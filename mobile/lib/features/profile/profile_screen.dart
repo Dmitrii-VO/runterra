@@ -1,0 +1,160 @@
+import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import '../../shared/api/users_service.dart';
+import '../../shared/di/service_locator.dart';
+import '../../shared/models/profile_model.dart';
+import '../../shared/ui/profile/header_section.dart';
+import '../../shared/ui/profile/stats_section.dart';
+import '../../shared/ui/profile/activity_section.dart';
+import '../../shared/ui/profile/quick_actions_section.dart';
+import '../../shared/ui/profile/notifications_section.dart';
+import '../../shared/ui/profile/settings_section.dart';
+
+/// Profile screen - Личный кабинет пользователя
+/// 
+/// Отображает все данные личного кабинета согласно требованиям MVP:
+/// 1. Идентификация пользователя (имя, фото, статус, клуб)
+/// 2. Мини-статистика (тренировки, территории, баллы)
+/// 3. Ближайшая и последняя активности
+/// 4. Быстрые действия (CTA)
+/// 5. Уведомления
+/// 6. Настройки
+/// 
+/// Минимальная реализация без state management, использует FutureBuilder.
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  late Future<ProfileModel> _profileFuture;
+  bool _locationPermissionGranted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileFuture = _fetchProfile();
+    _checkLocationPermission();
+  }
+
+  /// Создает Future для получения данных профиля
+  Future<ProfileModel> _fetchProfile() async {
+    return ServiceLocator.usersService.getProfile();
+  }
+
+  /// Проверяет статус разрешения геолокации
+  Future<void> _checkLocationPermission() async {
+    final locationService = ServiceLocator.locationService;
+    final permission = await locationService.checkPermission();
+    setState(() {
+      _locationPermissionGranted = permission != LocationPermission.denied &&
+          permission != LocationPermission.deniedForever;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Личный кабинет'),
+      ),
+      body: FutureBuilder<ProfileModel>(
+        future: _profileFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          if (snapshot.hasError) {
+            final err = snapshot.error;
+            String userMessage;
+
+            if (err is ApiException) {
+              userMessage = '${err.code}\n\n${err.message}';
+            } else {
+              final s = err.toString();
+              if (s.contains('SocketException') ||
+                  s.contains('connection refused') ||
+                  s.contains('отклонил это сетевое подключение')) {
+                userMessage = 'Не удалось подключиться к серверу.\n\n'
+                    'Убедитесь, что:\n'
+                    '1. Backend сервер запущен (npm run dev в папке backend)\n'
+                    '2. Для Android эмулятора используется адрес 10.0.2.2:3000\n'
+                    '3. Для физического устройства используйте IP адрес компьютера';
+              } else {
+                userMessage = 'Ошибка: $s';
+              }
+            }
+
+            return Center(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    userMessage,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            );
+          }
+
+          if (!snapshot.hasData) {
+            return const Center(
+              child: Text('Данные профиля не найдены'),
+            );
+          }
+
+          final profile = snapshot.data!;
+
+          return ListView(
+            children: [
+              // 1. Заголовок профиля
+              ProfileHeaderSection(
+                user: profile.user,
+                club: profile.club,
+              ),
+
+              // 2. Мини-статистика
+              ProfileStatsSection(stats: profile.stats),
+
+              // 3. Ближайшая и последняя активности
+              ProfileActivitySection(
+                nextActivity: profile.nextActivity,
+                lastActivity: profile.lastActivity,
+              ),
+
+              // 4. Быстрые действия (CTA)
+              ProfileQuickActionsSection(
+                hasClub: profile.club != null,
+                isMercantile: profile.user.isMercantile,
+              ),
+
+              // 5. Уведомления
+              ProfileNotificationsSection(
+                notifications: profile.notifications,
+              ),
+
+              // 6. Настройки
+              ProfileSettingsSection(
+                locationPermissionGranted: _locationPermissionGranted,
+                profileVisible: true, // TODO: Загружать из профиля
+                onLogout: () {
+                  // TODO: Реализовать выход из аккаунта
+                },
+                onDeleteAccount: () {
+                  // TODO: Реализовать удаление аккаунта
+                },
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}

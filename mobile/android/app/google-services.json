@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "718457871498",
+    "project_id": "runterra-8dbc2",
+    "storage_bucket": "runterra-8dbc2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:718457871498:android:adbf0a55f96734f85b6173",
+        "android_client_info": {
+          "package_name": "com.runterra.runterra"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDYBDIOvXc4t0vexw8qsEaerPhnqF_Pq6w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
