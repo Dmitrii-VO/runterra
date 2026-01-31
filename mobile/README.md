@@ -9,7 +9,7 @@
 - ✅ Базовая структура проекта
 - ✅ Базовый роутинг с BottomNavigationBar
 - ✅ Экраны-заглушки: Profile и Map
-- ✅ Mapbox подключен (mapbox_maps_flutter)
+- ✅ Yandex MapKit подключен (yandex_mapkit)
 - ✅ MapScreen с пустой картой (фиксированный центр - Санкт-Петербург)
 - ✅ UI-слои поверх карты (панель города, FAB, контейнер для карточек)
 - ✅ Минимальное соединение с backend (HTTP)
@@ -30,7 +30,7 @@ lib/
   app.dart                     # Основной MaterialApp widget с BottomNav
   features/
     map/
-      map_screen.dart          # Экран карты с Mapbox (пустая карта, фиксированный центр, UI-слои поверх)
+      map_screen.dart          # Экран карты с Yandex MapKit (территории, события, фильтры)
     profile/
       profile_screen.dart      # Экран профиля (отображает результат GET /health)
   shared/
@@ -56,7 +56,7 @@ flutter run
 
 ### Windows (ограниченная поддержка)
 
-**⚠️ Важно:** Mapbox Maps SDK не поддерживает Windows. Экран карты работает только на Android и iOS.
+**⚠️ Важно:** Yandex MapKit SDK не поддерживает Windows. Экран карты работает только на Android и iOS.
 
 Для тестирования других экранов (без карты) можно использовать Windows:
 
@@ -70,27 +70,27 @@ flutter run -d windows
 ## Платформы
 
 - **Android-first** (основная платформа)
-- iOS (поддерживается Mapbox)
-- Windows (опционально, для тестирования, но без Mapbox)
+- iOS (поддерживается Yandex MapKit)
+- Windows (опционально, для тестирования, но без карты)
 
 ## Зависимости
 
-- `mapbox_maps_flutter: ^2.17.0` - Mapbox Maps SDK для Flutter
+- `yandex_mapkit: ^4.0.0` - Yandex MapKit SDK для Flutter
 - `http: ^1.1.0` - HTTP клиент для работы с backend API
 - `geolocator: ^13.0.0` - Пакет для работы с GPS / Location
 
-## Настройка Mapbox
+## Настройка Yandex MapKit
 
-1. Получите Mapbox access token на [mapbox.com](https://www.mapbox.com/)
-2. Замените `YOUR_MAPBOX_ACCESS_TOKEN` в `android/app/src/main/AndroidManifest.xml` на реальный токен
-3. Для iOS добавьте токен в `ios/Runner/Info.plist` (когда будете настраивать iOS)
+1. Получите API-ключ на [developer.tech.yandex.ru](https://developer.tech.yandex.ru/)
+2. Ключ указывается в `android/app/src/main/AndroidManifest.xml` как `com.yandex.android.mapkit.ApiKey`
+3. Для iOS добавьте ключ в `ios/Runner/AppDelegate.swift` (когда будете настраивать iOS)
 
-**Текущее состояние:** Access token настроен как placeholder (TODO).
+**Текущее состояние:** API-ключ настроен.
 
 ## Навигация
 
 Приложение использует простую навигацию через `BottomNavigationBar`:
-- **Map** - экран с картой Mapbox (центр: Санкт-Петербург) с UI-слоями:
+- **Map** - экран с картой Yandex MapKit (центр: Санкт-Петербург) с UI-слоями:
   - Панель с названием города сверху (placeholder)
   - FloatingActionButton справа снизу (пустой)
   - Нижний полупрозрачный контейнер - задел под карточки

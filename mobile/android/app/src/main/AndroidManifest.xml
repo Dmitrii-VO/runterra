@@ -26,9 +26,9 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-        <!-- TODO: Replace with actual Mapbox access token -->
+        <!-- Yandex MapKit API key -->
         <meta-data
-            android:name="com.mapbox.accessToken"
-            android:value="pk.eyJ1IjoicmFnZW1pbGsiLCJhIjoiY21rd2gyMmphMDI2ejNkczVoaWRraTNsayJ9.EdykU4HCjcP3hfCsOs6N0Q" />
+            android:name="com.yandex.android.mapkit.ApiKey"
+            android:value="e8f28c35-e95f-49a9-8ee1-b3d8ee85bdf0" />
     </application>
 </manifest>

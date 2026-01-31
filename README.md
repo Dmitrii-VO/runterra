@@ -40,7 +40,7 @@
 - **Мобильное приложение:** Flutter (Android-first)
 - **Backend:** Node.js + TypeScript
 - **База данных:** PostgreSQL
-- **Карты:** Mapbox
+- **Карты:** Yandex MapKit
 - **Авторизация:** Firebase Authentication
 - **Админ-панель:** Next.js
 

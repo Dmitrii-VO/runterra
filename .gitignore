@@ -22,9 +22,11 @@ admin/.next/
 .build/
 .dart_tool/
 mobile/android/local.properties
+mobile/android/.gradle/
 
 # Logs
 *.log
+logs/
 
 # Test coverage
 coverage/

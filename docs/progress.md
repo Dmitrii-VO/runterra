@@ -15,6 +15,7 @@
 - **Настройка Firebase Authentication для Android:** интеграция Firebase Authentication в мобильное приложение — конфигурация Firebase проекта, настройка Gradle, добавление зависимостей, инициализация в коде. Подробности — [changes/firebase-setup.md](changes/firebase-setup.md), [docs/firebase-setup.md](firebase-setup.md).
 
 ### 2026-01-31
+- **Миграция карт: Mapbox → Yandex MapKit:** технологический стек карт изменён с Mapbox на Yandex MapKit; причина — лучшая поддержка региона РФ и ценовая политика. Обновлены: pubspec.yaml (yandex_mapkit: ^4.0.0), AndroidManifest.xml (API ключ Яндекс), map_screen.dart (полностью переписан под Yandex API), удалён my_location_button.dart (функционал встроен в map_screen), обновлена документация. Подробности — [changes/maps-yandex.md](changes/maps-yandex.md).
 - **Mobile API base URL — облачный backend по умолчанию (debug):** в `api_config.dart` для debug-сборок при отсутствии `--dart-define=API_BASE_URL` используется облачный backend `http://85.208.85.13:3000` (Cloud.ru); для release/production поведение без изменений (https). Подробности — [changes/api-client.md](changes/api-client.md).
 
 ### 2026-01-27

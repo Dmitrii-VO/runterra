@@ -22,7 +22,7 @@
 - Backend: Node.js + TypeScript
 - База данных: PostgreSQL
 - Админка: Next.js
-- Карты: Mapbox
+- Карты: Yandex MapKit
 - Авторизация: Firebase Authentication
 
 СТИЛЬ КОДА:

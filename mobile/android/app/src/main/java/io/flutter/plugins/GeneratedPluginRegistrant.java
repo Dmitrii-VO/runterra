@@ -36,9 +36,9 @@ public final class GeneratedPluginRegistrant {
       Log.e(TAG, "Error registering plugin geolocator_android, com.baseflow.geolocator.GeolocatorPlugin", e);
     }
     try {
-      flutterEngine.getPlugins().add(new com.mapbox.maps.mapbox_maps.MapboxMapsPlugin());
+      flutterEngine.getPlugins().add(new com.unact.yandexmapkit.YandexMapkitPlugin());
     } catch (Exception e) {
-      Log.e(TAG, "Error registering plugin mapbox_maps_flutter, com.mapbox.maps.mapbox_maps.MapboxMapsPlugin", e);
+      Log.e(TAG, "Error registering plugin yandex_mapkit, com.unact.yandexmapkit.YandexMapkitPlugin", e);
     }
   }
 }

@@ -9,7 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  mapbox_maps_flutter: ^2.17.0
+  yandex_mapkit: ^4.0.0
   http: ^1.1.0
   geolocator: ^13.0.0
   go_router: ^14.0.0

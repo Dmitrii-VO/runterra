@@ -411,11 +411,11 @@
   - Красивый UI из коробки (Material Design 3)
   - Нативная работа с картами и геолокацией
 
-- **Карты:** **Mapbox GL** ✅
-  - Гибкая кастомизация территорий и зон
-  - Дешевле Google Maps (50,000 запросов/мес бесплатно)
-  - Красивый дизайн и кастомные маркеры
-  - Пакет: `flutter_map` + `mapbox_gl`
+- **Карты:** **Yandex MapKit** ✅
+  - Лучшая поддержка региона РФ (актуальные данные, POI)
+  - Бесплатно до 1000 DAU при соблюдении условий
+  - Официальная поддержка Flutter
+  - Пакет: `yandex_mapkit`
 
 - **GPS-трекинг:** `geolocator` + `background_location`
   - Фоновое отслеживание активности
@@ -446,7 +446,7 @@
 ### Веб-админка
 - **Фреймворк:** **Next.js 14 (App Router)** ✅
 - **UI библиотека:** **shadcn/ui** (современная, красивая, гибкая)
-- **Карты для админки:** Mapbox GL JS
+- **Карты для админки:** Yandex Maps JS API
 - **Таблицы:** TanStack Table
 - **Формы:** React Hook Form + Zod
 
@@ -471,8 +471,8 @@
 - **Альтернатива:** Firebase Realtime Database (если нужна простота)
 
 ### Геокодирование и карты
-- **Geocoding API:** Mapbox Geocoding (адреса → координаты)
-- **Routing API:** Mapbox Directions (построение маршрутов, опционально)
+- **Geocoding API:** Yandex Geocoder (адреса → координаты)
+- **Routing API:** Yandex Router (построение маршрутов, опционально)
 
 ### DevOps и инструменты
 - **Контейнеризация:** Docker + Docker Compose

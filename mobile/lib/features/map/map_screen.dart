@@ -1,41 +1,22 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+import 'package:yandex_mapkit/yandex_mapkit.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import '../../shared/di/service_locator.dart';
 import '../../main.dart' show DevRemoteLogger;
 import '../../shared/models/map_data_model.dart';
 import '../../shared/models/territory_map_model.dart';
-import '../../shared/models/event_list_item_model.dart';
 import 'widgets/territory_bottom_sheet.dart';
-import 'widgets/event_card.dart';
-import 'widgets/my_location_button.dart';
 import 'widgets/map_filters.dart';
-
-/// Класс-обработчик тапов на территории
-/// 
-/// Реализует OnCircleAnnotationClickListener для обработки тапов на CircleAnnotation
-class _TerritoryTapListenerImpl extends OnCircleAnnotationClickListener {
-  final void Function(CircleAnnotation) onTap;
-  
-  _TerritoryTapListenerImpl(this.onTap);
-  
-  @override
-  void onCircleAnnotationClick(CircleAnnotation annotation) {
-    onTap(annotation);
-  }
-}
 
 /// Экран карты (MVP)
 /// 
 /// Отображает карту с территориями и событиями.
-/// Реализует согласно 123.md:
+/// Реализует:
 /// - Стартовая позиция: GPS координаты пользователя (fallback: СПб)
-/// - Территории: полигоны-круги с цветами статусов
+/// - Территории: круги с цветами статусов
 /// - События: маркеры на карте
 /// - Фильтры: минимум (сегодня/неделя, мой клуб, активные территории)
-/// - Персонализация: подсветка территорий/событий пользователя
 /// - Кнопка "Моё местоположение"
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -45,30 +26,24 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  MapboxMap? _mapboxMap;
+  YandexMapController? _mapController;
   MapDataModel? _mapData;
   bool _isLoading = true;
   String? _error;
   MapFilters _filters = MapFilters();
   bool _showFilters = false;
-  bool _isMapReady = false; // Flag to synchronize map creation and data loading
+  bool _isMapReady = false;
   
   // Дефолтные координаты СПб (fallback)
   static const double _defaultLongitude = 30.3351;
   static const double _defaultLatitude = 59.9343;
   static const double _defaultZoom = 12.0;
   
-  // Радиус территории в метрах (константа для MVP)
+  // Радиус территории в метрах
   static const double _territoryRadiusMeters = 500.0;
   
-  // Менеджеры аннотаций
-  CircleAnnotationManager? _territoriesAnnotationManager;
-  
-  // Списки аннотаций для управления
-  List<CircleAnnotation> _territoryAnnotations = [];
-
-  // Текущее значение zoom для пересчета радиуса в пикселях
-  double? _lastZoom;
+  // Объекты на карте
+  List<CircleMapObject> _territoryCircles = [];
 
   @override
   void initState() {
@@ -77,23 +52,17 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   /// Инициализация карты
-  /// 
-  /// 1. Получает GPS координаты пользователя (или использует fallback)
-  /// 2. Загружает данные карты через shared MapService
   Future<void> _initializeMap() async {
     try {
       final locationService = ServiceLocator.locationService;
 
-      // Получаем стартовую позицию (GPS или fallback)
-      // Координаты будут использованы в _centerMapOnStartPosition после загрузки данных
+      // Проверяем разрешения GPS
       try {
-        // Проверяем разрешения (для будущего использования)
         var permission = await locationService.checkPermission();
         if (permission == geo.LocationPermission.denied) {
           permission = await locationService.requestPermission();
         }
         
-        // Handle permission denial
         if (permission == geo.LocationPermission.denied ||
             permission == geo.LocationPermission.deniedForever) {
           if (mounted) {
@@ -112,20 +81,11 @@ class _MapScreenState extends State<MapScreen> {
           }
         }
       } catch (e) {
-        // Log error but continue with default position
         debugPrint('Could not check GPS permission: $e');
         DevRemoteLogger.logError(
           'GPS permission check during map initialization failed',
           error: e,
         );
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Ошибка проверки разрешений GPS: $e'),
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
       }
 
       // Загружаем данные карты
@@ -159,9 +119,8 @@ class _MapScreenState extends State<MapScreen> {
         setState(() {
           _mapData = data;
         });
-        // Update annotations only if map is ready
         if (_isMapReady) {
-          _updateMapAnnotations();
+          _updateMapObjects();
         }
       }
     } catch (e) {
@@ -173,133 +132,72 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
   
-  /// Обновляет аннотации на карте (территории и события)
-  Future<void> _updateMapAnnotations() async {
-    if (_mapboxMap == null || _mapData == null) return;
+  /// Обновляет объекты на карте (территории и события)
+  void _updateMapObjects() {
+    if (_mapController == null || _mapData == null) return;
     
     try {
-      // Обновляем аннотации территорий
-      await _updateTerritoriesAnnotations();
-      
-      // Обновляем аннотации маркеров событий
-      await _updateEventsAnnotations();
+      _updateTerritoryCircles();
     } catch (e) {
-      debugPrint('Error updating map annotations: $e');
+      debugPrint('Error updating map objects: $e');
       DevRemoteLogger.logError(
-        'Error updating map annotations',
+        'Error updating map objects',
         error: e,
       );
     }
   }
   
-  /// Обновляет аннотации территорий (CircleAnnotation)
-  Future<void> _updateTerritoriesAnnotations() async {
-    if (_territoriesAnnotationManager == null || _mapData == null || _mapboxMap == null) return;
+  /// Обновляет круги территорий
+  void _updateTerritoryCircles() {
+    if (_mapData == null) return;
     
-    try {
-      // Получаем текущий zoom камеры для пересчета радиуса в пикселях
-      final cameraState = await _mapboxMap!.getCameraState();
-      final zoom = cameraState.zoom;
-      _lastZoom = zoom;
-
-      // Удаляем старые аннотации
-      if (_territoryAnnotations.isNotEmpty) {
-        for (final annotation in _territoryAnnotations) {
-          await _territoriesAnnotationManager!.delete(annotation);
-        }
-        _territoryAnnotations.clear();
-      }
+    final circles = _mapData!.territories.asMap().entries.map((entry) {
+      final index = entry.key;
+      final territory = entry.value;
+      final color = _getTerritoryColor(territory.status);
+      final strokeColor = _getTerritoryStrokeColor(territory.status);
       
-      // Создаем новые аннотации для каждой территории
-      final annotations = _mapData!.territories.map((territory) {
-        final color = _getTerritoryAnnotationColor(territory.status);
-        final strokeColor = _getTerritoryAnnotationStrokeColor(territory.status);
-        final radiusPixels = _computeTerritoryRadiusPixels(
-          territory.coordinates.latitude,
-          zoom,
-        );
-        
-        // Mapbox expects ARGB int format (0xAARRGGBB)
-        // Color.value already returns ARGB, but we ensure proper format
-        final colorValue = color.value;
-        final strokeColorValue = strokeColor.value;
-        
-        return CircleAnnotationOptions(
-          geometry: Point(
-            coordinates: Position(
-              territory.coordinates.longitude,
-              territory.coordinates.latitude,
-            ),
+      return CircleMapObject(
+        mapId: MapObjectId('territory_$index'),
+        circle: Circle(
+          center: Point(
+            latitude: territory.coordinates.latitude,
+            longitude: territory.coordinates.longitude,
           ),
-          circleRadius: radiusPixels,
-          circleColor: colorValue,
-          circleStrokeColor: strokeColorValue,
-          circleStrokeWidth: 2.0,
-        );
-      }).toList();
-      
-      // Добавляем аннотации на карту
-      // Создаем аннотации по одной (createMulti может не существовать)
-      _territoryAnnotations = [];
-      for (final annotationOptions in annotations) {
-        final annotation = await _territoriesAnnotationManager!.create(annotationOptions);
-        _territoryAnnotations.add(annotation);
-      }
-    } catch (e) {
-      debugPrint('Error updating territories annotations: $e');
-      DevRemoteLogger.logError(
-        'Error updating territories annotations',
-        error: e,
+          radius: _territoryRadiusMeters,
+        ),
+        fillColor: color,
+        strokeColor: strokeColor,
+        strokeWidth: 2.0,
+        onTap: (mapObject, point) {
+          _showTerritoryBottomSheet(territory);
+        },
       );
-    }
-  }
-
-  /// Конвертирует радиус территории в метрах в радиус в пикселях
-  /// для текущего уровня зума и широты.
-  double _computeTerritoryRadiusPixels(double latitude, double zoom) {
-    // Формула основана на WebMercator: метров на пиксель = cos(lat) * C / (256 * 2^zoom),
-    // где C — длина экватора Земли.
-    const double earthCircumferenceMeters = 40075016.686; // приблизительно
-    final latRad = latitude * math.pi / 180.0;
-    final metersPerPixel =
-        (earthCircumferenceMeters * math.cos(latRad)) / (256 * math.pow(2.0, zoom));
-
-    if (metersPerPixel <= 0) {
-      // Fallback: используем приближение на дефолтном зуме
-      final fallbackMetersPerPixel =
-          (earthCircumferenceMeters * math.cos(_defaultLatitude * math.pi / 180.0)) /
-              (256 * math.pow(2.0, _defaultZoom));
-      return _territoryRadiusMeters / fallbackMetersPerPixel;
-    }
-
-    return _territoryRadiusMeters / metersPerPixel;
+    }).toList();
+    
+    setState(() {
+      _territoryCircles = circles;
+    });
   }
   
-  /// Обновляет аннотации маркеров событий (используем PointAnnotation как упрощение)
-  Future<void> _updateEventsAnnotations() async {
-    // TODO: Реализовать маркеры событий через PointAnnotation или другой способ
-    // Для MVP пока пропускаем, так как SymbolAnnotation требует дополнительной настройки
-    debugPrint('Events annotations: ${_mapData?.events.length} events');
-  }
-  
-  /// Получает цвет аннотации территории по статусу
-  Color _getTerritoryAnnotationColor(String status) {
+  /// Получает цвет заливки территории по статусу
+  Color _getTerritoryColor(String status) {
     switch (status) {
       case 'captured':
-        return const Color.fromRGBO(33, 150, 243, 0.3); // 🟦 Colors.blue
+        return const Color.fromRGBO(33, 150, 243, 0.3); // blue
       case 'free':
-        return const Color.fromRGBO(158, 158, 158, 0.2); // ⚪ Colors.grey
+        return const Color.fromRGBO(158, 158, 158, 0.2); // grey
       case 'contested':
-        return const Color.fromRGBO(255, 235, 59, 0.3); // 🟨 Colors.yellow
+        return const Color.fromRGBO(255, 235, 59, 0.3); // yellow
       case 'locked':
-        return const Color.fromRGBO(66, 66, 66, 0.3); // Colors.grey.shade800
+        return const Color.fromRGBO(66, 66, 66, 0.3); // dark grey
       default:
-        return const Color.fromRGBO(158, 158, 158, 0.2); // Colors.grey
+        return const Color.fromRGBO(158, 158, 158, 0.2);
     }
   }
   
-  /// Получает цвет границы аннотации территории по статусу
-  Color _getTerritoryAnnotationStrokeColor(String status) {
+  /// Получает цвет границы территории по статусу
+  Color _getTerritoryStrokeColor(String status) {
     switch (status) {
       case 'captured':
         return Colors.blue;
@@ -314,50 +212,6 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
   
-  /// Обработчик тапа на территорию
-  void _onTerritoryTap(CircleAnnotation annotation) {
-    if (_mapData == null) return;
-    
-    // Находим территорию по индексу аннотации
-    // Для MVP используем упрощенный подход: находим по индексу в списке
-    try {
-      final index = _territoryAnnotations.indexOf(annotation);
-      if (index >= 0 && index < _mapData!.territories.length) {
-        final territory = _mapData!.territories[index];
-        _showTerritoryBottomSheet(territory);
-      } else {
-        // Error: annotation not found in list
-        debugPrint('Territory annotation not found in list');
-        DevRemoteLogger.logError(
-          'Territory annotation not found in list',
-          error: Exception('Annotation index out of bounds'),
-        );
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Ошибка: не удалось найти территорию'),
-              duration: Duration(seconds: 2),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      debugPrint('Error finding territory: $e');
-      DevRemoteLogger.logError(
-        'Error finding territory on tap',
-        error: e,
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка при обработке тапа на территорию: $e'),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-    }
-  }
-  
   /// Показывает bottom sheet для территории
   void _showTerritoryBottomSheet(TerritoryMapModel territory) {
     showModalBottomSheet(
@@ -365,46 +219,26 @@ class _MapScreenState extends State<MapScreen> {
       builder: (context) => TerritoryBottomSheet(territory: territory),
     );
   }
-  
 
-  /// Обработчик создания карты (callback от MapWidget)
-  void _onMapCreated(MapboxMap mapboxMap) async {
-    _mapboxMap = mapboxMap;
-    // Инициализируем текущее значение zoom
-    try {
-      final cameraState = await _mapboxMap!.getCameraState();
-      _lastZoom = cameraState.zoom;
-    } catch (_) {
-      _lastZoom = _defaultZoom;
-    }
-
-    // Создаем менеджер аннотаций для территорий
-    _territoriesAnnotationManager = await mapboxMap.annotations.createCircleAnnotationManager();
+  /// Обработчик создания карты
+  void _onMapCreated(YandexMapController controller) async {
+    _mapController = controller;
     
-    // Добавляем обработчик тапов на аннотации территорий
-    // Создаем класс-обработчик, который реализует OnCircleAnnotationClickListener
-    _territoriesAnnotationManager?.addOnCircleAnnotationClickListener(
-      _TerritoryTapListenerImpl(_onTerritoryTap),
-    );
-    
-    // Mark map as ready
     if (mounted) {
       setState(() {
         _isMapReady = true;
       });
       
-      // Apply data if already loaded, otherwise wait for _loadMapData
       if (_mapData != null) {
-        _centerMapOnStartPosition();
-        _updateMapAnnotations();
+        await _centerMapOnStartPosition();
+        _updateMapObjects();
       }
     }
   }
-  
 
   /// Центрирует карту на стартовой позиции
   Future<void> _centerMapOnStartPosition() async {
-    if (_mapboxMap == null) return;
+    if (_mapController == null) return;
 
     double longitude = _defaultLongitude;
     double latitude = _defaultLatitude;
@@ -429,17 +263,78 @@ class _MapScreenState extends State<MapScreen> {
       }
     }
 
-    await _mapboxMap!.flyTo(
-      CameraOptions(
-        center: Point(
-          coordinates: Position(longitude, latitude),
+    await _mapController!.moveCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: Point(latitude: latitude, longitude: longitude),
+          zoom: _defaultZoom,
         ),
-        zoom: _defaultZoom,
       ),
-      MapAnimationOptions(duration: 500, startDelay: 0),
+      animation: const MapAnimation(
+        type: MapAnimationType.smooth,
+        duration: 0.5,
+      ),
     );
   }
+  
+  /// Центрирует карту на текущей позиции пользователя
+  Future<void> _centerOnMyLocation() async {
+    if (_mapController == null) return;
 
+    try {
+      final locationService = ServiceLocator.locationService;
+      
+      var permission = await locationService.checkPermission();
+      if (permission == geo.LocationPermission.denied) {
+        permission = await locationService.requestPermission();
+      }
+
+      if (permission == geo.LocationPermission.denied ||
+          permission == geo.LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Нет доступа к геолокации'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+        return;
+      }
+
+      final position = await locationService.getCurrentPosition();
+
+      await _mapController!.moveCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: Point(
+              latitude: position.latitude,
+              longitude: position.longitude,
+            ),
+            zoom: 15.0,
+          ),
+        ),
+        animation: const MapAnimation(
+          type: MapAnimationType.smooth,
+          duration: 1.0,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error centering on location: $e');
+      DevRemoteLogger.logError(
+        'Error centering map on user location',
+        error: e,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка геолокации: $e'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -504,17 +399,10 @@ class _MapScreenState extends State<MapScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Карта
-          MapWidget(
-            key: const ValueKey("mapWidget"),
-            cameraOptions: CameraOptions(
-              center: Point(
-                coordinates: Position(_defaultLongitude, _defaultLatitude),
-              ),
-              zoom: _defaultZoom,
-            ),
+          // Карта Яндекс
+          YandexMap(
             onMapCreated: _onMapCreated,
-            onCameraChangeListener: _onCameraChanged,
+            mapObjects: _territoryCircles,
           ),
 
           // Панель с названием города сверху
@@ -579,41 +467,20 @@ class _MapScreenState extends State<MapScreen> {
             ),
 
           // Кнопка "Моё местоположение"
-          if (_mapboxMap != null)
+          if (_mapController != null)
             Positioned(
               bottom: 220,
               right: 16,
-              child: MyLocationButton(
-                mapboxMap: _mapboxMap,
-                locationService: ServiceLocator.locationService,
+              child: FloatingActionButton(
+                mini: true,
+                onPressed: _centerOnMyLocation,
+                tooltip: 'Моё местоположение',
+                child: const Icon(Icons.my_location),
               ),
             ),
 
         ],
       ),
     );
-  }
-
-  /// Обработчик изменения параметров камеры.
-  /// 
-  /// Используем для динамического пересчета радиуса территорий в пикселях
-  /// при изменении уровня зума.
-  void _onCameraChanged(CameraChangedEventData data) {
-    if (_mapboxMap == null ||
-        _mapData == null ||
-        _territoriesAnnotationManager == null) {
-      return;
-    }
-
-    final zoom = data.cameraState.zoom;
-    // Обновляем аннотации только при заметном изменении зума,
-    // чтобы не перегружать перерисовку.
-    if (_lastZoom != null && (zoom - _lastZoom!).abs() < 0.1) {
-      return;
-    }
-
-    _lastZoom = zoom;
-    // Пересчитываем радиус кругов для текущего зума.
-    _updateTerritoriesAnnotations();
   }
 }
