@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'features/activity/activity_details_screen.dart';
 import 'features/city/city_details_screen.dart';
 import 'features/club/club_details_screen.dart';
+import 'features/login/login_screen.dart';
 import 'features/territory/territory_details_screen.dart';
 import 'features/map/map_screen.dart';
 import 'features/run/run_screen.dart';
@@ -10,10 +11,12 @@ import 'features/messages/messages_screen.dart';
 import 'features/events/events_screen.dart';
 import 'features/events/event_details_screen.dart';
 import 'features/profile/profile_screen.dart';
+import 'shared/auth/auth_service.dart';
+import 'shared/di/service_locator.dart';
 import 'shared/navigation/bottom_nav.dart';
 
 /// Notifier for auth state changes; when [refresh] is called, GoRouter refreshes (e.g. redirect).
-/// On skeleton: no real auth yet — call refresh() from Firebase auth listener when added.
+/// Called from AuthService listener when auth state changes.
 class AuthRefreshNotifier extends ChangeNotifier {
   void refresh() => notifyListeners();
 }
@@ -46,7 +49,35 @@ class RunterraApp extends StatelessWidget {
   static final GoRouter _router = GoRouter(
     initialLocation: '/', // Profile — entry point
     refreshListenable: authRefreshNotifier,
+    redirect: (context, state) async {
+      final isAuthenticated = AuthService.instance.isAuthenticated;
+      final isLoginRoute = state.matchedLocation == '/login';
+
+      // Если не авторизован и не на странице логина — редирект на логин
+      if (!isAuthenticated && !isLoginRoute) {
+        return '/login';
+      }
+
+      // Если авторизован и на странице логина — редирект на главную
+      if (isAuthenticated && isLoginRoute) {
+        // Обновляем токен в ApiClient после успешного входа
+        await ServiceLocator.refreshAuthToken();
+        return '/';
+      }
+
+      // Если авторизован — убедимся что токен актуален
+      if (isAuthenticated && !isLoginRoute) {
+        await ServiceLocator.refreshAuthToken();
+      }
+
+      return null; // Без редиректа
+    },
     routes: [
+      // Экран логина (без BottomNav)
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => const LoginScreen(),
+      ),
       // ShellRoute для BottomNav (Map, Run, Messages, Events, Profile)
       ShellRoute(
         builder: (context, state, child) {

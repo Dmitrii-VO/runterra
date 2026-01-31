@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:go_router/go_router.dart';
 import '../../shared/api/users_service.dart';
+import '../../shared/auth/auth_service.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/profile_model.dart';
 import '../../shared/ui/profile/header_section.dart';
@@ -9,6 +11,7 @@ import '../../shared/ui/profile/activity_section.dart';
 import '../../shared/ui/profile/quick_actions_section.dart';
 import '../../shared/ui/profile/notifications_section.dart';
 import '../../shared/ui/profile/settings_section.dart';
+import '../../app.dart';
 
 /// Profile screen - Личный кабинет пользователя
 /// 
@@ -164,8 +167,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ProfileSettingsSection(
                 locationPermissionGranted: _locationPermissionGranted,
                 profileVisible: true, // TODO: Загружать из профиля
-                onLogout: () {
-                  // TODO: Реализовать выход из аккаунта
+                onLogout: () async {
+                  // Показываем диалог подтверждения
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Выход'),
+                      content: const Text('Вы уверены, что хотите выйти из аккаунта?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: const Text('Отмена'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: const Text('Выйти'),
+                        ),
+                      ],
+                    ),
+                  );
+                  
+                  if (confirm == true && context.mounted) {
+                    await AuthService.instance.signOut();
+                    ServiceLocator.updateAuthToken(null);
+                    authRefreshNotifier.refresh();
+                    if (context.mounted) {
+                      context.go('/login');
+                    }
+                  }
                 },
                 onDeleteAccount: () {
                   // TODO: Реализовать удаление аккаунта

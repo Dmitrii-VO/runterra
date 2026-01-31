@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:http/http.dart' as http;
 import 'app.dart';
+import 'shared/auth/auth_service.dart';
 import 'shared/di/service_locator.dart';
 
 /// Dev-only remote logger.
@@ -61,6 +62,20 @@ void main() async {
 
   // Single ApiClient and shared services (DI) — created once at app start
   ServiceLocator.init();
+
+  // Слушаем изменения состояния авторизации
+  // При логине/логауте обновляем токен и уведомляем роутер
+  AuthService.instance.authStateChanges.listen((user) async {
+    if (user != null) {
+      // Пользователь залогинился — обновляем токен
+      await ServiceLocator.refreshAuthToken();
+    } else {
+      // Пользователь вышел — очищаем токен
+      ServiceLocator.updateAuthToken(null);
+    }
+    // Уведомляем роутер о смене состояния
+    authRefreshNotifier.refresh();
+  });
 
   // Настройка обработчика ошибок Flutter
   FlutterError.onError = (FlutterErrorDetails details) {

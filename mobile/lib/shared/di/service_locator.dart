@@ -8,6 +8,7 @@ import '../api/messages_service.dart';
 import '../api/run_service.dart';
 import '../api/territories_service.dart';
 import '../api/users_service.dart';
+import '../auth/auth_service.dart';
 import '../config/api_config.dart';
 import '../location/location_service.dart';
 
@@ -15,6 +16,8 @@ import '../location/location_service.dart';
 ///
 /// PURPOSE: Avoid creating ApiClient/XxxService per screen (connection reuse, no resource leak).
 /// Call [init] from main() before runApp. Screens use [activitiesService], [eventsService], etc.
+/// 
+/// AUTH: Call [updateAuthToken] after login/logout to update the token in ApiClient.
 class ServiceLocator {
   ServiceLocator._();
 
@@ -63,4 +66,17 @@ class ServiceLocator {
   static RunService get runService => _runService;
   static TerritoriesService get territoriesService => _territoriesService;
   static UsersService get usersService => _usersService;
+
+  /// Обновить токен авторизации в ApiClient
+  /// Вызывать после логина (с токеном) или логаута (с null)
+  static void updateAuthToken(String? token) {
+    _apiClient.updateToken(token);
+  }
+
+  /// Обновить токен из текущего пользователя Firebase
+  /// Удобный метод для вызова после логина
+  static Future<void> refreshAuthToken() async {
+    final token = await AuthService.instance.getIdToken();
+    updateAuthToken(token);
+  }
 }

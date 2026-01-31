@@ -31,9 +31,16 @@ class ApiClient {
 
   final String baseUrl;
   /// Optional Firebase ID token; when set, all requests get Authorization: Bearer header.
-  final String? authToken;
+  /// Mutable: call [updateToken] after login/logout to change.
+  String? _authToken;
+  String? get authToken => _authToken;
   final http.Client _client;
   final bool _ownsClient;
+
+  /// Обновить токен авторизации (вызывать после логина/логаута)
+  void updateToken(String? token) {
+    _authToken = token;
+  }
 
   /// Таймаут для HTTP запросов (30 секунд)
   ///
@@ -42,8 +49,8 @@ class ApiClient {
 
   /// Headers added to every request when [authToken] is set.
   Map<String, String> get _authHeaders {
-    if (authToken == null || authToken!.isEmpty) return const {};
-    return {'Authorization': 'Bearer ${authToken!}'};
+    if (_authToken == null || _authToken!.isEmpty) return const {};
+    return {'Authorization': 'Bearer ${_authToken!}'};
   }
 
   /// Создает ApiClient с указанным baseUrl и опциональным токеном авторизации.
@@ -54,9 +61,10 @@ class ApiClient {
   /// [client] - опциональная инъекция; если не задан, создаётся свой и закрывается в [dispose]
   ApiClient({
     required this.baseUrl,
-    this.authToken,
+    String? authToken,
     http.Client? client,
-  })  : _client = client ?? http.Client(),
+  })  : _authToken = authToken,
+        _client = client ?? http.Client(),
         _ownsClient = client == null;
 
   /// Выполняет GET запрос к указанному endpoint
