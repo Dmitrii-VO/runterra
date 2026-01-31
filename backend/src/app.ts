@@ -30,8 +30,25 @@ export function createApp(): Express {
   // JSON body parser with explicit limit (security / DoS)
   app.use(express.json({ limit: JSON_BODY_LIMIT }));
 
-  // Dev remote logs: backend error/warn are sent to the dev log server via logger + devLogClient.
-  // Mobile/frontend send directly to the same server (POST /log). No local /dev/log endpoint.
+  // Request logging middleware
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const start = Date.now();
+    
+    res.on('finish', () => {
+      const duration = Date.now() - start;
+      const level = res.statusCode >= 400 ? 'warn' : 'info';
+      
+      logger[level]('HTTP request', {
+        method: req.method,
+        path: req.path,
+        status: res.statusCode,
+        duration: `${duration}ms`,
+        ip: req.ip || req.socket.remoteAddress,
+      });
+    });
+    
+    next();
+  });
 
   // Health-check endpoint
   app.get('/health', (_req: Request, res: Response) => {
