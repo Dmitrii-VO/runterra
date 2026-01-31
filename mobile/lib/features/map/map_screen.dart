@@ -28,8 +28,7 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   YandexMapController? _mapController;
   MapDataModel? _mapData;
-  bool _isLoading = true;
-  String? _error;
+  String? _dataError; // Error loading data, but map still shows
   MapFilters _filters = MapFilters();
   bool _showFilters = false;
   bool _isMapReady = false;
@@ -48,61 +47,48 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeMap();
+    // Load data in background, don't block map display
+    _loadMapDataInBackground();
   }
 
-  /// Инициализация карты
-  Future<void> _initializeMap() async {
+  /// Загружает данные карты в фоне (не блокирует показ карты)
+  Future<void> _loadMapDataInBackground() async {
+    // Check GPS permission (non-blocking, just for snackbar notification)
+    _checkGpsPermission();
+    
+    // Load map data
+    await _loadMapData();
+  }
+  
+  /// Проверяет разрешения GPS (не блокирует)
+  Future<void> _checkGpsPermission() async {
     try {
       final locationService = ServiceLocator.locationService;
-
-      // Проверяем разрешения GPS
-      try {
-        var permission = await locationService.checkPermission();
-        if (permission == geo.LocationPermission.denied) {
-          permission = await locationService.requestPermission();
-        }
-        
-        if (permission == geo.LocationPermission.denied ||
-            permission == geo.LocationPermission.deniedForever) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text(
-                  'Доступ к геолокации не предоставлен. Карта будет показана с дефолтной позицией.',
-                ),
-                duration: const Duration(seconds: 3),
-                action: SnackBarAction(
-                  label: 'OK',
-                  onPressed: () {},
-                ),
-              ),
-            );
-          }
-        }
-      } catch (e) {
-        debugPrint('Could not check GPS permission: $e');
-        DevRemoteLogger.logError(
-          'GPS permission check during map initialization failed',
-          error: e,
-        );
+      var permission = await locationService.checkPermission();
+      
+      if (permission == geo.LocationPermission.denied) {
+        permission = await locationService.requestPermission();
       }
-
-      // Загружаем данные карты
-      await _loadMapData();
-
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+      
+      if (permission == geo.LocationPermission.denied ||
+          permission == geo.LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Доступ к геолокации не предоставлен. Используется позиция по умолчанию.',
+              ),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _error = e.toString();
-        });
-      }
+      debugPrint('Could not check GPS permission: $e');
+      DevRemoteLogger.logError(
+        'GPS permission check failed',
+        error: e,
+      );
     }
   }
 
@@ -118,16 +104,30 @@ class _MapScreenState extends State<MapScreen> {
       if (mounted) {
         setState(() {
           _mapData = data;
+          _dataError = null;
         });
         if (_isMapReady) {
           _updateMapObjects();
         }
       }
     } catch (e) {
+      debugPrint('Error loading map data: $e');
+      DevRemoteLogger.logError('Error loading map data', error: e);
       if (mounted) {
         setState(() {
-          _error = e.toString();
+          _dataError = e.toString();
         });
+        // Show snackbar but don't block map
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка загрузки данных: $e'),
+            duration: const Duration(seconds: 3),
+            action: SnackBarAction(
+              label: 'Повторить',
+              onPressed: _loadMapData,
+            ),
+          ),
+        );
       }
     }
   }
@@ -338,64 +338,7 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: 16),
-              Text(
-                'Загрузка карты...',
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (_error != null) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
-              const SizedBox(height: 16),
-              Text(
-                'Ошибка загрузки карты',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Text(
-                  _error!,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[600],
-                      ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    _error = null;
-                    _isLoading = true;
-                  });
-                  _initializeMap();
-                },
-                child: const Text('Повторить'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
+    // Always show the map, errors are displayed as snackbars
     return Scaffold(
       body: Stack(
         children: [
