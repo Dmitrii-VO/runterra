@@ -19,15 +19,19 @@ class GlobalChatTab extends StatefulWidget {
 }
 
 class _GlobalChatTabState extends State<GlobalChatTab> {
-  /// Cached future for global chat messages to avoid repeated HTTP calls on rebuilds.
-  late final Future<List<MessageModel>> _messagesFuture;
+  /// Future for global chat messages.
+  late Future<List<MessageModel>> _messagesFuture;
 
   /// Создает Future для получения сообщений общего чата
-  ///
-  /// TODO: Backend API для сообщений еще не реализован.
-  /// Метод возвращает пустой список (заглушка).
   Future<List<MessageModel>> _fetchMessages() async {
     return ServiceLocator.messagesService.getGlobalChatMessages();
+  }
+  
+  /// Reload messages
+  void _retry() {
+    setState(() {
+      _messagesFuture = _fetchMessages();
+    });
   }
 
   @override
@@ -54,10 +58,23 @@ class _GlobalChatTabState extends State<GlobalChatTab> {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Ошибка загрузки сообщений: ${snapshot.error}',
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Ошибка загрузки сообщений: ${snapshot.error}',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: _retry,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Повторить'),
+                  ),
+                ],
               ),
             ),
           );

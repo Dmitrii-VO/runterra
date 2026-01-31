@@ -30,14 +30,19 @@ class ClubDetailsScreen extends StatefulWidget {
 }
 
 class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
-  /// Cached future for club details to avoid repeated HTTP calls on rebuilds.
-  late final Future<ClubModel> _clubFuture;
+  /// Future for club details.
+  late Future<ClubModel> _clubFuture;
 
   /// Creates Future for loading club data.
-  ///
-  /// NOTE: This is a technical data-fetching helper without business logic.
   Future<ClubModel> _fetchClub() async {
     return ServiceLocator.clubsService.getClubById(widget.clubId);
+  }
+  
+  /// Reload data
+  void _retry() {
+    setState(() {
+      _clubFuture = _fetchClub();
+    });
   }
 
   @override
@@ -64,6 +69,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
           if (snapshot.hasError) {
             return ErrorDisplay(
               errorMessage: snapshot.error.toString(),
+              onRetry: _retry,
             );
           }
 

@@ -30,14 +30,19 @@ class TerritoryDetailsScreen extends StatefulWidget {
 }
 
 class _TerritoryDetailsScreenState extends State<TerritoryDetailsScreen> {
-  /// Cached future for territory details to avoid repeated HTTP calls on rebuilds.
-  late final Future<TerritoryModel> _territoryFuture;
+  /// Future for territory details.
+  late Future<TerritoryModel> _territoryFuture;
 
   /// Creates Future for loading territory data.
-  ///
-  /// NOTE: This is a technical data-fetching helper without business logic.
   Future<TerritoryModel> _fetchTerritory() async {
     return ServiceLocator.territoriesService.getTerritoryById(widget.territoryId);
+  }
+  
+  /// Reload data
+  void _retry() {
+    setState(() {
+      _territoryFuture = _fetchTerritory();
+    });
   }
 
   @override
@@ -64,6 +69,7 @@ class _TerritoryDetailsScreenState extends State<TerritoryDetailsScreen> {
           if (snapshot.hasError) {
             return ErrorDisplay(
               errorMessage: snapshot.error.toString(),
+              onRetry: _retry,
             );
           }
 

@@ -37,14 +37,19 @@ class EventDetailsScreen extends StatefulWidget {
 }
 
 class _EventDetailsScreenState extends State<EventDetailsScreen> {
-  /// Cached future for event details to avoid repeated HTTP calls on rebuilds.
-  late final Future<EventDetailsModel> _eventFuture;
+  /// Future for event details.
+  late Future<EventDetailsModel> _eventFuture;
 
   /// Creates Future for loading event data.
-  ///
-  /// NOTE: This is a technical data-fetching helper without business logic.
   Future<EventDetailsModel> _fetchEvent() async {
     return ServiceLocator.eventsService.getEventById(widget.eventId);
+  }
+  
+  /// Reload data
+  void _retry() {
+    setState(() {
+      _eventFuture = _fetchEvent();
+    });
   }
 
   @override
@@ -124,6 +129,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           if (snapshot.hasError) {
             return ErrorDisplay(
               errorMessage: snapshot.error.toString(),
+              onRetry: _retry,
             );
           }
 

@@ -10,11 +10,15 @@ class ErrorDisplay extends StatelessWidget {
   
   /// Опциональный заголовок ошибки
   final String? title;
+  
+  /// Callback для повторной попытки загрузки
+  final VoidCallback? onRetry;
 
   const ErrorDisplay({
     super.key,
     required this.errorMessage,
     this.title,
+    this.onRetry,
   });
 
   /// Преобразует техническое сообщение об ошибке в понятное для пользователя
@@ -63,6 +67,14 @@ class ErrorDisplay extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
+            if (onRetry != null) ...[
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Повторить'),
+              ),
+            ],
           ],
         ),
       ),

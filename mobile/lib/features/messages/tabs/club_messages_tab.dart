@@ -20,15 +20,19 @@ class ClubMessagesTab extends StatefulWidget {
 }
 
 class _ClubMessagesTabState extends State<ClubMessagesTab> {
-  /// Cached future for club chats to avoid repeated HTTP calls on rebuilds.
-  late final Future<List<ClubChatModel>> _clubChatsFuture;
+  /// Future for club chats.
+  late Future<List<ClubChatModel>> _clubChatsFuture;
 
   /// Создает Future для получения списка чатов клубов
-  ///
-  /// TODO: Backend API для сообщений еще не реализован.
-  /// Метод возвращает пустой список (заглушка).
   Future<List<ClubChatModel>> _fetchClubChats() async {
     return ServiceLocator.messagesService.getClubChats();
+  }
+  
+  /// Reload data
+  void _retry() {
+    setState(() {
+      _clubChatsFuture = _fetchClubChats();
+    });
   }
 
   @override
@@ -55,10 +59,23 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Ошибка загрузки чатов клубов: ${snapshot.error}',
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Ошибка загрузки чатов клубов: ${snapshot.error}',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: _retry,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Повторить'),
+                  ),
+                ],
               ),
             ),
           );

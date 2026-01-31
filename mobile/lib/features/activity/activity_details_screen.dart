@@ -30,14 +30,19 @@ class ActivityDetailsScreen extends StatefulWidget {
 }
 
 class _ActivityDetailsScreenState extends State<ActivityDetailsScreen> {
-  /// Cached future for activity details to avoid repeated HTTP calls on rebuilds.
-  late final Future<ActivityModel> _activityFuture;
+  /// Future for activity details.
+  late Future<ActivityModel> _activityFuture;
 
   /// Creates Future for loading activity data.
-  ///
-  /// NOTE: This is a technical data-fetching helper without business logic.
   Future<ActivityModel> _fetchActivity() async {
     return ServiceLocator.activitiesService.getActivityById(widget.activityId);
+  }
+  
+  /// Reload data
+  void _retry() {
+    setState(() {
+      _activityFuture = _fetchActivity();
+    });
   }
 
   @override
@@ -64,6 +69,7 @@ class _ActivityDetailsScreenState extends State<ActivityDetailsScreen> {
           if (snapshot.hasError) {
             return ErrorDisplay(
               errorMessage: snapshot.error.toString(),
+              onRetry: _retry,
             );
           }
 

@@ -17,12 +17,19 @@ class NotificationsTab extends StatefulWidget {
 }
 
 class _NotificationsTabState extends State<NotificationsTab> {
-  /// Cached future for notifications to avoid repeated HTTP calls on rebuilds.
-  late final Future<List<NotificationModel>> _notificationsFuture;
+  /// Future for notifications.
+  late Future<List<NotificationModel>> _notificationsFuture;
 
   Future<List<NotificationModel>> _fetchNotifications() async {
     // Stub: no API. Same pattern as other tabs.
     return [];
+  }
+  
+  /// Reload data
+  void _retry() {
+    setState(() {
+      _notificationsFuture = _fetchNotifications();
+    });
   }
 
   @override
@@ -49,10 +56,23 @@ class _NotificationsTabState extends State<NotificationsTab> {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Ошибка загрузки уведомлений: ${snapshot.error}',
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Ошибка загрузки уведомлений: ${snapshot.error}',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: _retry,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Повторить'),
+                  ),
+                ],
               ),
             ),
           );

@@ -30,14 +30,19 @@ class CityDetailsScreen extends StatefulWidget {
 }
 
 class _CityDetailsScreenState extends State<CityDetailsScreen> {
-  /// Cached future for city details to avoid repeated HTTP calls on rebuilds.
-  late final Future<CityModel> _cityFuture;
+  /// Future for city details.
+  late Future<CityModel> _cityFuture;
 
   /// Creates Future for loading city data.
-  ///
-  /// NOTE: This is a technical data-fetching helper without business logic.
   Future<CityModel> _fetchCity() async {
     return ServiceLocator.citiesService.getCityById(widget.cityId);
+  }
+  
+  /// Reload data
+  void _retry() {
+    setState(() {
+      _cityFuture = _fetchCity();
+    });
   }
 
   @override
@@ -64,6 +69,7 @@ class _CityDetailsScreenState extends State<CityDetailsScreen> {
           if (snapshot.hasError) {
             return ErrorDisplay(
               errorMessage: snapshot.error.toString(),
+              onRetry: _retry,
             );
           }
 
