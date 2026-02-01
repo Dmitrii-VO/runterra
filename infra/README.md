@@ -124,3 +124,4 @@ GitHub Actions CI (`ci.yml`) запускается на каждый push/PR в
 - [x] Profile: "type 'Null' is not a subtype of type 'bool'" — исправлено (isMercenary null-safe)
 - [x] Run submit: validation error — исправлено (activityId не отправляется если null, datetime в UTC)
 - [x] Карта не загружается — logcat: "You need to set the API key before using MapKit!" — исправлено (setApiKey в MainActivity до super.onCreate)
+- [x] launch_background — Resources$NotFoundException на эмуляторе (bitmap @mipmap/ic_launcher) — исправлено (только цвет)
