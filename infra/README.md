@@ -27,13 +27,49 @@ ssh runterra "journalctl -u runterra-backend -f"  # логи
 
 На сервере есть скрипт `~/runterra/backend/update.sh`:
 ```bash
-git pull → npm ci → npm run build → systemctl restart runterra-backend
+git pull → npm ci → npm run build → npm run migrate:prod → systemctl restart
 ```
 
 **Локально** (из корня репо):
 ```bash
 npm run deploy:backend   # push + SSH + update.sh
 npm run deploy           # backend + mobile
+```
+
+## База данных (PostgreSQL)
+
+- **Host:** localhost
+- **Port:** 5432
+- **Database:** runterra
+- **User:** runterra
+
+### Таблицы
+
+| Таблица | Назначение |
+|---------|------------|
+| `users` | Пользователи (связь с Firebase Auth) |
+| `events` | События (тренировки, забеги) |
+| `event_participants` | Участники событий (join/check-in) |
+| `runs` | Пробежки пользователей |
+| `run_gps_points` | GPS точки пробежек |
+| `migrations` | Трекинг применённых миграций |
+
+### Миграции
+
+Миграции хранятся в `backend/src/db/migrations/*.sql`
+
+```bash
+# Локально (dev)
+cd backend && npm run migrate
+
+# На сервере (prod) — запускается автоматически при деплое
+npm run migrate:prod
+```
+
+### Подключение к БД
+
+```bash
+ssh runterra "PGPASSWORD=... psql -h localhost -U runterra -d runterra"
 ```
 
 ## Firebase App Distribution (mobile)
@@ -56,25 +92,27 @@ GitHub Actions CI (`ci.yml`) запускается на каждый push/PR в
 
 ## TODO
 
+### Инфраструктура
 - [ ] Docker для backend
 - [x] CI/CD (GitHub Actions) — проверка перед деплоем
+- [x] Миграции БД
 - [ ] Автодеплой после merge в main
 - [ ] Staging окружение
 - [ ] HTTPS / домен
 
-  Много TODO в коде. Вот ключевые по приоритетам:
-  Критично для MVP:
-  1. Firebase Auth — сейчас mock, нужна реальная проверка токенов
-  2. События — запись на событие, check-in с GPS проверкой
-  3. Пробежки — валидация (слишком короткая/быстрая), сохранение GPS точек
+### Backend (критично для MVP)
+- [ ] Firebase Auth — сейчас mock, нужна реальная проверка токенов
+- [x] События — запись на событие (join) с проверкой лимита
+- [x] События — check-in с GPS проверкой (500м радиус)
+- [x] Пробежки — валидация (≥100м, ≤30км/ч, ≥30с)
+- [x] Пробежки — сохранение GPS точек
 
-  Важно:
-  4. Фильтры карты/событий — параметры принимаются, но не обрабатываются на backend
-  5. Профиль — выход из аккаунта, удаление аккаунта
-  6. Backend URL — захардкожен в нескольких экранах, нужно вынести в конфиг
+### Backend (важно)
+- [ ] Фильтры карты/событий — параметры принимаются, но не обрабатываются
+- [ ] Профиль — выход из аккаунта, удаление аккаунта
 
-  На потом:
-  7. i18n — локализация строк (много хардкода на русском)
-  8. Чат — real-time сообщения, пагинация
-  9. Retry logic — повторные запросы при ошибках сети
-  10. Background GPS — трекинг пробежки в фоне
+### Mobile
+- [ ] Backend URL — захардкожен, нужно вынести в конфиг
+- [ ] i18n — локализация строк
+- [ ] Чат — real-time сообщения
+- [ ] Background GPS — трекинг пробежки в фоне
