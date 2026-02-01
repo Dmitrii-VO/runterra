@@ -29,9 +29,18 @@ if ($ahead -gt 0) {
     Write-Host "Waiting for CI workflow to start..."
     Start-Sleep -Seconds 5
     
+    # Get the latest run ID for the current branch
+    $branch = git branch --show-current
+    $runId = gh run list --branch $branch --limit 1 --json databaseId --jq ".[0].databaseId"
+    
+    if (-not $runId) {
+        Write-Host "Could not find CI run for branch $branch" -ForegroundColor Red
+        exit 1
+    }
+    
     # Wait for CI workflow and check result
-    Write-Host "Monitoring CI status (this may take a few minutes)..."
-    gh run watch --exit-status
+    Write-Host "Monitoring CI run $runId (this may take a few minutes)..."
+    gh run watch $runId --exit-status
     if ($LASTEXITCODE -ne 0) {
         Write-Host "`nCI FAILED! Aborting deploy." -ForegroundColor Red
         Write-Host "Check the errors: gh run view --web" -ForegroundColor Yellow
@@ -47,7 +56,8 @@ if ($ahead -gt 0) {
     
     if ($ciStatus -eq "in_progress" -or $ciStatus -eq "queued") {
         Write-Host "CI is still running, waiting for completion..." -ForegroundColor Yellow
-        gh run watch --exit-status
+        $runId = gh run list --workflow=ci.yml --limit=1 --json databaseId --jq ".[0].databaseId"
+        gh run watch $runId --exit-status
         if ($LASTEXITCODE -ne 0) {
             Write-Host "`nCI FAILED! Aborting deploy." -ForegroundColor Red
             Write-Host "Check the errors: gh run view --web" -ForegroundColor Yellow

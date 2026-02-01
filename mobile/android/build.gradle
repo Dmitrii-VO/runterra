@@ -26,13 +26,11 @@ subprojects {
     project.evaluationDependsOn(':app')
     
     // Fix for plugins not yet compatible with AGP 8+
-    afterEvaluate { project ->
-        if (project.hasProperty('android')) {
-            project.android {
-                if (namespace == null) {
-                    namespace = project.group.toString()
-                }
-                compileSdkVersion = 35
+    // Use pluginManager.withPlugin instead of afterEvaluate to avoid timing issues
+    pluginManager.withPlugin('com.android.library') {
+        android {
+            if (namespace == null) {
+                namespace = project.group.toString()
             }
         }
     }
