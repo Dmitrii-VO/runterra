@@ -51,7 +51,7 @@ class NotificationModel {
       type: json['type'] as String,
       title: json['title'] as String,
       message: json['message'] as String,
-      read: json['read'] as bool,
+      read: json['read'] as bool? ?? false,
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }

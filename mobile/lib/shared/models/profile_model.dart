@@ -14,7 +14,7 @@ class ProfileModel {
   
   /// Информация о клубе (если пользователь состоит в клубе).
   /// Явный контракт: club == null — не в клубе. UI обрабатывает
-  /// club == null + isMercantile (меркатель) и club == null + !isMercantile (без клуба).
+  /// club == null + isMercenary (меркатель) и club == null + !isMercenary (без клуба).
   final ProfileClubModel? club;
   
   /// Мини-статистика пользователя
@@ -96,7 +96,7 @@ class ProfileUserData {
   final String? cityName;
   
   /// Флаг меркателя (true - меркатель, false - участник клуба)
-  final bool isMercantile;
+  final bool isMercenary;
   
   /// Статус пользователя
   /// 
@@ -109,7 +109,7 @@ class ProfileUserData {
     this.avatarUrl,
     this.cityId,
     this.cityName,
-    required this.isMercantile,
+    required this.isMercenary,
     required this.status,
   });
 
@@ -121,7 +121,7 @@ class ProfileUserData {
       avatarUrl: json['avatarUrl'] as String?,
       cityId: json['cityId'] as String?,
       cityName: json['cityName'] as String?,
-      isMercantile: json['isMercantile'] as bool,
+      isMercenary: json['isMercenary'] as bool? ?? false,
       status: json['status'] as String,
     );
   }
@@ -134,7 +134,7 @@ class ProfileUserData {
       if (avatarUrl != null) 'avatarUrl': avatarUrl,
       if (cityId != null) 'cityId': cityId,
       if (cityName != null) 'cityName': cityName,
-      'isMercantile': isMercantile,
+      'isMercenary': isMercenary,
       'status': status,
     };
   }

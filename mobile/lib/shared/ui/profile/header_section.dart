@@ -53,7 +53,7 @@ class ProfileHeaderSection extends StatelessWidget {
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 4),
-                  // Статус и клуб. Явная логика: club != null | isMercantile | иначе "Без клуба"
+                  // Статус и клуб. Явная логика: club != null | isMercenary | иначе "Без клуба"
                   if (club != null) ...[
                     Text(
                       club!.name,
@@ -66,7 +66,7 @@ class ProfileHeaderSection extends StatelessWidget {
                             color: Colors.grey[600],
                           ),
                     ),
-                  ] else if (user.isMercantile) ...[
+                  ] else if (user.isMercenary) ...[
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -85,7 +85,7 @@ class ProfileHeaderSection extends StatelessWidget {
                       ),
                     ),
                   ] else ...[
-                    // club == null && !isMercantile — явный edge-case
+                    // club == null && !isMercenary — явный edge-case
                     Text(
                       'Без клуба',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(

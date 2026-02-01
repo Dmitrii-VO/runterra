@@ -185,19 +185,21 @@ class RunService {
     final endTime = session.startedAt.add(session.duration);
 
     // Prepare request body
-    final requestBody = {
-      'activityId': session.activityId,
-      'startedAt': session.startedAt.toIso8601String(),
-      'endedAt': endTime.toIso8601String(),
+    final requestBody = <String, dynamic>{
+      'startedAt': session.startedAt.toUtc().toIso8601String(),
+      'endedAt': endTime.toUtc().toIso8601String(),
       'duration': session.duration.inSeconds,
       'distance': session.distance,
-      // TODO: Send GPS points when backend is ready
-      // 'gpsPoints': session.gpsPoints.map((p) => {
-      //   'latitude': p.latitude,
-      //   'longitude': p.longitude,
-      //   'timestamp': p.timestamp?.toIso8601String(),
-      // }).toList(),
+      'gpsPoints': session.gpsPoints.map((p) => <String, dynamic>{
+          'lat': p.latitude,
+          'lon': p.longitude,
+          'timestamp': p.timestamp?.toUtc().toIso8601String(),
+        }).toList(),
     };
+    // Only include activityId if not null
+    if (session.activityId != null) {
+      requestBody['activityId'] = session.activityId;
+    }
 
     // Send to backend
     final response = await _apiClient.post(

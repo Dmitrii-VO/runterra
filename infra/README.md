@@ -118,3 +118,8 @@ GitHub Actions CI (`ci.yml`) запускается на каждый push/PR в
 - [ ] i18n — локализация строк (крупная фича)
 - [ ] Чат — real-time сообщения (крупная фича)
 - [ ] Background GPS — трекинг пробежки в фоне (крупная фича)
+
+### Ошибки (требуют исправления)
+- [ ] Firebase App Distribution 403 — тестер не может скачать APK (проверить права в Firebase Console)
+- [x] Profile: "type 'Null' is not a subtype of type 'bool'" — исправлено (isMercenary null-safe)
+- [x] Run submit: validation error — исправлено (activityId не отправляется если null, datetime в UTC)

@@ -9,16 +9,16 @@ import 'package:go_router/go_router.dart';
 /// - Открыть карту (большая, основная)
 /// - Найти тренировку
 /// - Начать пробежку / Check-in
-/// - Найти клуб / Создать клуб — только если !hasClub && !isMercantile (явная логика).
+/// - Найти клуб / Создать клуб — только если !hasClub && !isMercenary (явная логика).
 class ProfileQuickActionsSection extends StatelessWidget {
   /// true если profile.club != null
   final bool hasClub;
-  final bool isMercantile;
+  final bool isMercenary;
 
   const ProfileQuickActionsSection({
     super.key,
     required this.hasClub,
-    required this.isMercantile,
+    required this.isMercenary,
   });
 
   @override
@@ -59,7 +59,7 @@ class ProfileQuickActionsSection extends StatelessWidget {
                   label: const Text('Начать пробежку'),
                 ),
                 // Действия для пользователей без клуба
-                if (!hasClub && !isMercantile) ...[
+                if (!hasClub && !isMercenary) ...[
                   OutlinedButton.icon(
                     onPressed: () => handler.handle(const FindClubAction()),
                     icon: const Icon(Icons.group),

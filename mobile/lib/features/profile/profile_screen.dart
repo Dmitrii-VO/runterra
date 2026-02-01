@@ -155,7 +155,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               // 4. Быстрые действия (CTA)
               ProfileQuickActionsSection(
                 hasClub: profile.club != null,
-                isMercantile: profile.user.isMercantile,
+                isMercenary: profile.user.isMercenary,
               ),
 
               // 5. Уведомления

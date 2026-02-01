@@ -22,7 +22,7 @@ class UserModel {
   final String? cityId;
   
   /// Флаг меркателя (true - меркатель, false - участник клуба)
-  final bool isMercantile;
+  final bool isMercenary;
   
   /// Статус пользователя
   /// 
@@ -42,7 +42,7 @@ class UserModel {
     required this.name,
     this.avatarUrl,
     this.cityId,
-    required this.isMercantile,
+    required this.isMercenary,
     required this.status,
     required this.createdAt,
     required this.updatedAt,
@@ -60,7 +60,7 @@ class UserModel {
       name: json['name'] as String,
       avatarUrl: json['avatarUrl'] as String?,
       cityId: json['cityId'] as String?,
-      isMercantile: json['isMercantile'] as bool,
+      isMercenary: json['isMercenary'] as bool? ?? false,
       status: json['status'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
@@ -78,7 +78,7 @@ class UserModel {
       'name': name,
       if (avatarUrl != null) 'avatarUrl': avatarUrl,
       if (cityId != null) 'cityId': cityId,
-      'isMercantile': isMercantile,
+      'isMercenary': isMercenary,
       'status': status,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
