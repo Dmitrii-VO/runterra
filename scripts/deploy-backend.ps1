@@ -41,15 +41,28 @@ if ($ahead -gt 0) {
 } else {
     Write-Host "Already up to date with origin."
     
-    # Check that the latest CI passed
+    # Check that the latest CI passed (wait if still running)
     Write-Host "Checking latest CI status..."
-    $ciStatus = gh run list --workflow=ci.yml --limit=1 --json conclusion --jq ".[0].conclusion"
-    if ($ciStatus -ne "success") {
-        Write-Host "Latest CI status: $ciStatus" -ForegroundColor Red
-        Write-Host "CI must pass before deploying. Fix the issues first." -ForegroundColor Yellow
-        exit 1
+    $ciStatus = gh run list --workflow=ci.yml --limit=1 --json status,conclusion --jq ".[0].status"
+    
+    if ($ciStatus -eq "in_progress" -or $ciStatus -eq "queued") {
+        Write-Host "CI is still running, waiting for completion..." -ForegroundColor Yellow
+        gh run watch --exit-status
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "`nCI FAILED! Aborting deploy." -ForegroundColor Red
+            Write-Host "Check the errors: gh run view --web" -ForegroundColor Yellow
+            exit 1
+        }
+        Write-Host "CI passed!" -ForegroundColor Green
+    } else {
+        $ciConclusion = gh run list --workflow=ci.yml --limit=1 --json conclusion --jq ".[0].conclusion"
+        if ($ciConclusion -ne "success") {
+            Write-Host "Latest CI status: $ciConclusion" -ForegroundColor Red
+            Write-Host "CI must pass before deploying. Fix the issues first." -ForegroundColor Yellow
+            exit 1
+        }
+        Write-Host "Latest CI passed." -ForegroundColor Green
     }
-    Write-Host "Latest CI passed." -ForegroundColor Green
 }
 
 Write-Host "`n=== 3. SSH: update backend on server ===" -ForegroundColor Cyan
