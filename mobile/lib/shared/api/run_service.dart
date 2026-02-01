@@ -193,7 +193,7 @@ class RunService {
       'gpsPoints': session.gpsPoints.map((p) => <String, dynamic>{
           'lat': p.latitude,
           'lon': p.longitude,
-          'timestamp': p.timestamp?.toUtc().toIso8601String(),
+          'timestamp': p.timestamp.toUtc().toIso8601String(),
         }).toList(),
     };
     // Only include activityId if not null
