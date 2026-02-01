@@ -5,6 +5,7 @@
  * Or after build: node dist/db/migrate.js
  */
 
+import 'dotenv/config';
 import { Pool } from 'pg';
 import * as fs from 'fs';
 import * as path from 'path';
