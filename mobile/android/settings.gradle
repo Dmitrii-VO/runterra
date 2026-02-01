@@ -34,7 +34,8 @@ class FlutterExtension {
 }
 
 gradle.beforeProject { project ->
-    if (!project.extensions.findByName('flutter')) {
+    // Skip :app - it has its own flutter extension from Flutter plugin
+    if (project.name != 'app' && !project.extensions.findByName('flutter')) {
         project.extensions.create('flutter', FlutterExtension)
     }
 }
