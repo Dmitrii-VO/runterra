@@ -63,8 +63,9 @@ void main() async {
   // Инициализация Firebase
   await Firebase.initializeApp();
   
-  // Инициализация Yandex MapKit (для корректной работы на Android)
-  AndroidYandexMap.useAndroidViewSurface = true;
+  // Инициализация Yandex MapKit
+  // useAndroidViewSurface = false лучше работает на эмуляторах
+  AndroidYandexMap.useAndroidViewSurface = false;
 
   // Single ApiClient and shared services (DI) — created once at app start
   ServiceLocator.init();
