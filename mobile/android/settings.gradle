@@ -23,3 +23,18 @@ plugins {
 }
 
 include ":app"
+
+// Workaround for plugins using flutter.compileSdkVersion (geolocator_android, etc.)
+// Provide flutter extension to subprojects before evaluation
+class FlutterExtension {
+    int compileSdkVersion = 35
+    int targetSdkVersion = 35
+    int minSdkVersion = 21
+    String ndkVersion = "26.1.10909125"
+}
+
+gradle.beforeProject { project ->
+    if (!project.extensions.findByName('flutter')) {
+        project.extensions.create('flutter', FlutterExtension)
+    }
+}
