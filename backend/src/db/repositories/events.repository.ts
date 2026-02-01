@@ -6,6 +6,7 @@ import { BaseRepository } from './base.repository';
 import { Event } from '../../modules/events/event.entity';
 import { EventType } from '../../modules/events/event.type';
 import { EventStatus } from '../../modules/events/event.status';
+import { EventListItemDto, EventDetailsDto } from '../../modules/events/event.dto';
 
 interface EventRow {
   id: string;
@@ -97,21 +98,83 @@ export class EventsRepository extends BaseRepository {
 
   async findAll(options?: {
     status?: EventStatus[];
+    dateFilter?: 'today' | 'tomorrow' | 'next7days';
+    clubId?: string;
+    difficultyLevel?: string;
+    eventType?: EventType;
+    organizerId?: string;
     limit?: number;
     offset?: number;
   }): Promise<Event[]> {
     const limit = options?.limit || 50;
     const offset = options?.offset || 0;
     
-    let sql = 'SELECT * FROM events';
+    const conditions: string[] = [];
     const params: unknown[] = [];
+    let paramIndex = 1;
     
+    // Status filter (default: only OPEN and FULL, exclude DRAFT)
     if (options?.status && options.status.length > 0) {
-      sql += ` WHERE status = ANY($1)`;
+      conditions.push(`status = ANY($${paramIndex++})`);
       params.push(options.status);
+    } else {
+      conditions.push(`status IN ('open', 'full')`);
     }
     
-    sql += ` ORDER BY start_date_time ASC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+    // Date filter
+    if (options?.dateFilter) {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      
+      if (options.dateFilter === 'today') {
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        conditions.push(`start_date_time >= $${paramIndex++} AND start_date_time < $${paramIndex++}`);
+        params.push(today, tomorrow);
+      } else if (options.dateFilter === 'tomorrow') {
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const dayAfter = new Date(tomorrow);
+        dayAfter.setDate(dayAfter.getDate() + 1);
+        conditions.push(`start_date_time >= $${paramIndex++} AND start_date_time < $${paramIndex++}`);
+        params.push(tomorrow, dayAfter);
+      } else if (options.dateFilter === 'next7days') {
+        const nextWeek = new Date(today);
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        conditions.push(`start_date_time >= $${paramIndex++} AND start_date_time < $${paramIndex++}`);
+        params.push(today, nextWeek);
+      }
+    }
+    
+    // Club filter (organizer)
+    if (options?.clubId) {
+      conditions.push(`organizer_id = $${paramIndex++} AND organizer_type = 'club'`);
+      params.push(options.clubId);
+    }
+    
+    // Difficulty level filter
+    if (options?.difficultyLevel) {
+      conditions.push(`difficulty_level = $${paramIndex++}`);
+      params.push(options.difficultyLevel);
+    }
+    
+    // Event type filter
+    if (options?.eventType) {
+      conditions.push(`type = $${paramIndex++}`);
+      params.push(options.eventType);
+    }
+    
+    // Organizer filter
+    if (options?.organizerId) {
+      conditions.push(`organizer_id = $${paramIndex++}`);
+      params.push(options.organizerId);
+    }
+    
+    let sql = 'SELECT * FROM events';
+    if (conditions.length > 0) {
+      sql += ` WHERE ${conditions.join(' AND ')}`;
+    }
+    sql += ` ORDER BY start_date_time ASC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
     params.push(limit, offset);
     
     const rows = await this.queryMany<EventRow>(sql, params);

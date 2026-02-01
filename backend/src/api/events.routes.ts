@@ -20,139 +20,147 @@ const router = Router();
 /**
  * GET /api/events
  * 
- * Возвращает список событий.
+ * Возвращает список событий с фильтрацией.
  * 
- * ВАЖНО: Правило фильтрации статусов:
- * - Список возвращает только события со статусом OPEN или FULL
- * - События со статусом DRAFT исключаются из списка (не показываются публично)
- * - DRAFT события доступны только организатору через GET /api/events/:id (позже, с проверкой прав)
- * - CANCELLED и COMPLETED могут быть включены в список в зависимости от фильтров (TODO)
- * 
- * Query параметры для фильтров (TODO: не обрабатываются):
+ * Query параметры:
  * - dateFilter?: 'today' | 'tomorrow' | 'next7days'
  * - clubId?: string
- * - difficultyLevel?: string
- * - eventType?: string
- * - onlyOpen?: boolean
+ * - difficultyLevel?: 'beginner' | 'intermediate' | 'advanced'
+ * - eventType?: 'group_run' | 'training' | 'competition' | 'club_event'
+ * - limit?: number (default 50)
+ * - offset?: number (default 0)
  * 
- * TODO: Реализовать пагинацию, фильтрацию, сортировку.
- * TODO: Реализовать исключение DRAFT из списка.
+ * По умолчанию возвращает только события со статусом OPEN или FULL.
  */
-router.get('/', (req: Request, res: Response) => {
-  // TODO: Обработать query параметры для фильтров
-  // TODO: Исключить события со статусом DRAFT из списка
+router.get('/', async (req: Request, res: Response) => {
   const query = req.query as Record<string, string | undefined>;
-  const { dateFilter, clubId, difficultyLevel, eventType, onlyOpen } = query;
+  const { dateFilter, clubId, difficultyLevel, eventType, limit, offset } = query;
   
-  // Заглушка: возвращаем массив из нескольких событий
-  const mockEvents: EventListItemDto[] = [
-    {
-      id: '1',
-      name: 'Утренняя пробежка в парке',
-      type: EventType.GROUP_RUN,
-      status: EventStatus.OPEN,
-      startDateTime: new Date(),
-      startLocation: {
-        longitude: 30.3351,
-        latitude: 59.9343,
-      },
-      locationName: 'Центральный парк',
-      organizerId: 'club-1',
-      organizerType: 'club',
-      difficultyLevel: 'beginner',
-      participantCount: 5,
-      territoryId: 'territory-1',
-    },
-    {
-      id: '2',
-      name: 'Интервальная тренировка',
-      type: EventType.TRAINING,
-      status: EventStatus.OPEN,
-      startDateTime: new Date(Date.now() + 86400000), // завтра
-      startLocation: {
-        longitude: 30.3451,
-        latitude: 59.9443,
-      },
-      locationName: 'Стадион',
-      organizerId: 'trainer-1',
-      organizerType: 'trainer',
-      difficultyLevel: 'advanced',
-      participantCount: 8,
-    },
-  ];
-
-  res.status(200).json(mockEvents);
+  try {
+    const repo = getEventsRepository();
+    const events = await repo.findAll({
+      dateFilter: dateFilter as 'today' | 'tomorrow' | 'next7days' | undefined,
+      clubId,
+      difficultyLevel,
+      eventType: eventType as EventType | undefined,
+      limit: limit ? parseInt(limit, 10) : 50,
+      offset: offset ? parseInt(offset, 10) : 0,
+    });
+    
+    // Map to DTO format
+    const eventsDto: EventListItemDto[] = events.map(event => ({
+      id: event.id,
+      name: event.name,
+      type: event.type,
+      status: event.status,
+      startDateTime: event.startDateTime,
+      startLocation: event.startLocation,
+      locationName: event.locationName,
+      organizerId: event.organizerId,
+      organizerType: event.organizerType,
+      difficultyLevel: event.difficultyLevel,
+      participantCount: event.participantCount,
+      territoryId: event.territoryId,
+    }));
+    
+    res.status(200).json(eventsDto);
+  } catch (error) {
+    logger.error('Error fetching events', { error });
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 /**
  * GET /api/events/:id
  * 
  * Возвращает событие по ID.
- * 
- * TODO: Реализовать проверку существования события.
  */
-router.get('/:id', (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
 
-  // Заглушка: возвращаем событие с переданным ID
-  const mockEvent: EventDetailsDto = {
-    id,
-    name: `Событие ${id}`,
-    type: EventType.GROUP_RUN,
-    status: EventStatus.OPEN,
-    startDateTime: new Date(),
-    startLocation: {
-      longitude: 30.3159,
-      latitude: 59.9343,
-    },
-    locationName: 'Центральный парк',
-    organizerId: 'club-1',
-    organizerType: 'club',
-    difficultyLevel: 'beginner',
-    description: `Описание события ${id}`,
-    participantLimit: 20,
-    participantCount: 5,
-    territoryId: 'territory-1',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
+  try {
+    const repo = getEventsRepository();
+    const event = await repo.findById(id);
+    
+    if (!event) {
+      res.status(404).json({ error: 'Event not found' });
+      return;
+    }
+    
+    const eventDto: EventDetailsDto = {
+      id: event.id,
+      name: event.name,
+      type: event.type,
+      status: event.status,
+      startDateTime: event.startDateTime,
+      startLocation: event.startLocation,
+      locationName: event.locationName,
+      organizerId: event.organizerId,
+      organizerType: event.organizerType,
+      difficultyLevel: event.difficultyLevel,
+      description: event.description,
+      participantLimit: event.participantLimit,
+      participantCount: event.participantCount,
+      territoryId: event.territoryId,
+      createdAt: event.createdAt,
+      updatedAt: event.updatedAt,
+    };
 
-  res.status(200).json(mockEvent);
+    res.status(200).json(eventDto);
+  } catch (error) {
+    logger.error('Error fetching event', { eventId: id, error });
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 /**
  * POST /api/events
  * 
  * Создает новое событие.
- * 
- * Техническая валидация: тело запроса проверяется через CreateEventSchema.
- * TODO: Реализовать проверку прав организатора.
  */
-router.post('/', validateBody(CreateEventSchema), (req: Request<{}, EventDetailsDto, CreateEventDto>, res: Response) => {
+router.post('/', validateBody(CreateEventSchema), async (req: Request<{}, EventDetailsDto, CreateEventDto>, res: Response) => {
   const dto = req.body;
 
-  // Заглушка: возвращаем созданное событие
-  // TODO: Получить organizerId из авторизации
-  const mockEvent: EventDetailsDto = {
-    id: 'new-event-id',
-    name: dto.name,
-    type: dto.type,
-    status: EventStatus.OPEN,
-    startDateTime: dto.startDateTime,
-    startLocation: dto.startLocation,
-    locationName: dto.locationName,
-    organizerId: dto.organizerId,
-    organizerType: dto.organizerType,
-    difficultyLevel: dto.difficultyLevel,
-    description: dto.description,
-    participantLimit: dto.participantLimit,
-    participantCount: 0, // TODO: вычислять
-    territoryId: dto.territoryId,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
+  try {
+    const repo = getEventsRepository();
+    const event = await repo.create({
+      name: dto.name,
+      type: dto.type,
+      startDateTime: new Date(dto.startDateTime),
+      startLocation: dto.startLocation,
+      locationName: dto.locationName,
+      organizerId: dto.organizerId,
+      organizerType: dto.organizerType,
+      difficultyLevel: dto.difficultyLevel,
+      description: dto.description,
+      participantLimit: dto.participantLimit,
+      territoryId: dto.territoryId,
+    });
+    
+    const eventDto: EventDetailsDto = {
+      id: event.id,
+      name: event.name,
+      type: event.type,
+      status: event.status,
+      startDateTime: event.startDateTime,
+      startLocation: event.startLocation,
+      locationName: event.locationName,
+      organizerId: event.organizerId,
+      organizerType: event.organizerType,
+      difficultyLevel: event.difficultyLevel,
+      description: event.description,
+      participantLimit: event.participantLimit,
+      participantCount: event.participantCount,
+      territoryId: event.territoryId,
+      createdAt: event.createdAt,
+      updatedAt: event.updatedAt,
+    };
 
-  res.status(201).json(mockEvent);
+    res.status(201).json(eventDto);
+  } catch (error) {
+    logger.error('Error creating event', { error });
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 /**

@@ -3,19 +3,20 @@
  * 
  * Содержит эндпоинты для работы с пользователями:
  * - GET /api/users - список пользователей
+ * - GET /api/users/me/profile - профиль текущего пользователя
  * - GET /api/users/:id - пользователь по ID
  * - POST /api/users - создание пользователя
- * 
- * На текущей стадии (skeleton) все эндпоинты возвращают заглушки.
- * TODO: Реализовать контроллеры и бизнес-логику в будущем.
+ * - DELETE /api/users/me - удаление аккаунта
  */
 
 import { Router, Request, Response } from 'express';
-import { User, UserStatus, CreateUserDto, CreateUserSchema, userToViewDto, ProfileDto, UserStats } from '../modules/users';
+import { User, UserStatus, CreateUserDto, CreateUserSchema, userToViewDto, ProfileDto } from '../modules/users';
 import { ClubRole } from '../modules/clubs';
-import { NotificationType, Notification } from '../modules/notifications';
+import { NotificationType } from '../modules/notifications';
 import { ActivityStatus } from '../modules/activities';
 import { validateBody } from './validateBody';
+import { getUsersRepository, getRunsRepository } from '../db/repositories';
+import { logger } from '../shared/logger';
 
 const router = Router();
 
@@ -23,152 +24,169 @@ const router = Router();
  * GET /api/users
  * 
  * Возвращает список пользователей.
- * 
- * TODO: Реализовать пагинацию, фильтрацию, сортировку.
+ * Query: limit, offset
  */
-router.get('/', (_req: Request, res: Response) => {
-  // Заглушка: возвращаем массив из одного пользователя
-  const mockUsers: User[] = [
-    {
-      id: '1',
-      firebaseUid: 'firebase-uid-1',
-      email: 'user@example.com',
-      name: 'Test User',
-      avatarUrl: undefined,
-      cityId: undefined,
-      isMercenary: false,
-      status: UserStatus.ACTIVE,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  ];
-
-  res.status(200).json(mockUsers.map(userToViewDto));
+router.get('/', async (req: Request, res: Response) => {
+  const { limit, offset } = req.query as { limit?: string; offset?: string };
+  
+  try {
+    const repo = getUsersRepository();
+    const users = await repo.findAll(
+      limit ? parseInt(limit, 10) : 50,
+      offset ? parseInt(offset, 10) : 0
+    );
+    res.status(200).json(users.map(userToViewDto));
+  } catch (error) {
+    logger.error('Error fetching users', { error });
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 /**
  * GET /api/users/me/profile
  * 
  * Возвращает агрегированные данные личного кабинета текущего пользователя.
- * 
- * TODO: Реализовать авторизацию и получение данных из БД.
- * MOCK: данные ниже — заглушка. TODO: replace with real data / ProfileService.
  */
-router.get('/me/profile', (_req: Request, res: Response) => {
-  // MOCK — фейковые данные для skeleton. Не использовать в проде.
-  const mockProfile: ProfileDto = {
-    user: {
-      id: '1',
-      name: 'Test User',
-      avatarUrl: undefined,
-      cityId: 'city-spb',
-      cityName: 'Санкт-Петербург',
-      isMercenary: false,
-      status: UserStatus.ACTIVE,
-    },
-    club: {
-      id: 'club-1',
-      name: 'Бегуны Петербурга',
-      role: ClubRole.MEMBER,
-    },
-    stats: {
-      trainingCount: 5,
-      territoriesParticipated: 3,
-      contributionPoints: 150,
-    },
-    nextActivity: {
-      id: 'activity-1',
-      name: 'Утренняя пробежка',
-      dateTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // завтра
-      status: ActivityStatus.PLANNED,
-    },
-    lastActivity: {
-      id: 'activity-2',
-      name: 'Вечерняя тренировка',
-      dateTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 дня назад
-      status: ActivityStatus.COMPLETED,
-      result: 'counted',
-      message: '+10 баллов, вклад в территорию',
-    },
-    notifications: [
-      {
-        id: 'notif-1',
-        userId: '1',
-        type: NotificationType.NEW_TRAINING,
-        title: 'Новая тренировка',
-        message: 'Ваш клуб создал новую тренировку',
-        read: false,
-        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 часа назад
+router.get('/me/profile', async (req: Request, res: Response) => {
+  // TODO: Получить userId из авторизации
+  const firebaseUid = (req as unknown as { user?: { uid: string } }).user?.uid || 'mock-uid-123';
+  
+  try {
+    const usersRepo = getUsersRepository();
+    const runsRepo = getRunsRepository();
+    
+    // Найти или создать пользователя
+    let user = await usersRepo.findByFirebaseUid(firebaseUid);
+    if (!user) {
+      // Создаём пользователя если не существует (первый вход)
+      user = await usersRepo.create({
+        firebaseUid,
+        email: 'user@example.com', // TODO: из Firebase token
+        name: 'New User',
+      });
+    }
+    
+    // Получаем статистику пробежек
+    const runStats = await runsRepo.getUserStats(user.id);
+    
+    const profile: ProfileDto = {
+      user: {
+        id: user.id,
+        name: user.name,
+        avatarUrl: user.avatarUrl,
+        cityId: user.cityId,
+        cityName: undefined, // TODO: получить из таблицы cities
+        isMercenary: user.isMercenary,
+        status: user.status,
       },
-      {
-        id: 'notif-2',
-        userId: '1',
-        type: NotificationType.TERRITORY_THREAT,
-        title: 'Территория под угрозой',
-        message: 'Территория вашего клуба атакуется',
-        read: true,
-        createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 часов назад
+      // TODO: получить клуб из таблицы club_memberships
+      club: undefined,
+      stats: {
+        trainingCount: runStats.totalRuns,
+        territoriesParticipated: 0, // TODO: из territories
+        contributionPoints: Math.floor(runStats.totalDistance / 100), // 1 балл за 100м
       },
-    ],
-  };
+      // TODO: получить из events/activities
+      nextActivity: undefined,
+      lastActivity: undefined,
+      // TODO: получить из notifications
+      notifications: [],
+    };
 
-  res.status(200).json(mockProfile);
-  // TODO: replace with real data. Remove mockProfile when ProfileService exists.
+    res.status(200).json(profile);
+  } catch (error) {
+    logger.error('Error fetching profile', { firebaseUid, error });
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 /**
  * GET /api/users/:id
  * 
  * Возвращает пользователя по ID.
- * 
- * TODO: Реализовать проверку существования пользователя.
  */
-router.get('/:id', (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
 
-  // Заглушка: возвращаем пользователя с переданным ID
-  const mockUser: User = {
-    id,
-    firebaseUid: `firebase-uid-${id}`,
-    email: `user${id}@example.com`,
-    name: `User ${id}`,
-    avatarUrl: undefined,
-    cityId: undefined,
-    isMercenary: false,
-    status: UserStatus.ACTIVE,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
+  try {
+    const repo = getUsersRepository();
+    const user = await repo.findById(id);
+    
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
 
-  res.status(200).json(userToViewDto(mockUser));
+    res.status(200).json(userToViewDto(user));
+  } catch (error) {
+    logger.error('Error fetching user', { userId: id, error });
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 /**
  * POST /api/users
  * 
  * Создает нового пользователя.
- * 
- * Техническая валидация: тело запроса проверяется через CreateUserSchema.
- * TODO: Реализовать проверку уникальности firebaseUid.
  */
-router.post('/', validateBody(CreateUserSchema), (req: Request<{}, User, CreateUserDto>, res: Response) => {
+router.post('/', validateBody(CreateUserSchema), async (req: Request<{}, User, CreateUserDto>, res: Response) => {
   const dto = req.body;
 
-  // Заглушка: возвращаем созданного пользователя
-  const mockUser: User = {
-    id: 'new-user-id',
-    firebaseUid: dto.firebaseUid,
-    email: dto.email,
-    name: dto.name,
-    avatarUrl: dto.avatarUrl,
-    cityId: dto.cityId,
-    isMercenary: dto.isMercenary ?? false,
-    status: dto.status || UserStatus.ACTIVE,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
+  try {
+    const repo = getUsersRepository();
+    
+    // Проверяем уникальность firebaseUid
+    const existing = await repo.findByFirebaseUid(dto.firebaseUid);
+    if (existing) {
+      res.status(409).json({ error: 'User with this firebaseUid already exists' });
+      return;
+    }
+    
+    const user = await repo.create({
+      firebaseUid: dto.firebaseUid,
+      email: dto.email,
+      name: dto.name,
+      avatarUrl: dto.avatarUrl,
+      cityId: dto.cityId,
+      isMercenary: dto.isMercenary,
+    });
 
-  res.status(201).json(userToViewDto(mockUser));
+    res.status(201).json(userToViewDto(user));
+  } catch (error) {
+    logger.error('Error creating user', { error });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * DELETE /api/users/me
+ * 
+ * Удаляет аккаунт текущего пользователя.
+ * Каскадно удаляет: runs, event_participants.
+ */
+router.delete('/me', async (req: Request, res: Response) => {
+  // TODO: Получить userId из авторизации
+  const firebaseUid = (req as unknown as { user?: { uid: string } }).user?.uid || 'mock-uid-123';
+  
+  try {
+    const repo = getUsersRepository();
+    const user = await repo.findByFirebaseUid(firebaseUid);
+    
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+    
+    await repo.delete(user.id);
+    
+    res.status(200).json({ 
+      success: true, 
+      message: 'Account deleted successfully' 
+    });
+  } catch (error) {
+    logger.error('Error deleting user', { firebaseUid, error });
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 export default router;

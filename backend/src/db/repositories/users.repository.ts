@@ -144,6 +144,18 @@ export class UsersRepository extends BaseRepository {
     }
     return this.create(data);
   }
+
+  /**
+   * Delete user by ID
+   * Cascade deletes: runs, event_participants (configured in DB)
+   */
+  async delete(id: string): Promise<boolean> {
+    const result = await this.query(
+      'DELETE FROM users WHERE id = $1',
+      [id]
+    );
+    return (result.rowCount ?? 0) > 0;
+  }
 }
 
 // Singleton instance
