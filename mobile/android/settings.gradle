@@ -30,7 +30,7 @@ class FlutterExtension {
     int compileSdkVersion = 35
     int targetSdkVersion = 35
     int minSdkVersion = 21
-    String ndkVersion = "26.1.10909125"
+    String ndkVersion = "25.1.8937393"
 }
 
 gradle.beforeProject { project ->
