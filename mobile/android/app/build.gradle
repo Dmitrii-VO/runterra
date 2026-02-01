@@ -59,6 +59,9 @@ flutter {
     source '../..'
 }
 
-dependencies {}
+dependencies {
+    // Yandex MapKit — нужен в MainActivity для setApiKey до инициализации плагина (тот же артефакт, что у плагина)
+    implementation 'com.yandex.android:maps.mobile:4.6.1-lite'
+}
 
 apply plugin: 'com.google.gms.google-services'
