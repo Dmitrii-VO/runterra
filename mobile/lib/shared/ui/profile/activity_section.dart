@@ -158,7 +158,7 @@ class _StatusChip extends StatelessWidget {
 
     return Chip(
       label: Text(label),
-      backgroundColor: Color.fromRGBO(color.red, color.green, color.blue, 0.1),
+      backgroundColor: color.withValues(alpha: 0.1),
       labelStyle: TextStyle(color: color, fontSize: 12),
     );
   }

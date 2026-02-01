@@ -28,7 +28,6 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   YandexMapController? _mapController;
   MapDataModel? _mapData;
-  String? _dataError; // Error loading data, but map still shows
   MapFilters _filters = MapFilters();
   bool _showFilters = false;
   bool _isMapReady = false;
@@ -104,7 +103,6 @@ class _MapScreenState extends State<MapScreen> {
       if (mounted) {
         setState(() {
           _mapData = data;
-          _dataError = null;
         });
         if (_isMapReady) {
           _updateMapObjects();
@@ -114,9 +112,6 @@ class _MapScreenState extends State<MapScreen> {
       debugPrint('Error loading map data: $e');
       DevRemoteLogger.logError('Error loading map data', error: e);
       if (mounted) {
-        setState(() {
-          _dataError = e.toString();
-        });
         // Show snackbar but don't block map
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

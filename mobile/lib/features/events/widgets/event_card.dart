@@ -116,12 +116,7 @@ class EventCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Color.fromRGBO(
-                        _getStatusColor(event.status).red,
-                        _getStatusColor(event.status).green,
-                        _getStatusColor(event.status).blue,
-                        0.2,
-                      ),
+                      color: _getStatusColor(event.status).withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(

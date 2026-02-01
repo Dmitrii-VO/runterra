@@ -48,7 +48,9 @@ class LocationService {
   /// TODO: добавить обработку ошибок
   Future<Position> getCurrentPosition() async {
     return await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+      ),
     );
   }
 
