@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:http/http.dart' as http;
+import 'package:yandex_mapkit/yandex_mapkit.dart';
 import 'app.dart';
 import 'shared/auth/auth_service.dart';
 import 'shared/di/service_locator.dart';
@@ -56,9 +57,14 @@ class DevRemoteLogger {
 }
 
 void main() async {
-  // Инициализация Firebase
+  // Инициализация Flutter binding
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Инициализация Firebase
   await Firebase.initializeApp();
+  
+  // Инициализация Yandex MapKit (для корректной работы на Android)
+  AndroidYandexMap.useAndroidViewSurface = true;
 
   // Single ApiClient and shared services (DI) — created once at app start
   ServiceLocator.init();

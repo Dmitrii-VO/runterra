@@ -217,6 +217,9 @@ class _MapScreenState extends State<MapScreen> {
 
   /// Обработчик создания карты
   void _onMapCreated(YandexMapController controller) async {
+    debugPrint('MapScreen: onMapCreated called');
+    DevRemoteLogger.logError('MapScreen: onMapCreated called', extra: {'controller': controller.toString()});
+    
     _mapController = controller;
     
     if (mounted) {
@@ -338,9 +341,14 @@ class _MapScreenState extends State<MapScreen> {
       body: Stack(
         children: [
           // Карта Яндекс
-          YandexMap(
-            onMapCreated: _onMapCreated,
-            mapObjects: _territoryCircles,
+          Builder(
+            builder: (context) {
+              debugPrint('MapScreen: Building YandexMap widget');
+              return YandexMap(
+                onMapCreated: _onMapCreated,
+                mapObjects: _territoryCircles,
+              );
+            },
           ),
 
           // Панель с названием города сверху
