@@ -12,7 +12,20 @@
           "package_name": "com.runterra.runterra"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "718457871498-2k79dchqftullnc00kmevlpjiouudb7n.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.runterra.runterra",
+            "certificate_hash": "315ab3f88a1f543c984a11118bd260946479cfd1"
+          }
+        },
+        {
+          "client_id": "718457871498-tto2ghffjmqfk9l6rv7qaa20l1upenvn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDYBDIOvXc4t0vexw8qsEaerPhnqF_Pq6w"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "718457871498-tto2ghffjmqfk9l6rv7qaa20l1upenvn.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

@@ -2,6 +2,78 @@
 
 Инструкция по сборке APK файла и отправке приложения друзьям/тестировщикам.
 
+## Одна команда: деплой всего (backend + mobile)
+
+Из корня репозитория:
+
+```bash
+npm run deploy
+```
+
+Это запускает **`deploy-all.ps1`**, который по порядку:
+
+### Backend (на сервере runterra)
+1. Проверка что нет незакоммиченных изменений
+2. `git push` в origin (если есть новые коммиты)
+3. SSH → `~/runterra/backend/update.sh` на сервере:
+   - `git pull`
+   - `npm ci`
+   - `npm run build`
+   - `systemctl restart runterra-backend`
+
+### Mobile (Firebase App Distribution)
+1. **Тесты** — `flutter test`
+2. **Сборка** — `flutter build apk --debug`
+3. **Деплой** — загрузка APK в Firebase App Distribution
+4. **Уведомление** — тестировщикам уходит email
+
+---
+
+## Отдельные команды
+
+**Только backend:**
+```bash
+npm run deploy:backend
+```
+
+**Только mobile:**
+```bash
+npm run deploy:mobile
+```
+
+**С release-notes:**
+```bash
+.\scripts\deploy-mobile.ps1 "Исправлен вход через Google"
+.\scripts\deploy-all.ps1 "Новая фича"
+```
+
+**Без тестов (быстрее):**
+```bash
+.\scripts\deploy-mobile.ps1 -SkipTests
+.\scripts\deploy-all.ps1 -SkipTests
+.\scripts\deploy-all.ps1 "Быстрый билд" -SkipTests
+```
+
+---
+
+## Конфигурация
+
+**Список тестировщиков** — `scripts/app-distribution.config.json`:
+```json
+{
+  "firebaseAppId": "1:718457871498:android:adbf0a55f96734f85b6173",
+  "testers": ["luckyleeop@gmail.com", "другой@email.com"]
+}
+```
+
+**SSH хост** — в скриптах используется алиас `runterra` (настроен в `~/.ssh/config`).
+
+**Перед первым запуском:**
+- `firebase login` (для mobile)
+- SSH ключ должен быть настроен для хоста `runterra`
+
+---
+
 ## Сборка APK файла
 
 ### Вариант 1: Debug APK (быстро, для тестирования)
@@ -122,14 +194,11 @@ flutter install
 
 Приложение установится напрямую на подключённое устройство.
 
-### 2. Через Firebase App Distribution (для будущего)
+### 2. Через Firebase App Distribution (рекомендуется)
 
-Для более организованного тестирования можно использовать:
-- Firebase App Distribution
-- TestFlight (для iOS)
-- Google Play Internal Testing
+Используйте одну команду из корня: **`npm run deploy`** (см. раздел выше).
 
-Но это требует дополнительной настройки и не нужно на skeleton стадии.
+Тестировщики получают email от Firebase, устанавливают приложение **Firebase App Tester**, после чего видят все новые сборки и могут обновляться в один тап. Добавление новых тестировщиков — в Firebase Console → App Distribution → Testers или через `scripts/app-distribution.config.json`.
 
 ## Проверка перед отправкой
 
