@@ -4,20 +4,24 @@
  * Содержит эндпоинты для работы с пробежками:
  * - POST /api/runs - создание пробежки
  * 
- * На текущей стадии (skeleton) все эндпоинты возвращают заглушки.
- * TODO: Реализовать контроллеры и бизнес-логику в будущем.
+ * Валидация:
+ * - Минимальная дистанция: 100м
+ * - Максимальная скорость: 30 км/ч
+ * - Минимальная длительность: 30 секунд
  */
 
 import { Router, Request, Response } from 'express';
 import { RunStatus, RunViewDto, CreateRunDto, CreateRunSchema } from '../modules/runs';
 import { validateBody } from './validateBody';
+import { getRunsRepository } from '../db/repositories';
+import { logger } from '../shared/logger';
 
 const router = Router();
 
 /**
  * POST /api/runs
  * 
- * Создает новую пробежку.
+ * Создает новую пробежку с валидацией.
  * 
  * Принимает:
  * - activityId (опционально) - ID тренировки
@@ -27,38 +31,69 @@ const router = Router();
  * - distance - расстояние в метрах
  * - gpsPoints (опционально) - массив GPS точек
  * 
- * Техническая валидация: тело запроса проверяется через CreateRunSchema.
- * TODO: Реализовать проверку существования пользователя.
- * TODO: Добавить валидацию пробежки (слишком короткая, слишком быстрая).
- * TODO: Получить userId из авторизации.
+ * Валидация:
+ * - distance >= 100м
+ * - speed <= 30 км/ч
+ * - duration >= 30 секунд
+ * 
+ * Если валидация не пройдена, пробежка сохраняется со статусом INVALID.
  */
-router.post('/', validateBody(CreateRunSchema), (req: Request<{}, RunViewDto, CreateRunDto>, res: Response) => {
+router.post('/', validateBody(CreateRunSchema), async (req: Request<{}, RunViewDto, CreateRunDto>, res: Response) => {
   const dto = req.body;
 
   // Parse dates from ISO strings
   const startedAt = new Date(dto.startedAt);
   const endedAt = new Date(dto.endedAt);
 
-  // TODO: Validate dates, duration, distance
-  // TODO: Check if run is too short (e.g., less than 100 meters)
-  // TODO: Check if speed is too high (e.g., more than 30 km/h)
-  // TODO: Get userId from authorization token
+  // TODO: Получить userId из авторизации (сейчас mock)
+  const userId = (req as unknown as { user?: { id: string } }).user?.id || 'mock-user-id';
 
-  // Заглушка: возвращаем созданную пробежку
-  const mockRun: RunViewDto = {
-    id: `run-${Date.now()}`,
-    userId: 'current-user-id', // TODO: Получить из токена авторизации
-    activityId: dto.activityId,
-    startedAt: startedAt,
-    endedAt: endedAt,
-    duration: dto.duration,
-    distance: dto.distance,
-    status: RunStatus.COMPLETED, // TODO: Validate and set INVALID if needed
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
+  try {
+    const repo = getRunsRepository();
+    // Convert GPS point timestamps from string to Date if present
+    const gpsPoints = dto.gpsPoints?.map(point => ({
+      longitude: point.longitude,
+      latitude: point.latitude,
+      timestamp: point.timestamp ? new Date(point.timestamp) : undefined,
+    }));
 
-  res.status(201).json(mockRun);
+    const { run, validation } = await repo.create({
+      userId,
+      activityId: dto.activityId,
+      startedAt,
+      endedAt,
+      duration: dto.duration,
+      distance: dto.distance,
+      gpsPoints,
+    });
+
+    const response: RunViewDto = {
+      id: run.id,
+      userId: run.userId,
+      activityId: run.activityId,
+      startedAt: run.startedAt,
+      endedAt: run.endedAt,
+      duration: run.duration,
+      distance: run.distance,
+      status: run.status,
+      createdAt: run.createdAt,
+      updatedAt: run.updatedAt,
+    };
+
+    // Return 201 with validation info
+    res.status(201).json({
+      ...response,
+      validation: {
+        valid: validation.valid,
+        errors: validation.errors,
+      },
+    });
+  } catch (error) {
+    logger.error('Error creating run', { userId, error });
+    res.status(500).json({
+      error: 'Internal server error',
+    });
+  }
 });
 
 export default router;

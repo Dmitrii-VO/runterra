@@ -7,14 +7,13 @@
  * - POST /api/events - создание события
  * - POST /api/events/:id/join - запись на событие
  * - POST /api/events/:id/check-in - check-in на событие
- * 
- * На текущей стадии (skeleton) все эндпоинты возвращают заглушки.
- * TODO: Реализовать контроллеры и бизнес-логику в будущем.
  */
 
 import { Router, Request, Response } from 'express';
 import { EventType, EventStatus, EventDetailsDto, EventListItemDto, CreateEventDto, CreateEventSchema } from '../modules/events';
 import { validateBody } from './validateBody';
+import { getEventsRepository } from '../db/repositories';
+import { logger } from '../shared/logger';
 
 const router = Router();
 
@@ -160,47 +159,92 @@ router.post('/', validateBody(CreateEventSchema), (req: Request<{}, EventDetails
  * POST /api/events/:id/join
  * 
  * Запись на событие.
- * 
- * TODO: Реализовать проверку прав, лимита участников, статуса события.
+ * Проверяет: существование события, статус, лимит участников.
  */
-router.post('/:id/join', (req: Request, res: Response) => {
+router.post('/:id/join', async (req: Request, res: Response) => {
   const { id } = req.params;
+  
+  // TODO: Получить userId из авторизации (сейчас mock)
+  const userId = (req as unknown as { user?: { id: string } }).user?.id || 'mock-user-id';
 
-  // Заглушка: возвращаем успешный ответ
-  // TODO: Получить userId из авторизации
-  // TODO: Добавить пользователя в список участников
-  // TODO: Обновить participantCount
-  res.status(200).json({
-    success: true,
-    message: `Запись на событие ${id} выполнена`,
-    eventId: id,
-  });
+  try {
+    const repo = getEventsRepository();
+    const result = await repo.joinEvent(id, userId);
+    
+    if (result.error) {
+      res.status(400).json({
+        success: false,
+        error: result.error,
+        eventId: id,
+      });
+      return;
+    }
+    
+    res.status(200).json({
+      success: true,
+      message: 'Successfully registered for event',
+      eventId: id,
+      participant: result.participant,
+    });
+  } catch (error) {
+    logger.error('Error joining event', { eventId: id, userId, error });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+    });
+  }
 });
 
 /**
  * POST /api/events/:id/check-in
  * 
  * Check-in на событие через GPS.
+ * Проверяет: GPS координаты (500м радиус), время (15 мин до / 30 мин после).
  * 
- * TODO: Реализовать GPS проверку (радиус 200-500м от точки старта).
- * TODO: Проверить время (за 15 минут до старта).
- * TODO: Проверить минимальное расстояние (1 км).
+ * Body: { longitude: number, latitude: number }
  */
-router.post('/:id/check-in', (req: Request, res: Response) => {
+router.post('/:id/check-in', async (req: Request, res: Response) => {
   const { id } = req.params;
-  // TODO: Получить координаты пользователя из body
-  // const { longitude, latitude } = req.body;
+  const { longitude, latitude } = req.body as { longitude?: number; latitude?: number };
+  
+  // Validate coordinates
+  if (typeof longitude !== 'number' || typeof latitude !== 'number') {
+    res.status(400).json({
+      success: false,
+      error: 'Missing or invalid coordinates. Required: { longitude: number, latitude: number }',
+    });
+    return;
+  }
+  
+  // TODO: Получить userId из авторизации (сейчас mock)
+  const userId = (req as unknown as { user?: { id: string } }).user?.id || 'mock-user-id';
 
-  // Заглушка: возвращаем успешный ответ
-  // TODO: Получить userId из авторизации
-  // TODO: Проверить GPS координаты
-  // TODO: Проверить время
-  // TODO: Записать check-in
-  res.status(200).json({
-    success: true,
-    message: `Check-in на событие ${id} выполнен`,
-    eventId: id,
-  });
+  try {
+    const repo = getEventsRepository();
+    const result = await repo.checkIn(id, userId, { longitude, latitude });
+    
+    if (result.error) {
+      res.status(400).json({
+        success: false,
+        error: result.error,
+        eventId: id,
+      });
+      return;
+    }
+    
+    res.status(200).json({
+      success: true,
+      message: 'Check-in successful',
+      eventId: id,
+      participant: result.participant,
+    });
+  } catch (error) {
+    logger.error('Error checking in to event', { eventId: id, userId, error });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+    });
+  }
 });
 
 export default router;
