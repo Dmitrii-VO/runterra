@@ -19,12 +19,14 @@ class GlobalChatTab extends StatefulWidget {
 }
 
 class _GlobalChatTabState extends State<GlobalChatTab> {
-  /// Future: (messages, cityId for real-time). cityId from profile.
-  late Future<(List<MessageModel>, String?)> _dataFuture;
+  /// Future: (messages, cityId for real-time, noCitySet flag). cityId from profile.
+  late Future<(List<MessageModel>, String?, bool)> _dataFuture;
   /// Current list: initial + new messages from WebSocket (newest at end for reverse ListView).
   List<MessageModel> _messages = [];
   /// Whether initial future has completed with success (so we have _messages from REST).
   bool _initialLoaded = false;
+  /// True when user has no city set — show friendly prompt instead of error.
+  bool _noCitySet = false;
   /// Real-time: subscribe to city channel when we have cityId.
   ChatRealtimeService? _realtimeService;
   StreamSubscription<MessageModel>? _realtimeSubscription;
@@ -35,21 +37,26 @@ class _GlobalChatTabState extends State<GlobalChatTab> {
   bool _sending = false;
   String? _sendError;
 
-  Future<(List<MessageModel>, String?)> _fetchData() async {
-    final messages = await ServiceLocator.messagesService.getGlobalChatMessages();
-    ProfileModel profile;
+  Future<(List<MessageModel>, String?, bool)> _fetchData() async {
+    // Fetch profile first to get cityId — avoid calling messages API without a city.
+    ProfileModel? profile;
     try {
       profile = await ServiceLocator.usersService.getProfile();
     } catch (_) {
-      return (messages, null);
+      // If profile fails, still try messages (server will return appropriate error).
     }
-    final cityId = profile.user.cityId;
-    return (messages, cityId);
+    final cityId = profile?.user.cityId;
+    if (cityId == null) {
+      return (<MessageModel>[], null, true);
+    }
+    final messages = await ServiceLocator.messagesService.getGlobalChatMessages();
+    return (messages, cityId, false);
   }
 
   void _retry() {
     setState(() {
       _initialLoaded = false;
+      _noCitySet = false;
       _messages = [];
       _realtimeStarted = false;
       _realtimeSubscription?.cancel();
@@ -120,7 +127,7 @@ class _GlobalChatTabState extends State<GlobalChatTab> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<(List<MessageModel>, String?)>(
+    return FutureBuilder<(List<MessageModel>, String?, bool)>(
       future: _dataFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting && !_initialLoaded) {
@@ -159,15 +166,44 @@ class _GlobalChatTabState extends State<GlobalChatTab> {
         }
 
         if (snapshot.hasData) {
-          final (initialMessages, cityId) = snapshot.data!;
+          final (initialMessages, cityId, noCityFlag) = snapshot.data!;
           if (!_initialLoaded) {
             _initialLoaded = true;
+            _noCitySet = noCityFlag;
             _messages = List.from(initialMessages.reversed);
             if (cityId != null) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _startRealtime(cityId);
               });
             }
+          }
+
+          if (_noCitySet) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.location_city, size: 48, color: Colors.grey),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Укажите город в профиле, чтобы участвовать в чате',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.grey,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: _retry,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Повторить'),
+                    ),
+                  ],
+                ),
+              ),
+            );
           }
 
           return Column(

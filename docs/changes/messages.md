@@ -24,6 +24,10 @@
     - GlobalChatTab (global_chat_tab.dart): начальные сообщения из REST (DESC порядок) переворачиваются через `.reversed` при сохранении в state, чтобы список хранился в ASC порядке (oldest→newest); WS-сообщения корректно добавляются в конец; `reverse: true` ListView c `_messages[length-1-index]` отображает новые внизу.
     - ChatRealtimeService (chat_realtime_service.dart): `_toWsUrl()` больше не приводит весь URL к lowercase — `toLowerCase()` применяется только для определения схемы (http/https), оригинальный URL сохраняется.
 
+- **Чат — fix Unhandled Exception user_city_required (logcat):**
+  - **Mobile**
+    - GlobalChatTab (global_chat_tab.dart): `_fetchData()` теперь загружает профиль первым для получения cityId. Если город не установлен (`cityId == null`) — messages API не вызывается, возвращается пустой список с флагом `noCitySet=true`. В UI при `_noCitySet` показывается дружелюбный экран с иконкой города, текстом «Укажите город в профиле, чтобы участвовать в чате» и кнопкой «Повторить», вместо красного экрана ошибки. Это устраняет `Unhandled Exception: User must have a city set to use global chat` в logcat, которое возникало при открытии чата без установленного города.
+
 ### 2026-01-29
 - **Mobile: Messages tabs FutureBuilder:** вкладки `GlobalChatTab`, `ClubMessagesTab` и `NotificationsTab` переведены на `StatefulWidget` с кэшированием `Future` загрузки данных в `initState`, чтобы избежать повторных HTTP-запросов при каждом `rebuild`; контракт заглушек и отображаемые данные не изменены.
 
