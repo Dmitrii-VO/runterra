@@ -50,8 +50,8 @@ class RunService {
     _startTime = DateTime.now();
     _gpsPoints.clear();
 
-    // Start GPS tracking
-    await _locationService.startTracking();
+    // Start GPS tracking (background so run continues when app is in background)
+    await _locationService.startTracking(distanceFilter: 5, background: true);
 
     // Listen to position updates
     _positionSubscription = _locationService.positionStream.listen(
