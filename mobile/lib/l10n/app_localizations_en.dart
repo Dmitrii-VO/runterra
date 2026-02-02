@@ -577,4 +577,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cityPickerEmpty => 'City list is empty';
+
+  @override
+  String get cityNotSelected => 'Not selected';
 }

@@ -1135,6 +1135,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'City list is empty'**
   String get cityPickerEmpty;
+
+  /// No description provided for @cityNotSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Not selected'**
+  String get cityNotSelected;
 }
 
 class _AppLocalizationsDelegate

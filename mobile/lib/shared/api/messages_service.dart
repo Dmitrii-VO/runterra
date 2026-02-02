@@ -15,18 +15,25 @@ class MessagesService {
   MessagesService({required ApiClient apiClient}) : _apiClient = apiClient;
 
   /// Выполняет GET запрос для получения сообщений общего чата (городской чат).
-  /// Backend использует cityId текущего пользователя из БД.
-  Future<List<MessageModel>> getGlobalChatMessages({int limit = 50, int offset = 0}) async {
-    final endpoint = '/api/messages/global?limit=$limit&offset=$offset';
+  /// [cityId] обязателен для backend (query param). Используйте текущий город из CurrentCityService или профиля.
+  Future<List<MessageModel>> getGlobalChatMessages({
+    required String cityId,
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    final endpoint = '/api/messages/global?cityId=${Uri.encodeComponent(cityId)}&limit=$limit&offset=$offset';
     final response = await _apiClient.get(endpoint);
 
     if (response.statusCode != 200) {
       if (response.statusCode == 400) {
         final body = _tryParseJson(response.body);
-        if (body != null && body['code'] == 'user_city_required') {
-          throw Exception(
-            body['message'] as String? ?? 'Укажите город в профиле, чтобы участвовать в чате',
-          );
+        if (body != null) {
+          final code = body['code'] as String?;
+          if (code == 'user_city_required' || code == 'validation_error') {
+            throw Exception(
+              body['message'] as String? ?? 'Укажите город в профиле, чтобы участвовать в чате',
+            );
+          }
         }
       }
       if (response.statusCode == 401) {

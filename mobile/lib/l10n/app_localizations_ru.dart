@@ -578,4 +578,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get cityPickerEmpty => 'Список городов пуст';
+
+  @override
+  String get cityNotSelected => 'Не выбран';
 }

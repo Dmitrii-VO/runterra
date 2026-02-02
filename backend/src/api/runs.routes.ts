@@ -13,10 +13,16 @@
 import { Router, Request, Response } from 'express';
 import { RunStatus, RunViewDto, CreateRunDto, CreateRunSchema } from '../modules/runs';
 import { validateBody } from './validateBody';
-import { getRunsRepository } from '../db/repositories';
+import { getRunsRepository, getUsersRepository } from '../db/repositories';
 import { logger } from '../shared/logger';
 
 const router = Router();
+
+const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isValidUUID(value: string): boolean {
+  return UUID_V4_REGEX.test(value);
+}
 
 /**
  * POST /api/runs
@@ -41,16 +47,42 @@ const router = Router();
 router.post('/', validateBody(CreateRunSchema), async (req: Request<{}, RunViewDto, CreateRunDto>, res: Response) => {
   const dto = req.body;
 
-  // Parse dates from ISO strings
+  // User ID must come from auth only (no mock in production)
+  const uid = req.authUser?.uid;
+  if (!uid) {
+    res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+      details: { reason: 'missing_header' },
+    });
+    return;
+  }
+
+  const usersRepo = getUsersRepository();
+  const user = await usersRepo.findByFirebaseUid(uid);
+  if (!user) {
+    res.status(400).json({
+      code: 'validation_error',
+      message: 'Authentication required',
+      details: { fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }] },
+    });
+    return;
+  }
+
+  if (!isValidUUID(user.id)) {
+    res.status(400).json({
+      code: 'validation_error',
+      message: 'Invalid user id',
+      details: { fields: [{ field: 'userId', message: 'User id must be a valid UUID', code: 'invalid_string' }] },
+    });
+    return;
+  }
+
   const startedAt = new Date(dto.startedAt);
   const endedAt = new Date(dto.endedAt);
 
-  // TODO: Получить userId из авторизации (сейчас mock)
-  const userId = (req as unknown as { user?: { id: string } }).user?.id || 'mock-user-id';
-
   try {
     const repo = getRunsRepository();
-    // Convert GPS point timestamps from string to Date if present
     const gpsPoints = dto.gpsPoints?.map(point => ({
       longitude: point.longitude,
       latitude: point.latitude,
@@ -58,7 +90,7 @@ router.post('/', validateBody(CreateRunSchema), async (req: Request<{}, RunViewD
     }));
 
     const { run, validation } = await repo.create({
-      userId,
+      userId: user.id,
       activityId: dto.activityId,
       startedAt,
       endedAt,
@@ -80,7 +112,6 @@ router.post('/', validateBody(CreateRunSchema), async (req: Request<{}, RunViewD
       updatedAt: run.updatedAt,
     };
 
-    // Return 201 with validation info
     res.status(201).json({
       ...response,
       validation: {
@@ -89,9 +120,10 @@ router.post('/', validateBody(CreateRunSchema), async (req: Request<{}, RunViewD
       },
     });
   } catch (error) {
-    logger.error('Error creating run', { userId, error });
+    logger.error('Error creating run', { userId: user.id, error });
     res.status(500).json({
-      error: 'Internal server error',
+      code: 'internal_error',
+      message: 'Internal server error',
     });
   }
 });

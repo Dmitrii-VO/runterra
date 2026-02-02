@@ -3,6 +3,15 @@
 ## История изменений
 
 ### 2026-02-02
+
+- **GlobalChatTab: убран fallback 'spb', лишний API-запрос при отсутствии города:** В `_fetchData()` cityId имел fallback `'spb'`, из-за которого messages API вызывался даже когда у пользователя не установлен город (noCitySet=true). Убран fallback; теперь при `cityId == null` API не вызывается, сразу возвращается `noCitySet=true` и показывается подсказка «Укажите город в профиле». Упрощена логика: `noCitySet` определяется единообразно через проверку cityId.
+
+**Файлы:** `mobile/lib/features/messages/tabs/global_chat_tab.dart`.
+
+- **GET /api/messages/global — обязательный cityId:** Эндпоинт изменён: город берётся из обязательного query-параметра `cityId`. При отсутствии или пустом `cityId` возвращается 400 с `code: "validation_error"`, `message: "cityId is required"`. Mobile: `getGlobalChatMessages` принимает обязательный параметр `cityId` и передаёт его в query; в GlobalChatTab передаётся `profile?.user.cityId ?? CurrentCityService.currentCityId ?? 'spb'` (дефолт «spb» при первом запуске без выбора города); флаг `noCitySet` выставляется, когда в профиле и CurrentCityService города нет, для отображения подсказки «Укажите город в профиле».
+
+**Файлы:** `backend/src/api/messages.routes.ts`, `mobile/lib/shared/api/messages_service.dart`, `mobile/lib/features/messages/tabs/global_chat_tab.dart`.
+
 - **Чат — real-time сообщения:**
   - **Backend**
     - Миграция `002_messages.sql`: таблица `messages` (id, channel_type 'city'|'club', channel_id, user_id FK, text VARCHAR(500), created_at, updated_at), индекс по (channel_type, channel_id, created_at DESC).

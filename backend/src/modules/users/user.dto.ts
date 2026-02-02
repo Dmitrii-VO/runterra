@@ -104,3 +104,19 @@ export interface UpdateUserDto {
   /** Статус пользователя */
   status?: UserStatus;
 }
+
+/**
+ * DTO для обновления профиля текущего пользователя (PATCH /me/profile).
+ * Все поля опциональны.
+ */
+export interface UpdateProfileDto {
+  /** Идентификатор текущего города пользователя (из /api/cities) */
+  currentCityId?: string;
+}
+
+/**
+ * Runtime schema for PATCH /me/profile body.
+ */
+export const UpdateProfileSchema = z.object({
+  currentCityId: z.string().optional(),
+});

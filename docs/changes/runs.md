@@ -2,6 +2,21 @@
 
 ## История изменений
 
+### 2026-02-02 — GPS-точки: неверные имена полей (lat/lon → latitude/longitude)
+
+- **Проблема:** В `run_service.dart` метод `submitRun()` формировал JSON GPS-точек с полями `lat` и `lon`, но backend `GpsPointSchema` (расширяет `GeoCoordinatesSchema`) ожидает `latitude` и `longitude`. Zod-валидация отклоняла GPS-данные при отправке пробежки.
+- **Решение:** Имена полей в map-литерале GPS-точек исправлены: `'lat'` → `'latitude'`, `'lon'` → `'longitude'`.
+
+**Файлы:** `mobile/lib/shared/api/run_service.dart`.
+
+### 2026-02-02 — Исправление ошибки создания run (500, PostgreSQL 22P02)
+
+- **Проблема:** В логах «Error creating run», userId «mock-user-id»; БД возвращала ошибку `string_to_uuid` (параметр не является валидным UUID).
+- **Решение (backend):** В `runs.routes.ts` userId больше не берётся из мока. Используется только авторизованный пользователь: `req.authUser.uid` → `getUsersRepository().findByFirebaseUid(uid)`; при отсутствии пользователя — ответ 400 (validation_error / «Authentication required»); перед INSERT проверяется, что `user.id` — валидный UUID (регулярное выражение UUID v4); при невалидном UUID — 400 («Invalid user id»). Ответы об ошибках в формате API (code, message, details).
+- **Путь создания пробежки (mobile):** В `run_service.dart` подтверждён канонический путь POST `/api/runs`; добавлен комментарий о том, что не следует использовать base URL без пути или путь «/».
+
+**Файлы:** `backend/src/api/runs.routes.ts`, `mobile/lib/shared/api/run_service.dart`.
+
 ### 2026-02-02 — Background GPS (трекинг в фоне, исправлен)
 
 - **Проблема:** Пакет `background_location:0.13.2` (последняя версия) использует устаревший Flutter plugin embedding v1 (`PluginRegistry.Registrar`), удалённый в текущей версии Flutter. Сборка падала с `Unresolved reference 'Registrar'` в BackgroundLocationPlugin.kt.

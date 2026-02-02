@@ -35,33 +35,31 @@ function getAuthUid(req: Request): string {
 
 /**
  * GET /api/messages/global
- * Query: limit, offset. Uses current user's cityId from DB.
+ * Query: cityId (required), limit, offset.
+ * Returns 400 if cityId is missing or empty.
  */
 router.get('/global', async (req: Request, res: Response) => {
   try {
-    const uid = getAuthUid(req);
-    const usersRepo = getUsersRepository();
-    const user = await usersRepo.findByFirebaseUid(uid);
-    if (!user) {
-      res.status(401).json({
-        code: 'unauthorized',
-        message: 'User not found',
-      });
-      return;
-    }
-    if (!user.cityId) {
+    getAuthUid(req);
+
+    const cityId = req.query.cityId;
+    if (cityId == null || (typeof cityId === 'string' && cityId.trim() === '')) {
       res.status(400).json({
-        code: 'user_city_required',
-        message: 'User must have a city set to use global chat',
+        code: 'validation_error',
+        message: 'cityId is required',
+        details: {
+          fields: [{ field: 'cityId', message: 'cityId is required', code: 'invalid_type' }],
+        },
       });
       return;
     }
+    const cityIdStr = typeof cityId === 'string' ? cityId : String(cityId);
 
     const { limit, offset } = parsePagination(req.query as { limit?: string; offset?: string });
     const messagesRepo = getMessagesRepository();
     const list = await messagesRepo.findByChannel(
       'city',
-      user.cityId,
+      cityIdStr,
       limit,
       offset
     );

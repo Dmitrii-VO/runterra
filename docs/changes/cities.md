@@ -10,6 +10,10 @@
 
 ### 2026-02-02
 
+- **Миграция users.city_id (UUID → VARCHAR):** Добавлена миграция `004_users_city_id_varchar.sql`: колонка `users.city_id` изменена с типа UUID на VARCHAR(64), чтобы сохранять идентификаторы городов из конфига (например «spb»). Необходимо для сохранения выбранного города в профиле через PATCH /me/profile.
+
+**Файлы:** `backend/src/db/migrations/004_users_city_id_varchar.sql`.
+
 - **Backend City: center + bounds, in-memory конфиг:** модель `City` в backend расширена полями `center: GeoCoordinates` и `bounds: { ne; sw }` (тип `CityBounds`), добавлен in-memory конфиг городов `cities.config.ts` с записью для Санкт‑Петербурга (`id: "spb"`, центр и прямоугольные границы вокруг города). Эндпоинты `/api/cities` и `/api/cities/:id` переведены на использование этого конфига, `POST /api/cities` возвращает центр и bounds без сохранения (skeleton).
 - **Shared utils для границ города:** добавлен модуль `city.utils.ts` с функциями `isPointWithinBounds` и `isPointWithinCityBounds`, используемый для валидации координат событий и территорий относительно выбранного города.
 - **Mobile CityModel: центр и границы:** `CityModel` расширен полями `center` и `bounds` с обратной совместимостью (если `center`/`bounds` отсутствуют в JSON, `center` берётся из `coordinates`, `bounds` остаются null). Это позволяет использовать центр/границы города на карте без изменения существующих вызовов.

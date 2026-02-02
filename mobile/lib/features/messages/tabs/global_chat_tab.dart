@@ -46,11 +46,11 @@ class _GlobalChatTabState extends State<GlobalChatTab> {
     } catch (_) {
       // If profile fails, still try messages (server will return appropriate error).
     }
-    final cityId = profile?.user.cityId;
-    if (cityId == null) {
+    final cityId = profile?.user.cityId ?? ServiceLocator.currentCityService.currentCityId;
+    if (cityId == null || cityId.isEmpty) {
       return (<MessageModel>[], null, true);
     }
-    final messages = await ServiceLocator.messagesService.getGlobalChatMessages();
+    final messages = await ServiceLocator.messagesService.getGlobalChatMessages(cityId: cityId);
     return (messages, cityId, false);
   }
 

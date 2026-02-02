@@ -318,5 +318,6 @@
       }
     }
   },
-  "cityPickerEmpty": "City list is empty"
+  "cityPickerEmpty": "City list is empty",
+  "cityNotSelected": "Not selected"
 }

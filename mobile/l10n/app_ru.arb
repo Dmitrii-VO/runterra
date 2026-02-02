@@ -172,5 +172,6 @@
   "trainerLabel": "Тренер: {id}",
   "cityPickerTitle": "Выбор города",
   "cityPickerLoadError": "Не удалось загрузить города:\n{error}",
-  "cityPickerEmpty": "Список городов пуст"
+  "cityPickerEmpty": "Список городов пуст",
+  "cityNotSelected": "Не выбран"
 }

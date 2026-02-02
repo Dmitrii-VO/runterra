@@ -60,6 +60,28 @@ class UsersService {
       );
     }
   }
+
+  /// Обновляет профиль текущего пользователя (PATCH /api/users/me/profile).
+  /// [currentCityId] — идентификатор города из /api/cities.
+  Future<void> updateProfile({String? currentCityId}) async {
+    final body = <String, dynamic>{};
+    if (currentCityId != null) {
+      body['currentCityId'] = currentCityId;
+    }
+    if (body.isEmpty) return;
+
+    final response = await _apiClient.patch(
+      '/api/users/me/profile',
+      body: body,
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ApiException(
+        'HTTP ${response.statusCode}',
+        'Не удалось обновить профиль: ${response.statusCode}. ${response.body}',
+      );
+    }
+  }
 }
 
 /// Исключение при ошибке API (статус, HTML вместо JSON, неверный JSON).

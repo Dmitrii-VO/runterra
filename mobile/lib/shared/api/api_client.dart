@@ -132,6 +132,37 @@ class ApiClient {
     return response;
   }
 
+  /// Выполняет PATCH запрос к указанному endpoint
+  Future<http.Response> patch(
+    String endpoint, {
+    Map<String, dynamic>? body,
+    Map<String, String>? headers,
+  }) async {
+    final uri = Uri.parse('$baseUrl$endpoint');
+    final requestHeaders = {
+      ..._authHeaders,
+      'Content-Type': 'application/json',
+      if (headers != null) ...headers,
+    };
+    final response = await _client
+        .patch(
+          uri,
+          headers: requestHeaders,
+          body: body != null ? jsonEncode(body) : null,
+        )
+        .timeout(
+          _timeout,
+          onTimeout: () {
+            throw TimeoutException(
+              'Запрос к $uri превысил таймаут (${_timeout.inSeconds} секунд). '
+              'Проверьте, что backend сервер запущен и доступен.',
+              _timeout,
+            );
+          },
+        );
+    return response;
+  }
+
   /// Закрывает [http.Client], если он был создан этим экземпляром.
   /// Для синглтона (полученного через [getInstance]) сбрасывает статический экземпляр,
   /// чтобы следующий [getInstance] создал новый. Вызывать в production не обязательно;

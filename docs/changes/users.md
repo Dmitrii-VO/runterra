@@ -2,6 +2,19 @@
 
 ## История изменений
 
+### 2026-02-02
+
+- **Единый формат ошибок API (ADR-0002):** В `users.routes.ts` старые эндпоинты (GET /, GET /:id, POST /, DELETE /me) возвращали ошибки в формате `{ error: '...' }`. Приведены к единому формату `{ code, message }`: `internal_error`, `not_found`, `conflict`. Новые эндпоинты (PATCH /me/profile, GET /me/profile) уже использовали правильный формат.
+
+**Файлы:** `backend/src/api/users.routes.ts`.
+
+- **Единый путь профиля:** Добавлен алиас GET `/api/me/profile` → редирект 302 на `/api/users/me/profile` в `api/index.ts`. Канонический путь для клиентов: `/api/users/me/profile`.
+- **Авторизация в users.routes:** Везде заменено чтение `(req as unknown as { user?: { uid: string } }).user?.uid` на `req.authUser?.uid`; при отсутствии — ответ 401 в формате API. Затрагивает GET /me/profile, DELETE /me, новый PATCH /me/profile.
+- **PATCH /api/users/me/profile:** Добавлен эндпоинт обновления профиля (тело `{ currentCityId?: string }`, валидация через `UpdateProfileSchema`). По `req.authUser.uid` находится пользователь; при наличии `currentCityId` в теле вызывается `usersRepo.update(user.id, { cityId })`. Ответ 200 с `{ success: true }`.
+- **Выбор города в профиле (mobile):** В ProfileScreen добавлен блок «Город» (`_CitySection`): отображение текущего города (из профиля), по нажатию — диалог выбора города (`showCityPickerDialog`); после выбора — `UsersService.updateProfile(currentCityId: cityId)` и `CurrentCityService.setCurrentCityId(cityId)`, затем обновление профиля. Добавлены `UsersService.updateProfile()`, метод `patch()` в ApiClient; l10n ключ `cityNotSelected` (Not selected / Не выбран).
+
+**Файлы:** `backend/src/api/index.ts`, `backend/src/api/users.routes.ts`, `backend/src/modules/users/user.dto.ts` (UpdateProfileDto, UpdateProfileSchema), `mobile/lib/shared/api/users_service.dart`, `mobile/lib/shared/api/api_client.dart`, `mobile/lib/features/profile/profile_screen.dart`, `mobile/lib/shared/services/current_city_service.dart`, `mobile/l10n/app_en.arb`, `mobile/l10n/app_ru.arb`.
+
 ### 2026-01-29
 
 - **firebaseUid не утекает в API-ответах (безопасность):** Все user-эндпоинты, возвращающие данные пользователя, теперь отдают UserViewDto вместо полной сущности User. UserViewDto не содержит firebaseUid (внутренний идентификатор Firebase). Добавлены интерфейс UserViewDto и функция userToViewDto в user.dto.ts; GET /api/users, GET /api/users/:id и POST /api/users возвращают результат маппинга. GET /api/users/me/profile не изменён — ProfileDto.user уже не содержал firebaseUid.

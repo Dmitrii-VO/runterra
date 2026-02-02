@@ -191,8 +191,8 @@ class RunService {
       'duration': session.duration.inSeconds,
       'distance': session.distance,
       'gpsPoints': session.gpsPoints.map((p) => <String, dynamic>{
-          'lat': p.latitude,
-          'lon': p.longitude,
+          'latitude': p.latitude,
+          'longitude': p.longitude,
           'timestamp': p.timestamp.toUtc().toIso8601String(),
         }).toList(),
     };
@@ -201,7 +201,7 @@ class RunService {
       requestBody['activityId'] = session.activityId;
     }
 
-    // Send to backend
+    // Send to backend. Canonical path: POST /api/runs (do not use base URL only or path "/").
     final response = await _apiClient.post(
       '/api/runs',
       body: requestBody,

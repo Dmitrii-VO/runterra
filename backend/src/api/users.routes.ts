@@ -4,13 +4,14 @@
  * Содержит эндпоинты для работы с пользователями:
  * - GET /api/users - список пользователей
  * - GET /api/users/me/profile - профиль текущего пользователя
+ * - PATCH /api/users/me/profile - обновление профиля (currentCityId и др.)
  * - GET /api/users/:id - пользователь по ID
  * - POST /api/users - создание пользователя
  * - DELETE /api/users/me - удаление аккаунта
  */
 
 import { Router, Request, Response } from 'express';
-import { User, UserStatus, CreateUserDto, CreateUserSchema, userToViewDto, ProfileDto } from '../modules/users';
+import { User, UserStatus, CreateUserDto, CreateUserSchema, userToViewDto, ProfileDto, UpdateProfileSchema } from '../modules/users';
 import { ClubRole } from '../modules/clubs';
 import { NotificationType } from '../modules/notifications';
 import { ActivityStatus } from '../modules/activities';
@@ -38,7 +39,7 @@ router.get('/', async (req: Request, res: Response) => {
     res.status(200).json(users.map(userToViewDto));
   } catch (error) {
     logger.error('Error fetching users', { error });
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
   }
 });
 
@@ -48,9 +49,16 @@ router.get('/', async (req: Request, res: Response) => {
  * Возвращает агрегированные данные личного кабинета текущего пользователя.
  */
 router.get('/me/profile', async (req: Request, res: Response) => {
-  // TODO: Получить userId из авторизации
-  const firebaseUid = (req as unknown as { user?: { uid: string } }).user?.uid || 'mock-uid-123';
-  
+  const firebaseUid = req.authUser?.uid;
+  if (!firebaseUid) {
+    res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+      details: { reason: 'missing_header' },
+    });
+    return;
+  }
+
   try {
     const usersRepo = getUsersRepository();
     const runsRepo = getRunsRepository();
@@ -96,7 +104,47 @@ router.get('/me/profile', async (req: Request, res: Response) => {
     res.status(200).json(profile);
   } catch (error) {
     logger.error('Error fetching profile', { firebaseUid, error });
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
+ * PATCH /api/users/me/profile
+ *
+ * Обновляет профиль текущего пользователя (например currentCityId).
+ * Тело: { currentCityId?: string }.
+ */
+router.patch('/me/profile', validateBody(UpdateProfileSchema), async (req: Request, res: Response) => {
+  const firebaseUid = req.authUser?.uid;
+  if (!firebaseUid) {
+    res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+      details: { reason: 'missing_header' },
+    });
+    return;
+  }
+
+  try {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(firebaseUid);
+    if (!user) {
+      res.status(404).json({
+        code: 'not_found',
+        message: 'User not found',
+      });
+      return;
+    }
+
+    const body = req.body as { currentCityId?: string };
+    if (body.currentCityId !== undefined) {
+      await usersRepo.update(user.id, { cityId: body.currentCityId });
+    }
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    logger.error('Error updating profile', { firebaseUid, error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
   }
 });
 
@@ -113,14 +161,14 @@ router.get('/:id', async (req: Request, res: Response) => {
     const user = await repo.findById(id);
     
     if (!user) {
-      res.status(404).json({ error: 'User not found' });
+      res.status(404).json({ code: 'not_found', message: 'User not found' });
       return;
     }
 
     res.status(200).json(userToViewDto(user));
   } catch (error) {
     logger.error('Error fetching user', { userId: id, error });
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
   }
 });
 
@@ -138,7 +186,7 @@ router.post('/', validateBody(CreateUserSchema), async (req: Request<{}, User, C
     // Проверяем уникальность firebaseUid
     const existing = await repo.findByFirebaseUid(dto.firebaseUid);
     if (existing) {
-      res.status(409).json({ error: 'User with this firebaseUid already exists' });
+      res.status(409).json({ code: 'conflict', message: 'User with this firebaseUid already exists' });
       return;
     }
     
@@ -154,7 +202,7 @@ router.post('/', validateBody(CreateUserSchema), async (req: Request<{}, User, C
     res.status(201).json(userToViewDto(user));
   } catch (error) {
     logger.error('Error creating user', { error });
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
   }
 });
 
@@ -165,15 +213,22 @@ router.post('/', validateBody(CreateUserSchema), async (req: Request<{}, User, C
  * Каскадно удаляет: runs, event_participants.
  */
 router.delete('/me', async (req: Request, res: Response) => {
-  // TODO: Получить userId из авторизации
-  const firebaseUid = (req as unknown as { user?: { uid: string } }).user?.uid || 'mock-uid-123';
+  const firebaseUid = req.authUser?.uid;
+  if (!firebaseUid) {
+    res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+      details: { reason: 'missing_header' },
+    });
+    return;
+  }
   
   try {
     const repo = getUsersRepository();
     const user = await repo.findByFirebaseUid(firebaseUid);
     
     if (!user) {
-      res.status(404).json({ error: 'User not found' });
+      res.status(404).json({ code: 'not_found', message: 'User not found' });
       return;
     }
     
@@ -185,7 +240,7 @@ router.delete('/me', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error deleting user', { firebaseUid, error });
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
   }
 });
 

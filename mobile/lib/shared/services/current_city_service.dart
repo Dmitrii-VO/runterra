@@ -56,9 +56,7 @@ class CurrentCityService extends ChangeNotifier {
   }
 
   /// Устанавливает текущий город и сохраняет его локально.
-  ///
-  /// TODO: дополнительно отправлять выбранный город на backend,
-  /// когда появится эндпоинт обновления профиля.
+  /// Синхронизация с backend выполняется вызывающим кодом (например ProfileScreen через UsersService.updateProfile).
   Future<void> setCurrentCityId(String cityId) async {
     _currentCityId = cityId;
     final prefs = await SharedPreferences.getInstance();

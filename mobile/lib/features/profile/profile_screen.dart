@@ -12,6 +12,7 @@ import '../../shared/ui/profile/activity_section.dart';
 import '../../shared/ui/profile/quick_actions_section.dart';
 import '../../shared/ui/profile/notifications_section.dart';
 import '../../shared/ui/profile/settings_section.dart';
+import '../city/city_picker_dialog.dart';
 import '../../app.dart';
 
 /// Profile screen - Личный кабинет пользователя
@@ -144,6 +145,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               // 2. Мини-статистика
               ProfileStatsSection(stats: profile.stats),
 
+              // 2.5 Город (выбор города в личном кабинете)
+              _CitySection(
+                currentCityId: profile.user.cityId,
+                onCitySelected: () => _retry(),
+              ),
+
               // 3. Ближайшая и последняя активности
               ProfileActivitySection(
                 nextActivity: profile.nextActivity,
@@ -205,6 +212,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
           );
         },
       ),
+    );
+  }
+}
+
+/// Блок «Город» в личном кабинете: отображает текущий город, по нажатию — выбор города.
+class _CitySection extends StatelessWidget {
+  const _CitySection({
+    required this.currentCityId,
+    required this.onCitySelected,
+  });
+
+  final String? currentCityId;
+  final VoidCallback onCitySelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return ListTile(
+      leading: const Icon(Icons.location_city),
+      title: Text(l10n.tabCity),
+      subtitle: Text(
+        currentCityId != null && currentCityId!.isNotEmpty
+            ? currentCityId!
+            : l10n.cityNotSelected,
+      ),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () async {
+        final selected = await showCityPickerDialog(context);
+        if (selected == null || !context.mounted) return;
+        try {
+          await ServiceLocator.usersService.updateProfile(currentCityId: selected);
+          await ServiceLocator.currentCityService.setCurrentCityId(selected);
+          if (context.mounted) onCitySelected();
+        } catch (_) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l10n.profileCityRequired)),
+            );
+          }
+        }
+      },
     );
   }
 }
