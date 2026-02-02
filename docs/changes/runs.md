@@ -2,6 +2,16 @@
 
 ## История изменений
 
+### 2026-02-02 — POST "/" → 404 и обработка ошибок при создании пробежки
+
+- **Проблема:** В логах POST к корню "/" давал 404 без тела ответа; при ошибке 400 (валидация) mobile показывал сырой `e.toString()` вместо понятного сообщения из backend.
+- **Решение (backend):** В `app.ts` добавлен 404-обработчик для неизвестных маршрутов — возвращает `{ code: "not_found", message: "Route not found: METHOD /path" }` в формате ADR-0002. Исправлен формат ошибки 500 с `{ error: '...' }` на `{ code: 'internal_error', message: '...' }`.
+- **Решение (mobile):** В `run_service.dart` при ошибке submit (статус != 200/201) парсится структурированный ответ backend (`{ code, message }`) и выбрасывается `ApiException` вместо generic `Exception`. В `run_screen.dart` при `ApiException` отображается `e.message` (текст из backend) вместо `e.toString()`.
+- **Путь POST /api/runs:** Подтверждён — `run_service.dart` уже использовал корректный путь; проблема POST "/" в логах от клиентов до фикса или от сторонних запросов.
+- **Тесты:** Обновлён `app.test.ts` — 404 тест проверяет `{ code, message }`; добавлен тест POST "/" → 404. Все 55 тестов проходят.
+
+**Файлы:** `backend/src/app.ts`, `backend/src/app.test.ts`, `mobile/lib/shared/api/run_service.dart`, `mobile/lib/features/run/run_screen.dart`.
+
 ### 2026-02-02 — GPS-точки: неверные имена полей (lat/lon → latitude/longitude)
 
 - **Проблема:** В `run_service.dart` метод `submitRun()` формировал JSON GPS-точек с полями `lat` и `lon`, но backend `GpsPointSchema` (расширяет `GeoCoordinatesSchema`) ожидает `latitude` и `longitude`. Zod-валидация отклоняла GPS-данные при отправке пробежки.

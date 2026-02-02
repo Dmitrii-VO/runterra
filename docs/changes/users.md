@@ -8,7 +8,7 @@
 
 **Файлы:** `backend/src/api/users.routes.ts`.
 
-- **Единый путь профиля:** Добавлен алиас GET `/api/me/profile` → редирект 302 на `/api/users/me/profile` в `api/index.ts`. Канонический путь для клиентов: `/api/users/me/profile`.
+- **Единый путь профиля:** Алиас GET `/api/me/profile` в `api/index.ts` заменён с 302-редиректа на прямой forward в `usersRouter` — редирект терял заголовок `Authorization`, что приводило к 401. Теперь оба пути (`/api/me/profile` и `/api/users/me/profile`) обрабатываются одним handler без дублирования логики.
 - **Авторизация в users.routes:** Везде заменено чтение `(req as unknown as { user?: { uid: string } }).user?.uid` на `req.authUser?.uid`; при отсутствии — ответ 401 в формате API. Затрагивает GET /me/profile, DELETE /me, новый PATCH /me/profile.
 - **PATCH /api/users/me/profile:** Добавлен эндпоинт обновления профиля (тело `{ currentCityId?: string }`, валидация через `UpdateProfileSchema`). По `req.authUser.uid` находится пользователь; при наличии `currentCityId` в теле вызывается `usersRepo.update(user.id, { cityId })`. Ответ 200 с `{ success: true }`.
 - **Выбор города в профиле (mobile):** В ProfileScreen добавлен блок «Город» (`_CitySection`): отображение текущего города (из профиля), по нажатию — диалог выбора города (`showCityPickerDialog`); после выбора — `UsersService.updateProfile(currentCityId: cityId)` и `CurrentCityService.setCurrentCityId(cityId)`, затем обновление профиля. Добавлены `UsersService.updateProfile()`, метод `patch()` в ApiClient; l10n ключ `cityNotSelected` (Not selected / Не выбран).

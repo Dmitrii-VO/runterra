@@ -112,6 +112,10 @@
 
 ### 2026-02-02
 
+- **Обработка 401 при загрузке данных карты (mobile):** в `MapService.getMapData()` добавлено явное распознавание HTTP 401 — выбрасывается `ApiException('unauthorized', ...)`. В `MapScreen._loadMapData()` при 401 выполняется попытка обновить токен (`ServiceLocator.refreshAuthToken()`) и повторный запрос; при повторном 401 — редирект на экран входа (`context.go('/login')`). Backend не изменён.
+
+**Файлы:** `mobile/lib/shared/api/map_service.dart`, `mobile/lib/features/map/map_screen.dart`.
+
 - **Обязательный cityId для данных карты (backend):** эндпоинт `GET /api/map/data` теперь требует query‑параметр `cityId`; при его отсутствии возвращается `400 validation_error` с кодом `city_required`, при неизвестном городе — `city_not_found`. Для указанного города данные карты ограничиваются только его территориями и событиями: mock‑территории получают `cityId` из запроса, события выбираются из БД с фильтром `city_id = :cityId`. Viewport центрируется по `center` города из модуля `cities`.
 - **Mobile MapService: cityId в запросах:** метод `MapService.getMapData` расширен обязательным параметром `cityId` и всегда добавляет его в query‑строку `/api/map/data?cityId=...`. Дополнительно пробрасываются фильтры `dateFilter`, `clubId`, `onlyActive` как и раньше.
 - **Выбор и кеширование текущего города (mobile):** добавлен сервис `CurrentCityService` (DI через `ServiceLocator`), который хранит `currentCityId` в SharedPreferences и синхронизирует его с профилем пользователя (`GET /api/users/me/profile`). При первом запуске без города показывается диалог выбора города (СПб и др. из `/api/cities`), выбранный `cityId` сохраняется локально; TODO: в будущем отправлять выбор на backend.

@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import '../../l10n/app_localizations.dart';
+import '../../shared/api/users_service.dart' show ApiException;
 import '../../shared/di/service_locator.dart';
 import '../../main.dart' show DevRemoteLogger;
 import '../../shared/models/map_data_model.dart';
@@ -129,12 +131,13 @@ class _MapScreenState extends State<MapScreen> {
 
   /// Загружает данные карты через MapService
   Future<void> _loadMapData() async {
+    final cityId = ServiceLocator.currentCityService.currentCityId;
+    if (cityId == null || cityId.isEmpty) {
+      // Если по какой-то причине города нет, не делаем запрос.
+      return;
+    }
+
     try {
-      final cityId = ServiceLocator.currentCityService.currentCityId;
-      if (cityId == null || cityId.isEmpty) {
-        // Если по какой-то причине города нет, не делаем запрос.
-        return;
-      }
 
       final data = await ServiceLocator.mapService.getMapData(
         cityId: cityId,
@@ -151,11 +154,51 @@ class _MapScreenState extends State<MapScreen> {
           _updateMapObjects();
         }
       }
+    } on ApiException catch (e) {
+      if (e.code == 'unauthorized' && mounted) {
+        // Try refreshing the token once and retry
+        try {
+          await ServiceLocator.refreshAuthToken();
+          final retryData = await ServiceLocator.mapService.getMapData(
+            cityId: cityId,
+            dateFilter: _filters.dateFilter,
+            clubId: _filters.clubId,
+            onlyActive: _filters.onlyActive,
+          );
+          if (mounted) {
+            setState(() {
+              _mapData = retryData;
+            });
+            if (_isMapReady) _updateMapObjects();
+          }
+          return;
+        } on ApiException catch (retryErr) {
+          if (retryErr.code == 'unauthorized' && mounted) {
+            context.go('/login');
+            return;
+          }
+        } catch (_) {
+          // Fall through to generic error handling below
+        }
+      }
+      debugPrint('Error loading map data: $e');
+      DevRemoteLogger.logError('Error loading map data', error: e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.mapLoadErrorSnackbar(e.toString())),
+            duration: const Duration(seconds: 3),
+            action: SnackBarAction(
+              label: AppLocalizations.of(context)!.retry,
+              onPressed: _loadMapData,
+            ),
+          ),
+        );
+      }
     } catch (e) {
       debugPrint('Error loading map data: $e');
       DevRemoteLogger.logError('Error loading map data', error: e);
       if (mounted) {
-        // Show snackbar but don't block map
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(AppLocalizations.of(context)!.mapLoadErrorSnackbar(e.toString())),

@@ -60,6 +60,14 @@ export function createApp(): Express {
   // API роутеры (rate limit 100 req/min per IP per product_spec)
   app.use('/api', apiLimiter, apiRouter);
 
+  // 404 handler for unknown routes
+  app.use((_req: Request, res: Response) => {
+    res.status(404).json({
+      code: 'not_found',
+      message: `Route not found: ${_req.method} ${_req.originalUrl}`,
+    });
+  });
+
   // Обработчик необработанных ошибок (fallback)
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
     // Technical logging for unexpected errors.
@@ -73,7 +81,8 @@ export function createApp(): Express {
 
     if (!res.headersSent) {
       res.status(500).json({
-        error: 'Internal server error',
+        code: 'internal_error',
+        message: 'Internal server error',
       });
     }
   });

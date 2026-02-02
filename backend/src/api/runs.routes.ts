@@ -89,13 +89,25 @@ router.post('/', validateBody(CreateRunSchema), async (req: Request<{}, RunViewD
       timestamp: point.timestamp ? new Date(point.timestamp) : undefined,
     }));
 
+    // DB expects INTEGER for duration and distance; coerce from possible float (e.g. from mobile)
+    const duration = Math.round(Number(dto.duration));
+    const distance = Math.round(Number(dto.distance));
+    if (!Number.isFinite(duration) || !Number.isFinite(distance)) {
+      res.status(400).json({
+        code: 'validation_error',
+        message: 'duration and distance must be valid numbers',
+        details: { fields: [{ field: 'duration/distance', message: 'Invalid number', code: 'invalid_type' }] },
+      });
+      return;
+    }
+
     const { run, validation } = await repo.create({
       userId: user.id,
       activityId: dto.activityId,
       startedAt,
       endedAt,
-      duration: dto.duration,
-      distance: dto.distance,
+      duration,
+      distance,
       gpsPoints,
     });
 

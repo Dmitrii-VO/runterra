@@ -14,10 +14,22 @@ describe('App', () => {
   });
 
   describe('Unknown routes', () => {
-    it('returns 404 for unknown routes', async () => {
+    it('returns 404 with code and message for unknown routes', async () => {
       const res = await request(app).get('/unknown-route');
-      
+
       expect(res.status).toBe(404);
+      expect(res.body.code).toBe('not_found');
+      expect(res.body.message).toContain('Route not found');
+    });
+
+    it('returns 404 for POST to root', async () => {
+      const res = await request(app)
+        .post('/')
+        .send({ foo: 'bar' })
+        .set('Content-Type', 'application/json');
+
+      expect(res.status).toBe(404);
+      expect(res.body.code).toBe('not_found');
     });
   });
 

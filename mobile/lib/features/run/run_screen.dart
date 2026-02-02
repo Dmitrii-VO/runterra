@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../l10n/app_localizations.dart';
+import '../../shared/api/users_service.dart' show ApiException;
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/run_session.dart';
 
@@ -152,9 +153,13 @@ class _RunScreenState extends State<RunScreen> {
       });
 
       if (mounted) {
+        // Show backend message directly for ApiException, generic wrapper otherwise
+        final errorText = (e is ApiException)
+            ? e.message
+            : AppLocalizations.of(context)!.runFinishError(e.toString());
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)!.runFinishError(e.toString())),
+            content: Text(errorText),
             backgroundColor: Colors.red,
           ),
         );

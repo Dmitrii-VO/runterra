@@ -9,7 +9,7 @@
  * TODO: Добавить middleware для валидации и обработки ошибок.
  */
 
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { authMiddleware } from '../auth';
 import usersRouter from './users.routes';
 import citiesRouter from './cities.routes';
@@ -26,10 +26,11 @@ const apiRouter = Router();
 // Глобальное middleware авторизации для всех API роутов (modules/auth AuthProvider)
 apiRouter.use(authMiddleware);
 
-// Алиас: GET /api/me/profile → GET /api/users/me/profile (канонический путь)
-apiRouter.get('/me/profile', (req: Request, res: Response) => {
-  const query = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
-  res.redirect(302, `/api/users/me/profile${query}`);
+// Алиас: GET /api/me/profile → обработчик GET /api/users/me/profile
+// Прямой forward вместо 302-редиректа, чтобы не терять заголовок Authorization
+apiRouter.get('/me/profile', (req: Request, res: Response, next: NextFunction) => {
+  req.url = '/me/profile';
+  usersRouter(req, res, next);
 });
 
 // Подключаем роутеры для каждого домена

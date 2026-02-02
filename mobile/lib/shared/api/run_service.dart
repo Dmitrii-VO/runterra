@@ -6,6 +6,7 @@ import '../location/location_service.dart';
 import '../models/run_model.dart';
 import '../models/run_session.dart';
 import 'api_client.dart';
+import 'users_service.dart' show ApiException;
 
 /// Сервис для работы с пробежками
 ///
@@ -208,9 +209,19 @@ class RunService {
     );
 
     if (response.statusCode != 201 && response.statusCode != 200) {
-      throw Exception(
-        'Failed to submit run: ${response.statusCode} ${response.body}',
-      );
+      // Try to parse structured error from backend ({ code, message, details })
+      String errorMessage = 'Failed to submit run (${response.statusCode})';
+      String errorCode = 'submit_error';
+      try {
+        final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
+        if (decoded != null) {
+          errorCode = (decoded['code'] as String?) ?? errorCode;
+          errorMessage = (decoded['message'] as String?) ?? errorMessage;
+        }
+      } on FormatException {
+        // Non-JSON response, use default message
+      }
+      throw ApiException(errorCode, errorMessage);
     }
 
     // Parse response as RunViewDto (RunModel) for consistency with backend contract

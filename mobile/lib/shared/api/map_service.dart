@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'api_client.dart';
+import 'users_service.dart' show ApiException;
 import '../models/map_data_model.dart';
 
 /// Сервис для работы с картой
@@ -43,6 +44,10 @@ class MapService {
     
     final response = await _apiClient.get('/api/map/data$queryString');
     
+    if (response.statusCode == 401) {
+      throw ApiException('unauthorized', 'Authorization required');
+    }
+
     // Проверяем, что ответ - JSON
     if (response.statusCode != 200) {
       throw Exception(
