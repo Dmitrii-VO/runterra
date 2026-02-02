@@ -14,6 +14,7 @@ import { EventType, EventStatus, EventDetailsDto, EventListItemDto, CreateEventD
 import { validateBody } from './validateBody';
 import { getEventsRepository } from '../db/repositories';
 import { logger } from '../shared/logger';
+import { isPointWithinCityBounds } from '../modules/cities/city.utils';
 
 const router = Router();
 
@@ -23,6 +24,7 @@ const router = Router();
  * Возвращает список событий с фильтрацией.
  * 
  * Query параметры:
+ * - cityId: string (обязателен) — идентификатор города
  * - dateFilter?: 'today' | 'tomorrow' | 'next7days'
  * - clubId?: string
  * - difficultyLevel?: 'beginner' | 'intermediate' | 'advanced'
@@ -34,11 +36,28 @@ const router = Router();
  */
 router.get('/', async (req: Request, res: Response) => {
   const query = req.query as Record<string, string | undefined>;
-  const { dateFilter, clubId, difficultyLevel, eventType, limit, offset } = query;
+  const { cityId, dateFilter, clubId, difficultyLevel, eventType, limit, offset } = query;
   
+  if (!cityId) {
+    return res.status(400).json({
+      code: 'validation_error',
+      message: 'Query validation failed',
+      details: {
+        fields: [
+          {
+            field: 'cityId',
+            message: 'cityId is required',
+            code: 'city_required',
+          },
+        ],
+      },
+    });
+  }
+
   try {
     const repo = getEventsRepository();
     const events = await repo.findAll({
+      cityId,
       dateFilter: dateFilter as 'today' | 'tomorrow' | 'next7days' | undefined,
       clubId,
       difficultyLevel,
@@ -61,6 +80,7 @@ router.get('/', async (req: Request, res: Response) => {
       difficultyLevel: event.difficultyLevel,
       participantCount: event.participantCount,
       territoryId: event.territoryId,
+      cityId: event.cityId,
     }));
     
     res.status(200).json(eventsDto);
@@ -102,6 +122,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       participantLimit: event.participantLimit,
       participantCount: event.participantCount,
       territoryId: event.territoryId,
+      cityId: event.cityId,
       createdAt: event.createdAt,
       updatedAt: event.updatedAt,
     };
@@ -121,6 +142,22 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.post('/', validateBody(CreateEventSchema), async (req: Request<{}, EventDetailsDto, CreateEventDto>, res: Response) => {
   const dto = req.body;
 
+  if (!isPointWithinCityBounds(dto.startLocation, dto.cityId)) {
+    return res.status(400).json({
+      code: 'validation_error',
+      message: 'Request body validation failed',
+      details: {
+        fields: [
+          {
+            field: 'startLocation',
+            message: 'startLocation coordinates are outside city bounds',
+            code: 'coordinates_out_of_city',
+          },
+        ],
+      },
+    });
+  }
+
   try {
     const repo = getEventsRepository();
     const event = await repo.create({
@@ -135,6 +172,7 @@ router.post('/', validateBody(CreateEventSchema), async (req: Request<{}, EventD
       description: dto.description,
       participantLimit: dto.participantLimit,
       territoryId: dto.territoryId,
+      cityId: dto.cityId,
     });
     
     const eventDto: EventDetailsDto = {
@@ -152,6 +190,7 @@ router.post('/', validateBody(CreateEventSchema), async (req: Request<{}, EventD
       participantLimit: event.participantLimit,
       participantCount: event.participantCount,
       territoryId: event.territoryId,
+      cityId: event.cityId,
       createdAt: event.createdAt,
       updatedAt: event.updatedAt,
     };

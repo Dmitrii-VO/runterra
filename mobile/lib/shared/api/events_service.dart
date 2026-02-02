@@ -21,6 +21,7 @@ class EventsService {
   /// 
   /// [filters] - параметры фильтрации, отправляются как query параметры
   Future<List<EventListItemModel>> getEvents({
+    required String cityId,
     String? dateFilter,
     String? clubId,
     String? difficultyLevel,
@@ -28,7 +29,7 @@ class EventsService {
     bool? onlyOpen,
   }) async {
     // Build query parameters
-    final queryParams = <String, String>{};
+    final queryParams = <String, String>{'cityId': cityId};
     if (dateFilter != null) queryParams['dateFilter'] = dateFilter;
     if (clubId != null) queryParams['clubId'] = clubId;
     if (difficultyLevel != null) queryParams['difficultyLevel'] = difficultyLevel;

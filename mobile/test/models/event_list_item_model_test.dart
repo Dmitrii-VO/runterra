@@ -21,6 +21,7 @@ void main() {
         'difficultyLevel': 'beginner',
         'participantCount': 5,
         'territoryId': 'territory-1',
+        'cityId': 'spb',
       };
 
       final event = EventListItemModel.fromJson(json);
@@ -38,6 +39,7 @@ void main() {
       expect(event.difficultyLevel, 'beginner');
       expect(event.participantCount, 5);
       expect(event.territoryId, 'territory-1');
+      expect(event.cityId, 'spb');
     });
 
     test('fromJson handles null optional fields', () {
@@ -61,6 +63,7 @@ void main() {
       expect(event.locationName, isNull);
       expect(event.difficultyLevel, isNull);
       expect(event.territoryId, isNull);
+      expect(event.cityId, ''); // defaults to '' when missing
     });
 
     test('toJson produces correct output', () {
@@ -77,6 +80,7 @@ void main() {
         organizerId: 'club-1',
         organizerType: 'club',
         participantCount: 10,
+        cityId: 'spb',
       );
 
       final json = event.toJson();

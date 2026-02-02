@@ -169,5 +169,8 @@
   "detailCapturedBy": "Захвачена игроком",
   "eventTerritoryLabel": "Территория",
   "clubLabel": "Клуб: {id}",
-  "trainerLabel": "Тренер: {id}"
+  "trainerLabel": "Тренер: {id}",
+  "cityPickerTitle": "Выбор города",
+  "cityPickerLoadError": "Не удалось загрузить города:\n{error}",
+  "cityPickerEmpty": "Список городов пуст"
 }

@@ -40,8 +40,13 @@ class _EventsScreenState extends State<EventsScreen> {
   /// Создает Future для получения списка событий
   Future<List<EventListItemModel>> _fetchEvents() async {
     final eventsService = ServiceLocator.eventsService;
+    final cityId = ServiceLocator.currentCityService.currentCityId;
+    if (cityId == null || cityId.isEmpty) {
+      throw Exception('Current city is not selected');
+    }
     // TODO: Передать реальные фильтры когда они будут обрабатываться на backend
     return eventsService.getEvents(
+      cityId: cityId,
       dateFilter: _selectedDateFilter,
       clubId: _selectedClubId,
       difficultyLevel: _selectedDifficultyLevel,

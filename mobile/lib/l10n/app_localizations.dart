@@ -1117,6 +1117,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Coach: {id}'**
   String trainerLabel(String id);
+
+  /// No description provided for @cityPickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select city'**
+  String get cityPickerTitle;
+
+  /// No description provided for @cityPickerLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load cities:\n{error}'**
+  String cityPickerLoadError(String error);
+
+  /// No description provided for @cityPickerEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'City list is empty'**
+  String get cityPickerEmpty;
 }
 
 class _AppLocalizationsDelegate

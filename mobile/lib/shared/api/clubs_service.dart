@@ -16,8 +16,12 @@ class ClubsService {
   /// 
   /// Возвращает список клубов (List<ClubModel>).
   /// Парсит JSON ответ и преобразует его в типизированные модели.
-  Future<List<ClubModel>> getClubs() async {
-    final response = await _apiClient.get('/api/clubs');
+  Future<List<ClubModel>> getClubs({required String cityId}) async {
+    final uri = Uri(
+      path: '/api/clubs',
+      queryParameters: {'cityId': cityId},
+    );
+    final response = await _apiClient.get(uri.toString());
 
     if (response.statusCode != 200) {
       throw Exception(

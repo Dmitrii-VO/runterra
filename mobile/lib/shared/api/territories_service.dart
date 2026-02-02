@@ -16,8 +16,19 @@ class TerritoriesService {
   /// 
   /// Возвращает список территорий (List<TerritoryModel>).
   /// Парсит JSON ответ и преобразует его в типизированные модели.
-  Future<List<TerritoryModel>> getTerritories() async {
-    final response = await _apiClient.get('/api/territories');
+  Future<List<TerritoryModel>> getTerritories({
+    required String cityId,
+    String? clubId,
+  }) async {
+    final queryParams = <String, String>{'cityId': cityId};
+    if (clubId != null) {
+      queryParams['clubId'] = clubId;
+    }
+    final uri = Uri(
+      path: '/api/territories',
+      queryParameters: queryParams,
+    );
+    final response = await _apiClient.get(uri.toString());
 
     if (response.statusCode != 200) {
       throw Exception(

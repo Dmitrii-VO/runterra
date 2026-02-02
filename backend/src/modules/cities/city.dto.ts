@@ -10,7 +10,7 @@
 
 import { z } from 'zod';
 import { GeoCoordinatesSchema } from '../../shared/types/coordinates';
-import type { CityCoordinates } from './city.entity';
+import type { CityBounds, CityCoordinates } from './city.entity';
 
 /**
  * DTO для создания города
@@ -20,9 +20,21 @@ import type { CityCoordinates } from './city.entity';
 export interface CreateCityDto {
   /** Название города */
   name: string;
-  
-  /** Координаты города на карте */
-  coordinates: CityCoordinates;
+
+  /**
+   * Координаты центра города на карте.
+   *
+   * Используются как стартовая позиция камеры.
+   */
+  center: CityCoordinates;
+
+  /**
+   * Прямоугольные границы города на карте.
+   *
+   * Используются для ограничения области карты и
+   * валидации координат сущностей.
+   */
+  bounds: CityBounds;
 }
 
 /**
@@ -32,7 +44,11 @@ export interface CreateCityDto {
  */
 export const CreateCitySchema = z.object({
   name: z.string(),
-  coordinates: GeoCoordinatesSchema,
+  center: GeoCoordinatesSchema,
+  bounds: z.object({
+    ne: GeoCoordinatesSchema,
+    sw: GeoCoordinatesSchema,
+  }),
 });
 
 /**
@@ -44,7 +60,14 @@ export const CreateCitySchema = z.object({
 export interface UpdateCityDto {
   /** Название города */
   name?: string;
-  
-  /** Координаты города на карте */
-  coordinates?: CityCoordinates;
+
+  /**
+   * Координаты центра города на карте.
+   */
+  center?: CityCoordinates;
+
+  /**
+   * Прямоугольные границы города на карте.
+   */
+  bounds?: CityBounds;
 }

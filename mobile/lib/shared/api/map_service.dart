@@ -16,6 +16,7 @@ class MapService {
   /// 
   /// Возвращает данные для отображения на карте (территории + события).
   /// 
+  /// [cityId] - идентификатор города (обязателен)
   /// [bounds] - границы видимой области карты (опционально, формат: "minLng,minLat,maxLng,maxLat")
   /// [dateFilter] - фильтр по дате: 'today' | 'week' (опционально)
   /// [clubId] - фильтр по клубу (опционально)
@@ -23,13 +24,14 @@ class MapService {
   /// 
   /// TODO: Реализовать реальную фильтрацию на backend
   Future<MapDataModel> getMapData({
+    required String cityId,
     String? bounds,
     String? dateFilter,
     String? clubId,
     bool? onlyActive,
   }) async {
     // Формируем query параметры
-    final queryParams = <String, String>{};
+    final queryParams = <String, String>{'cityId': cityId};
     if (bounds != null) queryParams['bounds'] = bounds;
     if (dateFilter != null) queryParams['dateFilter'] = dateFilter;
     if (clubId != null) queryParams['clubId'] = clubId;

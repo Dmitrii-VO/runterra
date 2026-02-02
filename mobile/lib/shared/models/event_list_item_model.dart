@@ -56,6 +56,9 @@ class EventListItemModel {
   
   /// Идентификатор территории, к которой привязано событие (если есть)
   final String? territoryId;
+  
+  /// Идентификатор города, в котором проходит событие
+  final String cityId;
 
   EventListItemModel({
     required this.id,
@@ -70,6 +73,7 @@ class EventListItemModel {
     this.difficultyLevel,
     required this.participantCount,
     this.territoryId,
+    required this.cityId,
   });
 
   /// Создает EventListItemModel из JSON
@@ -95,6 +99,7 @@ class EventListItemModel {
       difficultyLevel: json['difficultyLevel'] as String?,
       participantCount: (json['participantCount'] as num).toInt(),
       territoryId: json['territoryId'] as String?,
+      cityId: json['cityId'] as String? ?? '',
     );
   }
 
@@ -115,6 +120,7 @@ class EventListItemModel {
       if (difficultyLevel != null) 'difficultyLevel': difficultyLevel,
       'participantCount': participantCount,
       if (territoryId != null) 'territoryId': territoryId,
+      'cityId': cityId,
     };
   }
 }

@@ -24,6 +24,7 @@ interface EventRow {
   participant_limit: number | null;
   participant_count: number;
   territory_id: string | null;
+  city_id: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -44,9 +45,10 @@ function rowToEvent(row: EventRow): Event {
     organizerType: row.organizer_type as 'club' | 'trainer',
     difficultyLevel: row.difficulty_level as Event['difficultyLevel'],
     description: row.description || undefined,
-    participantLimit: row.participant_limit || undefined,
+    participantLimit: row.participant_limit ?? undefined,
     participantCount: row.participant_count,
     territoryId: row.territory_id || undefined,
+    cityId: row.city_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -81,8 +83,8 @@ function rowToParticipant(row: ParticipantRow): EventParticipant {
     userId: row.user_id,
     status: row.status as EventParticipant['status'],
     checkedInAt: row.checked_in_at || undefined,
-    checkInLongitude: row.check_in_longitude || undefined,
-    checkInLatitude: row.check_in_latitude || undefined,
+    checkInLongitude: row.check_in_longitude ?? undefined,
+    checkInLatitude: row.check_in_latitude ?? undefined,
     createdAt: row.created_at,
   };
 }
@@ -100,6 +102,7 @@ export class EventsRepository extends BaseRepository {
     status?: EventStatus[];
     dateFilter?: 'today' | 'tomorrow' | 'next7days';
     clubId?: string;
+    cityId?: string;
     difficultyLevel?: string;
     eventType?: EventType;
     organizerId?: string;
@@ -151,6 +154,12 @@ export class EventsRepository extends BaseRepository {
       conditions.push(`organizer_id = $${paramIndex++} AND organizer_type = 'club'`);
       params.push(options.clubId);
     }
+
+    // City filter (required at API level, but kept optional here for flexibility)
+    if (options?.cityId) {
+      conditions.push(`city_id = $${paramIndex++}`);
+      params.push(options.cityId);
+    }
     
     // Difficulty level filter
     if (options?.difficultyLevel) {
@@ -193,13 +202,14 @@ export class EventsRepository extends BaseRepository {
     description?: string;
     participantLimit?: number;
     territoryId?: string;
+    cityId: string;
   }): Promise<Event> {
     const row = await this.queryOne<EventRow>(
       `INSERT INTO events (
         name, type, status, start_date_time, start_longitude, start_latitude,
         location_name, organizer_id, organizer_type, difficulty_level,
-        description, participant_limit, territory_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        description, participant_limit, territory_id, city_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *`,
       [
         data.name,
@@ -215,6 +225,7 @@ export class EventsRepository extends BaseRepository {
         data.description || null,
         data.participantLimit || null,
         data.territoryId || null,
+        data.cityId,
       ]
     );
     return rowToEvent(row!);

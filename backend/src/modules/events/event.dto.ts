@@ -54,6 +54,9 @@ export interface CreateEventDto {
   
   /** Идентификатор территории, к которой привязано событие (если есть) */
   territoryId?: string;
+
+  /** Идентификатор города, в котором проходит событие */
+  cityId: string;
 }
 
 /**
@@ -76,6 +79,7 @@ export const CreateEventSchema = z.object({
   description: z.string().optional(),
   participantLimit: z.number().int().optional(),
   territoryId: z.string().optional(),
+  cityId: z.string(),
 });
 
 /**
@@ -147,6 +151,9 @@ export interface EventDetailsDto {
   /** Идентификатор территории, к которой привязано событие (если есть) */
   territoryId?: string;
   
+  /** Идентификатор города, в котором проходит событие */
+  cityId: string;
+  
   /** Дата создания записи */
   createdAt: Date;
   
@@ -196,4 +203,7 @@ export interface EventListItemDto {
   
   /** Идентификатор территории, к которой привязано событие (если есть) */
   territoryId?: string;
+
+  /** Идентификатор города, в котором проходит событие */
+  cityId: string;
 }

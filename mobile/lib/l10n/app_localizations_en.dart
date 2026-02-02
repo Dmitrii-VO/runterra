@@ -566,4 +566,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String trainerLabel(String id) {
     return 'Coach: $id';
   }
+
+  @override
+  String get cityPickerTitle => 'Select city';
+
+  @override
+  String cityPickerLoadError(String error) {
+    return 'Failed to load cities:\n$error';
+  }
+
+  @override
+  String get cityPickerEmpty => 'City list is empty';
 }

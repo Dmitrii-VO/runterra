@@ -9,6 +9,13 @@
 - **Runtime-валидация создания события (backend):** Для эндпоинта `POST /api/events` добавлена техническая runtime-валидация тела запроса через Zod-схему `CreateEventSchema` (на основе `CreateEventDto`). Валидация проверяет только форму и типы полей запроса; поле `startDateTime` на этапе валидации приводится к `Date` через `z.coerce.date()`, остальные правила бизнес-логики (статусы, фильтры, инварианты FULL) не изменены. При некорректном теле запроса backend возвращает `400 Bad Request` с описанием ошибок.
  - **Mobile: Event details FutureBuilder:** `EventDetailsScreen` переведён на `StatefulWidget` с кэшированием `Future` загрузки деталей события в `initState`, чтобы избежать повторных HTTP-запросов при каждом `rebuild`; отображаемые поля и доменная модель не изменены.
 
+### 2026-02-02
+
+- **Поле cityId у событий и миграция:** сущность `Event` и DTO (`CreateEventDto`, `EventListItemDto`, `EventDetailsDto`) дополнены обязательным полем `cityId: string`. Добавлена миграция `003_events_city_id` — в таблицу `events` добавлен столбец `city_id VARCHAR(64) NOT NULL DEFAULT 'spb'` и индекс `idx_events_city_id`. Репозиторий `EventsRepository` мапит `city_id` ↔ `cityId`.
+- **Фильтрация событий по городу и клубу:** метод `EventsRepository.findAll` принимает новый параметр `cityId?: string` и добавляет условие `city_id = :cityId` к SQL-запросу. Эндпоинт `GET /api/events` теперь требует query‑параметр `cityId` (при его отсутствии возвращается `400 validation_error`), пробрасывает `cityId` в репозиторий и возвращает DTO с полем `cityId`. Дополнительно при запросе карты `/api/map/data` события фильтруются по тому же `cityId`.
+- **Валидация координат старта по границам города:** для `POST /api/events` после Zod‑валидации добавлена техническая проверка `isPointWithinCityBounds(dto.startLocation, dto.cityId)`; при выходе точки старта за границы города возвращается `400 validation_error` с полем `startLocation` и кодом `coordinates_out_of_city`.
+- **Mobile Events: cityId в моделях и запросах:** `EventListItemModel` и `EventDetailsModel` расширены полем `cityId` (JSON‑поле `cityId` с дефолтом `''` при отсутствии), сервис `EventsService.getEvents` требует параметр `cityId` и добавляет его в query‑параметры. `EventsScreen` при загрузке событий читает текущий город из `CurrentCityService` и при отсутствии города выбрасывает понятную ошибку вместо «тихого» запроса без `cityId`.
+
 ### 2025-01-27
 
 **Events MVP — Архитектурная основа (Skeleton)**

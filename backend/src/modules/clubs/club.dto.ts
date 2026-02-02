@@ -23,6 +23,9 @@ export interface CreateClubDto {
   /** Описание клуба (опционально) */
   description?: string;
   
+  /** Идентификатор города, в котором базируется клуб */
+  cityId: string;
+  
   /** Статус клуба (по умолчанию PENDING) */
   status?: ClubStatus;
 }
@@ -35,6 +38,7 @@ export interface CreateClubDto {
 export const CreateClubSchema = z.object({
   name: z.string(),
   description: z.string().optional(),
+  cityId: z.string(),
   status: z.nativeEnum(ClubStatus).optional(),
 });
 
@@ -54,6 +58,9 @@ export interface ClubViewDto {
   
   /** Описание клуба (опционально) */
   description?: string;
+  
+  /** Идентификатор города, в котором базируется клуб */
+  cityId: string;
   
   /** Статус клуба */
   status: ClubStatus;

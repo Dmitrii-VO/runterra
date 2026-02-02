@@ -308,5 +308,15 @@
         "type": "String"
       }
     }
-  }
+  },
+  "cityPickerTitle": "Select city",
+  "cityPickerLoadError": "Failed to load cities:\n{error}",
+  "@cityPickerLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "cityPickerEmpty": "City list is empty"
 }

@@ -23,14 +23,34 @@ const router = Router();
  * 
  * TODO: Реализовать пагинацию, фильтрацию, сортировку.
  */
-router.get('/', (_req: Request, res: Response) => {
-  // Заглушка: возвращаем массив из одного клуба
+router.get('/', (req: Request, res: Response) => {
+  const query = req.query as Record<string, string | undefined>;
+  const { cityId } = query;
+
+  if (!cityId) {
+    return res.status(400).json({
+      code: 'validation_error',
+      message: 'Query validation failed',
+      details: {
+        fields: [
+          {
+            field: 'cityId',
+            message: 'cityId is required',
+            code: 'city_required',
+          },
+        ],
+      },
+    });
+  }
+
+  // Заглушка: возвращаем массив из одного клуба в указанном городе
   const mockClubs: ClubViewDto[] = [
     {
       id: '1',
       name: 'Test Club',
       description: 'Test club description',
       status: ClubStatus.ACTIVE,
+      cityId,
       createdAt: new Date(),
       updatedAt: new Date(),
     },
@@ -55,6 +75,7 @@ router.get('/:id', (req: Request, res: Response) => {
     name: `Club ${id}`,
     description: `Description for club ${id}`,
     status: ClubStatus.ACTIVE,
+    cityId: 'spb',
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -79,6 +100,7 @@ router.post('/', validateBody(CreateClubSchema), (req: Request<{}, ClubViewDto, 
     name: dto.name,
     description: dto.description,
     status: dto.status || ClubStatus.PENDING,
+    cityId: dto.cityId,
     createdAt: new Date(),
     updatedAt: new Date(),
   };

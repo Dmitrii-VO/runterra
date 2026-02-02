@@ -13,6 +13,7 @@
 import { Router, Request, Response } from 'express';
 import { TerritoryStatus, TerritoryViewDto, CreateTerritoryDto, CreateTerritorySchema } from '../modules/territories';
 import { validateBody } from './validateBody';
+import { isPointWithinCityBounds } from '../modules/cities/city.utils';
 
 const router = Router();
 
@@ -23,9 +24,28 @@ const router = Router();
  * 
  * TODO: Реализовать пагинацию, фильтрацию, сортировку.
  */
-router.get('/', (_req: Request, res: Response) => {
-  // Заглушка: возвращаем массив из одной территории
-  const mockTerritories: TerritoryViewDto[] = [
+router.get('/', (req: Request, res: Response) => {
+  const query = req.query as Record<string, string | undefined>;
+  const { cityId, clubId } = query;
+
+  if (!cityId) {
+    return res.status(400).json({
+      code: 'validation_error',
+      message: 'Query validation failed',
+      details: {
+        fields: [
+          {
+            field: 'cityId',
+            message: 'cityId is required',
+            code: 'city_required',
+          },
+        ],
+      },
+    });
+  }
+
+  // Заглушка: возвращаем массив из одной территории в указанном городе
+  let mockTerritories: TerritoryViewDto[] = [
     {
       id: '1',
       name: 'Test Territory',
@@ -34,12 +54,17 @@ router.get('/', (_req: Request, res: Response) => {
         longitude: 37.6173,
         latitude: 55.7558,
       },
-      cityId: 'city-1',
+      cityId,
+      clubId: 'club-1',
       capturedByUserId: undefined,
       createdAt: new Date(),
       updatedAt: new Date(),
     },
   ];
+
+  if (clubId) {
+    mockTerritories = mockTerritories.filter((t) => t.clubId === clubId);
+  }
 
   res.status(200).json(mockTerritories);
 });
@@ -63,7 +88,7 @@ router.get('/:id', (req: Request, res: Response) => {
       longitude: 37.6173,
       latitude: 55.7558,
     },
-    cityId: 'city-1',
+    cityId: 'spb',
     capturedByUserId: undefined,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -82,6 +107,22 @@ router.get('/:id', (req: Request, res: Response) => {
  */
 router.post('/', validateBody(CreateTerritorySchema), (req: Request<{}, TerritoryViewDto, CreateTerritoryDto>, res: Response) => {
   const dto = req.body;
+
+  if (!isPointWithinCityBounds(dto.coordinates, dto.cityId)) {
+    return res.status(400).json({
+      code: 'validation_error',
+      message: 'Request body validation failed',
+      details: {
+        fields: [
+          {
+            field: 'coordinates',
+            message: 'coordinates are outside city bounds',
+            code: 'coordinates_out_of_city',
+          },
+        ],
+      },
+    });
+  }
 
   // Заглушка: возвращаем созданную территорию
   const mockTerritory: TerritoryViewDto = {

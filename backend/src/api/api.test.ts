@@ -80,7 +80,7 @@ describe('API Routes', () => {
   describe('GET /api/clubs', () => {
     it('returns 200 with array', async () => {
       const res = await request(app)
-        .get('/api/clubs')
+        .get('/api/clubs?cityId=spb')
         .set('Authorization', 'Bearer test-token');
       
       expect(res.status).toBe(200);
@@ -91,7 +91,7 @@ describe('API Routes', () => {
   describe('GET /api/territories', () => {
     it('returns 200 with array', async () => {
       const res = await request(app)
-        .get('/api/territories')
+        .get('/api/territories?cityId=spb')
         .set('Authorization', 'Bearer test-token');
       
       expect(res.status).toBe(200);
@@ -102,7 +102,7 @@ describe('API Routes', () => {
   describe('GET /api/events', () => {
     it('returns 200 with array', async () => {
       const res = await request(app)
-        .get('/api/events')
+        .get('/api/events?cityId=spb')
         .set('Authorization', 'Bearer test-token');
       
       expect(res.status).toBe(200);
@@ -124,7 +124,7 @@ describe('API Routes', () => {
   describe('GET /api/map/data', () => {
     it('returns 200 with territories and events', async () => {
       const res = await request(app)
-        .get('/api/map/data')
+        .get('/api/map/data?cityId=spb')
         .set('Authorization', 'Bearer test-token');
       
       expect(res.status).toBe(200);
@@ -337,7 +337,7 @@ describe('API Routes', () => {
   describe('GET /api/map/data filters', () => {
     it('should return territories and events with onlyActive filter', async () => {
       const res = await request(app)
-        .get('/api/map/data?onlyActive=true')
+        .get('/api/map/data?cityId=spb&onlyActive=true')
         .set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(200);
@@ -350,12 +350,44 @@ describe('API Routes', () => {
 
     it('should return filtered territories when clubId is provided', async () => {
       const res = await request(app)
-        .get('/api/map/data?clubId=club-1')
+        .get('/api/map/data?cityId=spb&clubId=club-1')
         .set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(200);
       expect(res.body.territories).toBeDefined();
       expect(res.body.territories.every((t: { clubId: string }) => t.clubId === 'club-1')).toBe(true);
+    });
+  });
+
+  describe('cityId validation and filtering', () => {
+    it('GET /api/events without cityId returns 400 with validation_error', async () => {
+      const res = await request(app)
+        .get('/api/events')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('code', 'validation_error');
+      expect(res.body.details?.fields?.some((f: { field: string }) => f.field === 'cityId')).toBe(true);
+    });
+
+    it('GET /api/map/data without cityId returns 400 with validation_error', async () => {
+      const res = await request(app)
+        .get('/api/map/data')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('code', 'validation_error');
+      expect(res.body.details?.fields?.some((f: { field: string }) => f.field === 'cityId')).toBe(true);
+    });
+
+    it('GET /api/territories returns territories only for requested city', async () => {
+      const res = await request(app)
+        .get('/api/territories?cityId=spb&clubId=club-1')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.every((t: { cityId: string }) => t.cityId === 'spb')).toBe(true);
     });
   });
 });

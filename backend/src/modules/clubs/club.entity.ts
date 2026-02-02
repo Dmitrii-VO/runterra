@@ -35,6 +35,9 @@ export interface Club {
   /** Описание клуба (опционально) */
   description?: string;
   
+  /** Идентификатор города, в котором базируется клуб */
+  cityId: string;
+  
   /** Статус клуба */
   status: ClubStatus;
   

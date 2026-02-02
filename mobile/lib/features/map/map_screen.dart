@@ -7,6 +7,8 @@ import '../../shared/di/service_locator.dart';
 import '../../main.dart' show DevRemoteLogger;
 import '../../shared/models/map_data_model.dart';
 import '../../shared/models/territory_map_model.dart';
+import '../../shared/models/city_model.dart';
+import '../city/city_picker_dialog.dart';
 import 'widgets/territory_bottom_sheet.dart';
 import 'widgets/map_filters.dart';
 
@@ -32,6 +34,7 @@ class _MapScreenState extends State<MapScreen> {
   MapFilters _filters = MapFilters();
   bool _showFilters = false;
   bool _isMapReady = false;
+  CityModel? _currentCity;
   
   // Дефолтные координаты СПб (fallback)
   static const double _defaultLongitude = 30.3351;
@@ -40,6 +43,9 @@ class _MapScreenState extends State<MapScreen> {
   
   // Радиус территории в метрах
   static const double _territoryRadiusMeters = 500.0;
+  static const double _minZoom = 9.0;
+  static const double _maxZoom = 19.0;
+  bool _isAdjustingCamera = false;
   
   // Объекты на карте
   List<CircleMapObject> _territoryCircles = [];
@@ -47,8 +53,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
-    // Load data in background, don't block map display
-    _loadMapDataInBackground();
+    _ensureCityAndLoad();
   }
 
   /// Загружает данные карты в фоне (не блокирует показ карты)
@@ -58,6 +63,38 @@ class _MapScreenState extends State<MapScreen> {
     
     // Load map data
     await _loadMapData();
+  }
+
+  /// Гарантирует, что выбран город, и затем загружает данные карты.
+  Future<void> _ensureCityAndLoad() async {
+    final currentCityService = ServiceLocator.currentCityService;
+    if (!currentCityService.isInitialized) {
+      await currentCityService.init();
+    }
+
+    if (!mounted) return;
+
+    if (currentCityService.currentCityId == null ||
+        currentCityService.currentCityId!.isEmpty) {
+      final selectedCityId = await showCityPickerDialog(context);
+      if (!mounted) return;
+
+      if (selectedCityId == null || selectedCityId.isEmpty) {
+        // Пользователь не выбрал город — карту можно оставить пустой.
+        return;
+      }
+
+      await currentCityService.setCurrentCityId(selectedCityId);
+    }
+
+    final city = await currentCityService.getCurrentCity();
+    if (mounted && city != null) {
+      setState(() {
+        _currentCity = city;
+      });
+    }
+
+    await _loadMapDataInBackground();
   }
   
   /// Проверяет разрешения GPS (не блокирует)
@@ -93,7 +130,14 @@ class _MapScreenState extends State<MapScreen> {
   /// Загружает данные карты через MapService
   Future<void> _loadMapData() async {
     try {
+      final cityId = ServiceLocator.currentCityService.currentCityId;
+      if (cityId == null || cityId.isEmpty) {
+        // Если по какой-то причине города нет, не делаем запрос.
+        return;
+      }
+
       final data = await ServiceLocator.mapService.getMapData(
+        cityId: cityId,
         dateFilter: _filters.dateFilter,
         clubId: _filters.clubId,
         onlyActive: _filters.onlyActive,
@@ -173,6 +217,53 @@ class _MapScreenState extends State<MapScreen> {
       _territoryCircles = circles;
     });
   }
+
+  void _handleCameraPositionChanged(CameraPosition position) {
+    if (_isAdjustingCamera || _mapController == null || _currentCity == null) {
+      return;
+    }
+
+    var zoom = position.zoom;
+    if (zoom < _minZoom) zoom = _minZoom;
+    if (zoom > _maxZoom) zoom = _maxZoom;
+
+    final bounds = _currentCity!.bounds;
+    if (bounds == null) {
+      return;
+    }
+
+    var latitude = position.target.latitude;
+    var longitude = position.target.longitude;
+
+    latitude = latitude.clamp(bounds.sw.latitude, bounds.ne.latitude);
+    longitude = longitude.clamp(bounds.sw.longitude, bounds.ne.longitude);
+
+    final isZoomOk = zoom == position.zoom;
+    final isLatOk = latitude == position.target.latitude;
+    final isLonOk = longitude == position.target.longitude;
+
+    if (isZoomOk && isLatOk && isLonOk) {
+      return;
+    }
+
+    _isAdjustingCamera = true;
+    _mapController!
+        .moveCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+              target: Point(latitude: latitude, longitude: longitude),
+              zoom: zoom,
+            ),
+          ),
+          animation: const MapAnimation(
+            type: MapAnimationType.smooth,
+            duration: 0.2,
+          ),
+        )
+        .whenComplete(() {
+          _isAdjustingCamera = false;
+        });
+  }
   
   /// Получает цвет заливки территории по статусу
   Color _getTerritoryColor(String status) {
@@ -217,8 +308,7 @@ class _MapScreenState extends State<MapScreen> {
   /// Обработчик создания карты
   void _onMapCreated(YandexMapController controller) async {
     debugPrint('MapScreen: onMapCreated called');
-    DevRemoteLogger.logError('MapScreen: onMapCreated called', extra: {'controller': controller.toString()});
-    
+
     _mapController = controller;
     
     if (mounted) {
@@ -240,8 +330,12 @@ class _MapScreenState extends State<MapScreen> {
     double longitude = _defaultLongitude;
     double latitude = _defaultLatitude;
 
-    // Используем координаты из загруженных данных или GPS
-    if (_mapData != null && _mapData!.viewport.center.longitude != 0) {
+    // Если известен текущий город — используем его центр.
+    if (_currentCity != null) {
+      longitude = _currentCity!.center.longitude;
+      latitude = _currentCity!.center.latitude;
+    } else if (_mapData != null && _mapData!.viewport.center.longitude != 0) {
+      // Иначе используем viewport из данных карты
       longitude = _mapData!.viewport.center.longitude;
       latitude = _mapData!.viewport.center.latitude;
     } else {
@@ -345,6 +439,9 @@ class _MapScreenState extends State<MapScreen> {
               debugPrint('MapScreen: Building YandexMap widget');
               return YandexMap(
                 onMapCreated: _onMapCreated,
+                onCameraPositionChanged: (position, _reason, _finished) {
+                  _handleCameraPositionChanged(position);
+                },
                 mapObjects: _territoryCircles,
               );
             },

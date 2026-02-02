@@ -74,6 +74,9 @@ class EventDetailsModel {
   /// Идентификатор территории, к которой привязано событие (если есть)
   final String? territoryId;
   
+  /// Идентификатор города, в котором проходит событие
+  final String cityId;
+  
   /// Дата создания записи
   final DateTime createdAt;
   
@@ -95,6 +98,7 @@ class EventDetailsModel {
     this.participantLimit,
     required this.participantCount,
     this.territoryId,
+    required this.cityId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -123,6 +127,7 @@ class EventDetailsModel {
           : null,
       participantCount: (json['participantCount'] as num).toInt(),
       territoryId: json['territoryId'] as String?,
+      cityId: json['cityId'] as String? ?? '',
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -147,6 +152,7 @@ class EventDetailsModel {
       if (participantLimit != null) 'participantLimit': participantLimit,
       'participantCount': participantCount,
       if (territoryId != null) 'territoryId': territoryId,
+      'cityId': cityId,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };

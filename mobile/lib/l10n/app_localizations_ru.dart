@@ -567,4 +567,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String trainerLabel(String id) {
     return 'Тренер: $id';
   }
+
+  @override
+  String get cityPickerTitle => 'Выбор города';
+
+  @override
+  String cityPickerLoadError(String error) {
+    return 'Не удалось загрузить города:\n$error';
+  }
+
+  @override
+  String get cityPickerEmpty => 'Список городов пуст';
 }

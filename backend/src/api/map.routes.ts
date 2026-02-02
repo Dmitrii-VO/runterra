@@ -10,6 +10,7 @@ import { MapDataDto } from '../modules/map';
 import { TerritoryStatus, TerritoryViewDto } from '../modules/territories';
 import { EventType, EventStatus, EventListItemDto } from '../modules/events';
 import { getEventsRepository } from '../db/repositories';
+import { findCityById } from '../modules/cities/cities.config';
 import { logger } from '../shared/logger';
 
 const router = Router();
@@ -20,6 +21,7 @@ const router = Router();
  * Возвращает данные для отображения на карте: территории и события.
  * 
  * Query параметры:
+ * - cityId: string (обязателен) — идентификатор города
  * - bounds?: string (формат: "minLng,minLat,maxLng,maxLat") - TODO
  * - dateFilter?: 'today' | 'week'
  * - clubId?: string (фильтр "Мой клуб")
@@ -27,7 +29,40 @@ const router = Router();
  */
 router.get('/data', async (req: Request, res: Response) => {
   const query = req.query as Record<string, string | undefined>;
-  const { dateFilter, clubId, onlyActive } = query;
+  const { cityId, dateFilter, clubId, onlyActive } = query;
+  
+  if (!cityId) {
+    return res.status(400).json({
+      code: 'validation_error',
+      message: 'Query validation failed',
+      details: {
+        fields: [
+          {
+            field: 'cityId',
+            message: 'cityId is required',
+            code: 'city_required',
+          },
+        ],
+      },
+    });
+  }
+
+  const city = findCityById(cityId);
+  if (!city) {
+    return res.status(400).json({
+      code: 'validation_error',
+      message: 'Query validation failed',
+      details: {
+        fields: [
+          {
+            field: 'cityId',
+            message: 'Unknown cityId',
+            code: 'city_not_found',
+          },
+        ],
+      },
+    });
+  }
   
   try {
     // Mock territories (территории пока не в БД)
@@ -40,7 +75,7 @@ router.get('/data', async (req: Request, res: Response) => {
           longitude: 30.3351,
           latitude: 59.9343,
         },
-        cityId: 'city-1',
+        cityId,
         clubId: 'club-1',
         capturedByUserId: 'user-1',
         createdAt: new Date(),
@@ -54,7 +89,7 @@ router.get('/data', async (req: Request, res: Response) => {
           longitude: 30.3451,
           latitude: 59.9443,
         },
-        cityId: 'city-1',
+        cityId,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -66,7 +101,7 @@ router.get('/data', async (req: Request, res: Response) => {
           longitude: 30.3251,
           latitude: 59.9243,
         },
-        cityId: 'city-1',
+        cityId,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -87,6 +122,7 @@ router.get('/data', async (req: Request, res: Response) => {
     // Получаем события из БД с фильтрами
     const repo = getEventsRepository();
     const events = await repo.findAll({
+      cityId,
       dateFilter: dateFilter === 'today' ? 'today' : dateFilter === 'week' ? 'next7days' : undefined,
       clubId,
       limit: 100,
@@ -106,13 +142,14 @@ router.get('/data', async (req: Request, res: Response) => {
       difficultyLevel: event.difficultyLevel,
       participantCount: event.participantCount,
       territoryId: event.territoryId,
+      cityId: event.cityId,
     }));
     
-    // Viewport (центр СПб по умолчанию)
+    // Viewport — центр выбранного города
     const viewport = {
       center: {
-        longitude: 30.3351,
-        latitude: 59.9343,
+        longitude: city.center.longitude,
+        latitude: city.center.latitude,
       },
       zoom: 12.0,
     };
