@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/di/service_locator.dart';
 import '../../../shared/api/chat_realtime_service.dart';
 import '../../../shared/config/api_config.dart';
@@ -149,7 +150,7 @@ class _GlobalChatTabState extends State<GlobalChatTab> {
                   const Icon(Icons.error_outline, size: 48, color: Colors.red),
                   const SizedBox(height: 16),
                   Text(
-                    'Ошибка загрузки сообщений: ${snapshot.error}',
+                    AppLocalizations.of(context)!.messagesLoadError(snapshot.error.toString()),
                     style: Theme.of(context).textTheme.bodyMedium,
                     textAlign: TextAlign.center,
                   ),
@@ -157,7 +158,7 @@ class _GlobalChatTabState extends State<GlobalChatTab> {
                   ElevatedButton.icon(
                     onPressed: _retry,
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Повторить'),
+                    label: Text(AppLocalizations.of(context)!.retry),
                   ),
                 ],
               ),
@@ -188,7 +189,7 @@ class _GlobalChatTabState extends State<GlobalChatTab> {
                     const Icon(Icons.location_city, size: 48, color: Colors.grey),
                     const SizedBox(height: 16),
                     Text(
-                      'Укажите город в профиле, чтобы участвовать в чате',
+                      AppLocalizations.of(context)!.profileCityRequired,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Colors.grey,
                           ),
@@ -198,7 +199,7 @@ class _GlobalChatTabState extends State<GlobalChatTab> {
                     ElevatedButton.icon(
                       onPressed: _retry,
                       icon: const Icon(Icons.refresh),
-                      label: const Text('Повторить'),
+                      label: Text(AppLocalizations.of(context)!.retry),
                     ),
                   ],
                 ),
@@ -214,7 +215,7 @@ class _GlobalChatTabState extends State<GlobalChatTab> {
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
                           child: Text(
-                            'Пока тихо. Напиши первое сообщение и задай ритм городу 🏃‍♂️',
+                            AppLocalizations.of(context)!.globalChatEmpty,
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                   color: Colors.grey,
                                 ),
@@ -252,10 +253,10 @@ class _GlobalChatTabState extends State<GlobalChatTab> {
                       child: TextField(
                         controller: _textController,
                         focusNode: _focusNode,
-                        decoration: const InputDecoration(
-                          hintText: 'Сообщение...',
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: InputDecoration(
+                          hintText: AppLocalizations.of(context)!.messageHint,
+                          border: const OutlineInputBorder(),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         ),
                         maxLines: 2,
                         maxLength: 500,

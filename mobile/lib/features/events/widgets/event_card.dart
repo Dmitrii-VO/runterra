@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/models/event_list_item_model.dart';
 
 /// Виджет карточки события
@@ -8,7 +9,6 @@ import '../../../shared/models/event_list_item_model.dart';
 /// Отображает основную информацию о событии в списке.
 /// Только отображение данных, без интерактивности (кроме перехода на детальный экран).
 /// 
-/// TODO: Add i18n/l10n support - all hardcoded strings (event types, statuses) should be localized
 class EventCard extends StatelessWidget {
   /// Модель события для отображения (упрощённая версия для списка)
   final EventListItemModel event;
@@ -18,17 +18,17 @@ class EventCard extends StatelessWidget {
     required this.event,
   });
 
-  /// Получает текст типа события
-  String _getEventTypeText(String type) {
+  String _getEventTypeText(BuildContext context, String type) {
+    final l10n = AppLocalizations.of(context)!;
     switch (type) {
       case 'training':
-        return 'Тренировка';
+        return l10n.eventTypeTraining;
       case 'group_run':
-        return 'Совместный бег';
+        return l10n.eventTypeGroupRun;
       case 'club_event':
-        return 'Клубное событие';
+        return l10n.eventTypeClubEvent;
       case 'open_event':
-        return 'Открытое событие';
+        return l10n.eventTypeOpenEvent;
       default:
         return type;
     }
@@ -50,39 +50,37 @@ class EventCard extends StatelessWidget {
     }
   }
 
-  /// Получает текст статуса события
-  String _getStatusText(String status) {
+  String _getStatusText(BuildContext context, String status) {
+    final l10n = AppLocalizations.of(context)!;
     switch (status) {
       case 'open':
-        return 'Открыто';
+        return l10n.eventStatusOpen;
       case 'full':
-        return 'Нет мест';
+        return l10n.eventStatusFull;
       case 'cancelled':
-        return 'Отменено';
+        return l10n.eventStatusCancelled;
       case 'completed':
-        return 'Завершено';
+        return l10n.eventStatusCompleted;
       default:
         return status;
     }
   }
 
-  /// Получает текст уровня подготовки
-  String? _getDifficultyText(String? level) {
+  String? _getDifficultyText(BuildContext context, String? level) {
+    final l10n = AppLocalizations.of(context)!;
     switch (level) {
       case 'beginner':
-        return 'Новичок';
+        return l10n.eventDifficultyBeginner;
       case 'intermediate':
-        return 'Любитель';
+        return l10n.eventDifficultyIntermediate;
       case 'advanced':
-        return 'Опытный';
+        return l10n.eventDifficultyAdvanced;
       default:
         return level;
     }
   }
 
-  /// Форматирует дату и время
   String _formatDateTime(DateTime dateTime) {
-    // TODO: Add i18n/l10n support for date formatting
     final dateFormat = DateFormat('d.M.y H:mm');
     return dateFormat.format(dateTime);
   }
@@ -116,11 +114,16 @@ class EventCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: _getStatusColor(event.status).withOpacity(0.2),
+                      color: Color.fromRGBO(
+                        _getStatusColor(event.status).red,
+                        _getStatusColor(event.status).green,
+                        _getStatusColor(event.status).blue,
+                        0.2,
+                      ),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      _getStatusText(event.status),
+                      _getStatusText(context, event.status),
                       style: TextStyle(
                         color: _getStatusColor(event.status),
                         fontSize: 12,
@@ -138,7 +141,7 @@ class EventCard extends StatelessWidget {
                   const Icon(Icons.event, size: 16, color: Colors.blue),
                   const SizedBox(width: 4),
                   Text(
-                    _getEventTypeText(event.type),
+                    _getEventTypeText(context, event.type),
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
@@ -187,7 +190,7 @@ class EventCard extends StatelessWidget {
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      'Организатор: ${event.organizerId}', // TODO: Получить название клуба/тренера
+                      AppLocalizations.of(context)!.eventOrganizerLabel(event.organizerId),
                       style: Theme.of(context).textTheme.bodySmall,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -204,7 +207,7 @@ class EventCard extends StatelessWidget {
                     const Icon(Icons.trending_up, size: 16, color: Colors.grey),
                     const SizedBox(width: 4),
                     Text(
-                      _getDifficultyText(event.difficultyLevel)!,
+                      _getDifficultyText(context, event.difficultyLevel)!,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -234,7 +237,7 @@ class EventCard extends StatelessWidget {
                         const Text('🗺', style: TextStyle(fontSize: 16)),
                         const SizedBox(width: 4),
                         Text(
-                          'Территория',
+                          AppLocalizations.of(context)!.eventTerritoryLabel,
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],

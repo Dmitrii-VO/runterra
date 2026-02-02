@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'tabs/global_chat_tab.dart';
 import 'tabs/club_messages_tab.dart';
 import 'tabs/notifications_tab.dart';
@@ -25,12 +26,12 @@ class MessagesScreen extends StatelessWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Messages'),
-          bottom: const TabBar(
+          title: Text(AppLocalizations.of(context)!.messagesTitle),
+          bottom: TabBar(
             tabs: [
-              Tab(text: 'Город'),
-              Tab(text: 'Клубы'),
-              Tab(text: 'Уведомления'),
+              Tab(text: AppLocalizations.of(context)!.tabCity),
+              Tab(text: AppLocalizations.of(context)!.tabClubs),
+              Tab(text: AppLocalizations.of(context)!.tabNotifications),
             ],
           ),
         ),

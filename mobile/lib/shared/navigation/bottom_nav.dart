@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Bottom navigation widget for switching between main screens
 /// Integrated with GoRouter for navigation
@@ -36,26 +37,26 @@ class BottomNav extends StatelessWidget {
             context.go('/');
           }
         },
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.map),
-            label: 'Map',
+            icon: const Icon(Icons.map),
+            label: AppLocalizations.of(context)!.navMap,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.directions_run),
-            label: 'Run',
+            icon: const Icon(Icons.directions_run),
+            label: AppLocalizations.of(context)!.navRun,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.message),
-            label: 'Messages',
+            icon: const Icon(Icons.message),
+            label: AppLocalizations.of(context)!.navMessages,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.event),
-            label: 'Events',
+            icon: const Icon(Icons.event),
+            label: AppLocalizations.of(context)!.navEvents,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
+            icon: const Icon(Icons.person),
+            label: AppLocalizations.of(context)!.navProfile,
           ),
         ],
       ),

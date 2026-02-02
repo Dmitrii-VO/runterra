@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../models/profile_activity_model.dart';
 import '../../navigation/navigation_handler.dart';
 import '../../navigation/user_action.dart';
@@ -11,7 +12,6 @@ import 'package:go_router/go_router.dart';
 /// - Ближайшую активность (тренировку)
 /// - Последнюю активность
 /// 
-/// TODO: Add i18n/l10n support - all hardcoded strings (status labels, result labels) should be localized
 class ProfileActivitySection extends StatelessWidget {
   final ProfileActivityModel? nextActivity;
   final ProfileActivityModel? lastActivity;
@@ -36,12 +36,12 @@ class ProfileActivitySection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Ближайшая тренировка',
+                    AppLocalizations.of(context)!.activityNext,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    nextActivity!.name ?? 'Тренировка',
+                    nextActivity!.name ?? AppLocalizations.of(context)!.activityDefaultName,
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                   if (nextActivity!.dateTime != null) ...[
@@ -67,7 +67,7 @@ class ProfileActivitySection extends StatelessWidget {
                           handler.handle(const OpenMapAction());
                         },
                         icon: const Icon(Icons.map),
-                        label: const Text('Открыть на карте'),
+                        label: Text(AppLocalizations.of(context)!.openOnMap),
                       ),
                     ],
                   ),
@@ -85,12 +85,12 @@ class ProfileActivitySection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Последняя активность',
+                    AppLocalizations.of(context)!.activityLast,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    lastActivity!.name ?? 'Активность',
+                    lastActivity!.name ?? AppLocalizations.of(context)!.activityDefaultActivity,
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                   if (lastActivity!.result != null) ...[
@@ -115,7 +115,6 @@ class ProfileActivitySection extends StatelessWidget {
   String _formatDateTime(String isoString) {
     try {
       final dateTime = DateTime.parse(isoString);
-      // TODO: Add i18n/l10n support for date formatting
       final dateFormat = DateFormat('d.M.y H:mm');
       return dateFormat.format(dateTime);
     } catch (e) {
@@ -131,24 +130,25 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     String label;
     Color color;
 
     switch (status) {
       case 'planned':
-        label = 'Записан';
+        label = l10n.activityStatusPlanned;
         color = Colors.blue;
         break;
       case 'in_progress':
-        label = 'В процессе';
+        label = l10n.activityStatusInProgress;
         color = Colors.orange;
         break;
       case 'completed':
-        label = 'Завершено';
+        label = l10n.activityStatusCompleted;
         color = Colors.green;
         break;
       case 'cancelled':
-        label = 'Отменено';
+        label = l10n.activityStatusCancelled;
         color = Colors.grey;
         break;
       default:
@@ -158,7 +158,7 @@ class _StatusChip extends StatelessWidget {
 
     return Chip(
       label: Text(label),
-      backgroundColor: color.withOpacity(0.1),
+      backgroundColor: Color.fromRGBO(color.red, color.green, color.blue, 0.1),
       labelStyle: TextStyle(color: color, fontSize: 12),
     );
   }
@@ -171,9 +171,10 @@ class _ResultChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isCounted = result == 'counted';
     return Chip(
-      label: Text(isCounted ? 'Засчитано' : 'Не засчитано'),
+      label: Text(isCounted ? l10n.activityResultCounted : l10n.activityResultNotCounted),
       backgroundColor: isCounted
           ? const Color.fromRGBO(76, 175, 80, 0.1) // Colors.green
           : const Color.fromRGBO(244, 67, 54, 0.1), // Colors.red

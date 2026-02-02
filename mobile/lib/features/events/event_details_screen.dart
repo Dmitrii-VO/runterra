@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/event_details_model.dart';
 import '../../shared/ui/details_scaffold.dart';
@@ -18,7 +19,6 @@ import 'widgets/participants_list.dart';
 /// - список участников
 /// - check-in секция (TODO)
 /// 
-/// TODO: Add i18n/l10n support - all hardcoded strings (event types, statuses, labels) should be localized
 class EventDetailsScreen extends StatefulWidget {
   /// ID события (передается через параметр маршрута)
   final String eventId;
@@ -58,55 +58,53 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     _eventFuture = _fetchEvent();
   }
 
-  /// Получает текст типа события
-  String _getEventTypeText(String type) {
+  String _getEventTypeText(BuildContext context, String type) {
+    final l10n = AppLocalizations.of(context)!;
     switch (type) {
       case 'training':
-        return 'Тренировка';
+        return l10n.eventTypeTraining;
       case 'group_run':
-        return 'Совместный бег';
+        return l10n.eventTypeGroupRun;
       case 'club_event':
-        return 'Клубное событие';
+        return l10n.eventTypeClubEvent;
       case 'open_event':
-        return 'Открытое событие';
+        return l10n.eventTypeOpenEvent;
       default:
         return type;
     }
   }
 
-  /// Получает текст статуса события
-  String _getStatusText(String status) {
+  String _getStatusText(BuildContext context, String status) {
+    final l10n = AppLocalizations.of(context)!;
     switch (status) {
       case 'open':
-        return 'Открыто';
+        return l10n.eventStatusOpen;
       case 'full':
-        return 'Нет мест';
+        return l10n.eventStatusFull;
       case 'cancelled':
-        return 'Отменено';
+        return l10n.eventStatusCancelled;
       case 'completed':
-        return 'Завершено';
+        return l10n.eventStatusCompleted;
       default:
         return status;
     }
   }
 
-  /// Получает текст уровня подготовки
-  String? _getDifficultyText(String? level) {
+  String? _getDifficultyText(BuildContext context, String? level) {
+    final l10n = AppLocalizations.of(context)!;
     switch (level) {
       case 'beginner':
-        return 'Новичок';
+        return l10n.eventDifficultyBeginner;
       case 'intermediate':
-        return 'Любитель';
+        return l10n.eventDifficultyIntermediate;
       case 'advanced':
-        return 'Опытный';
+        return l10n.eventDifficultyAdvanced;
       default:
         return level;
     }
   }
 
-  /// Форматирует дату и время
   String _formatDateTime(DateTime dateTime) {
-    // TODO: Add i18n/l10n support for date formatting
     final dateFormat = DateFormat('d.M.y H:mm');
     return dateFormat.format(dateTime);
   }
@@ -114,7 +112,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return DetailsScaffold(
-      title: 'Событие',
+      title: AppLocalizations.of(context)!.eventDetailsTitle,
       body: FutureBuilder<EventDetailsModel>(
         future: _eventFuture,
         builder: (context, snapshot) {
@@ -161,7 +159,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        _getStatusText(event.status),
+                        _getStatusText(context, event.status),
                         style: TextStyle(
                           color: event.status == 'open'
                               ? Colors.green
@@ -177,7 +175,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     // Описание
                     if (event.description != null) ...[
                       Text(
-                        'Описание',
+                        AppLocalizations.of(context)!.eventDescription,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 8),
@@ -190,41 +188,33 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     
                     // Основная информация
                     Text(
-                      'Информация',
+                      AppLocalizations.of(context)!.eventInfo,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
-                    
-                    // Тип события
                     _buildInfoRow(
                       context,
                       Icons.event,
-                      'Тип',
-                      _getEventTypeText(event.type),
+                      AppLocalizations.of(context)!.eventType,
+                      _getEventTypeText(context, event.type),
                     ),
-                    
-                    // Дата и время
                     _buildInfoRow(
                       context,
                       Icons.access_time,
-                      'Дата и время',
+                      AppLocalizations.of(context)!.eventDateTime,
                       _formatDateTime(event.startDateTime),
                     ),
-                    
-                    // Локация
                     if (event.locationName != null)
                       _buildInfoRow(
                         context,
                         Icons.location_on,
-                        'Локация',
+                        AppLocalizations.of(context)!.eventLocation,
                         event.locationName!,
                       ),
-                    
-                    // Организатор
                     _buildInfoRow(
                       context,
                       event.organizerType == 'club' ? Icons.group : Icons.person,
-                      'Организатор',
+                      AppLocalizations.of(context)!.eventOrganizer,
                       event.organizerId, // TODO: Получить название клуба/тренера
                       onTap: () {
                         // TODO: Переход на профиль клуба/тренера
@@ -239,17 +229,15 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       _buildInfoRow(
                         context,
                         Icons.trending_up,
-                        'Уровень подготовки',
-                        _getDifficultyText(event.difficultyLevel)!,
+                        AppLocalizations.of(context)!.eventDifficulty,
+                        _getDifficultyText(context, event.difficultyLevel)!,
                       ),
-                    
-                    // Территория
                     if (event.territoryId != null)
                       _buildInfoRow(
                         context,
                         Icons.map,
-                        'Территория',
-                        'Привязано к территории', // TODO: Получить название территории
+                        AppLocalizations.of(context)!.eventTerritory,
+                        AppLocalizations.of(context)!.eventTerritoryLinked,
                         onTap: () {
                           // TODO: Переход на детальный экран территории
                           context.push('/territory/${event.territoryId}');
@@ -260,7 +248,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     
                     // Точка старта на карте (placeholder)
                     Text(
-                      'Точка старта',
+                      AppLocalizations.of(context)!.eventStartPoint,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
@@ -277,7 +265,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                             const Icon(Icons.map, size: 48, color: Colors.grey),
                             const SizedBox(height: 8),
                             Text(
-                              'Карта (TODO: Mapbox)',
+                              AppLocalizations.of(context)!.eventMapTodo,
                               style: Theme.of(context).textTheme.bodyMedium,
                             ),
                             Text(
@@ -293,42 +281,39 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     
                     // Участие
                     Text(
-                      'Участие',
+                      AppLocalizations.of(context)!.eventParticipation,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
-                    
-                    // Кнопка участия
                     if (event.status == 'open')
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            // TODO: Реализовать запись на событие
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Запись на событие - TODO'),
+                              SnackBar(
+                                content: Text(AppLocalizations.of(context)!.eventJoinTodo),
                               ),
                             );
                           },
                           icon: const Icon(Icons.person_add),
-                          label: const Text('Присоединиться'),
+                          label: Text(AppLocalizations.of(context)!.eventJoin),
                         ),
                       )
                     else if (event.status == 'full')
-                      const SizedBox(
+                      SizedBox(
                         width: double.infinity,
                         child: OutlinedButton(
                           onPressed: null,
-                          child: Text('Нет свободных мест'),
+                          child: Text(AppLocalizations.of(context)!.eventNoPlaces),
                         ),
                       )
                     else if (event.status == 'cancelled')
-                      const SizedBox(
+                      SizedBox(
                         width: double.infinity,
                         child: OutlinedButton(
                           onPressed: null,
-                          child: Text('Событие отменено'),
+                          child: Text(AppLocalizations.of(context)!.eventCancelled),
                         ),
                       ),
                     
@@ -348,8 +333,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           }
 
           // Fallback
-          return const Center(
-            child: Text('Нет данных'),
+          return Center(
+            child: Text(AppLocalizations.of(context)!.noData),
           );
         },
       ),

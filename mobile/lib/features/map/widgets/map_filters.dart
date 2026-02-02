@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Фильтры для карты
 /// 
@@ -92,16 +93,14 @@ class _MapFiltersPanelState extends State<MapFiltersPanel> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Фильтры',
+            AppLocalizations.of(context)!.filtersTitle,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
           ),
           const SizedBox(height: 16),
-          
-          // Фильтр по дате
           Text(
-            '📅 Дата',
+            AppLocalizations.of(context)!.filtersDate,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w500,
                 ),
@@ -110,7 +109,7 @@ class _MapFiltersPanelState extends State<MapFiltersPanel> {
           Row(
             children: [
               ChoiceChip(
-                label: const Text('Сегодня'),
+                label: Text(AppLocalizations.of(context)!.filtersToday),
                 selected: _filters.dateFilter == 'today',
                 onSelected: (selected) {
                   setState(() {
@@ -121,7 +120,7 @@ class _MapFiltersPanelState extends State<MapFiltersPanel> {
               ),
               const SizedBox(width: 8),
               ChoiceChip(
-                label: const Text('Неделя'),
+                label: Text(AppLocalizations.of(context)!.filtersWeek),
                 selected: _filters.dateFilter == 'week',
                 onSelected: (selected) {
                   setState(() {
@@ -148,7 +147,7 @@ class _MapFiltersPanelState extends State<MapFiltersPanel> {
                   widget.onFiltersChanged(_filters);
                 },
               ),
-              const Text('🏃 Мой клуб'),
+              Text(AppLocalizations.of(context)!.filtersMyClub),
             ],
           ),
           const SizedBox(height: 8),
@@ -167,7 +166,7 @@ class _MapFiltersPanelState extends State<MapFiltersPanel> {
                   }
                 },
               ),
-              const Text('🔥 Только активные территории'),
+              Text(AppLocalizations.of(context)!.filtersActiveTerritories),
             ],
           ),
         ],

@@ -1,0 +1,312 @@
+{
+  "@@locale": "en",
+  "appTitle": "Runterra",
+  "navMap": "Map",
+  "navRun": "Run",
+  "navMessages": "Messages",
+  "navEvents": "Events",
+  "navProfile": "Profile",
+  "errorLoadTitle": "Load error",
+  "retry": "Retry",
+  "errorTimeoutMessage": "Connection timeout.\n\nMake sure:\n1. Backend server is running (npm run dev in backend folder)\n2. Server listens on all interfaces (0.0.0.0)\n3. No network or firewall issues",
+  "errorConnectionMessage": "Could not connect to server.\n\nMake sure backend server is running and available.",
+  "errorGeneric": "Error: {message}",
+  "@errorGeneric": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "profileCityRequired": "Set your city in profile to participate in chat",
+  "globalChatEmpty": "It's quiet here. Send the first message and set the pace 🏃‍♂️",
+  "messageHint": "Message...",
+  "messagesLoadError": "Error loading messages: {error}",
+  "@messagesLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "messagesTitle": "Messages",
+  "tabCity": "City",
+  "tabClubs": "Clubs",
+  "tabNotifications": "Notifications",
+  "noClubChats": "No club chats\n\nYou are not in any club yet",
+  "noNotifications": "No notifications",
+  "clubChatsLoadError": "Error loading club chats: {error}",
+  "@clubChatsLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationsLoadError": "Error loading notifications: {error}",
+  "@notificationsLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "profileTitle": "Profile",
+  "profileNotFound": "Profile data not found",
+  "profileConnectionError": "Could not connect to server.\n\nMake sure:\n1. Backend server is running (npm run dev in backend folder)\n2. For Android emulator use 10.0.2.2:3000\n3. For physical device use your computer IP address",
+  "logoutTitle": "Sign out",
+  "logoutConfirm": "Are you sure you want to sign out?",
+  "cancel": "Cancel",
+  "logout": "Sign out",
+  "headerMercenary": "Mercenary",
+  "headerNoClub": "No club",
+  "roleMember": "Member",
+  "roleModerator": "Moderator",
+  "roleLeader": "Leader",
+  "quickOpenMap": "Open map",
+  "quickFindTraining": "Find workout",
+  "quickStartRun": "Start run",
+  "quickFindClub": "Find club",
+  "quickCreateClub": "Create club",
+  "activityNext": "Next workout",
+  "activityLast": "Last activity",
+  "activityDefaultName": "Workout",
+  "activityDefaultActivity": "Activity",
+  "openOnMap": "Open on map",
+  "activityStatusPlanned": "Registered",
+  "activityStatusInProgress": "In progress",
+  "activityStatusCompleted": "Completed",
+  "activityStatusCancelled": "Cancelled",
+  "activityResultCounted": "Counted",
+  "activityResultNotCounted": "Not counted",
+  "settingsLocation": "Location",
+  "settingsLocationAllowed": "Allowed",
+  "settingsLocationDenied": "Not allowed",
+  "settingsVisibility": "Profile visibility",
+  "settingsVisible": "Visible",
+  "settingsHidden": "Hidden",
+  "settingsLogout": "Sign out",
+  "settingsDeleteAccount": "Delete account",
+  "statsTrainings": "Workouts",
+  "statsTerritories": "Territories",
+  "statsPoints": "Points",
+  "notificationsSectionTitle": "Notifications",
+  "eventsTitle": "Events",
+  "eventsLoadError": "Error loading events",
+  "eventsEmpty": "No events found",
+  "eventsEmptyHint": "Try changing filters",
+  "eventsCreateTodo": "Create event - TODO",
+  "eventsCreateTooltip": "Create event",
+  "filterToday": "Today",
+  "filterTomorrow": "Tomorrow",
+  "filter7days": "7 days",
+  "filterOnlyOpen": "Open only",
+  "eventTypeTraining": "Workout",
+  "eventTypeGroupRun": "Group run",
+  "eventTypeClubEvent": "Club event",
+  "eventTypeOpenEvent": "Open event",
+  "eventStatusOpen": "Open",
+  "eventStatusFull": "Full",
+  "eventStatusCancelled": "Cancelled",
+  "eventStatusCompleted": "Completed",
+  "eventDifficultyBeginner": "Beginner",
+  "eventDifficultyIntermediate": "Intermediate",
+  "eventDifficultyAdvanced": "Advanced",
+  "eventDetailsTitle": "Event",
+  "eventDescription": "Description",
+  "eventInfo": "Info",
+  "eventType": "Type",
+  "eventDateTime": "Date & time",
+  "eventLocation": "Location",
+  "eventOrganizer": "Organizer",
+  "eventDifficulty": "Difficulty",
+  "eventTerritory": "Territory",
+  "eventTerritoryLinked": "Linked to territory",
+  "eventStartPoint": "Start point",
+  "eventMapTodo": "Map (TODO)",
+  "eventParticipation": "Participation",
+  "eventJoin": "Join",
+  "eventJoinTodo": "Join event - TODO",
+  "eventNoPlaces": "No spots left",
+  "eventCancelled": "Event cancelled",
+  "eventOrganizerLabel": "Organizer: {id}",
+  "@eventOrganizerLabel": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "participantsTitle": "Participants ({count})",
+  "@participantsTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "participantsNone": "No participants yet",
+  "participantsMore": "And {count} more participants",
+  "@participantsMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "participantN": "Participant {n}",
+  "@participantN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "mapTitle": "Map",
+  "mapFiltersTooltip": "Filters",
+  "mapMyLocationTooltip": "My location",
+  "mapLocationDeniedSnackbar": "Location access not granted. Using default position.",
+  "mapLoadErrorSnackbar": "Error loading data: {error}",
+  "@mapLoadErrorSnackbar": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "mapNoLocationSnackbar": "No location access",
+  "mapLocationErrorSnackbar": "Location error: {error}",
+  "@mapLocationErrorSnackbar": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "filtersTitle": "Filters",
+  "filtersDate": "📅 Date",
+  "filtersToday": "Today",
+  "filtersWeek": "Week",
+  "filtersMyClub": "🏃 My club",
+  "filtersActiveTerritories": "🔥 Active territories only",
+  "territoryCaptured": "Captured by club",
+  "territoryFree": "Neutral",
+  "territoryContested": "Contested",
+  "territoryLocked": "Locked",
+  "territoryUnknown": "Unknown",
+  "territoryOwnerLabel": "Owner club: {id}",
+  "@territoryOwnerLabel": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "territoryHoldTodo": "Until hold: TODO",
+  "territoryViewTrainings": "View workouts",
+  "territoryHelpCapture": "Help capture",
+  "territoryMore": "More",
+  "runTitle": "Run",
+  "runStart": "Start run",
+  "runFinish": "Finish",
+  "runFinishing": "Finishing...",
+  "runDone": "Done 🎉",
+  "runGpsSearching": "Searching for signal",
+  "runGpsRecording": "Recording",
+  "runGpsError": "GPS error",
+  "runForActivity": "Run will count for workout \"{activityId}\"",
+  "@runForActivity": {
+    "placeholders": {
+      "activityId": {
+        "type": "String"
+      }
+    }
+  },
+  "runCountedTraining": "Workout participation counted",
+  "runCountedTerritory": "Territory contribution",
+  "runReady": "Done",
+  "runStartError": "Error starting run",
+  "runStartPermissionDenied": "Location permission not granted.\n\nFor Windows: Settings → Privacy → Location → App permissions and enable Runterra.\n\nFor Android: allow location access when prompted.",
+  "runStartPermanentlyDenied": "Location access blocked.\n\nPlease enable permission in device settings:\nWindows: Settings → Privacy → Location\nAndroid: Settings → Apps → Runterra → Permissions",
+  "runStartServiceDisabled": "Location service is disabled.\n\nPlease enable location in device settings.",
+  "runStartErrorGeneric": "Error starting run:\n{error}",
+  "@runStartErrorGeneric": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "runFinishError": "Error finishing run: {error}",
+  "@runFinishError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "distanceMeters": "{value} m",
+  "@distanceMeters": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "distanceKm": "{value} km",
+  "@distanceKm": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "loginTitle": "Runterra",
+  "loginSubtitle": "Running app for territory capture",
+  "loginButton": "Sign in with Google",
+  "loginLoading": "Signing in...",
+  "loginError": "Sign-in error: {error}",
+  "@loginError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "noData": "No data",
+  "activityDetailsTitle": "Activity",
+  "cityDetailsTitle": "City",
+  "clubDetailsTitle": "Club",
+  "territoryDetailsTitle": "Territory",
+  "detailType": "Type",
+  "detailStatus": "Status",
+  "detailDescription": "Description",
+  "detailCoordinates": "Coordinates",
+  "detailLatLng": "Latitude: {lat}\nLongitude: {lng}",
+  "@detailLatLng": {
+    "placeholders": {
+      "lat": {"type": "String"},
+      "lng": {"type": "String"}
+    }
+  },
+  "detailCoordinatesCenter": "Center coordinates",
+  "detailCity": "City",
+  "detailCapturedBy": "Captured by player",
+  "eventTerritoryLabel": "Territory",
+  "clubLabel": "Club: {id}",
+  "@clubLabel": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "trainerLabel": "Coach: {id}",
+  "@trainerLabel": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  }
+}

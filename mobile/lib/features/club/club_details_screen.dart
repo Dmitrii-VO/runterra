@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/club_model.dart';
 import '../../shared/ui/details_scaffold.dart';
@@ -54,7 +55,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return DetailsScaffold(
-      title: 'Клуб',
+      title: AppLocalizations.of(context)!.clubDetailsTitle,
       body: FutureBuilder<ClubModel>(
         future: _clubFuture,
         builder: (context, snapshot) {
@@ -91,7 +92,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                     // Описание клуба (если есть)
                     if (club.description != null) ...[
                       Text(
-                        'Описание',
+                        AppLocalizations.of(context)!.detailDescription,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 8),
@@ -107,8 +108,8 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
           }
 
           // Fallback (не должно произойти)
-          return const Center(
-            child: Text('Нет данных'),
+          return Center(
+            child: Text(AppLocalizations.of(context)!.noData),
           );
         },
       ),

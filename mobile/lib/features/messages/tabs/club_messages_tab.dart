@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/di/service_locator.dart';
 import '../../../shared/models/club_chat_model.dart';
 import '../../../shared/ui/list_items/club_chat_list_item.dart';
@@ -65,7 +66,7 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
                   const Icon(Icons.error_outline, size: 48, color: Colors.red),
                   const SizedBox(height: 16),
                   Text(
-                    'Ошибка загрузки чатов клубов: ${snapshot.error}',
+                    AppLocalizations.of(context)!.clubChatsLoadError(snapshot.error.toString()),
                     style: Theme.of(context).textTheme.bodyMedium,
                     textAlign: TextAlign.center,
                   ),
@@ -73,7 +74,7 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
                   ElevatedButton.icon(
                     onPressed: _retry,
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Повторить'),
+                    label: Text(AppLocalizations.of(context)!.retry),
                   ),
                 ],
               ),
@@ -86,7 +87,7 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Text(
-                'Нет чатов клубов\n\nВы пока не состоите ни в одном клубе',
+                AppLocalizations.of(context)!.noClubChats,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.grey,
                     ),

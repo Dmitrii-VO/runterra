@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/models/notification_model.dart';
 import '../../../shared/ui/notification_item.dart';
 
@@ -62,7 +63,7 @@ class _NotificationsTabState extends State<NotificationsTab> {
                   const Icon(Icons.error_outline, size: 48, color: Colors.red),
                   const SizedBox(height: 16),
                   Text(
-                    'Ошибка загрузки уведомлений: ${snapshot.error}',
+                    AppLocalizations.of(context)!.notificationsLoadError(snapshot.error.toString()),
                     style: Theme.of(context).textTheme.bodyMedium,
                     textAlign: TextAlign.center,
                   ),
@@ -70,7 +71,7 @@ class _NotificationsTabState extends State<NotificationsTab> {
                   ElevatedButton.icon(
                     onPressed: _retry,
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Повторить'),
+                    label: Text(AppLocalizations.of(context)!.retry),
                   ),
                 ],
               ),
@@ -83,7 +84,7 @@ class _NotificationsTabState extends State<NotificationsTab> {
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Text(
-                'Нет уведомлений',
+                AppLocalizations.of(context)!.noNotifications,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.grey,
                     ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../models/user_stats_model.dart';
 
 /// Секция мини-статистики
@@ -26,17 +27,17 @@ class ProfileStatsSection extends StatelessWidget {
           children: [
             _StatCard(
               icon: Icons.check_circle,
-              label: 'Тренировки',
+              label: AppLocalizations.of(context)!.statsTrainings,
               value: stats.trainingCount.toString(),
             ),
             _StatCard(
               icon: Icons.map,
-              label: 'Территории',
+              label: AppLocalizations.of(context)!.statsTerritories,
               value: stats.territoriesParticipated.toString(),
             ),
             _StatCard(
               icon: Icons.star,
-              label: 'Баллы',
+              label: AppLocalizations.of(context)!.statsPoints,
               value: stats.contributionPoints.toString(),
             ),
           ],

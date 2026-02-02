@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../models/notification_model.dart';
 import '../notification_item.dart';
 
@@ -28,7 +29,7 @@ class ProfileNotificationsSection extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Уведомления',
+              AppLocalizations.of(context)!.notificationsSectionTitle,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),

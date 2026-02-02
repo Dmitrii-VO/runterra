@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/run_session.dart';
 
@@ -101,30 +102,20 @@ class _RunScreenState extends State<RunScreen> {
       );
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Ошибка при запуске пробежки';
-        
-        // Provide more user-friendly error messages
+        final l10n = AppLocalizations.of(context)!;
+        String errorMessage;
         final errorString = e.toString();
-        if (errorString.contains('permission denied') || 
+        if (errorString.contains('permission denied') ||
             errorString.contains('Location permission denied')) {
-          errorMessage = 'Разрешение на геолокацию не предоставлено.\n\n'
-              'Для Windows: откройте Настройки → Конфиденциальность → Расположение → '
-              'Разрешения приложений и включите доступ для Runterra.\n\n'
-              'Для Android: разрешите доступ к геолокации при запросе.';
-        } else if (errorString.contains('permanently denied') || 
-                   errorString.contains('permanently denied')) {
-          errorMessage = 'Доступ к геолокации заблокирован.\n\n'
-              'Пожалуйста, включите разрешение в настройках устройства:\n'
-              'Windows: Настройки → Конфиденциальность → Расположение\n'
-              'Android: Настройки → Приложения → Runterra → Разрешения';
-        } else if (errorString.contains('service is disabled') || 
-                   errorString.contains('Location service is disabled')) {
-          errorMessage = 'Служба геолокации отключена.\n\n'
-              'Пожалуйста, включите геолокацию в настройках устройства.';
+          errorMessage = l10n.runStartPermissionDenied;
+        } else if (errorString.contains('permanently denied')) {
+          errorMessage = l10n.runStartPermanentlyDenied;
+        } else if (errorString.contains('service is disabled') ||
+            errorString.contains('Location service is disabled')) {
+          errorMessage = l10n.runStartServiceDisabled;
         } else {
-          errorMessage = 'Ошибка при запуске пробежки:\n$e';
+          errorMessage = l10n.runStartErrorGeneric(e.toString());
         }
-        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
@@ -163,7 +154,7 @@ class _RunScreenState extends State<RunScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Ошибка при завершении пробежки: $e'),
+            content: Text(AppLocalizations.of(context)!.runFinishError(e.toString())),
             backgroundColor: Colors.red,
           ),
         );
@@ -188,21 +179,23 @@ class _RunScreenState extends State<RunScreen> {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  String _formatDistance(double distanceMeters) {
+  String _formatDistance(BuildContext context, double distanceMeters) {
+    final l10n = AppLocalizations.of(context)!;
     if (distanceMeters < 1000) {
-      return '${distanceMeters.toStringAsFixed(0)} м';
+      return l10n.distanceMeters(distanceMeters.toStringAsFixed(0));
     }
-    return '${(distanceMeters / 1000).toStringAsFixed(2)} км';
+    return l10n.distanceKm((distanceMeters / 1000).toStringAsFixed(2));
   }
 
-  String _getGpsStatusText(GpsStatus status) {
+  String _getGpsStatusText(BuildContext context, GpsStatus status) {
+    final l10n = AppLocalizations.of(context)!;
     switch (status) {
       case GpsStatus.searching:
-        return 'Поиск сигнала';
+        return l10n.runGpsSearching;
       case GpsStatus.recording:
-        return 'Запись';
+        return l10n.runGpsRecording;
       case GpsStatus.error:
-        return 'Ошибка GPS';
+        return l10n.runGpsError;
     }
   }
 
@@ -210,7 +203,7 @@ class _RunScreenState extends State<RunScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Run'),
+        title: Text(AppLocalizations.of(context)!.runTitle),
       ),
       body: switch (_state) {
         RunTabState.idle => _buildIdleContent(),
@@ -229,7 +222,7 @@ class _RunScreenState extends State<RunScreen> {
           children: [
             if (widget.activityId != null) ...[
               Text(
-                'Пробежка будет засчитана для тренировки "${widget.activityId}"',
+                AppLocalizations.of(context)!.runForActivity(widget.activityId!),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.grey,
                     ),
@@ -240,7 +233,7 @@ class _RunScreenState extends State<RunScreen> {
             FilledButton.icon(
               onPressed: _startRun,
               icon: const Icon(Icons.play_arrow),
-              label: const Text('Начать пробежку'),
+              label: Text(AppLocalizations.of(context)!.runStart),
               style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(56),
               ),
@@ -270,7 +263,7 @@ class _RunScreenState extends State<RunScreen> {
                     const Icon(Icons.location_on, size: 20),
                     const SizedBox(width: 8),
                     Text(
-                      '📍 GPS: ${_getGpsStatusText(gpsStatus)}',
+                      '📍 GPS: ${_getGpsStatusText(context, gpsStatus)}',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
@@ -296,7 +289,7 @@ class _RunScreenState extends State<RunScreen> {
                 const SizedBox(height: 8),
                 // Distance
                 Text(
-                  _formatDistance(distance),
+                  _formatDistance(context, distance),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: Colors.grey,
                       ),
@@ -316,7 +309,7 @@ class _RunScreenState extends State<RunScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.stop),
-            label: Text(_isSubmitting ? 'Завершение...' : 'Завершить'),
+            label: Text(_isSubmitting ? AppLocalizations.of(context)!.runFinishing : AppLocalizations.of(context)!.runFinish),
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
               minimumSize: const Size.fromHeight(48),
@@ -339,7 +332,7 @@ class _RunScreenState extends State<RunScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'Готово 🎉',
+              AppLocalizations.of(context)!.runDone,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 24),
@@ -351,7 +344,7 @@ class _RunScreenState extends State<RunScreen> {
             const SizedBox(height: 8),
             // Distance
             Text(
-              '📏 ${_formatDistance(distance)}',
+              '📏 ${_formatDistance(context, distance)}',
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 32),
@@ -365,7 +358,7 @@ class _RunScreenState extends State<RunScreen> {
                       const Icon(Icons.check, color: Colors.green, size: 20),
                       const SizedBox(width: 8),
                       Text(
-                        'Участие в тренировке засчитано',
+                        AppLocalizations.of(context)!.runCountedTraining,
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],
@@ -376,7 +369,7 @@ class _RunScreenState extends State<RunScreen> {
                     const Icon(Icons.check, color: Colors.green, size: 20),
                     const SizedBox(width: 8),
                     Text(
-                      'Вклад в территорию',
+                      AppLocalizations.of(context)!.runCountedTerritory,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
@@ -395,7 +388,7 @@ class _RunScreenState extends State<RunScreen> {
             const SizedBox(height: 32),
             FilledButton(
               onPressed: _backToIdle,
-              child: const Text('Готово'),
+              child: Text(AppLocalizations.of(context)!.runReady),
             ),
           ],
         ),

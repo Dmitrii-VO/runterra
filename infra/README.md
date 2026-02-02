@@ -115,9 +115,9 @@ GitHub Actions CI (`ci.yml`) запускается на каждый push/PR в
 
 ### Mobile
 - [x] Backend URL — конфиг через `--dart-define=API_BASE_URL=...` (api_config.dart)
-- [ ] i18n — локализация строк (крупная фича)
-- [ ] Чат — real-time сообщения (крупная фича)
-- [ ] Background GPS — трекинг пробежки в фоне (крупная фича)
+- [x] i18n — локализация строк (крупная фича)
+- [x] Чат — real-time сообщения (крупная фича)
+- [x] Background GPS — трекинг пробежки в фоне (крупная фича)
 
 ### Ошибки (требуют исправления)
 - [ ] Firebase App Distribution 403 — тестер не может скачать APK (проверить права в Firebase Console)

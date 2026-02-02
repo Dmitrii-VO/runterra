@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/event_list_item_model.dart';
 import 'widgets/event_card.dart';
@@ -62,7 +63,7 @@ class _EventsScreenState extends State<EventsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('События'),
+        title: Text(AppLocalizations.of(context)!.eventsTitle),
       ),
       body: Column(
         children: [
@@ -99,7 +100,7 @@ class _EventsScreenState extends State<EventsScreen> {
                           const Icon(Icons.error_outline, size: 48, color: Colors.red),
                           const SizedBox(height: 16),
                           Text(
-                            'Ошибка загрузки событий',
+                            AppLocalizations.of(context)!.eventsLoadError,
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
@@ -111,7 +112,7 @@ class _EventsScreenState extends State<EventsScreen> {
                           const SizedBox(height: 16),
                           ElevatedButton(
                             onPressed: _refreshEvents,
-                            child: const Text('Повторить'),
+                            child: Text(AppLocalizations.of(context)!.retry),
                           ),
                         ],
                       ),
@@ -134,12 +135,12 @@ class _EventsScreenState extends State<EventsScreen> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'События не найдены',
+                            AppLocalizations.of(context)!.eventsEmpty,
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Попробуйте изменить фильтры',
+                            AppLocalizations.of(context)!.eventsEmptyHint,
                             style: Theme.of(context).textTheme.bodySmall,
                             textAlign: TextAlign.center,
                           ),
@@ -169,12 +170,12 @@ class _EventsScreenState extends State<EventsScreen> {
         onPressed: () {
           // TODO: Переход на экран создания события (только для организаторов)
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Создание события - TODO'),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.eventsCreateTodo),
             ),
           );
         },
-        tooltip: 'Создать событие',
+        tooltip: AppLocalizations.of(context)!.eventsCreateTooltip,
         child: const Icon(Icons.add),
       ),
     );
@@ -200,16 +201,14 @@ class _EventsScreenState extends State<EventsScreen> {
         child: Row(
           children: [
             // Фильтр по дате
-            _buildDateFilterChip('Сегодня', 'today'),
+            _buildDateFilterChip(AppLocalizations.of(context)!.filterToday, 'today'),
             const SizedBox(width: 8),
-            _buildDateFilterChip('Завтра', 'tomorrow'),
+            _buildDateFilterChip(AppLocalizations.of(context)!.filterTomorrow, 'tomorrow'),
             const SizedBox(width: 8),
-            _buildDateFilterChip('7 дней', 'next7days'),
+            _buildDateFilterChip(AppLocalizations.of(context)!.filter7days, 'next7days'),
             const SizedBox(width: 16),
-            
-            // Переключатель "Только открытые"
             FilterChip(
-              label: const Text('Только открытые'),
+              label: Text(AppLocalizations.of(context)!.filterOnlyOpen),
               selected: _onlyOpen,
               onSelected: (selected) {
                 setState(() {

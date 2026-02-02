@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/city_model.dart';
 import '../../shared/ui/details_scaffold.dart';
@@ -54,7 +55,7 @@ class _CityDetailsScreenState extends State<CityDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return DetailsScaffold(
-      title: 'Город',
+      title: AppLocalizations.of(context)!.cityDetailsTitle,
       body: FutureBuilder<CityModel>(
         future: _cityFuture,
         builder: (context, snapshot) {
@@ -90,12 +91,15 @@ class _CityDetailsScreenState extends State<CityDetailsScreen> {
                     const SizedBox(height: 16),
                     // Координаты города
                     Text(
-                      'Координаты',
+                      AppLocalizations.of(context)!.detailCoordinates,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Широта: ${city.coordinates.latitude}\nДолгота: ${city.coordinates.longitude}',
+                      AppLocalizations.of(context)!.detailLatLng(
+                        city.coordinates.latitude.toString(),
+                        city.coordinates.longitude.toString(),
+                      ),
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                   ],
@@ -105,8 +109,8 @@ class _CityDetailsScreenState extends State<CityDetailsScreen> {
           }
 
           // Fallback (не должно произойти)
-          return const Center(
-            child: Text('Нет данных'),
+          return Center(
+            child: Text(AppLocalizations.of(context)!.noData),
           );
         },
       ),

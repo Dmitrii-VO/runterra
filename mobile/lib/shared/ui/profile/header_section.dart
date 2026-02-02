@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../models/profile_model.dart';
 import '../../models/profile_club_model.dart';
 
@@ -61,7 +62,7 @@ class ProfileHeaderSection extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      _getRoleText(club!.role),
+                      _getRoleText(context, club!.role),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Colors.grey[600],
                           ),
@@ -77,7 +78,7 @@ class ProfileHeaderSection extends StatelessWidget {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        'Меркатель',
+                        AppLocalizations.of(context)!.headerMercenary,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Colors.orange[900],
                               fontWeight: FontWeight.bold,
@@ -87,7 +88,7 @@ class ProfileHeaderSection extends StatelessWidget {
                   ] else ...[
                     // club == null && !isMercenary — явный edge-case
                     Text(
-                      'Без клуба',
+                      AppLocalizations.of(context)!.headerNoClub,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Colors.grey[600],
                           ),
@@ -112,14 +113,15 @@ class ProfileHeaderSection extends StatelessWidget {
     );
   }
 
-  String _getRoleText(String role) {
+  String _getRoleText(BuildContext context, String role) {
+    final l10n = AppLocalizations.of(context)!;
     switch (role) {
       case 'member':
-        return 'Участник';
+        return l10n.roleMember;
       case 'moderator':
-        return 'Модератор';
+        return l10n.roleModerator;
       case 'leader':
-        return 'Лидер';
+        return l10n.roleLeader;
       default:
         return role;
     }

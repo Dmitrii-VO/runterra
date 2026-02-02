@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/territory_model.dart';
 import '../../shared/ui/details_scaffold.dart';
@@ -54,7 +55,7 @@ class _TerritoryDetailsScreenState extends State<TerritoryDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return DetailsScaffold(
-      title: 'Территория',
+      title: AppLocalizations.of(context)!.territoryDetailsTitle,
       body: FutureBuilder<TerritoryModel>(
         future: _territoryFuture,
         builder: (context, snapshot) {
@@ -90,7 +91,7 @@ class _TerritoryDetailsScreenState extends State<TerritoryDetailsScreen> {
                     const SizedBox(height: 16),
                     // Статус территории
                     Text(
-                      'Статус',
+                      AppLocalizations.of(context)!.detailStatus,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
@@ -101,18 +102,20 @@ class _TerritoryDetailsScreenState extends State<TerritoryDetailsScreen> {
                     const SizedBox(height: 16),
                     // Координаты центра территории
                     Text(
-                      'Координаты центра',
+                      AppLocalizations.of(context)!.detailCoordinatesCenter,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Широта: ${territory.coordinates.latitude}\nДолгота: ${territory.coordinates.longitude}',
+                      AppLocalizations.of(context)!.detailLatLng(
+                        territory.coordinates.latitude.toString(),
+                        territory.coordinates.longitude.toString(),
+                      ),
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                     const SizedBox(height: 16),
-                    // ID города
                     Text(
-                      'Город',
+                      AppLocalizations.of(context)!.detailCity,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
@@ -124,7 +127,7 @@ class _TerritoryDetailsScreenState extends State<TerritoryDetailsScreen> {
                     if (territory.capturedByUserId != null) ...[
                       const SizedBox(height: 16),
                       Text(
-                        'Захвачена игроком',
+                        AppLocalizations.of(context)!.detailCapturedBy,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 8),
@@ -140,8 +143,8 @@ class _TerritoryDetailsScreenState extends State<TerritoryDetailsScreen> {
           }
 
           // Fallback (не должно произойти)
-          return const Center(
-            child: Text('Нет данных'),
+          return Center(
+            child: Text(AppLocalizations.of(context)!.noData),
           );
         },
       ),

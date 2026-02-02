@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Виджет списка участников события
 /// 
@@ -17,15 +18,16 @@ class ParticipantsList extends StatelessWidget {
   Widget build(BuildContext context) {
     // TODO: Загружать реальные данные участников из API
     // Mock-данные для skeleton
+    final l10n = AppLocalizations.of(context)!;
     final mockParticipants = List.generate(
-      participantCount > 10 ? 10 : participantCount, // Показываем максимум 10
-      (index) => 'Участник ${index + 1}',
+      participantCount > 10 ? 10 : participantCount,
+      (index) => l10n.participantN(index + 1),
     );
 
     if (mockParticipants.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Text('Пока нет участников'),
+      return Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Text(l10n.participantsNone),
       );
     }
 
@@ -35,7 +37,7 @@ class ParticipantsList extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Text(
-            'Участники ($participantCount)',
+            l10n.participantsTitle(participantCount),
             style: Theme.of(context).textTheme.titleMedium,
           ),
         ),
@@ -61,7 +63,7 @@ class ParticipantsList extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Text(
-              'И ещё ${participantCount - 10} участников',
+              l10n.participantsMore(participantCount - 10),
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),

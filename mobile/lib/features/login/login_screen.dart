@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/auth/auth_service.dart';
 import '../../shared/di/service_locator.dart';
 import '../../app.dart';
@@ -46,7 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Ошибка входа: ${e.toString()}';
+        _errorMessage = AppLocalizations.of(context)!.loginError(e.toString());
       });
     }
   }
@@ -68,19 +69,19 @@ class _LoginScreenState extends State<LoginScreen> {
                 color: Colors.blue,
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Runterra',
+              Text(
+                AppLocalizations.of(context)!.loginTitle,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Беговое приложение для захвата территорий',
+              Text(
+                AppLocalizations.of(context)!.loginSubtitle,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16,
                   color: Colors.grey,
                 ),
@@ -114,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.login),
-                label: Text(_isLoading ? 'Вход...' : 'Войти через Google'),
+                label: Text(_isLoading ? AppLocalizations.of(context)!.loginLoading : AppLocalizations.of(context)!.loginButton),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(

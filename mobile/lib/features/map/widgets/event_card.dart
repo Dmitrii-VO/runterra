@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/models/event_list_item_model.dart';
 
 /// Карточка события для отображения на карте
@@ -75,7 +76,12 @@ class EventCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _getEventColor(event.type).withOpacity(0.1),
+                  color: Color.fromRGBO(
+                    _getEventColor(event.type).red,
+                    _getEventColor(event.type).green,
+                    _getEventColor(event.type).blue,
+                    0.1,
+                  ),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -133,23 +139,20 @@ class EventCard extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 event.organizerType == 'club'
-                    ? 'Клуб: ${event.organizerId}'
-                    : 'Тренер: ${event.organizerId}',
+                    ? AppLocalizations.of(context)!.clubLabel(event.organizerId)
+                    : AppLocalizations.of(context)!.trainerLabel(event.organizerId),
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             ],
           ),
-          
           const SizedBox(height: 16),
-          
-          // Кнопка "Присоединиться"
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
                 context.push('/event/${event.id}');
               },
-              child: const Text('Присоединиться'),
+              child: Text(AppLocalizations.of(context)!.eventJoin),
             ),
           ),
         ],

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
 import 'package:geolocator/geolocator.dart' as geo;
+import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../main.dart' show DevRemoteLogger;
 import '../../shared/models/map_data_model.dart';
@@ -73,11 +74,9 @@ class _MapScreenState extends State<MapScreen> {
           permission == geo.LocationPermission.deniedForever) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Доступ к геолокации не предоставлен. Используется позиция по умолчанию.',
-              ),
-              duration: Duration(seconds: 3),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.mapLocationDeniedSnackbar),
+              duration: const Duration(seconds: 3),
             ),
           );
         }
@@ -115,10 +114,10 @@ class _MapScreenState extends State<MapScreen> {
         // Show snackbar but don't block map
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Ошибка загрузки данных: $e'),
+            content: Text(AppLocalizations.of(context)!.mapLoadErrorSnackbar(e.toString())),
             duration: const Duration(seconds: 3),
             action: SnackBarAction(
-              label: 'Повторить',
+              label: AppLocalizations.of(context)!.retry,
               onPressed: _loadMapData,
             ),
           ),
@@ -291,9 +290,9 @@ class _MapScreenState extends State<MapScreen> {
           permission == geo.LocationPermission.deniedForever) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Нет доступа к геолокации'),
-              duration: Duration(seconds: 2),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.mapNoLocationSnackbar),
+              duration: const Duration(seconds: 2),
             ),
           );
         }
@@ -326,7 +325,7 @@ class _MapScreenState extends State<MapScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Ошибка геолокации: $e'),
+            content: Text(AppLocalizations.of(context)!.mapLocationErrorSnackbar(e.toString())),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -377,7 +376,7 @@ class _MapScreenState extends State<MapScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        'Карта',
+                        AppLocalizations.of(context)!.mapTitle,
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                     ),
@@ -388,7 +387,7 @@ class _MapScreenState extends State<MapScreen> {
                           _showFilters = !_showFilters;
                         });
                       },
-                      tooltip: 'Фильтры',
+                      tooltip: AppLocalizations.of(context)!.mapFiltersTooltip,
                     ),
                   ],
                 ),
@@ -420,7 +419,7 @@ class _MapScreenState extends State<MapScreen> {
               child: FloatingActionButton(
                 mini: true,
                 onPressed: _centerOnMyLocation,
-                tooltip: 'Моё местоположение',
+                tooltip: AppLocalizations.of(context)!.mapMyLocationTooltip,
                 child: const Icon(Icons.my_location),
               ),
             ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/activity_model.dart';
 import '../../shared/ui/details_scaffold.dart';
@@ -54,7 +55,7 @@ class _ActivityDetailsScreenState extends State<ActivityDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return DetailsScaffold(
-      title: 'Активность',
+      title: AppLocalizations.of(context)!.activityDetailsTitle,
       body: FutureBuilder<ActivityModel>(
         future: _activityFuture,
         builder: (context, snapshot) {
@@ -92,7 +93,7 @@ class _ActivityDetailsScreenState extends State<ActivityDetailsScreen> {
                     ],
                     // Тип активности
                     Text(
-                      'Тип',
+                      AppLocalizations.of(context)!.detailType,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
@@ -103,7 +104,7 @@ class _ActivityDetailsScreenState extends State<ActivityDetailsScreen> {
                     const SizedBox(height: 16),
                     // Статус активности
                     Text(
-                      'Статус',
+                      AppLocalizations.of(context)!.detailStatus,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
@@ -115,7 +116,7 @@ class _ActivityDetailsScreenState extends State<ActivityDetailsScreen> {
                     // Описание активности (если есть)
                     if (activity.description != null) ...[
                       Text(
-                        'Описание',
+                        AppLocalizations.of(context)!.detailDescription,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 8),
@@ -131,8 +132,8 @@ class _ActivityDetailsScreenState extends State<ActivityDetailsScreen> {
           }
 
           // Fallback (не должно произойти)
-          return const Center(
-            child: Text('Нет данных'),
+          return Center(
+            child: Text(AppLocalizations.of(context)!.noData),
           );
         },
       ),

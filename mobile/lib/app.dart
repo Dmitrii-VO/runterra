@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'l10n/app_localizations.dart';
 import 'features/activity/activity_details_screen.dart';
 import 'features/city/city_details_screen.dart';
 import 'features/club/club_details_screen.dart';
@@ -179,6 +180,14 @@ class RunterraApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localeResolutionCallback: (locale, supported) {
+        for (final l in supported) {
+          if (l.languageCode == locale?.languageCode) return l;
+        }
+        return const Locale('ru');
+      },
       routerConfig: _router,
     );
   }

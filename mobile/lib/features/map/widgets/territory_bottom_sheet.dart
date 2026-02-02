@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/models/territory_map_model.dart';
 
 /// Bottom sheet для отображения информации о территории
@@ -30,19 +31,19 @@ class TerritoryBottomSheet extends StatelessWidget {
     }
   }
 
-  /// Получает текст статуса территории
-  String _getStatusText(String status) {
+  String _getStatusText(BuildContext context, String status) {
+    final l10n = AppLocalizations.of(context)!;
     switch (status) {
       case 'captured':
-        return 'Захвачена клубом';
+        return l10n.territoryCaptured;
       case 'free':
-        return 'Нейтральная';
+        return l10n.territoryFree;
       case 'contested':
-        return 'Оспариваемая';
+        return l10n.territoryContested;
       case 'locked':
-        return 'Заблокирована';
+        return l10n.territoryLocked;
       default:
-        return 'Неизвестно';
+        return l10n.territoryUnknown;
     }
   }
 
@@ -84,7 +85,7 @@ class TerritoryBottomSheet extends StatelessWidget {
           
           // Статус
           Text(
-            _getStatusText(territory.status),
+            _getStatusText(context, territory.status),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Colors.grey[600],
                 ),
@@ -94,15 +95,13 @@ class TerritoryBottomSheet extends StatelessWidget {
           // Клуб-владелец (если есть)
           if (territory.clubId != null)
             Text(
-              'Клуб-владелец: ${territory.clubId}',
+              AppLocalizations.of(context)!.territoryOwnerLabel(territory.clubId!),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           
           const SizedBox(height: 16),
-          
-          // Счётчик (TODO: заглушка)
           Text(
-            'До удержания: TODO',
+            AppLocalizations.of(context)!.territoryHoldTodo,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Colors.grey[600],
                 ),
@@ -119,7 +118,7 @@ class TerritoryBottomSheet extends StatelessWidget {
                     // TODO: Навигация на список тренировок территории
                     Navigator.pop(context);
                   },
-                  child: const Text('Посмотреть тренировки'),
+                  child: Text(AppLocalizations.of(context)!.territoryViewTrainings),
                 ),
               ),
               const SizedBox(width: 12),
@@ -127,18 +126,14 @@ class TerritoryBottomSheet extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      // TODO: Навигация на экран захвата территории
                       Navigator.pop(context);
                     },
-                    child: const Text('Помочь захватить'),
+                    child: Text(AppLocalizations.of(context)!.territoryHelpCapture),
                   ),
                 ),
             ],
           ),
-          
           const SizedBox(height: 8),
-          
-          // Кнопка детальной информации
           SizedBox(
             width: double.infinity,
             child: TextButton(
@@ -146,7 +141,7 @@ class TerritoryBottomSheet extends StatelessWidget {
                 Navigator.pop(context);
                 context.push('/territory/${territory.id}');
               },
-              child: const Text('Подробнее'),
+              child: Text(AppLocalizations.of(context)!.territoryMore),
             ),
           ),
         ],

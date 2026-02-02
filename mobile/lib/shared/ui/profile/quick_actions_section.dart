@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../navigation/user_action.dart';
 import '../../navigation/navigation_handler.dart';
-import 'package:go_router/go_router.dart';
 
 /// Секция быстрых действий (CTA)
 /// 
@@ -37,7 +38,7 @@ class ProfileQuickActionsSection extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: () => handler.handle(const OpenMapAction()),
               icon: const Icon(Icons.map),
-              label: const Text('Открыть карту'),
+              label: Text(AppLocalizations.of(context)!.quickOpenMap),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
@@ -51,24 +52,23 @@ class ProfileQuickActionsSection extends StatelessWidget {
                 OutlinedButton.icon(
                   onPressed: () => handler.handle(const FindTrainingAction()),
                   icon: const Icon(Icons.search),
-                  label: const Text('Найти тренировку'),
+                  label: Text(AppLocalizations.of(context)!.quickFindTraining),
                 ),
                 OutlinedButton.icon(
                   onPressed: () => handler.handle(const StartRunAction()),
                   icon: const Icon(Icons.directions_run),
-                  label: const Text('Начать пробежку'),
+                  label: Text(AppLocalizations.of(context)!.quickStartRun),
                 ),
-                // Действия для пользователей без клуба
                 if (!hasClub && !isMercenary) ...[
                   OutlinedButton.icon(
                     onPressed: () => handler.handle(const FindClubAction()),
                     icon: const Icon(Icons.group),
-                    label: const Text('Найти клуб'),
+                    label: Text(AppLocalizations.of(context)!.quickFindClub),
                   ),
                   OutlinedButton.icon(
                     onPressed: () => handler.handle(const CreateClubAction()),
                     icon: const Icon(Icons.add),
-                    label: const Text('Создать клуб'),
+                    label: Text(AppLocalizations.of(context)!.quickCreateClub),
                   ),
                 ],
               ],

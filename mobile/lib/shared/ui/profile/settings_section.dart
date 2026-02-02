@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Секция настроек
 /// 
@@ -31,9 +32,11 @@ class ProfileSettingsSection extends StatelessWidget {
         children: [
           ListTile(
             leading: const Icon(Icons.location_on),
-            title: const Text('Геолокация'),
+            title: Text(AppLocalizations.of(context)!.settingsLocation),
             subtitle: Text(
-              locationPermissionGranted ? 'Разрешено' : 'Не разрешено',
+              locationPermissionGranted
+                  ? AppLocalizations.of(context)!.settingsLocationAllowed
+                  : AppLocalizations.of(context)!.settingsLocationDenied,
             ),
             trailing: Icon(
               locationPermissionGranted ? Icons.check_circle : Icons.cancel,
@@ -44,8 +47,12 @@ class ProfileSettingsSection extends StatelessWidget {
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.visibility),
-            title: const Text('Видимость профиля'),
-            subtitle: Text(profileVisible ? 'Видимый' : 'Скрытый'),
+            title: Text(AppLocalizations.of(context)!.settingsVisibility),
+            subtitle: Text(
+              profileVisible
+                  ? AppLocalizations.of(context)!.settingsVisible
+                  : AppLocalizations.of(context)!.settingsHidden,
+            ),
             trailing: Switch(
               value: profileVisible,
               onChanged: (_) {
@@ -57,9 +64,9 @@ class ProfileSettingsSection extends StatelessWidget {
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text(
-              'Выйти из аккаунта',
-              style: TextStyle(color: Colors.red),
+            title: Text(
+              AppLocalizations.of(context)!.settingsLogout,
+              style: const TextStyle(color: Colors.red),
             ),
             onTap: onLogout,
             // TODO: Реализовать выход из аккаунта
@@ -67,9 +74,9 @@ class ProfileSettingsSection extends StatelessWidget {
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.delete_forever, color: Colors.red),
-            title: const Text(
-              'Удалить аккаунт',
-              style: TextStyle(color: Colors.red),
+            title: Text(
+              AppLocalizations.of(context)!.settingsDeleteAccount,
+              style: const TextStyle(color: Colors.red),
             ),
             onTap: onDeleteAccount,
             // TODO: Реализовать удаление аккаунта

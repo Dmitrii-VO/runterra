@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Общий виджет для отображения ошибок загрузки данных
 /// 
@@ -21,30 +22,27 @@ class ErrorDisplay extends StatelessWidget {
     this.onRetry,
   });
 
-  /// Преобразует техническое сообщение об ошибке в понятное для пользователя
-  static String _getUserFriendlyMessage(String errorMessage) {
+  /// Returns user-friendly message key or builds message from l10n.
+  static String _getUserFriendlyMessage(BuildContext context, String errorMessage) {
+    final l10n = AppLocalizations.of(context)!;
     if (errorMessage.contains('TimeoutException') ||
         errorMessage.contains('Semaphore timeout') ||
         errorMessage.contains('превысил таймаут')) {
-      return 'Превышен таймаут подключения.\n\n'
-          'Убедитесь, что:\n'
-          '1. Backend сервер запущен (npm run dev в папке backend)\n'
-          '2. Сервер слушает на всех интерфейсах (0.0.0.0)\n'
-          '3. Нет проблем с сетью или файрволом';
+      return l10n.errorTimeoutMessage;
     } else if (errorMessage.contains('SocketException') ||
         errorMessage.contains('connection refused') ||
         errorMessage.contains('отклонил это сетевое подключение')) {
-      return 'Не удалось подключиться к серверу.\n\n'
-          'Убедитесь, что backend сервер запущен и доступен.';
+      return l10n.errorConnectionMessage;
     } else {
-      return 'Ошибка: $errorMessage';
+      return l10n.errorGeneric(errorMessage);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final userMessage = _getUserFriendlyMessage(errorMessage);
-    
+    final userMessage = _getUserFriendlyMessage(context, errorMessage);
+    final l10n = AppLocalizations.of(context)!;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -58,7 +56,7 @@ class ErrorDisplay extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              title ?? 'Ошибка загрузки',
+              title ?? l10n.errorLoadTitle,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
@@ -72,7 +70,7 @@ class ErrorDisplay extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Повторить'),
+                label: Text(l10n.retry),
               ),
             ],
           ],

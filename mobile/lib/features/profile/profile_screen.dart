@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/api/users_service.dart';
 import '../../shared/auth/auth_service.dart';
 import '../../shared/di/service_locator.dart';
@@ -68,7 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Личный кабинет'),
+        title: Text(AppLocalizations.of(context)!.profileTitle),
       ),
       body: FutureBuilder<ProfileModel>(
         future: _profileFuture,
@@ -83,6 +84,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             final err = snapshot.error;
             String userMessage;
 
+            final l10n = AppLocalizations.of(context)!;
             if (err is ApiException) {
               userMessage = '${err.code}\n\n${err.message}';
             } else {
@@ -90,13 +92,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (s.contains('SocketException') ||
                   s.contains('connection refused') ||
                   s.contains('отклонил это сетевое подключение')) {
-                userMessage = 'Не удалось подключиться к серверу.\n\n'
-                    'Убедитесь, что:\n'
-                    '1. Backend сервер запущен (npm run dev в папке backend)\n'
-                    '2. Для Android эмулятора используется адрес 10.0.2.2:3000\n'
-                    '3. Для физического устройства используйте IP адрес компьютера';
+                userMessage = l10n.profileConnectionError;
               } else {
-                userMessage = 'Ошибка: $s';
+                userMessage = l10n.errorGeneric(s);
               }
             }
 
@@ -118,7 +116,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ElevatedButton.icon(
                         onPressed: _retry,
                         icon: const Icon(Icons.refresh),
-                        label: const Text('Повторить'),
+                        label: Text(AppLocalizations.of(context)!.retry),
                       ),
                     ],
                   ),
@@ -128,8 +126,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           }
 
           if (!snapshot.hasData) {
-            return const Center(
-              child: Text('Данные профиля не найдены'),
+            return Center(
+              child: Text(AppLocalizations.of(context)!.profileNotFound),
             );
           }
 
@@ -171,20 +169,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   // Показываем диалог подтверждения
                   final confirm = await showDialog<bool>(
                     context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Выход'),
-                      content: const Text('Вы уверены, что хотите выйти из аккаунта?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(false),
-                          child: const Text('Отмена'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(true),
-                          child: const Text('Выйти'),
-                        ),
-                      ],
-                    ),
+                    builder: (context) {
+                      final l10n = AppLocalizations.of(context)!;
+                      return AlertDialog(
+                        title: Text(l10n.logoutTitle),
+                        content: Text(l10n.logoutConfirm),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: Text(l10n.cancel),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: Text(l10n.logout),
+                          ),
+                        ],
+                      );
+                    },
                   );
                   
                   if (confirm == true && context.mounted) {
