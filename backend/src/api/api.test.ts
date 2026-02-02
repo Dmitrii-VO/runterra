@@ -313,7 +313,7 @@ describe('API Routes', () => {
         });
 
       expect(res.status).toBe(409);
-      expect(res.body.error).toMatch(/already exists/i);
+      expect(res.body.message).toMatch(/already exists/i);
       expect(mockUsersRepository.create).not.toHaveBeenCalled();
     });
   });
@@ -329,7 +329,7 @@ describe('API Routes', () => {
         .set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(404);
-      expect(res.body.error).toMatch(/not found/i);
+      expect(res.body.message).toMatch(/not found/i);
       expect(mockUsersRepository.delete).not.toHaveBeenCalled();
     });
   });
