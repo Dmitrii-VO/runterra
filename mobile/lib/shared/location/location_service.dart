@@ -1,6 +1,7 @@
 import 'dart:async';
-import 'package:background_location/background_location.dart' as bg;
+import 'dart:io' show Platform;
 import 'package:geolocator/geolocator.dart';
+import 'package:geolocator_android/geolocator_android.dart';
 
 /// Сервис для работы с GPS / Location
 ///
@@ -10,13 +11,13 @@ import 'package:geolocator/geolocator.dart';
 /// - получение текущей позиции
 /// - continuous tracking для записи пробежек (foreground или background)
 ///
-/// При [startTracking] с [background: true] используется пакет background_location
-/// (Android: foreground service с уведомлением; iOS: при добавлении платформы — UIBackgroundModes location).
+/// При [startTracking] с [background: true] на Android используется
+/// foreground service geolocator_android (AndroidSettings.foregroundNotificationConfig)
+/// с постоянным уведомлением, чтобы GPS-трекинг продолжался при сворачивании приложения.
 /// Вычисление расстояний и сохранение данных — не входят в обязанности сервиса.
 class LocationService {
   StreamSubscription<Position>? _positionStreamSubscription;
   final StreamController<Position> _positionController = StreamController<Position>.broadcast();
-  bool _isBackgroundTracking = false;
 
   /// Проверяет текущий статус разрешения на доступ к геолокации
   ///
@@ -62,29 +63,6 @@ class LocationService {
     return await Geolocator.isLocationServiceEnabled();
   }
 
-  /// Converts background_location [Location] to geolocator [Position] for API consistency.
-  ///
-  /// Note: background_location returns [Location.time] in milliseconds on Android
-  /// (android.location.Location.getTime()) but in seconds on iOS
-  /// (NSDate.timeIntervalSince1970). Currently only Android is supported.
-  Position _locationToPosition(bg.Location location) {
-    final timeMs = location.time ?? 0.0;
-    final timestamp = DateTime.fromMillisecondsSinceEpoch(timeMs.round());
-    return Position(
-      longitude: location.longitude ?? 0.0,
-      latitude: location.latitude ?? 0.0,
-      timestamp: timestamp,
-      accuracy: location.accuracy ?? 0.0,
-      altitude: location.altitude ?? 0.0,
-      altitudeAccuracy: 0.0,
-      heading: location.bearing ?? 0.0,
-      headingAccuracy: 0.0,
-      speed: location.speed ?? 0.0,
-      speedAccuracy: 0.0,
-      isMocked: location.isMock ?? false,
-    );
-  }
-
   /// Начинает continuous GPS tracking
   ///
   /// Запускает поток позиций через [positionStream].
@@ -116,26 +94,29 @@ class LocationService {
       throw Exception('Location permission not granted. Current status: $permission');
     }
 
-    if (background) {
-      await bg.BackgroundLocation.stopLocationService();
-      await bg.BackgroundLocation.setAndroidNotification(
-        title: 'Runterra',
-        message: 'Run in progress',
-        icon: '@mipmap/ic_launcher',
+    LocationSettings locationSettings;
+
+    if (background && Platform.isAndroid) {
+      locationSettings = AndroidSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: distanceFilter,
+        foregroundNotificationConfig: const ForegroundNotificationConfig(
+          notificationTitle: 'Runterra',
+          notificationText: 'Run in progress',
+          notificationIcon: AndroidResource(name: 'ic_launcher', defType: 'mipmap'),
+          setOngoing: true,
+          enableWakeLock: true,
+        ),
       );
-      bg.BackgroundLocation.getLocationUpdates((bg.Location location) {
-        _positionController.add(_locationToPosition(location));
-      });
-      await bg.BackgroundLocation.startLocationService(distanceFilter: distanceFilter.toDouble());
-      _isBackgroundTracking = true;
-      return;
+    } else {
+      locationSettings = LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: distanceFilter,
+      );
     }
 
     _positionStreamSubscription = Geolocator.getPositionStream(
-      locationSettings: LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: distanceFilter,
-      ),
+      locationSettings: locationSettings,
     ).listen(
       (position) {
         _positionController.add(position);
@@ -144,20 +125,14 @@ class LocationService {
         _positionController.addError(error);
       },
     );
-    _isBackgroundTracking = false;
   }
 
   /// Останавливает continuous GPS tracking
   ///
-  /// Отменяет подписку на поток позиций или останавливает фоновый сервис.
+  /// Отменяет подписку на поток позиций.
   void stopTracking() {
-    if (_isBackgroundTracking) {
-      bg.BackgroundLocation.stopLocationService();
-      _isBackgroundTracking = false;
-    } else {
-      _positionStreamSubscription?.cancel();
-      _positionStreamSubscription = null;
-    }
+    _positionStreamSubscription?.cancel();
+    _positionStreamSubscription = null;
   }
 
   /// Stream позиций GPS в реальном времени

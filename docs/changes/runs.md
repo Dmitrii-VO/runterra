@@ -2,24 +2,18 @@
 
 ## История изменений
 
-### 2026-02-02 — Background GPS (трекинг в фоне)
+### 2026-02-02 — Background GPS (трекинг в фоне, исправлен)
 
-- **Зависимость:** В `mobile/pubspec.yaml` добавлена `background_location: ^0.13.2` (согласно product_spec: geolocator + background_location).
-- **AndroidManifest:** Добавлены разрешения `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION`, `ACCESS_BACKGROUND_LOCATION`, `POST_NOTIFICATIONS` для foreground service с типом location и отображения уведомления при трекинге в фоне.
-- **LocationService:** Добавлен опциональный параметр `background` в `startTracking({int distanceFilter = 5, bool background = false})`. При `background: true`: вызов `BackgroundLocation.stopLocationService()` перед стартом (обход дублирования callback), `setAndroidNotification(title: "Runterra", message: "Run in progress", icon: "@mipmap/ic_launcher")`, `getLocationUpdates(callback)` с конвертацией `Location` (background_location) в `Position` (geolocator) через приватный метод `_locationToPosition`, затем `startLocationService(distanceFilter)`. В `stopTracking()` при флаге `_isBackgroundTracking` вызывается `BackgroundLocation.stopLocationService()`. Комментарии обновлены: при `background: true` используется foreground service (Android) и пакет background_location.
-- **RunService:** В `startRun()` вызов изменён на `_locationService.startTracking(distanceFilter: 5, background: true)`, чтобы трекинг продолжался при сворачивании приложения или выключенном экране.
-- **RunScreen:** Без изменений (подписка на `gpsPositionStream`, таймер, кнопки «Завершить»/«Готово» остаются прежними).
-- **iOS:** При появлении платформы потребуются Info.plist: UIBackgroundModes (location, fetch), NSLocationAlwaysAndWhenInUseUsageDescription; код LocationService уже переключается на background по флагу.
+- **Проблема:** Пакет `background_location:0.13.2` (последняя версия) использует устаревший Flutter plugin embedding v1 (`PluginRegistry.Registrar`), удалённый в текущей версии Flutter. Сборка падала с `Unresolved reference 'Registrar'` в BackgroundLocationPlugin.kt.
+- **Решение:** Заменён на встроенный foreground service `geolocator_android` (уже в проекте как транзитивная зависимость geolocator:^13.0.0). При `startTracking(background: true)` используется `AndroidSettings(foregroundNotificationConfig: ForegroundNotificationConfig(...))` — geolocator сам стартует Android foreground service с уведомлением «Runterra — Run in progress», GPS-поток продолжает работать при сворачивании приложения.
+- **Удалено из LocationService:** импорт `background_location`, приватный метод `_locationToPosition()` (больше не нужен — geolocator возвращает `Position` напрямую), флаг `_isBackgroundTracking`, разветвлённая логика в `stopTracking()`.
+- **Удалено из pubspec.yaml:** зависимость `background_location: ^0.13.2`.
+- **AndroidManifest:** Разрешения `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION`, `ACCESS_BACKGROUND_LOCATION`, `POST_NOTIFICATIONS` сохранены (нужны geolocator foreground service).
+- **compileSdk:** поднят с 35 до 36 в `build.gradle` (требование geolocator_android:4.6.2, google_sign_in_android:6.2.1, flutter_plugin_android_lifecycle:2.0.33).
+- **RunService:** Без изменений (`startTracking(distanceFilter: 5, background: true)` работает с новой реализацией).
+- **Сборка:** `flutter build apk --debug` — успешна.
 
-**Файлы:** `mobile/pubspec.yaml`, `mobile/android/app/src/main/AndroidManifest.xml`, `mobile/lib/shared/location/location_service.dart`, `mobile/lib/shared/api/run_service.dart`.
-
-### 2026-02-02 — Fix timestamp в _locationToPosition
-
-- **Баг:** В `LocationService._locationToPosition()` поле `location.time` (пакет background_location) на Android приходит в **миллисекундах** (из `android.location.Location.getTime()`), но код умножал значение на 1000, трактуя его как секунды. В результате `Position.timestamp` содержал дату в ~33,700 году. Этот timestamp далее сериализовался в `gpsPoints[].timestamp` при отправке пробежки на backend (`run_service.dart:submitRun`).
-- **Исправление:** убрано умножение `* 1000`; переменная переименована в `timeMs` для ясности; добавлен doc-комментарий о различии формата `time` между Android (мс) и iOS (секунды).
-- **Примечание:** на iOS `timeIntervalSince1970` возвращает **секунды**; при добавлении платформы потребуется условная конвертация.
-
-**Файлы:** `mobile/lib/shared/location/location_service.dart`.
+**Файлы:** `mobile/lib/shared/location/location_service.dart`, `mobile/pubspec.yaml`, `mobile/android/app/build.gradle`.
 
 ### 2026-01-29 (продолжение)
 
