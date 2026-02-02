@@ -19,6 +19,7 @@ import activitiesRouter from './activities.routes';
 import eventsRouter from './events.routes';
 import runsRouter from './runs.routes';
 import mapRouter from './map.routes';
+import messagesRouter from './messages.routes';
 
 const apiRouter = Router();
 
@@ -34,5 +35,6 @@ apiRouter.use('/activities', activitiesRouter);
 apiRouter.use('/events', eventsRouter);
 apiRouter.use('/runs', runsRouter);
 apiRouter.use('/map', mapRouter);
+apiRouter.use('/messages', messagesRouter);
 
 export default apiRouter;
