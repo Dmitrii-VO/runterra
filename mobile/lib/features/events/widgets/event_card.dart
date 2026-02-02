@@ -115,9 +115,9 @@ class EventCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Color.fromRGBO(
-                        _getStatusColor(event.status).red,
-                        _getStatusColor(event.status).green,
-                        _getStatusColor(event.status).blue,
+                        (_getStatusColor(event.status).r * 255.0).round().clamp(0, 255),
+                        (_getStatusColor(event.status).g * 255.0).round().clamp(0, 255),
+                        (_getStatusColor(event.status).b * 255.0).round().clamp(0, 255),
                         0.2,
                       ),
                       borderRadius: BorderRadius.circular(12),

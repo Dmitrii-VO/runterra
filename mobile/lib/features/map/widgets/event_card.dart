@@ -77,9 +77,9 @@ class EventCard extends StatelessWidget {
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Color.fromRGBO(
-                    _getEventColor(event.type).red,
-                    _getEventColor(event.type).green,
-                    _getEventColor(event.type).blue,
+                    (_getEventColor(event.type).r * 255.0).round().clamp(0, 255),
+                    (_getEventColor(event.type).g * 255.0).round().clamp(0, 255),
+                    (_getEventColor(event.type).b * 255.0).round().clamp(0, 255),
                     0.1,
                   ),
                   borderRadius: BorderRadius.circular(8),
