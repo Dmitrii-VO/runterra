@@ -17,6 +17,7 @@ import { NotificationType } from '../modules/notifications';
 import { ActivityStatus } from '../modules/activities';
 import { validateBody } from './validateBody';
 import { getUsersRepository, getRunsRepository } from '../db/repositories';
+import { findCityById } from '../modules/cities/cities.config';
 import { logger } from '../shared/logger';
 
 const router = Router();
@@ -83,7 +84,7 @@ router.get('/me/profile', async (req: Request, res: Response) => {
         name: user.name,
         avatarUrl: user.avatarUrl,
         cityId: user.cityId,
-        cityName: undefined, // TODO: получить из таблицы cities
+        cityName: user.cityId ? findCityById(user.cityId)?.name : undefined,
         isMercenary: user.isMercenary,
         status: user.status,
       },

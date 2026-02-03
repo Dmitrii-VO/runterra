@@ -1,0 +1,116 @@
+-- Migration: 005_seed_example_events
+-- Description: Insert example/demo events for city spb
+-- Created: 2026-02-04
+
+INSERT INTO events (
+  id,
+  name,
+  type,
+  status,
+  start_date_time,
+  start_longitude,
+  start_latitude,
+  location_name,
+  organizer_id,
+  organizer_type,
+  difficulty_level,
+  description,
+  participant_limit,
+  participant_count,
+  territory_id,
+  city_id
+) VALUES
+  (
+    'a1000001-0001-4000-8000-000000000001',
+    'Утренняя пробежка в Летнем саду',
+    'group_run',
+    'open',
+    NOW() + INTERVAL '1 day' + INTERVAL '7 hours',
+    30.334500,
+    59.941000,
+    'Летний сад',
+    'demo-club-1',
+    'club',
+    'beginner',
+    'Лёгкая групповая пробежка для всех желающих.',
+    10,
+    0,
+    NULL,
+    'spb'
+  ),
+  (
+    'a1000001-0001-4000-8000-000000000002',
+    'Тренировка на выносливость',
+    'training',
+    'open',
+    NOW() + INTERVAL '3 days' + INTERVAL '18 hours',
+    30.315868,
+    59.939095,
+    'Дворцовая набережная',
+    'demo-club-1',
+    'club',
+    'intermediate',
+    'Темповая работа 5 км.',
+    15,
+    0,
+    NULL,
+    'spb'
+  ),
+  (
+    'a1000001-0001-4000-8000-000000000003',
+    'Клубный забег «Невский»',
+    'club_event',
+    'open',
+    NOW() + INTERVAL '7 days' + INTERVAL '9 hours',
+    30.355000,
+    59.932000,
+    'Невский проспект',
+    'demo-club-1',
+    'club',
+    NULL,
+    'Еженедельный клубный забег по центру города.',
+    NULL,
+    0,
+    NULL,
+    'spb'
+  ),
+  (
+    'a1000001-0001-4000-8000-000000000004',
+    'Интервальная тренировка',
+    'training',
+    'open',
+    NOW() + INTERVAL '2 days' + INTERVAL '19 hours',
+    30.300000,
+    59.945000,
+    'Марсово поле',
+    'demo-club-1',
+    'club',
+    'advanced',
+    'Интервалы 400 м.',
+    8,
+    0,
+    NULL,
+    'spb'
+  ),
+  (
+    'a1000001-0001-4000-8000-000000000005',
+    'Воскресный групповой бег',
+    'group_run',
+    'open',
+    NOW() + INTERVAL '5 days' + INTERVAL '8 hours',
+    30.320000,
+    59.935000,
+    'Стрелка Васильевского острова',
+    'demo-club-1',
+    'club',
+    'beginner',
+    'Совместная пробежка 10 км.',
+    20,
+    0,
+    NULL,
+    'spb'
+  )
+ON CONFLICT (id) DO NOTHING;
+
+-- Record this migration
+INSERT INTO migrations (name) VALUES ('005_seed_example_events') ON CONFLICT (name) DO NOTHING;

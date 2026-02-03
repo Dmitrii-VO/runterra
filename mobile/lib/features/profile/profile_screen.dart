@@ -161,6 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ProfileStatsSection(stats: profile.stats),
         _CitySection(
           currentCityId: profile.user.cityId,
+          currentCityName: profile.user.cityName ?? profile.user.cityId,
           onCitySelected: () => _retry(),
         ),
         ProfileActivitySection(
@@ -216,23 +217,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
 class _CitySection extends StatelessWidget {
   const _CitySection({
     required this.currentCityId,
+    this.currentCityName,
     required this.onCitySelected,
   });
 
   final String? currentCityId;
+  final String? currentCityName;
   final VoidCallback onCitySelected;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final displayText = (currentCityName != null && currentCityName!.isNotEmpty)
+        ? currentCityName!
+        : (currentCityId != null && currentCityId!.isNotEmpty
+            ? currentCityId!
+            : l10n.cityNotSelected);
     return ListTile(
       leading: const Icon(Icons.location_city),
       title: Text(l10n.cityLabel),
-      subtitle: Text(
-        currentCityId != null && currentCityId!.isNotEmpty
-            ? currentCityId!
-            : l10n.cityNotSelected,
-      ),
+      subtitle: Text(displayText),
       trailing: const Icon(Icons.chevron_right),
       onTap: () async {
         final selected = await showCityPickerDialog(context);
