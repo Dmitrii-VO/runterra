@@ -1141,6 +1141,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not selected'**
   String get cityNotSelected;
+
+  /// No description provided for @editProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit profile'**
+  String get editProfileTitle;
+
+  /// No description provided for @editProfileName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get editProfileName;
+
+  /// No description provided for @editProfilePhotoUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo URL'**
+  String get editProfilePhotoUrl;
+
+  /// No description provided for @editProfileSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get editProfileSave;
+
+  /// No description provided for @editProfileNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Name is required'**
+  String get editProfileNameRequired;
+
+  /// No description provided for @editProfileEditAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get editProfileEditAction;
 }
 
 class _AppLocalizationsDelegate

@@ -2,6 +2,12 @@
 
 ## История изменений
 
+### 2026-02-04
+
+- **Редактирование профиля:** Реализован экран/форма изменения данных пользователя (имя, URL фото). Backend: в `user.dto.ts` расширены `UpdateProfileDto` и `UpdateProfileSchema` полями `name?` (z.string().min(1).max(100).optional()) и `avatarUrl?` (z.union([z.string().url(), z.literal('')]).optional()); в `users.routes.ts` обработчик PATCH `/me/profile` собирает из тела запроса `currentCityId`, `name`, `avatarUrl` и передаёт их в `usersRepo.update(user.id, updates)` (пустая строка `avatarUrl` сохраняется как сброс фото). Mobile: в `users_service.dart` метод `updateProfile` принимает опциональные параметры `name` и `avatarUrl`; добавлен экран `edit_profile_screen.dart` (форма с полями имя и URL фото, валидация имени, вызов `UsersService.updateProfile`, при успехе `context.pop(true)`); в `profile_screen.dart` — AppBar с кнопкой «Редактировать» (при наличии данных профиля), переход `context.push('/profile/edit', extra: profile.user)`, по возврату с `result == true` — `_retry()` для обновления профиля; в `app.dart` добавлен маршрут `/profile/edit` с `state.extra as ProfileUserData`. Локализация: в `app_en.arb` и `app_ru.arb` добавлены ключи `editProfileTitle`, `editProfileName`, `editProfilePhotoUrl`, `editProfileSave`, `editProfileNameRequired`, `editProfileEditAction`.
+
+**Файлы:** `backend/src/modules/users/user.dto.ts`, `backend/src/api/users.routes.ts`, `mobile/lib/shared/api/users_service.dart`, `mobile/lib/features/profile/edit_profile_screen.dart`, `mobile/lib/features/profile/profile_screen.dart`, `mobile/lib/app.dart`, `mobile/l10n/app_en.arb`, `mobile/l10n/app_ru.arb`.
+
 ### 2026-02-02
 
 - **Единый формат ошибок API (ADR-0002):** В `users.routes.ts` старые эндпоинты (GET /, GET /:id, POST /, DELETE /me) возвращали ошибки в формате `{ error: '...' }`. Приведены к единому формату `{ code, message }`: `internal_error`, `not_found`, `conflict`. Новые эндпоинты (PATCH /me/profile, GET /me/profile) уже использовали правильный формат.

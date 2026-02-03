@@ -136,9 +136,13 @@ router.patch('/me/profile', validateBody(UpdateProfileSchema), async (req: Reque
       return;
     }
 
-    const body = req.body as { currentCityId?: string };
-    if (body.currentCityId !== undefined) {
-      await usersRepo.update(user.id, { cityId: body.currentCityId });
+    const body = req.body as { currentCityId?: string; name?: string; avatarUrl?: string };
+    const updates: { cityId?: string; name?: string; avatarUrl?: string } = {};
+    if (body.currentCityId !== undefined) updates.cityId = body.currentCityId;
+    if (body.name !== undefined) updates.name = body.name;
+    if (body.avatarUrl !== undefined) updates.avatarUrl = body.avatarUrl;
+    if (Object.keys(updates).length > 0) {
+      await usersRepo.update(user.id, updates);
     }
 
     res.status(200).json({ success: true });

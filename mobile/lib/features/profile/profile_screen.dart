@@ -68,150 +68,146 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.profileTitle),
-      ),
-      body: FutureBuilder<ProfileModel>(
-        future: _profileFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
+    final l10n = AppLocalizations.of(context)!;
+    return FutureBuilder<ProfileModel>(
+      future: _profileFuture,
+      builder: (context, snapshot) {
+        final hasData = snapshot.hasData;
+        final profile = snapshot.data;
 
-          if (snapshot.hasError) {
-            final err = snapshot.error;
-            String userMessage;
-
-            final l10n = AppLocalizations.of(context)!;
-            if (err is ApiException) {
-              userMessage = '${err.code}\n\n${err.message}';
-            } else {
-              final s = err.toString();
-              if (s.contains('SocketException') ||
-                  s.contains('connection refused') ||
-                  s.contains('отклонил это сетевое подключение')) {
-                userMessage = l10n.profileConnectionError;
-              } else {
-                userMessage = l10n.errorGeneric(s);
-              }
-            }
-
-            return Center(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                      const SizedBox(height: 16),
-                      Text(
-                        userMessage,
-                        style: Theme.of(context).textTheme.bodyMedium,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        onPressed: _retry,
-                        icon: const Icon(Icons.refresh),
-                        label: Text(AppLocalizations.of(context)!.retry),
-                      ),
-                    ],
-                  ),
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(l10n.profileTitle),
+            actions: [
+              if (hasData && profile != null)
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  tooltip: l10n.editProfileEditAction,
+                  onPressed: () async {
+                    final result = await context.push<bool>(
+                      '/profile/edit',
+                      extra: profile.user,
+                    );
+                    if (result == true && context.mounted) _retry();
+                  },
                 ),
-              ),
-            );
-          }
-
-          if (!snapshot.hasData) {
-            return Center(
-              child: Text(AppLocalizations.of(context)!.profileNotFound),
-            );
-          }
-
-          final profile = snapshot.data!;
-
-          return ListView(
-            children: [
-              // 1. Заголовок профиля
-              ProfileHeaderSection(
-                user: profile.user,
-                club: profile.club,
-              ),
-
-              // 2. Мини-статистика
-              ProfileStatsSection(stats: profile.stats),
-
-              // 2.5 Город (выбор города в личном кабинете)
-              _CitySection(
-                currentCityId: profile.user.cityId,
-                onCitySelected: () => _retry(),
-              ),
-
-              // 3. Ближайшая и последняя активности
-              ProfileActivitySection(
-                nextActivity: profile.nextActivity,
-                lastActivity: profile.lastActivity,
-              ),
-
-              // 4. Быстрые действия (CTA)
-              ProfileQuickActionsSection(
-                hasClub: profile.club != null,
-                isMercenary: profile.user.isMercenary,
-              ),
-
-              // 5. Уведомления
-              ProfileNotificationsSection(
-                notifications: profile.notifications,
-              ),
-
-              // 6. Настройки
-              ProfileSettingsSection(
-                locationPermissionGranted: _locationPermissionGranted,
-                profileVisible: true, // TODO: Загружать из профиля
-                onLogout: () async {
-                  // Показываем диалог подтверждения
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (context) {
-                      final l10n = AppLocalizations.of(context)!;
-                      return AlertDialog(
-                        title: Text(l10n.logoutTitle),
-                        content: Text(l10n.logoutConfirm),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(false),
-                            child: Text(l10n.cancel),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(true),
-                            child: Text(l10n.logout),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                  
-                  if (confirm == true && context.mounted) {
-                    await AuthService.instance.signOut();
-                    ServiceLocator.updateAuthToken(null);
-                    authRefreshNotifier.refresh();
-                    if (context.mounted) {
-                      context.go('/login');
-                    }
-                  }
-                },
-                onDeleteAccount: () {
-                  // TODO: Реализовать удаление аккаунта
-                },
-              ),
             ],
-          );
-        },
-      ),
+          ),
+          body: _buildBody(context, snapshot, l10n),
+        );
+      },
+    );
+  }
+
+  Widget _buildBody(
+    BuildContext context,
+    AsyncSnapshot<ProfileModel> snapshot,
+    AppLocalizations l10n,
+  ) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (snapshot.hasError) {
+      final err = snapshot.error;
+      String userMessage;
+      if (err is ApiException) {
+        userMessage = '${err.code}\n\n${err.message}';
+      } else {
+        final s = err.toString();
+        if (s.contains('SocketException') ||
+            s.contains('connection refused') ||
+            s.contains('отклонил это сетевое подключение')) {
+          userMessage = l10n.profileConnectionError;
+        } else {
+          userMessage = l10n.errorGeneric(s);
+        }
+      }
+      return Center(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  userMessage,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: _retry,
+                  icon: const Icon(Icons.refresh),
+                  label: Text(l10n.retry),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (!snapshot.hasData) {
+      return Center(child: Text(l10n.profileNotFound));
+    }
+
+    final profile = snapshot.data!;
+    return ListView(
+      children: [
+        ProfileHeaderSection(user: profile.user, club: profile.club),
+        ProfileStatsSection(stats: profile.stats),
+        _CitySection(
+          currentCityId: profile.user.cityId,
+          onCitySelected: () => _retry(),
+        ),
+        ProfileActivitySection(
+          nextActivity: profile.nextActivity,
+          lastActivity: profile.lastActivity,
+        ),
+        ProfileQuickActionsSection(
+          hasClub: profile.club != null,
+          isMercenary: profile.user.isMercenary,
+        ),
+        ProfileNotificationsSection(notifications: profile.notifications),
+        ProfileSettingsSection(
+          locationPermissionGranted: _locationPermissionGranted,
+          profileVisible: true, // TODO: Загружать из профиля
+          onLogout: () async {
+            final confirm = await showDialog<bool>(
+              context: context,
+              builder: (context) {
+                final l10n = AppLocalizations.of(context)!;
+                return AlertDialog(
+                  title: Text(l10n.logoutTitle),
+                  content: Text(l10n.logoutConfirm),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: Text(l10n.cancel),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: Text(l10n.logout),
+                    ),
+                  ],
+                );
+              },
+            );
+            if (confirm == true && context.mounted) {
+              await AuthService.instance.signOut();
+              ServiceLocator.updateAuthToken(null);
+              authRefreshNotifier.refresh();
+              if (context.mounted) context.go('/login');
+            }
+          },
+          onDeleteAccount: () {
+            // TODO: Реализовать удаление аккаунта
+          },
+        ),
+      ],
     );
   }
 }

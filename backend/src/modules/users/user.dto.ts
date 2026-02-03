@@ -112,11 +112,18 @@ export interface UpdateUserDto {
 export interface UpdateProfileDto {
   /** Идентификатор текущего города пользователя (из /api/cities) */
   currentCityId?: string;
+  /** Имя пользователя */
+  name?: string;
+  /** URL фото профиля */
+  avatarUrl?: string;
 }
 
 /**
  * Runtime schema for PATCH /me/profile body.
+ * name: non-empty string, max 100 chars; avatarUrl: optional string (URL).
  */
 export const UpdateProfileSchema = z.object({
   currentCityId: z.string().optional(),
+  name: z.string().min(1, 'Name is required').max(100).optional(),
+  avatarUrl: z.union([z.string().url(), z.literal('')]).optional(),
 });

@@ -319,5 +319,11 @@
     }
   },
   "cityPickerEmpty": "City list is empty",
-  "cityNotSelected": "Not selected"
+  "cityNotSelected": "Not selected",
+  "editProfileTitle": "Edit profile",
+  "editProfileName": "Name",
+  "editProfilePhotoUrl": "Photo URL",
+  "editProfileSave": "Save",
+  "editProfileNameRequired": "Name is required",
+  "editProfileEditAction": "Edit"
 }

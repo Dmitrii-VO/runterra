@@ -580,4 +580,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cityNotSelected => 'Not selected';
+
+  @override
+  String get editProfileTitle => 'Edit profile';
+
+  @override
+  String get editProfileName => 'Name';
+
+  @override
+  String get editProfilePhotoUrl => 'Photo URL';
+
+  @override
+  String get editProfileSave => 'Save';
+
+  @override
+  String get editProfileNameRequired => 'Name is required';
+
+  @override
+  String get editProfileEditAction => 'Edit';
 }

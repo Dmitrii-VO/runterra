@@ -581,4 +581,22 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get cityNotSelected => 'Не выбран';
+
+  @override
+  String get editProfileTitle => 'Редактирование профиля';
+
+  @override
+  String get editProfileName => 'Имя';
+
+  @override
+  String get editProfilePhotoUrl => 'URL фото';
+
+  @override
+  String get editProfileSave => 'Сохранить';
+
+  @override
+  String get editProfileNameRequired => 'Укажите имя';
+
+  @override
+  String get editProfileEditAction => 'Редактировать';
 }

@@ -173,5 +173,11 @@
   "cityPickerTitle": "Выбор города",
   "cityPickerLoadError": "Не удалось загрузить города:\n{error}",
   "cityPickerEmpty": "Список городов пуст",
-  "cityNotSelected": "Не выбран"
+  "cityNotSelected": "Не выбран",
+  "editProfileTitle": "Редактирование профиля",
+  "editProfileName": "Имя",
+  "editProfilePhotoUrl": "URL фото",
+  "editProfileSave": "Сохранить",
+  "editProfileNameRequired": "Укажите имя",
+  "editProfileEditAction": "Редактировать"
 }

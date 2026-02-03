@@ -12,6 +12,8 @@ import 'features/messages/messages_screen.dart';
 import 'features/events/events_screen.dart';
 import 'features/events/event_details_screen.dart';
 import 'features/profile/profile_screen.dart';
+import 'features/profile/edit_profile_screen.dart';
+import 'shared/models/profile_model.dart';
 import 'shared/auth/auth_service.dart';
 import 'shared/di/service_locator.dart';
 import 'shared/navigation/bottom_nav.dart';
@@ -127,6 +129,14 @@ class RunterraApp extends StatelessWidget {
             builder: (context, state) => const ProfileScreen(),
           ),
         ],
+      ),
+      // Edit profile (push from ProfileScreen with extra: ProfileUserData)
+      GoRoute(
+        path: '/profile/edit',
+        builder: (context, state) {
+          final user = state.extra as ProfileUserData;
+          return EditProfileScreen(user: user);
+        },
       ),
       // Отдельный маршрут для ClubDetailsScreen (без BottomNav)
       GoRoute(

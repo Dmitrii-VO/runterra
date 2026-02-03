@@ -63,11 +63,16 @@ class UsersService {
 
   /// Обновляет профиль текущего пользователя (PATCH /api/users/me/profile).
   /// [currentCityId] — идентификатор города из /api/cities.
-  Future<void> updateProfile({String? currentCityId}) async {
+  /// [name] — имя пользователя. [avatarUrl] — URL фото (omit to leave unchanged, '' to clear).
+  Future<void> updateProfile({
+    String? currentCityId,
+    String? name,
+    String? avatarUrl,
+  }) async {
     final body = <String, dynamic>{};
-    if (currentCityId != null) {
-      body['currentCityId'] = currentCityId;
-    }
+    if (currentCityId != null) body['currentCityId'] = currentCityId;
+    if (name != null) body['name'] = name;
+    if (avatarUrl != null) body['avatarUrl'] = avatarUrl;
     if (body.isEmpty) return;
 
     final response = await _apiClient.patch(
