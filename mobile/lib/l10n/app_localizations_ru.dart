@@ -493,6 +493,47 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get runDuration => 'Длительность';
+
+  @override
+  String get runDistance => 'Дистанция';
+
+  @override
+  String get runPace => 'Темп';
+
+  @override
+  String runPaceValue(String pace) {
+    return '$pace /км';
+  }
+
+  @override
+  String get runAvgSpeed => 'Ср. скорость';
+
+  @override
+  String runAvgSpeedValue(String speed) {
+    return '$speed км/ч';
+  }
+
+  @override
+  String get runCalories => 'Калории';
+
+  @override
+  String runCaloriesValue(int calories) {
+    return '~$calories ккал';
+  }
+
+  @override
+  String get runHeartRate => 'Пульс';
+
+  @override
+  String runHeartRateValue(int bpm) {
+    return '$bpm уд/мин';
+  }
+
+  @override
+  String get runNoData => '—';
+
+  @override
   String distanceMeters(String value) {
     return '$value м';
   }

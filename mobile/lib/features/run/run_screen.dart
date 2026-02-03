@@ -197,18 +197,14 @@ class _RunScreenState extends State<RunScreen> {
       _gpsSubscription?.cancel();
 
       final completedSession = await _runService.stopRun();
+      if (mounted) {
+        setState(() {
+          _session = completedSession;
+          _state = RunTabState.completed;
+        });
+      }
       await _runService.submitRun();
-
-      setState(() {
-        _session = completedSession;
-        _state = RunTabState.completed;
-        _isSubmitting = false;
-      });
     } catch (e) {
-      setState(() {
-        _isSubmitting = false;
-      });
-
       if (mounted) {
         // Show backend message directly for ApiException, generic wrapper otherwise
         final errorText = (e is ApiException)
@@ -220,6 +216,12 @@ class _RunScreenState extends State<RunScreen> {
             backgroundColor: Colors.red,
           ),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
       }
     }
   }
@@ -247,6 +249,65 @@ class _RunScreenState extends State<RunScreen> {
       return l10n.distanceMeters(distanceMeters.toStringAsFixed(0));
     }
     return l10n.distanceKm((distanceMeters / 1000).toStringAsFixed(2));
+  }
+
+  /// Pace in min:sec per km. Returns null if distance is too small.
+  String? _formatPace(Duration duration, double distanceMeters) {
+    final distanceKm = distanceMeters / 1000;
+    if (distanceKm < 0.01) return null;
+    final totalSeconds = (duration.inSeconds / distanceKm).round();
+    final m = totalSeconds ~/ 60;
+    final s = totalSeconds % 60;
+    return '$m:${s.toString().padLeft(2, '0')}';
+  }
+
+  /// Average speed in km/h. Returns null if duration is zero.
+  double? _calcAvgSpeedKmh(Duration duration, double distanceMeters) {
+    if (duration.inSeconds <= 0) return null;
+    return (distanceMeters / 1000) / (duration.inSeconds / 3600);
+  }
+
+  /// Rough calorie estimate: ~65 kcal per km (no weight).
+  int _calcCalories(double distanceMeters) {
+    final distanceKm = distanceMeters / 1000;
+    return (distanceKm * 65).round();
+  }
+
+  Widget _buildMetricCard({
+    required BuildContext context,
+    required String value,
+    required String label,
+    IconData? icon,
+  }) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 24, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(height: 8),
+            ],
+            Text(
+              value,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.grey,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   String _getGpsStatusText(BuildContext context, GpsStatus status) {
@@ -383,34 +444,83 @@ class _RunScreenState extends State<RunScreen> {
   }
 
   Widget _buildCompletedContent() {
+    final l10n = AppLocalizations.of(context)!;
     final duration = _session?.duration ?? Duration.zero;
     final distance = _session?.distance ?? 0.0;
     final hasActivity = _session?.activityId != null;
 
-    return Center(
+    final paceStr = _formatPace(duration, distance);
+    final avgSpeed = _calcAvgSpeedKmh(duration, distance);
+    final calories = _calcCalories(distance);
+
+    // TODO: Heart rate — placeholder for future Health Connect integration
+    const int? heartRateBpm = null;
+
+    return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              AppLocalizations.of(context)!.runDone,
+              l10n.runDone,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 24),
-            // Time
-            Text(
-              '⏱ ${_formatDuration(duration)}',
-              style: Theme.of(context).textTheme.titleLarge,
+            // Metrics grid (fitness-app style)
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 1.4,
+              children: [
+                _buildMetricCard(
+                  context: context,
+                  value: _formatDuration(duration),
+                  label: l10n.runDuration,
+                  icon: Icons.timer,
+                ),
+                _buildMetricCard(
+                  context: context,
+                  value: _formatDistance(context, distance),
+                  label: l10n.runDistance,
+                  icon: Icons.straighten,
+                ),
+                _buildMetricCard(
+                  context: context,
+                  value: paceStr != null
+                      ? l10n.runPaceValue(paceStr)
+                      : l10n.runNoData,
+                  label: l10n.runPace,
+                  icon: Icons.speed,
+                ),
+                _buildMetricCard(
+                  context: context,
+                  value: avgSpeed != null
+                      ? l10n.runAvgSpeedValue(avgSpeed.toStringAsFixed(1))
+                      : l10n.runNoData,
+                  label: l10n.runAvgSpeed,
+                  icon: Icons.show_chart,
+                ),
+                _buildMetricCard(
+                  context: context,
+                  value: l10n.runCaloriesValue(calories),
+                  label: l10n.runCalories,
+                  icon: Icons.local_fire_department,
+                ),
+                _buildMetricCard(
+                  context: context,
+                  value: heartRateBpm != null
+                      ? l10n.runHeartRateValue(heartRateBpm)
+                      : l10n.runNoData,
+                  label: l10n.runHeartRate,
+                  icon: Icons.favorite,
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            // Distance
-            Text(
-              '📏 ${_formatDistance(context, distance)}',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 32),
-            // Counted items (placeholders)
+            const SizedBox(height: 24),
+            // Counted items
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -420,37 +530,28 @@ class _RunScreenState extends State<RunScreen> {
                       const Icon(Icons.check, color: Colors.green, size: 20),
                       const SizedBox(width: 8),
                       Text(
-                        AppLocalizations.of(context)!.runCountedTraining,
+                        l10n.runCountedTraining,
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],
                   ),
-                const SizedBox(height: 8),
+                if (hasActivity) const SizedBox(height: 8),
                 Row(
                   children: [
                     const Icon(Icons.check, color: Colors.green, size: 20),
                     const SizedBox(width: 8),
                     Text(
-                      AppLocalizations.of(context)!.runCountedTerritory,
+                      l10n.runCountedTerritory,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
                 ),
-                // TODO: Add points if available
-                // const SizedBox(height: 8),
-                // Row(
-                //   children: [
-                //     const Icon(Icons.check, color: Colors.green, size: 20),
-                //     const SizedBox(width: 8),
-                //     Text('+баллы (если есть)'),
-                //   ],
-                // ),
               ],
             ),
             const SizedBox(height: 32),
             FilledButton(
               onPressed: _backToIdle,
-              child: Text(AppLocalizations.of(context)!.runReady),
+              child: Text(l10n.runReady),
             ),
           ],
         ),

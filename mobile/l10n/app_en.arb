@@ -247,6 +247,45 @@
       }
     }
   },
+  "runDuration": "Duration",
+  "runDistance": "Distance",
+  "runPace": "Pace",
+  "runPaceValue": "{pace}/km",
+  "@runPaceValue": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
+      }
+    }
+  },
+  "runAvgSpeed": "Avg speed",
+  "runAvgSpeedValue": "{speed} km/h",
+  "@runAvgSpeedValue": {
+    "placeholders": {
+      "speed": {
+        "type": "String"
+      }
+    }
+  },
+  "runCalories": "Calories",
+  "runCaloriesValue": "~{calories} kcal",
+  "@runCaloriesValue": {
+    "placeholders": {
+      "calories": {
+        "type": "int"
+      }
+    }
+  },
+  "runHeartRate": "Heart rate",
+  "runHeartRateValue": "{bpm} bpm",
+  "@runHeartRateValue": {
+    "placeholders": {
+      "bpm": {
+        "type": "int"
+      }
+    }
+  },
+  "runNoData": "—",
   "distanceMeters": "{value} m",
   "@distanceMeters": {
     "placeholders": {

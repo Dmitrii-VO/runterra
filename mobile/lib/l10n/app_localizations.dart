@@ -992,6 +992,72 @@ abstract class AppLocalizations {
   /// **'Error finishing run: {error}'**
   String runFinishError(String error);
 
+  /// No description provided for @runDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get runDuration;
+
+  /// No description provided for @runDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get runDistance;
+
+  /// No description provided for @runPace.
+  ///
+  /// In en, this message translates to:
+  /// **'Pace'**
+  String get runPace;
+
+  /// No description provided for @runPaceValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{pace}/km'**
+  String runPaceValue(String pace);
+
+  /// No description provided for @runAvgSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg speed'**
+  String get runAvgSpeed;
+
+  /// No description provided for @runAvgSpeedValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{speed} km/h'**
+  String runAvgSpeedValue(String speed);
+
+  /// No description provided for @runCalories.
+  ///
+  /// In en, this message translates to:
+  /// **'Calories'**
+  String get runCalories;
+
+  /// No description provided for @runCaloriesValue.
+  ///
+  /// In en, this message translates to:
+  /// **'~{calories} kcal'**
+  String runCaloriesValue(int calories);
+
+  /// No description provided for @runHeartRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Heart rate'**
+  String get runHeartRate;
+
+  /// No description provided for @runHeartRateValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{bpm} bpm'**
+  String runHeartRateValue(int bpm);
+
+  /// No description provided for @runNoData.
+  ///
+  /// In en, this message translates to:
+  /// **'—'**
+  String get runNoData;
+
   /// No description provided for @distanceMeters.
   ///
   /// In en, this message translates to:

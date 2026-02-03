@@ -492,6 +492,47 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get runDuration => 'Duration';
+
+  @override
+  String get runDistance => 'Distance';
+
+  @override
+  String get runPace => 'Pace';
+
+  @override
+  String runPaceValue(String pace) {
+    return '$pace/km';
+  }
+
+  @override
+  String get runAvgSpeed => 'Avg speed';
+
+  @override
+  String runAvgSpeedValue(String speed) {
+    return '$speed km/h';
+  }
+
+  @override
+  String get runCalories => 'Calories';
+
+  @override
+  String runCaloriesValue(int calories) {
+    return '~$calories kcal';
+  }
+
+  @override
+  String get runHeartRate => 'Heart rate';
+
+  @override
+  String runHeartRateValue(int bpm) {
+    return '$bpm bpm';
+  }
+
+  @override
+  String get runNoData => '—';
+
+  @override
   String distanceMeters(String value) {
     return '$value m';
   }

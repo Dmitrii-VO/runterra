@@ -2,6 +2,38 @@
 
 ## История изменений
 
+### 2026-02-04 — Code review: Завершение тренировки
+
+- **Проверка:** Проведён code review реализации экрана завершения пробежки.
+- **Найденная проблема:** В методе `_calcCalories(Duration duration, double distanceMeters)` параметр `duration` объявлен, но не используется — калории считаются только по дистанции (~65 ккал/км).
+- **Исправление:** Параметр `duration` удалён из сигнатуры метода: `_calcCalories(double distanceMeters)`.
+- **Результат проверки:** Остальная реализация корректна: расчёт темпа (`_formatPace`), средней скорости (`_calcAvgSpeedKmh`), калорий; i18n ключи (en/ru); layout сетки карточек метрик; placeholder для пульса.
+
+**Файл:** `mobile/lib/features/run/run_screen.dart`.
+
+### 2026-02-04 — Завершение тренировки — экран как в фитнес-приложении
+
+- **Задача:** Сделать экран результата пробежки (completed state) похожим на типичное фитнес-приложение для бега с показателями (темп, скорость, калории, пульс при возможности).
+- **Решение (mobile):**
+  - Переработан `_buildCompletedContent()` в `run_screen.dart`:
+    - Карточки метрик в сетке 2×3 (Duration | Distance | Pace | Avg Speed | Calories | Heart Rate).
+    - Добавлены методы: `_formatPace()` — темп мин/км; `_calcAvgSpeedKmh()` — средняя скорость км/ч; `_calcCalories()` — оценка ~65 ккал/км без веса; `_buildMetricCard()` — виджет карточки с иконкой, значением и подписью.
+    - Пульс — placeholder «—» (TODO: будущая интеграция Health Connect).
+  - i18n: добавлены ключи runDuration, runDistance, runPace, runPaceValue, runAvgSpeed, runAvgSpeedValue, runCalories, runCaloriesValue, runHeartRate, runHeartRateValue, runNoData (en/ru).
+  - Layout: SingleChildScrollView + GridView.count (childAspectRatio 1.4).
+- **Backend:** Без изменений. Pace, avg speed, calories считаются на клиенте.
+
+**Файлы:** `mobile/lib/features/run/run_screen.dart`, `mobile/l10n/app_en.arb`, `mobile/l10n/app_ru.arb`.
+
+### 2026-02-03 — Fix: экран результата — корректный темп и состояние после ошибки отправки
+
+- **Проблема 1:** `_formatPace()` округлял секунды темпа отдельно и мог выдавать формат `m:60` при округлении (например 5:60).
+- **Решение:** темп округляется по общему числу секунд и форматируется через `mm:ss`, что гарантирует `00–59` секунд.
+- **Проблема 2:** при ошибке `submitRun()` UI оставался в состоянии `running` после остановки GPS (таймер и трекинг уже остановлены).
+- **Решение:** состояние экрана переводится в `completed` сразу после `stopRun()`, а флаг `_isSubmitting` сбрасывается в `finally` (ошибка отправки всё ещё показывается через SnackBar).
+
+**Файл:** `mobile/lib/features/run/run_screen.dart`.
+
 ### 2026-02-02 — POST "/" → 404 и обработка ошибок при создании пробежки
 
 - **Проблема:** В логах POST к корню "/" давал 404 без тела ответа; при ошибке 400 (валидация) mobile показывал сырой `e.toString()` вместо понятного сообщения из backend.
