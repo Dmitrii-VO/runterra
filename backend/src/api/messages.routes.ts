@@ -1,6 +1,6 @@
 /**
- * API router for messages (city and club chat).
- * GET/POST /api/messages/global, GET/POST /api/messages/clubs/:clubId
+ * API router for messages (club chat).
+ * GET/POST /api/messages/clubs/:clubId
  */
 
 import { Router, Request, Response } from 'express';
@@ -15,11 +15,6 @@ const router = Router();
 
 const MAX_LIMIT = 100;
 const DEFAULT_LIMIT = 50;
-
-const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-function isValidUUID(value: string): boolean {
-  return UUID_V4_REGEX.test(value.trim());
-}
 
 function parsePagination(query: { limit?: string; offset?: string }): { limit: number; offset: number } {
   const limit = query.limit ? parseInt(query.limit, 10) : DEFAULT_LIMIT;
@@ -37,109 +32,6 @@ function getAuthUid(req: Request): string {
   }
   return uid;
 }
-
-/**
- * GET /api/messages/global
- * Query: cityId (required), limit, offset.
- * Returns 400 if cityId is missing or empty.
- */
-router.get('/global', async (req: Request, res: Response) => {
-  try {
-    getAuthUid(req);
-
-    const cityId = req.query.cityId;
-    if (cityId == null || (typeof cityId === 'string' && cityId.trim() === '')) {
-      res.status(400).json({
-        code: 'validation_error',
-        message: 'cityId is required',
-        details: {
-          fields: [{ field: 'cityId', message: 'cityId is required', code: 'invalid_type' }],
-        },
-      });
-      return;
-    }
-    const cityIdStr = typeof cityId === 'string' ? cityId.trim() : String(cityId).trim();
-    if (!isValidUUID(cityIdStr)) {
-      res.status(400).json({
-        code: 'validation_error',
-        message: 'cityId must be a valid UUID',
-        details: {
-          fields: [{ field: 'cityId', message: 'cityId must be a valid UUID', code: 'invalid_string' }],
-        },
-      });
-      return;
-    }
-
-    const { limit, offset } = parsePagination(req.query as { limit?: string; offset?: string });
-    const messagesRepo = getMessagesRepository();
-    const list = await messagesRepo.findByChannel(
-      'city',
-      cityIdStr,
-      limit,
-      offset
-    );
-    res.status(200).json(list);
-  } catch (error) {
-    logger.error('Error fetching global messages', { error });
-    res.status(500).json({
-      code: 'internal_error',
-      message: 'Internal server error',
-    });
-  }
-});
-
-/**
- * POST /api/messages/global
- * Body: { text }. Uses current user's cityId. Broadcasts to channel city:{cityId}.
- */
-router.post('/global', validateBody(CreateMessageSchema), async (req: Request, res: Response) => {
-  try {
-    const uid = getAuthUid(req);
-    const usersRepo = getUsersRepository();
-    const user = await usersRepo.findByFirebaseUid(uid);
-    if (!user) {
-      res.status(401).json({
-        code: 'unauthorized',
-        message: 'User not found',
-      });
-      return;
-    }
-    if (!user.cityId) {
-      res.status(400).json({
-        code: 'user_city_required',
-        message: 'User must have a city set to use global chat',
-      });
-      return;
-    }
-
-    const { text } = req.body as { text: string };
-    const messagesRepo = getMessagesRepository();
-    const message = await messagesRepo.create({
-      channelType: 'city',
-      channelId: user.cityId,
-      userId: user.id,
-      text,
-    });
-
-    const dto: MessageViewDto = {
-      id: message.id,
-      text: message.text,
-      userId: message.userId,
-      userName: user.name,
-      createdAt: message.createdAt.toISOString(),
-      updatedAt: message.updatedAt.toISOString(),
-    };
-
-    broadcast(`city:${user.cityId}`, dto);
-    res.status(201).json(dto);
-  } catch (error) {
-    logger.error('Error sending global message', { error });
-    res.status(500).json({
-      code: 'internal_error',
-      message: 'Internal server error',
-    });
-  }
-});
 
 /**
  * GET /api/messages/clubs/:clubId

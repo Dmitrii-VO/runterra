@@ -227,7 +227,7 @@ class _CitySection extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     return ListTile(
       leading: const Icon(Icons.location_city),
-      title: Text(l10n.tabCity),
+      title: Text(l10n.cityLabel),
       subtitle: Text(
         currentCityId != null && currentCityId!.isNotEmpty
             ? currentCityId!

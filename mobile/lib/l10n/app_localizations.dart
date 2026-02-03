@@ -170,12 +170,6 @@ abstract class AppLocalizations {
   /// **'Set your city in profile to participate in chat'**
   String get profileCityRequired;
 
-  /// No description provided for @globalChatEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'It\'s quiet here. Send the first message and set the pace 🏃‍♂️'**
-  String get globalChatEmpty;
-
   /// No description provided for @messageHint.
   ///
   /// In en, this message translates to:
@@ -194,23 +188,41 @@ abstract class AppLocalizations {
   /// **'Messages'**
   String get messagesTitle;
 
-  /// No description provided for @tabCity.
+  /// No description provided for @cityLabel.
   ///
   /// In en, this message translates to:
   /// **'City'**
-  String get tabCity;
+  String get cityLabel;
 
-  /// No description provided for @tabClubs.
+  /// No description provided for @tabPersonal.
   ///
   /// In en, this message translates to:
-  /// **'Clubs'**
-  String get tabClubs;
+  /// **'Personal'**
+  String get tabPersonal;
 
-  /// No description provided for @tabNotifications.
+  /// No description provided for @tabClub.
   ///
   /// In en, this message translates to:
-  /// **'Notifications'**
-  String get tabNotifications;
+  /// **'Club'**
+  String get tabClub;
+
+  /// No description provided for @tabCoach.
+  ///
+  /// In en, this message translates to:
+  /// **'Coach'**
+  String get tabCoach;
+
+  /// No description provided for @personalChatsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No personal messages yet'**
+  String get personalChatsEmpty;
+
+  /// No description provided for @coachMessagesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No coach messages yet'**
+  String get coachMessagesEmpty;
 
   /// No description provided for @noClubChats.
   ///

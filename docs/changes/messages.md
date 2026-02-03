@@ -2,6 +2,22 @@
 
 ## История изменений
 
+### 2026-02-04
+
+- **Удаление чата города:**
+  - **Backend**
+    - `messages.routes.ts`: удалены эндпоинты GET и POST `/api/messages/global`.
+    - `chatWs.ts`: удалена поддержка каналов `city:{cityId}`; VALID_CHANNEL_RE и canSubscribe() поддерживают только `club:{clubId}`; удалён импорт getUsersRepository.
+  - **Mobile**
+    - Удалён `global_chat_tab.dart`.
+    - Удалён `notifications_tab.dart` (orphaned — не используется после замены вкладок).
+    - Удалён `chat_realtime_service.dart` (orphaned — использовал city-каналы, не нужен без GlobalChatTab; будет переписан для club-каналов при реализации real-time в ClubMessagesTab).
+    - `messages_screen.dart`: вкладки заменены с «Город | Клубы | Уведомления» на «Личные | Клуб | Тренер»; добавлены PersonalChatsTab и CoachTab (заглушки), ClubMessagesTab оставлен.
+    - `messages_service.dart`: удалены getGlobalChatMessages() и sendGlobalMessage().
+    - l10n: добавлены tabPersonal, tabClub, tabCoach, cityLabel, personalChatsEmpty, coachMessagesEmpty; удалены tabCity, tabClubs, tabNotifications, globalChatEmpty. Примечание: ключи noNotifications и notificationsLoadError оставлены — используются в ProfileNotificationsSection.
+    - `profile_screen.dart`: блок «Город» использует cityLabel вместо tabCity.
+  - **Файлы:** backend/src/api/messages.routes.ts, backend/src/ws/chatWs.ts, mobile/lib/features/messages/*.dart, mobile/lib/shared/api/messages_service.dart, mobile/lib/shared/api/chat_realtime_service.dart (удалён), mobile/l10n/*.arb, mobile/lib/features/profile/profile_screen.dart.
+
 ### 2026-02-02
 
 - **GlobalChatTab: убран fallback 'spb', лишний API-запрос при отсутствии города:** В `_fetchData()` cityId имел fallback `'spb'`, из-за которого messages API вызывался даже когда у пользователя не установлен город (noCitySet=true). Убран fallback; теперь при `cityId == null` API не вызывается, сразу возвращается `noCitySet=true` и показывается подсказка «Укажите город в профиле». Упрощена логика: `noCitySet` определяется единообразно через проверку cityId.

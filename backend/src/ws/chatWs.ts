@@ -1,6 +1,6 @@
 /**
  * WebSocket server for real-time chat.
- * Path: /ws. Auth via query token. Client sends { type: 'subscribe', channel: 'city:cityId' } or 'club:clubId'.
+ * Path: /ws. Auth via query token. Client sends { type: 'subscribe', channel: 'club:clubId' }.
  * Server broadcasts { type: 'message', payload: MessageViewDto } to subscribers of the channel.
  */
 
@@ -8,7 +8,6 @@ import { Server as HttpServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { parse as parseUrl } from 'url';
 import { getAuthProvider } from '../modules/auth';
-import { getUsersRepository } from '../db/repositories';
 import { logger } from '../shared/logger';
 
 const WS_PATH = '/ws';
@@ -23,7 +22,7 @@ const clients = new Map<WebSocket, WsClient>();
 
 let wss: WebSocketServer | null = null;
 
-const VALID_CHANNEL_RE = /^(city|club):[0-9a-f-]{36}$/;
+const VALID_CHANNEL_RE = /^club:[0-9a-f-]{36}$/;
 
 /**
  * Broadcast payload to all connections subscribed to channelKey.
@@ -45,28 +44,10 @@ export function broadcast(channelKey: string, payload: object): void {
 
 /**
  * Validate that the user is allowed to subscribe to the given channel.
- * city:<cityId> — user must belong to that city.
  * club:<clubId> — allowed for now (stub), but format is validated.
  */
-async function canSubscribe(uid: string, channelKey: string): Promise<boolean> {
-  const match = channelKey.match(VALID_CHANNEL_RE);
-  if (!match) return false;
-
-  const [, type] = channelKey.split(':');
-  const channelId = channelKey.substring(channelKey.indexOf(':') + 1);
-
-  if (type === 'city') {
-    const usersRepo = getUsersRepository();
-    const user = await usersRepo.findByFirebaseUid(uid);
-    return user?.cityId === channelId;
-  }
-
-  // club — stub: allow any authenticated user for now
-  if (type === 'club') {
-    return true;
-  }
-
-  return false;
+async function canSubscribe(_uid: string, channelKey: string): Promise<boolean> {
+  return VALID_CHANNEL_RE.test(channelKey);
 }
 
 /**

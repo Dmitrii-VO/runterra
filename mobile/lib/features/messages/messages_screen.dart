@@ -1,22 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
-import 'tabs/global_chat_tab.dart';
+import 'tabs/personal_chats_tab.dart';
 import 'tabs/club_messages_tab.dart';
-import 'tabs/notifications_tab.dart';
+import 'tabs/coach_tab.dart';
 
 /// Messages screen
 ///
-/// Экран сообщений с тремя вкладками (MVP по 123.md):
-/// - Город (общий чат)
-/// - Клубы (чаты клубов)
-/// - Уведомления (системные сообщения, read-only)
+/// Экран сообщений с тремя вкладками:
+/// - Личные (заглушка)
+/// - Клуб (чаты клубов)
+/// - Тренер (заглушка)
 ///
 /// Использует TabBar для переключения.
-/// Минимальная реализация без state management.
-///
-/// TODO: Реализовать отправку сообщений
-/// TODO: Реализовать обновление в реальном времени
-/// TODO: Добавить навигацию к экранам конкретных чатов
 class MessagesScreen extends StatelessWidget {
   const MessagesScreen({super.key});
 
@@ -29,17 +24,17 @@ class MessagesScreen extends StatelessWidget {
           title: Text(AppLocalizations.of(context)!.messagesTitle),
           bottom: TabBar(
             tabs: [
-              Tab(text: AppLocalizations.of(context)!.tabCity),
-              Tab(text: AppLocalizations.of(context)!.tabClubs),
-              Tab(text: AppLocalizations.of(context)!.tabNotifications),
+              Tab(text: AppLocalizations.of(context)!.tabPersonal),
+              Tab(text: AppLocalizations.of(context)!.tabClub),
+              Tab(text: AppLocalizations.of(context)!.tabCoach),
             ],
           ),
         ),
         body: const TabBarView(
           children: [
-            GlobalChatTab(),
+            PersonalChatsTab(),
             ClubMessagesTab(),
-            NotificationsTab(),
+            CoachTab(),
           ],
         ),
       ),

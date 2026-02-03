@@ -19,7 +19,6 @@
     }
   },
   "profileCityRequired": "Set your city in profile to participate in chat",
-  "globalChatEmpty": "It's quiet here. Send the first message and set the pace 🏃‍♂️",
   "messageHint": "Message...",
   "messagesLoadError": "Error loading messages: {error}",
   "@messagesLoadError": {
@@ -30,9 +29,12 @@
     }
   },
   "messagesTitle": "Messages",
-  "tabCity": "City",
-  "tabClubs": "Clubs",
-  "tabNotifications": "Notifications",
+  "cityLabel": "City",
+  "tabPersonal": "Personal",
+  "tabClub": "Club",
+  "tabCoach": "Coach",
+  "personalChatsEmpty": "No personal messages yet",
+  "coachMessagesEmpty": "No coach messages yet",
   "noClubChats": "No club chats\n\nYou are not in any club yet",
   "noNotifications": "No notifications",
   "clubChatsLoadError": "Error loading club chats: {error}",

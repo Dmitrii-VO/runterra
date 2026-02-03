@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'api_client.dart';
 import '../models/message_model.dart';
 import '../models/chat_model.dart';
@@ -9,69 +8,11 @@ import '../models/club_chat_model.dart';
 /// Предоставляет методы для выполнения запросов к API сообщений.
 /// Использует ApiClient для выполнения HTTP запросов.
 class MessagesService {
+  // ignore: unused_field - used when club/personal chat methods are implemented
   final ApiClient _apiClient;
 
   /// Создает MessagesService с указанным ApiClient
   MessagesService({required ApiClient apiClient}) : _apiClient = apiClient;
-
-  /// Выполняет GET запрос для получения сообщений общего чата (городской чат).
-  /// [cityId] обязателен для backend (query param). Используйте текущий город из CurrentCityService или профиля.
-  Future<List<MessageModel>> getGlobalChatMessages({
-    required String cityId,
-    int limit = 50,
-    int offset = 0,
-  }) async {
-    final endpoint = '/api/messages/global?cityId=${Uri.encodeComponent(cityId)}&limit=$limit&offset=$offset';
-    final response = await _apiClient.get(endpoint);
-
-    if (response.statusCode != 200) {
-      if (response.statusCode == 400) {
-        final body = _tryParseJson(response.body);
-        if (body != null) {
-          final code = body['code'] as String?;
-          if (code == 'user_city_required' || code == 'validation_error') {
-            throw Exception(
-              body['message'] as String? ?? 'Укажите город в профиле, чтобы участвовать в чате',
-            );
-          }
-        }
-      }
-      if (response.statusCode == 401) {
-        throw Exception('Требуется авторизация');
-      }
-      throw Exception(
-        'Ошибка загрузки сообщений: ${response.statusCode}\n${response.body}',
-      );
-    }
-
-    final contentType = response.headers['content-type'] ?? '';
-    if (!contentType.contains('application/json')) {
-      throw FormatException(
-        'Ожидался JSON, получен: $contentType',
-        response.body,
-      );
-    }
-
-    try {
-      final jsonData = jsonDecode(response.body) as List<dynamic>;
-      return jsonData
-          .map((json) => MessageModel.fromJson(json as Map<String, dynamic>))
-          .toList();
-    } catch (_) {
-      throw FormatException(
-        'Не удалось разобрать ответ сервера',
-        response.body,
-      );
-    }
-  }
-
-  static Map<String, dynamic>? _tryParseJson(String body) {
-    try {
-      return jsonDecode(body) as Map<String, dynamic>?;
-    } catch (_) {
-      return null;
-    }
-  }
 
   /// Выполняет GET запрос для получения списка личных переписок
   /// 
@@ -136,55 +77,6 @@ class MessagesService {
     
     // Заглушка: возвращаем пустой список
     return [];
-  }
-
-  /// Выполняет POST запрос для отправки сообщения в общий чат (городской чат).
-  Future<MessageModel> sendGlobalMessage(String text) async {
-    final response = await _apiClient.post(
-      '/api/messages/global',
-      body: {'text': text.trim()},
-    );
-
-    if (response.statusCode == 201) {
-      final contentType = response.headers['content-type'] ?? '';
-      if (!contentType.contains('application/json')) {
-        throw FormatException('Ожидался JSON', response.body);
-      }
-      try {
-        final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
-        return MessageModel.fromJson(jsonData);
-      } catch (_) {
-        throw FormatException(
-          'Не удалось разобрать ответ сервера',
-          response.body,
-        );
-      }
-    }
-
-    if (response.statusCode == 400) {
-      final body = _tryParseJson(response.body);
-      if (body != null && body['code'] == 'validation_error') {
-        final details = body['details'];
-        final fields = details is Map && details['fields'] is List
-            ? (details['fields'] as List).cast<Map<String, dynamic>>()
-            : <Map<String, dynamic>>[];
-        final msg = fields.isNotEmpty
-            ? (fields.first['message'] as String? ?? 'Ошибка валидации')
-            : (body['message'] as String? ?? 'Ошибка валидации');
-        throw Exception(msg);
-      }
-      if (body != null && body['code'] == 'user_city_required') {
-        throw Exception(
-          body['message'] as String? ?? 'Укажите город в профиле',
-        );
-      }
-    }
-    if (response.statusCode == 401) {
-      throw Exception('Требуется авторизация');
-    }
-    throw Exception(
-      'Ошибка отправки сообщения: ${response.statusCode}\n${response.body}',
-    );
   }
 
   /// Выполняет POST запрос для отправки сообщения в личный чат

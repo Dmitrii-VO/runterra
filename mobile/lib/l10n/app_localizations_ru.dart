@@ -50,10 +50,6 @@ class AppLocalizationsRu extends AppLocalizations {
       'Укажите город в профиле, чтобы участвовать в чате';
 
   @override
-  String get globalChatEmpty =>
-      'Пока тихо. Напиши первое сообщение и задай ритм городу 🏃‍♂️';
-
-  @override
   String get messageHint => 'Сообщение...';
 
   @override
@@ -65,13 +61,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get messagesTitle => 'Сообщения';
 
   @override
-  String get tabCity => 'Город';
+  String get cityLabel => 'Город';
 
   @override
-  String get tabClubs => 'Клубы';
+  String get tabPersonal => 'Личные';
 
   @override
-  String get tabNotifications => 'Уведомления';
+  String get tabClub => 'Клуб';
+
+  @override
+  String get tabCoach => 'Тренер';
+
+  @override
+  String get personalChatsEmpty => 'Пока нет личных сообщений';
+
+  @override
+  String get coachMessagesEmpty => 'Пока нет сообщений от тренера';
 
   @override
   String get noClubChats =>

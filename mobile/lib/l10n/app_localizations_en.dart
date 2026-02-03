@@ -50,10 +50,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Set your city in profile to participate in chat';
 
   @override
-  String get globalChatEmpty =>
-      'It\'s quiet here. Send the first message and set the pace 🏃‍♂️';
-
-  @override
   String get messageHint => 'Message...';
 
   @override
@@ -65,13 +61,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messagesTitle => 'Messages';
 
   @override
-  String get tabCity => 'City';
+  String get cityLabel => 'City';
 
   @override
-  String get tabClubs => 'Clubs';
+  String get tabPersonal => 'Personal';
 
   @override
-  String get tabNotifications => 'Notifications';
+  String get tabClub => 'Club';
+
+  @override
+  String get tabCoach => 'Coach';
+
+  @override
+  String get personalChatsEmpty => 'No personal messages yet';
+
+  @override
+  String get coachMessagesEmpty => 'No coach messages yet';
 
   @override
   String get noClubChats => 'No club chats\n\nYou are not in any club yet';
