@@ -43,13 +43,13 @@ class NavigationHandler {
         router.go('/map');
         break;
       case FindTrainingAction():
-        // TODO: Реализовать навигацию к экрану поиска тренировок
+        router.go('/events');
         break;
       case StartRunAction():
-        // TODO: Реализовать навигацию к экрану начала пробежки
+        router.go('/run');
         break;
       case FindClubAction():
-        // TODO: Реализовать навигацию к экрану поиска клубов
+        router.go('/map');
         break;
       case CreateClubAction():
         // TODO: Реализовать навигацию к экрану создания клуба

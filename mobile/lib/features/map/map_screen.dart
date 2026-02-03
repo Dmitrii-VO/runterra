@@ -152,6 +152,7 @@ class _MapScreenState extends State<MapScreen> {
         });
         if (_isMapReady) {
           _updateMapObjects();
+          await _centerMapOnStartPosition();
         }
       }
     } on ApiException catch (e) {
@@ -169,7 +170,10 @@ class _MapScreenState extends State<MapScreen> {
             setState(() {
               _mapData = retryData;
             });
-            if (_isMapReady) _updateMapObjects();
+            if (_isMapReady) {
+              _updateMapObjects();
+              await _centerMapOnStartPosition();
+            }
           }
           return;
         } on ApiException catch (retryErr) {
@@ -358,9 +362,9 @@ class _MapScreenState extends State<MapScreen> {
       setState(() {
         _isMapReady = true;
       });
-      
+      // Всегда центрируем по городу/СПб при открытии, чтобы не показывать вид с экватора
+      await _centerMapOnStartPosition();
       if (_mapData != null) {
-        await _centerMapOnStartPosition();
         _updateMapObjects();
       }
     }

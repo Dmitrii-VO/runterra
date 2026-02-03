@@ -36,11 +36,68 @@ class _RunScreenState extends State<RunScreen> {
   bool _isSubmitting = false;
 
   @override
+  void initState() {
+    super.initState();
+    // При возврате на вкладку восстанавливаем UI, если пробежка уже идёт в фоне.
+    if (_runService.currentSession?.status == RunSessionStatus.running) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _restoreRunningState();
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _timer?.cancel();
     _gpsSubscription?.cancel();
-    _runService.cancelRun();
+    // Не отменяем пробежку при уходе на другую вкладку — сессия продолжается в RunService.
     super.dispose();
+  }
+
+  /// Восстанавливает UI при возврате на вкладку, если пробежка уже идёт в RunService.
+  void _restoreRunningState() {
+    final session = _runService.currentSession;
+    if (session == null || session.status != RunSessionStatus.running) return;
+
+    setState(() {
+      _session = session;
+      _state = RunTabState.running;
+    });
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_session != null && _state == RunTabState.running && mounted) {
+        final duration = DateTime.now().difference(_session!.startedAt);
+        _runService.updateSessionMetrics(duration: duration);
+        setState(() {
+          _session = _runService.currentSession;
+        });
+      }
+    });
+
+    _gpsSubscription = _runService.gpsPositionStream.listen(
+      (position) {
+        if (_session?.gpsStatus == GpsStatus.searching) {
+          _runService.updateGpsStatus(GpsStatus.recording);
+        }
+        if (_session != null && _session!.gpsPoints.length > 1 && mounted) {
+          final gpsPoints = List.from(_session!.gpsPoints);
+          final lastIndex = gpsPoints.length - 1;
+          final increment = Geolocator.distanceBetween(
+            gpsPoints[lastIndex - 1].latitude,
+            gpsPoints[lastIndex - 1].longitude,
+            gpsPoints[lastIndex].latitude,
+            gpsPoints[lastIndex].longitude,
+          );
+          final newDistance = (_session!.distance) + increment;
+          _runService.updateSessionMetrics(distance: newDistance);
+        }
+        if (mounted) setState(() => _session = _runService.currentSession);
+      },
+      onError: (_) {
+        _runService.updateGpsStatus(GpsStatus.error);
+        if (mounted) setState(() => _session = _runService.currentSession);
+      },
+    );
   }
 
   Future<void> _startRun() async {

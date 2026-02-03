@@ -16,6 +16,11 @@ const router = Router();
 const MAX_LIMIT = 100;
 const DEFAULT_LIMIT = 50;
 
+const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+function isValidUUID(value: string): boolean {
+  return UUID_V4_REGEX.test(value.trim());
+}
+
 function parsePagination(query: { limit?: string; offset?: string }): { limit: number; offset: number } {
   const limit = query.limit ? parseInt(query.limit, 10) : DEFAULT_LIMIT;
   const offset = query.offset ? parseInt(query.offset, 10) : 0;
@@ -53,7 +58,17 @@ router.get('/global', async (req: Request, res: Response) => {
       });
       return;
     }
-    const cityIdStr = typeof cityId === 'string' ? cityId : String(cityId);
+    const cityIdStr = typeof cityId === 'string' ? cityId.trim() : String(cityId).trim();
+    if (!isValidUUID(cityIdStr)) {
+      res.status(400).json({
+        code: 'validation_error',
+        message: 'cityId must be a valid UUID',
+        details: {
+          fields: [{ field: 'cityId', message: 'cityId must be a valid UUID', code: 'invalid_string' }],
+        },
+      });
+      return;
+    }
 
     const { limit, offset } = parsePagination(req.query as { limit?: string; offset?: string });
     const messagesRepo = getMessagesRepository();

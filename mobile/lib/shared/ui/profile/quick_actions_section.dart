@@ -8,8 +8,7 @@ import '../../navigation/navigation_handler.dart';
 /// 
 /// Отображает кнопки для быстрого доступа к ключевым функциям:
 /// - Открыть карту (большая, основная)
-/// - Найти тренировку
-/// - Начать пробежку / Check-in
+/// - Найти тренировку → экран событий
 /// - Найти клуб / Создать клуб — только если !hasClub && !isMercenary (явная логика).
 class ProfileQuickActionsSection extends StatelessWidget {
   /// true если profile.club != null
@@ -53,11 +52,6 @@ class ProfileQuickActionsSection extends StatelessWidget {
                   onPressed: () => handler.handle(const FindTrainingAction()),
                   icon: const Icon(Icons.search),
                   label: Text(AppLocalizations.of(context)!.quickFindTraining),
-                ),
-                OutlinedButton.icon(
-                  onPressed: () => handler.handle(const StartRunAction()),
-                  icon: const Icon(Icons.directions_run),
-                  label: Text(AppLocalizations.of(context)!.quickStartRun),
                 ),
                 if (!hasClub && !isMercenary) ...[
                   OutlinedButton.icon(

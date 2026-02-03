@@ -100,6 +100,14 @@ router.post('/', validateBody(CreateRunSchema), async (req: Request<{}, RunViewD
       });
       return;
     }
+    if (duration < 30) {
+      res.status(400).json({
+        code: 'validation_error',
+        message: 'duration must be at least 30 seconds',
+        details: { fields: [{ field: 'duration', message: 'duration must be at least 30 seconds', code: 'invalid_type' }] },
+      });
+      return;
+    }
 
     const { run, validation } = await repo.create({
       userId: user.id,
