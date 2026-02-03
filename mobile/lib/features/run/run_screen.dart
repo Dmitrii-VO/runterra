@@ -5,6 +5,7 @@ import '../../l10n/app_localizations.dart';
 import '../../shared/api/users_service.dart' show ApiException;
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/run_session.dart';
+import 'widgets/run_route_map.dart';
 
 /// Состояния вкладки Run (до пробежки / во время / после).
 enum RunTabState {
@@ -371,54 +372,53 @@ class _RunScreenState extends State<RunScreen> {
     final duration = _session?.duration ?? Duration.zero;
     final distance = _session?.distance ?? 0.0;
     final gpsStatus = _session?.gpsStatus ?? GpsStatus.searching;
+    final gpsPoints = _session?.gpsPoints ?? [];
 
     return Column(
       children: [
         Expanded(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // GPS Status
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.location_on, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      '📍 GPS: ${_getGpsStatusText(context, gpsStatus)}',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                // Active indicator
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: gpsStatus == GpsStatus.recording
-                        ? Colors.green
-                        : Colors.orange,
-                    shape: BoxShape.circle,
+          flex: 2,
+          child: RunRouteMap(gpsPoints: gpsPoints),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.location_on, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'GPS: ${_getGpsStatusText(context, gpsStatus)}',
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: gpsStatus == GpsStatus.recording
+                      ? Colors.green
+                      : Colors.orange,
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 24),
-                // Timer
-                Text(
-                  '⏱ ${_formatDuration(duration)}',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 8),
-                // Distance
-                Text(
-                  _formatDistance(context, distance),
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.grey,
-                      ),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '⏱ ${_formatDuration(duration)}',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _formatDistance(context, distance),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: Colors.grey,
+                    ),
+              ),
+            ],
           ),
         ),
         Padding(
