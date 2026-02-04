@@ -673,4 +673,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String createClubError(String message) {
     return 'Could not create club: $message';
   }
+
+  @override
+  String get runStuckSessionTitle => 'Run in progress';
+
+  @override
+  String get runStuckSessionMessage =>
+      'You have an unfinished run. Would you like to continue it or start fresh?';
+
+  @override
+  String get runStuckSessionResume => 'Continue run';
+
+  @override
+  String get runStuckSessionCancel => 'Discard and start new';
 }

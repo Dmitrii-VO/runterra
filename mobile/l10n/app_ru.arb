@@ -208,5 +208,9 @@
         "type": "String"
       }
     }
-  }
+  },
+  "runStuckSessionTitle": "Пробежка в процессе",
+  "runStuckSessionMessage": "У вас есть незавершённая пробежка. Хотите продолжить её или начать заново?",
+  "runStuckSessionResume": "Продолжить",
+  "runStuckSessionCancel": "Отменить и начать заново"
 }

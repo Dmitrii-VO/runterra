@@ -2,6 +2,21 @@
 
 ## История изменений
 
+### 2026-02-04 — Fix: Повторный старт пробежки (Run already started)
+
+- **Проблема:** При нажатии «Начать пробежку» пользователь получал ошибку `Exception: Run already started`, хотя UI показывал idle-состояние с кнопкой «Начать». Причина: `RunService._currentSession` очищалась только при успешном `submitRun()` или явном `cancelRun()`. При ошибке сети или нажатии «Готово» UI переходил в idle, но сессия оставалась в памяти.
+- **Решение (mobile):**
+  - **RunService:** добавлен метод `clearCompletedSession()` — очищает сессию, если она в статусе `completed` (не running); `startRun()` автоматически вызывает его перед стартом, выбрасывая исключение только для running-сессий.
+  - **RunScreen:** `initState()` теперь восстанавливает UI и для `completed`-сессий (показывает экран результата); `_backToIdle()` вызывает `clearCompletedSession()` при переходе в idle.
+  - **Диалог для running-сессии:** если `startRun()` бросает исключение для running-сессии, показывается диалог с выбором: «Продолжить» (восстанавливает экран бега) или «Отменить и начать заново» (вызывает `cancelRun()`).
+  - **i18n:** добавлены ключи `runStuckSessionTitle`, `runStuckSessionMessage`, `runStuckSessionResume`, `runStuckSessionCancel` (EN/RU).
+- **Backend:** Без изменений.
+
+**Файлы:**
+- `mobile/lib/shared/api/run_service.dart` — добавлен `clearCompletedSession()`, изменён `startRun()`
+- `mobile/lib/features/run/run_screen.dart` — изменены `initState()`, `_backToIdle()`, добавлен `_showStuckSessionDialog()`, обработка ошибки в `_startRun()`
+- `mobile/l10n/app_en.arb`, `mobile/l10n/app_ru.arb` — новые ключи
+
 ### 2026-02-04 — Трекинг пробежки на карте (маршрут в реальном времени)
 
 - **Задача:** Отображение маршрута пробежки на карте в реальном времени во время бега (первый пункт раздела «Карта и трекинг» в infra/README.md).

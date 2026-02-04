@@ -44,6 +44,13 @@ class RunService {
   /// - служба геолокации отключена
   /// - разрешение на геолокацию отклонено
   Future<RunSession> startRun({String? activityId}) async {
+    // Auto-clear completed sessions (failed submissions, etc.)
+    if (_currentSession != null &&
+        _currentSession!.status == RunSessionStatus.completed) {
+      clearCompletedSession();
+    }
+
+    // Still running session - this is the real error case
     if (_currentSession != null) {
       throw Exception('Run already started');
     }
@@ -118,6 +125,19 @@ class RunService {
 
   /// Получить текущую сессию
   RunSession? get currentSession => _currentSession;
+
+  /// Clear a completed session without submitting.
+  /// Use this to reset after failed submission or when user wants to discard.
+  /// Does nothing if session is still running (use cancelRun() for that).
+  void clearCompletedSession() {
+    if (_currentSession == null) return;
+    if (_currentSession!.status == RunSessionStatus.running) {
+      return; // Don't clear running session - use cancelRun()
+    }
+    _currentSession = null;
+    _gpsPoints.clear();
+    _startTime = null;
+  }
 
   /// Завершить трекинг.
   ///

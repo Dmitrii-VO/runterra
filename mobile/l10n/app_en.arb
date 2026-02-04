@@ -382,5 +382,9 @@
         "type": "String"
       }
     }
-  }
+  },
+  "runStuckSessionTitle": "Run in progress",
+  "runStuckSessionMessage": "You have an unfinished run. Would you like to continue it or start fresh?",
+  "runStuckSessionResume": "Continue run",
+  "runStuckSessionCancel": "Discard and start new"
 }

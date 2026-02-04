@@ -39,12 +39,23 @@ class _RunScreenState extends State<RunScreen> {
   @override
   void initState() {
     super.initState();
-    // При возврате на вкладку восстанавливаем UI, если пробежка уже идёт в фоне.
-    if (_runService.currentSession?.status == RunSessionStatus.running) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _restoreRunningState();
-      });
-    }
+    // При возврате на вкладку восстанавливаем UI в соответствии с состоянием сессии.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      final session = _runService.currentSession;
+      if (session == null) return;
+
+      if (session.status == RunSessionStatus.running) {
+        _restoreRunningState();
+      } else if (session.status == RunSessionStatus.completed) {
+        // Show completed UI so user can see results or dismiss
+        setState(() {
+          _session = session;
+          _state = RunTabState.completed;
+        });
+      }
+    });
   }
 
   @override
@@ -172,6 +183,10 @@ class _RunScreenState extends State<RunScreen> {
         } else if (errorString.contains('service is disabled') ||
             errorString.contains('Location service is disabled')) {
           errorMessage = l10n.runStartServiceDisabled;
+        } else if (errorString.contains('Run already started')) {
+          // Offer dialog to resume or cancel stuck running session
+          _showStuckSessionDialog();
+          return;
         } else {
           errorMessage = l10n.runStartErrorGeneric(e.toString());
         }
@@ -228,10 +243,42 @@ class _RunScreenState extends State<RunScreen> {
   }
 
   void _backToIdle() {
+    _runService.clearCompletedSession();
     setState(() {
       _state = RunTabState.idle;
       _session = null;
     });
+  }
+
+  void _showStuckSessionDialog() {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.runStuckSessionTitle),
+        content: Text(l10n.runStuckSessionMessage),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _restoreRunningState();
+            },
+            child: Text(l10n.runStuckSessionResume),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _runService.cancelRun();
+              setState(() {
+                _state = RunTabState.idle;
+                _session = null;
+              });
+            },
+            child: Text(l10n.runStuckSessionCancel),
+          ),
+        ],
+      ),
+    );
   }
 
   String _formatDuration(Duration duration) {

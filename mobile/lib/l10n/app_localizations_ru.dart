@@ -674,4 +674,17 @@ class AppLocalizationsRu extends AppLocalizations {
   String createClubError(String message) {
     return 'Не удалось создать клуб: $message';
   }
+
+  @override
+  String get runStuckSessionTitle => 'Пробежка в процессе';
+
+  @override
+  String get runStuckSessionMessage =>
+      'У вас есть незавершённая пробежка. Хотите продолжить её или начать заново?';
+
+  @override
+  String get runStuckSessionResume => 'Продолжить';
+
+  @override
+  String get runStuckSessionCancel => 'Отменить и начать заново';
 }

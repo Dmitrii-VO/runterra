@@ -1309,6 +1309,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not create club: {message}'**
   String createClubError(String message);
+
+  /// No description provided for @runStuckSessionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Run in progress'**
+  String get runStuckSessionTitle;
+
+  /// No description provided for @runStuckSessionMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You have an unfinished run. Would you like to continue it or start fresh?'**
+  String get runStuckSessionMessage;
+
+  /// No description provided for @runStuckSessionResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue run'**
+  String get runStuckSessionResume;
+
+  /// No description provided for @runStuckSessionCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard and start new'**
+  String get runStuckSessionCancel;
 }
 
 class _AppLocalizationsDelegate

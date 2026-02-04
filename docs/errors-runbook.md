@@ -23,10 +23,15 @@
   Что сделано: в `backend/src/api/runs.routes.ts` добавлена проверка `duration >= 30` до вызова репозитория; при нарушении возврат 400 с сообщением «duration must be at least 30 seconds».  
   Дата: 2026-02-03.
 
-- **Глобальные сообщения — невалидный cityId (500)**  
-  Сигнатура: `"Error fetching global messages"`, `string_to_uuid`, `parameter $2 = '...'`, код 22P02.  
-  Что сделано: в `backend/src/api/messages.routes.ts` для GET `/global` добавлена валидация `cityId` как UUID; при невалидном значении возврат 400 «cityId must be a valid UUID».  
+- **Глобальные сообщения — невалидный cityId (500)**
+  Сигнатура: `"Error fetching global messages"`, `string_to_uuid`, `parameter $2 = '...'`, код 22P02.
+  Что сделано: в `backend/src/api/messages.routes.ts` для GET `/global` добавлена валидация `cityId` как UUID; при невалидном значении возврат 400 «cityId must be a valid UUID».
   Дата: 2026-02-03.
+
+- **Повторный старт пробежки — `Exception: Run already started`**
+  Сигнатура: на вкладках «Пробежка» и «Карта» внизу показывается красный баннер `Ошибка при запуске пробежки: Exception: Run already started`, при этом UI остаётся в состоянии «Начать пробежку» без таймера и маршрута.
+  Что сделано: (1) в `RunService` добавлен метод `clearCompletedSession()` для очистки завершённых сессий; (2) `startRun()` автоматически очищает завершённые (completed) сессии перед стартом — выбрасывает исключение только для running-сессий; (3) в `RunScreen.initState()` при возврате на вкладку восстанавливается UI для running и completed сессий; (4) `_backToIdle()` теперь вызывает `clearCompletedSession()`; (5) при исключении «Run already started» показывается диалог с выбором «Продолжить» или «Отменить и начать заново»; (6) добавлены i18n ключи `runStuckSessionTitle`, `runStuckSessionMessage`, `runStuckSessionResume`, `runStuckSessionCancel` (EN/RU).
+  Дата: 2026-02-04.
 
 ---
 
