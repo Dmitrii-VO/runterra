@@ -1,18 +1,18 @@
 /**
  * API роутер для модуля клубов
- * 
+ *
  * Содержит эндпоинты для работы с клубами:
  * - GET /api/clubs - список клубов
- * - GET /api/clubs/:id - клуб по ID
+ * - GET /api/clubs/:id - клуб по ID (при auth — isMember, membershipStatus)
  * - POST /api/clubs - создание клуба
- * 
- * На текущей стадии (skeleton) все эндпоинты возвращают заглушки.
- * TODO: Реализовать контроллеры и бизнес-логику в будущем.
+ * - POST /api/clubs/:id/join - присоединение к клубу
  */
 
 import { Router, Request, Response } from 'express';
 import { ClubStatus, ClubViewDto, CreateClubDto, CreateClubSchema } from '../modules/clubs';
 import { validateBody } from './validateBody';
+import { getUsersRepository, getClubMembersRepository } from '../db/repositories';
+import { logger } from '../shared/logger';
 
 const router = Router();
 
@@ -61,16 +61,13 @@ router.get('/', (req: Request, res: Response) => {
 
 /**
  * GET /api/clubs/:id
- * 
- * Возвращает клуб по ID.
- * 
- * TODO: Реализовать проверку существования клуба.
+ *
+ * Возвращает клуб по ID. При наличии auth добавляет isMember и membershipStatus.
  */
-router.get('/:id', (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
 
-  // Заглушка: возвращаем клуб с переданным ID
-  const mockClub: ClubViewDto = {
+  const mockClub: ClubViewDto & { isMember?: boolean; membershipStatus?: string } = {
     id,
     name: `Club ${id}`,
     description: `Description for club ${id}`,
@@ -79,6 +76,22 @@ router.get('/:id', (req: Request, res: Response) => {
     createdAt: new Date(),
     updatedAt: new Date(),
   };
+
+  const uid = req.authUser?.uid;
+  if (uid) {
+    try {
+      const usersRepo = getUsersRepository();
+      const user = await usersRepo.findByFirebaseUid(uid);
+      if (user) {
+        const clubMembersRepo = getClubMembersRepository();
+        const membership = await clubMembersRepo.findByClubAndUser(id, user.id);
+        mockClub.isMember = !!membership;
+        if (membership) mockClub.membershipStatus = membership.status;
+      }
+    } catch (error) {
+      logger.error('Error fetching club membership', { clubId: id, error });
+    }
+  }
 
   res.status(200).json(mockClub);
 });
@@ -94,7 +107,6 @@ router.get('/:id', (req: Request, res: Response) => {
 router.post('/', validateBody(CreateClubSchema), (req: Request<{}, ClubViewDto, CreateClubDto>, res: Response) => {
   const dto = req.body;
 
-  // Заглушка: возвращаем созданный клуб
   const mockClub: ClubViewDto = {
     id: 'new-club-id',
     name: dto.name,
@@ -106,6 +118,67 @@ router.post('/', validateBody(CreateClubSchema), (req: Request<{}, ClubViewDto, 
   };
 
   res.status(201).json(mockClub);
+});
+
+/**
+ * POST /api/clubs/:id/join
+ *
+ * Присоединение текущего пользователя к клубу. userId из auth (Firebase UID → users.id).
+ * Ошибки в формате ADR-0002.
+ */
+router.post('/:id/join', async (req: Request, res: Response) => {
+  const { id: clubId } = req.params;
+  const uid = req.authUser?.uid;
+  if (!uid) {
+    res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+      details: { reason: 'missing_header' },
+    });
+    return;
+  }
+
+  try {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) {
+      res.status(400).json({
+        code: 'validation_error',
+        message: 'Authentication required',
+        details: {
+          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+        },
+      });
+      return;
+    }
+
+    const clubMembersRepo = getClubMembersRepository();
+    const existing = await clubMembersRepo.findByClubAndUser(clubId, user.id);
+    if (existing) {
+      res.status(400).json({
+        code: 'already_member',
+        message: 'Already a member of this club',
+        details: { clubId },
+      });
+      return;
+    }
+
+    const membership = await clubMembersRepo.create(clubId, user.id, 'active');
+    res.status(201).json({
+      id: membership.id,
+      clubId: membership.clubId,
+      userId: membership.userId,
+      status: membership.status,
+      createdAt: membership.createdAt,
+    });
+  } catch (error) {
+    logger.error('Error joining club', { clubId, error });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+      details: undefined,
+    });
+  }
 });
 
 export default router;

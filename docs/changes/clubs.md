@@ -20,3 +20,13 @@
 - **Поле cityId у клубов (skeleton):** сущность `Club` и DTO (`CreateClubDto`, `ClubViewDto`) расширены обязательным полем `cityId: string`, чтобы явно фиксировать город клуба в доменной модели. Таблица клубов пока отсутствует (mock‑данные), поэтому изменения не затрагивают БД.
 - **Фильтрация клубов по городу в API:** эндпоинт `GET /api/clubs` теперь требует query‑параметр `cityId`; при его отсутствии возвращается `400 validation_error` с полем `cityId`. Заглушка возвращает список клубов с `cityId` из запроса; `GET /api/clubs/:id` возвращает mock‑клуб с `cityId: "spb"` для согласованности контракта.
 - **Mobile ClubsService: cityId в запросах:** метод `ClubsService.getClubs` теперь принимает обязательный параметр `cityId` и добавляет его в query‑строку `/api/clubs?cityId=...`. Модель `ClubModel` по‑прежнему использует только id/name/description/status/createdAt/updatedAt; фильтрация по городу реализуется на уровне backend.
+
+### 2026-02-04 — Присоединение к клубу (join club) — реализовано
+
+- **Backend:**
+  - Добавлена миграция `006_club_members.sql`: таблица `club_members` (id, club_id VARCHAR(128), user_id UUID REFERENCES users(id), status VARCHAR(20) DEFAULT 'active', created_at, updated_at; UNIQUE (club_id, user_id)). Репозиторий `ClubMembersRepository` (findByClubAndUser, create, findPrimaryClubIdByUser).
+  - Эндпоинт `POST /api/clubs/:id/join`: auth → userId (findByFirebaseUid), проверка дубликата (findByClubAndUser), вставка в club_members, ответ 201 с телом { id, clubId, userId, status, createdAt } (без firebaseUid). Ошибки: 401 unauthorized, 400 validation_error (user not found), 400 already_member.
+  - `GET /api/clubs/:id`: при наличии auth запрашивается membership; в ответ добавляются опциональные поля isMember (boolean) и membershipStatus (string).
+- **Mobile:**
+  - `ClubsService.joinClub(clubId)`: POST /api/clubs/:id/join, при не-2xx — ApiException(code, message). Модель `ClubModel` расширена полями isMember и membershipStatus (парсятся из GET /api/clubs/:id).
+  - На `ClubDetailsScreen`: кнопка «Присоединиться» (при !isMember) вызывает joinClub; при успехе — setCurrentClubId(clubId), SnackBar «Вы вступили в клуб», перезагрузка клуба; при isMember отображается «Вы в клубе» (OutlinedButton disabled). i18n: clubJoin, clubJoinSuccess, clubJoinError(message), clubYouAreMember.

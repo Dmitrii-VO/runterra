@@ -704,6 +704,36 @@ abstract class AppLocalizations {
   /// **'Join event - TODO'**
   String get eventJoinTodo;
 
+  /// No description provided for @eventJoinSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'You are registered'**
+  String get eventJoinSuccess;
+
+  /// No description provided for @eventJoinError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not join: {message}'**
+  String eventJoinError(String message);
+
+  /// No description provided for @eventYouAreRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'You are registered'**
+  String get eventYouAreRegistered;
+
+  /// No description provided for @eventCheckInSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in successful'**
+  String get eventCheckInSuccess;
+
+  /// No description provided for @eventCheckInError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not check in: {message}'**
+  String eventCheckInError(String message);
+
   /// No description provided for @eventNoPlaces.
   ///
   /// In en, this message translates to:
@@ -1135,6 +1165,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Club'**
   String get clubDetailsTitle;
+
+  /// No description provided for @clubJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get clubJoin;
+
+  /// No description provided for @clubJoinSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'You joined the club'**
+  String get clubJoinSuccess;
+
+  /// No description provided for @clubJoinError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not join: {message}'**
+  String clubJoinError(String message);
+
+  /// No description provided for @clubYouAreMember.
+  ///
+  /// In en, this message translates to:
+  /// **'You are a member'**
+  String get clubYouAreMember;
 
   /// No description provided for @territoryDetailsTitle.
   ///

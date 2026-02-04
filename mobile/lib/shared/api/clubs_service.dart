@@ -153,4 +153,23 @@ class ClubsService {
       rethrow;
     }
   }
+
+  /// Выполняет POST /api/clubs/:id/join — присоединение текущего пользователя к клубу.
+  /// Бросает [ApiException] при 4xx/5xx с code и message из ответа.
+  Future<void> joinClub(String clubId) async {
+    final response = await _apiClient.post('/api/clubs/$clubId/join');
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    String errorCode = 'join_club_error';
+    String errorMessage = 'Failed to join club (${response.statusCode})';
+    try {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
+      if (decoded != null) {
+        errorCode = (decoded['code'] as String?) ?? errorCode;
+        errorMessage = (decoded['message'] as String?) ?? errorMessage;
+      }
+    } on FormatException {
+      // Non-JSON response
+    }
+    throw ApiException(errorCode, errorMessage);
+  }
 }

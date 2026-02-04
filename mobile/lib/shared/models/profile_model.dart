@@ -95,11 +95,14 @@ class ProfileUserData {
   /// Название города (опционально, для удобства)
   final String? cityName;
   
+  /// Идентификатор основного клуба (для фильтра «Мой клуб»)
+  final String? primaryClubId;
+
   /// Флаг меркателя (true - меркатель, false - участник клуба)
   final bool isMercenary;
-  
+
   /// Статус пользователя
-  /// 
+  ///
   /// Возможные значения: 'active', 'inactive', 'blocked'
   final String status;
 
@@ -109,6 +112,7 @@ class ProfileUserData {
     this.avatarUrl,
     this.cityId,
     this.cityName,
+    this.primaryClubId,
     required this.isMercenary,
     required this.status,
   });
@@ -121,6 +125,7 @@ class ProfileUserData {
       avatarUrl: json['avatarUrl'] as String?,
       cityId: json['cityId'] as String?,
       cityName: json['cityName'] as String?,
+      primaryClubId: json['primaryClubId'] as String?,
       isMercenary: json['isMercenary'] as bool? ?? false,
       status: json['status'] as String,
     );
@@ -134,6 +139,7 @@ class ProfileUserData {
       if (avatarUrl != null) 'avatarUrl': avatarUrl,
       if (cityId != null) 'cityId': cityId,
       if (cityName != null) 'cityName': cityName,
+      if (primaryClubId != null) 'primaryClubId': primaryClubId,
       'isMercenary': isMercenary,
       'status': status,
     };

@@ -101,9 +101,28 @@
   "eventParticipation": "Участие",
   "eventJoin": "Присоединиться",
   "eventJoinTodo": "Запись на событие - TODO",
+  "eventJoinSuccess": "Вы записаны",
+  "eventJoinError": "Не удалось записаться: {message}",
+  "eventYouAreRegistered": "Вы записаны",
+  "eventCheckInSuccess": "Отметка о прибытии принята",
+  "eventCheckInError": "Не удалось отметиться: {message}",
   "eventNoPlaces": "Нет свободных мест",
   "eventCancelled": "Событие отменено",
   "eventOrganizerLabel": "Организатор: {id}",
+  "@eventJoinError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "@eventCheckInError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "participantsTitle": "Участники ({count})",
   "participantsNone": "Пока нет участников",
   "participantsMore": "И ещё {count} участников",
@@ -173,6 +192,17 @@
   "activityDetailsTitle": "Активность",
   "cityDetailsTitle": "Город",
   "clubDetailsTitle": "Клуб",
+  "clubJoin": "Присоединиться",
+  "clubJoinSuccess": "Вы вступили в клуб",
+  "clubJoinError": "Не удалось вступить: {message}",
+  "clubYouAreMember": "Вы в клубе",
+  "@clubJoinError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "territoryDetailsTitle": "Территория",
   "detailType": "Тип",
   "detailStatus": "Статус",

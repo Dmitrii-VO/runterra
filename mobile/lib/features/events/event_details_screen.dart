@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../l10n/app_localizations.dart';
+import '../../shared/api/users_service.dart' show ApiException;
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/event_details_model.dart';
 import '../../shared/ui/details_scaffold.dart';
@@ -39,17 +40,41 @@ class EventDetailsScreen extends StatefulWidget {
 class _EventDetailsScreenState extends State<EventDetailsScreen> {
   /// Future for event details.
   late Future<EventDetailsModel> _eventFuture;
+  /// True while join/check-in request is in progress.
+  bool _isJoining = false;
 
   /// Creates Future for loading event data.
   Future<EventDetailsModel> _fetchEvent() async {
     return ServiceLocator.eventsService.getEventById(widget.eventId);
   }
-  
+
   /// Reload data
   void _retry() {
     setState(() {
       _eventFuture = _fetchEvent();
     });
+  }
+
+  /// Join event and refresh on success; show SnackBar on error.
+  Future<void> _onJoinEvent() async {
+    if (_isJoining) return;
+    setState(() => _isJoining = true);
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      await ServiceLocator.eventsService.joinEvent(widget.eventId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.eventJoinSuccess)),
+      );
+      _retry();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.eventJoinError(e.message))),
+      );
+    } finally {
+      if (mounted) setState(() => _isJoining = false);
+    }
   }
 
   @override
@@ -289,15 +314,19 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(AppLocalizations.of(context)!.eventJoinTodo),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.person_add),
-                          label: Text(AppLocalizations.of(context)!.eventJoin),
+                          onPressed: _isJoining ? null : _onJoinEvent,
+                          icon: _isJoining
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.person_add),
+                          label: Text(
+                            _isJoining
+                                ? AppLocalizations.of(context)!.eventJoinTodo
+                                : AppLocalizations.of(context)!.eventJoin,
+                          ),
                         ),
                       )
                     else if (event.status == 'full')

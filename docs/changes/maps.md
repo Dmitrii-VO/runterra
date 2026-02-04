@@ -16,6 +16,12 @@
 - **Удаление фильтров:** С MapScreen удалены состояние `_showFilters`, поле `_filters`, кнопка фильтра в AppBar, виджет MapFiltersPanel. Вызовы getMapData выполняются только с параметром cityId (без dateFilter, clubId, onlyActive). Файл map_filters.dart оставлен в проекте для возможного использования в «Слоях карты».
 - **Файлы:** `mobile/lib/shared/navigation/navigation_handler.dart`, `mobile/lib/app.dart`, `mobile/lib/features/map/map_screen.dart`, `mobile/l10n/app_en.arb`, `mobile/l10n/app_ru.arb`.
 
+### 2026-02-04 — Фильтр «Мой клуб» на карте и в списке событий
+
+- **Источник правды для «моего клуба»:** Реализованы `CurrentClubService` (mobile) и поле `user.primaryClubId` в GET `/api/users/me/profile` (backend). CurrentClubService хранит currentClubId, синхронизируется с профилем при init(), обновляется при присоединении к клубу (ClubDetailsScreen после join). См. [changes/users.md](changes/users.md), [changes/clubs.md](changes/clubs.md).
+- **Список событий:** На экране событий (EventsScreen) добавлен чип «Мой клуб» (filtersMyClub): при выборе подставляется `clubId` из CurrentClubService в запрос `EventsService.getEvents`, список перезапрашивается. См. [changes/events.md](changes/events.md).
+- **Карта:** `GET /api/map/data` по-прежнему поддерживает `clubId`; на MapScreen панель фильтров удалена, передача `clubId` на карту отложена до реализации системы слоёв (см. раздел «Слои карты» в infra/README.md).
+
 ### 2026-02-04 — Трекинг пробежки на карте (маршрут в реальном времени)
 
 - **Контекст:** Реализация первого пункта раздела «Карта и трекинг» в infra/README.md — отображение маршрута в реальном времени во время бега.

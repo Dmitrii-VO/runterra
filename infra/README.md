@@ -144,8 +144,16 @@ GitHub Actions CI (`ci.yml`) запускается на каждый push/PR в
 - [ ] **E) Слой «Пробежки»** — пробежки сегодня/завтра/на дату; заявка на присоединение или создание пробежки (функция присоединения/создания должна быть доступна и без этого слоя)
 
 ### Ошибки (требуют исправления)
-- [ ] Firebase App Distribution 403 — тестер не может скачать APK (проверить права в Firebase Console)
+- [ ] Вылет при «Начать пробежку» в Nox — краш на эмуляторе при старте foreground service (GPS). Нужно определить стратегию поддержки/ограничений для Nox и добавить guard-ы/обработку ошибок вокруг старта сервиса.
+- [ ] Firebase App Distribution 403 — тестер не может скачать APK; проверить роли/группы тестировщиков и настройки дистрибуции в Firebase Console.
 - [x] Profile: "type 'Null' is not a subtype of type 'bool'" — исправлено (isMercenary null-safe)
 - [x] Run submit: validation error — исправлено (activityId не отправляется если null, datetime в UTC)
 - [x] Карта не загружается — logcat: "You need to set the API key before using MapKit!" — исправлено (setApiKey в MainActivity до super.onCreate)
 - [x] launch_background — Resources$NotFoundException на эмуляторе (bitmap @mipmap/ic_launcher) — исправлено (только цвет)
+
+### Открытые фичи (по docs/progress.md)
+
+- [x] Участие в активностях (events/clubs) — реализовано 2026-02-04:
+  - **События (join/check-in):** Backend: `userId` из auth (Firebase UID → users.id), ошибки в формате ADR-0002. Mobile: `EventsService.joinEvent`/`checkInEvent`, кнопка «Присоединиться» на EventDetailsScreen, SnackBar успеха/ошибки, i18n. Подробности — [docs/changes/events.md](../docs/changes/events.md).
+  - **Клубы (присоединение к клубу):** Backend: миграция `006_club_members`, `POST /api/clubs/:id/join`, `GET /api/clubs/:id` с isMember/membershipStatus. Mobile: `ClubsService.joinClub`, кнопка «Присоединиться» и состояние «Вы в клубе» на ClubDetailsScreen. Подробности — [docs/changes/clubs.md](../docs/changes/clubs.md).
+  - **Фильтр «Мой клуб»:** Backend: в профиле добавлено `user.primaryClubId` (из club_members). Mobile: CurrentClubService, чип «Мой клуб» на EventsScreen (подставляет clubId и перезапрашивает список); на карте фильтр по clubId отложен до системы слоёв. Подробности — [docs/changes/users.md](../docs/changes/users.md), [docs/changes/maps.md](../docs/changes/maps.md).

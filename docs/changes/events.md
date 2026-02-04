@@ -8,6 +8,15 @@
 
 **Файлы:** `backend/src/db/migrations/005_seed_example_events.sql`.
 
+### 2026-02-04 — Участие в событиях (join/check-in) — реализовано
+
+- **Backend:**
+  - `POST /api/events/:id/join` и `POST /api/events/:id/check-in` берут userId из auth (Firebase UID → users.id через `getUsersRepository().findByFirebaseUid(uid)`). При отсутствии пользователя в БД возвращается 400 с `validation_error` и полем `userId`. Ошибки бизнес-логики (event full, already registered, not registered, check-in too far и т.д.) возвращаются в формате ADR-0002: HTTP 400 с телом `{ code, message, details? }` (коды: event_full, already_registered, event_not_found, event_not_open, join_failed; check_in: not_registered, already_checked_in, check_in_too_far и др.). Успешные ответы по-прежнему в формате `{ success: true, eventId, participant }`.
+  - Таблица `event_participants` и обновление `participantCount`/статуса `FULL` в репозитории без изменений.
+- **Mobile:**
+  - Реализованы `EventsService.joinEvent(eventId)` и `checkInEvent(eventId, longitude, latitude)`: POST на backend, при не-2xx парсится ответ и выбрасывается `ApiException(code, message)`.
+  - На `EventDetailsScreen` кнопка «Присоединиться» вызывает `joinEvent`, при успехе — SnackBar «Вы записаны» и перезагрузка события; при ошибке — SnackBar с сообщением из ApiException. Состояние загрузки (_isJoining) отображается на кнопке. Добавлены i18n: eventJoinSuccess, eventJoinError(message), eventCheckInSuccess, eventCheckInError(message).
+
 ### 2026-01-29
 
 - **Фильтры перезапрашивают данные (mobile):** В `EventsScreen` при смене фильтра по дате (`_buildDateFilterChip`) или переключателя «Только открытые» вызывается `_eventsFuture = _fetchEvents()` и выполняется `setState`, благодаря чему список событий перезагружается с учётом выбранных фильтров. Раньше фильтры только меняли локальное состояние без повторного запроса.

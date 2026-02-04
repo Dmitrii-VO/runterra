@@ -23,6 +23,12 @@ class ClubModel {
   /// Дата последнего обновления
   final DateTime updatedAt;
 
+  /// Текущий пользователь является участником клуба (при наличии auth)
+  final bool? isMember;
+
+  /// Статус членства: pending, active, inactive, suspended (если isMember == true)
+  final String? membershipStatus;
+
   ClubModel({
     required this.id,
     required this.name,
@@ -30,6 +36,8 @@ class ClubModel {
     required this.status,
     required this.createdAt,
     required this.updatedAt,
+    this.isMember,
+    this.membershipStatus,
   });
 
   /// Создает ClubModel из JSON
@@ -44,6 +52,8 @@ class ClubModel {
       status: json['status'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
+      isMember: json['isMember'] as bool?,
+      membershipStatus: json['membershipStatus'] as String?,
     );
   }
 

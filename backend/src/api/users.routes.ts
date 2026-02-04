@@ -77,7 +77,11 @@ router.get('/me/profile', async (req: Request, res: Response) => {
     
     // Получаем статистику пробежек
     const runStats = await runsRepo.getUserStats(user.id);
-    
+
+    const { getClubMembersRepository } = await import('../db/repositories');
+    const clubMembersRepo = getClubMembersRepository();
+    const primaryClubId = await clubMembersRepo.findPrimaryClubIdByUser(user.id);
+
     const profile: ProfileDto = {
       user: {
         id: user.id,
@@ -85,10 +89,11 @@ router.get('/me/profile', async (req: Request, res: Response) => {
         avatarUrl: user.avatarUrl,
         cityId: user.cityId,
         cityName: user.cityId ? findCityById(user.cityId)?.name : undefined,
+        primaryClubId: primaryClubId ?? undefined,
         isMercenary: user.isMercenary,
         status: user.status,
       },
-      // TODO: получить клуб из таблицы club_memberships
+      // TODO: получить клуб из таблицы club_memberships (полный объект)
       club: undefined,
       stats: {
         trainingCount: runStats.totalRuns,

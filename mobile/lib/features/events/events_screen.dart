@@ -223,8 +223,21 @@ class _EventsScreenState extends State<EventsScreen> {
               },
             ),
             const SizedBox(width: 16),
-            
-            // TODO: Фильтр по клубу (выпадающий список)
+            // Фильтр «Мой клуб» — подставляет clubId из CurrentClubService
+            FilterChip(
+              label: Text(AppLocalizations.of(context)!.filtersMyClub),
+              selected: ServiceLocator.currentClubService.currentClubId != null &&
+                  _selectedClubId == ServiceLocator.currentClubService.currentClubId,
+              onSelected: (selected) {
+                setState(() {
+                  _selectedClubId = selected
+                      ? ServiceLocator.currentClubService.currentClubId
+                      : null;
+                  _eventsFuture = _fetchEvents();
+                });
+              },
+            ),
+            const SizedBox(width: 16),
             // TODO: Фильтр по уровню подготовки (выпадающий список)
             // TODO: Фильтр по типу события (выпадающий список)
           ],

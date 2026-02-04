@@ -4,6 +4,10 @@
 
 ### 2026-02-04
 
+- **Профиль — primaryClubId (фильтр «Мой клуб»):** В GET `/api/users/me/profile` в объект `user` добавлено опциональное поле `primaryClubId` (идентификатор основного клуба пользователя для фильтра «Мой клуб»). Значение берётся из таблицы `club_members`: первый активный клуб пользователя по `created_at` (`getClubMembersRepository().findPrimaryClubIdByUser(user.id)`). В `ProfileDto.user` и мобильной модели `ProfileUserData` добавлено поле `primaryClubId?: string`. Используется в CurrentClubService при инициализации и на экране событий для фильтра «Мой клуб».
+
+**Файлы:** `backend/src/modules/users/profile.dto.ts`, `backend/src/api/users.routes.ts`, `mobile/lib/shared/models/profile_model.dart`.
+
 - **Выбор города — отображение названия города:** В GET `/api/users/me/profile` при формировании `ProfileDto.user` поле `cityName` заполняется из конфига городов: `user.cityId ? findCityById(user.cityId)?.name : undefined` (импорт `findCityById` из `../modules/cities/cities.config`). В ProfileScreen в блок «Город» (`_CitySection`) передаётся `currentCityName: profile.user.cityName ?? profile.user.cityId`; отображается человекочитаемое название (cityName, при отсутствии — cityId, иначе «Не выбран»). Контракт ProfileDto.user.cityName и ProfileUserData.cityName уже существовал.
 
 **Файлы:** `backend/src/api/users.routes.ts`, `mobile/lib/features/profile/profile_screen.dart`.

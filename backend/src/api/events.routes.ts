@@ -12,7 +12,7 @@
 import { Router, Request, Response } from 'express';
 import { EventType, EventStatus, EventDetailsDto, EventListItemDto, CreateEventDto, CreateEventSchema } from '../modules/events';
 import { validateBody } from './validateBody';
-import { getEventsRepository } from '../db/repositories';
+import { getEventsRepository, getUsersRepository } from '../db/repositories';
 import { logger } from '../shared/logger';
 import { isPointWithinCityBounds } from '../modules/cities/city.utils';
 
@@ -204,29 +204,59 @@ router.post('/', validateBody(CreateEventSchema), async (req: Request<{}, EventD
 
 /**
  * POST /api/events/:id/join
- * 
+ *
  * Запись на событие.
- * Проверяет: существование события, статус, лимит участников.
+ * userId берётся из auth (Firebase UID → users.id).
+ * Ошибки возвращаются в формате ADR-0002 { code, message, details? }.
  */
 router.post('/:id/join', async (req: Request, res: Response) => {
   const { id } = req.params;
-  
-  // TODO: Получить userId из авторизации (сейчас mock)
-  const userId = (req as unknown as { user?: { id: string } }).user?.id || 'mock-user-id';
+  const uid = req.authUser?.uid;
+  if (!uid) {
+    res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+      details: { reason: 'missing_header' },
+    });
+    return;
+  }
 
   try {
-    const repo = getEventsRepository();
-    const result = await repo.joinEvent(id, userId);
-    
-    if (result.error) {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) {
       res.status(400).json({
-        success: false,
-        error: result.error,
-        eventId: id,
+        code: 'validation_error',
+        message: 'Authentication required',
+        details: {
+          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+        },
       });
       return;
     }
-    
+    const userId = user.id;
+
+    const repo = getEventsRepository();
+    const result = await repo.joinEvent(id, userId);
+
+    if (result.error) {
+      const code = result.error.includes('full')
+        ? 'event_full'
+        : result.error.includes('Already registered')
+          ? 'already_registered'
+          : result.error.includes('not found')
+            ? 'event_not_found'
+            : result.error.includes('status')
+              ? 'event_not_open'
+              : 'join_failed';
+      res.status(400).json({
+        code,
+        message: result.error,
+        details: { eventId: id },
+      });
+      return;
+    }
+
     res.status(200).json({
       success: true,
       message: 'Successfully registered for event',
@@ -234,51 +264,96 @@ router.post('/:id/join', async (req: Request, res: Response) => {
       participant: result.participant,
     });
   } catch (error) {
-    logger.error('Error joining event', { eventId: id, userId, error });
+    logger.error('Error joining event', { eventId: id, error });
     res.status(500).json({
-      success: false,
-      error: 'Internal server error',
+      code: 'internal_error',
+      message: 'Internal server error',
+      details: undefined,
     });
   }
 });
 
 /**
  * POST /api/events/:id/check-in
- * 
+ *
  * Check-in на событие через GPS.
- * Проверяет: GPS координаты (500м радиус), время (15 мин до / 30 мин после).
- * 
+ * userId берётся из auth (Firebase UID → users.id).
+ * Ошибки в формате ADR-0002 { code, message, details? }.
  * Body: { longitude: number, latitude: number }
  */
 router.post('/:id/check-in', async (req: Request, res: Response) => {
   const { id } = req.params;
   const { longitude, latitude } = req.body as { longitude?: number; latitude?: number };
-  
-  // Validate coordinates
+
   if (typeof longitude !== 'number' || typeof latitude !== 'number') {
     res.status(400).json({
-      success: false,
-      error: 'Missing or invalid coordinates. Required: { longitude: number, latitude: number }',
+      code: 'validation_error',
+      message: 'Request body validation failed',
+      details: {
+        fields: [
+          {
+            field: longitude === undefined ? 'longitude' : 'latitude',
+            message: 'Missing or invalid coordinates. Required: { longitude: number, latitude: number }',
+            code: 'invalid_type',
+          },
+        ],
+      },
     });
     return;
   }
-  
-  // TODO: Получить userId из авторизации (сейчас mock)
-  const userId = (req as unknown as { user?: { id: string } }).user?.id || 'mock-user-id';
+
+  const uid = req.authUser?.uid;
+  if (!uid) {
+    res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+      details: { reason: 'missing_header' },
+    });
+    return;
+  }
 
   try {
-    const repo = getEventsRepository();
-    const result = await repo.checkIn(id, userId, { longitude, latitude });
-    
-    if (result.error) {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) {
       res.status(400).json({
-        success: false,
-        error: result.error,
-        eventId: id,
+        code: 'validation_error',
+        message: 'Authentication required',
+        details: {
+          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+        },
       });
       return;
     }
-    
+    const userId = user.id;
+
+    const repo = getEventsRepository();
+    const result = await repo.checkIn(id, userId, { longitude, latitude });
+
+    if (result.error) {
+      const code = result.error.includes('Not registered')
+        ? 'not_registered'
+        : result.error.includes('Already checked in')
+          ? 'already_checked_in'
+          : result.error.includes('cancelled')
+            ? 'registration_cancelled'
+            : result.error.includes('not found')
+              ? 'event_not_found'
+              : result.error.includes('not yet available')
+                ? 'check_in_too_early'
+                : result.error.includes('closed')
+                  ? 'check_in_too_late'
+                  : result.error.includes('Too far')
+                    ? 'check_in_too_far'
+                    : 'check_in_failed';
+      res.status(400).json({
+        code,
+        message: result.error,
+        details: { eventId: id },
+      });
+      return;
+    }
+
     res.status(200).json({
       success: true,
       message: 'Check-in successful',
@@ -286,10 +361,11 @@ router.post('/:id/check-in', async (req: Request, res: Response) => {
       participant: result.participant,
     });
   } catch (error) {
-    logger.error('Error checking in to event', { eventId: id, userId, error });
+    logger.error('Error checking in to event', { eventId: id, error });
     res.status(500).json({
-      success: false,
-      error: 'Internal server error',
+      code: 'internal_error',
+      message: 'Internal server error',
+      details: undefined,
     });
   }
 });

@@ -70,6 +70,8 @@ export interface ProfileDto {
     avatarUrl?: string;
     cityId?: string;
     cityName?: string; // Название города (для удобства)
+    /** Идентификатор основного клуба пользователя (из club_members, для фильтра «Мой клуб»). */
+    primaryClubId?: string;
     isMercenary: boolean;
     status: User['status'];
   };

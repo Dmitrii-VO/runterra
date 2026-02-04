@@ -129,12 +129,31 @@
   "eventParticipation": "Participation",
   "eventJoin": "Join",
   "eventJoinTodo": "Join event - TODO",
+  "eventJoinSuccess": "You are registered",
+  "eventJoinError": "Could not join: {message}",
+  "eventYouAreRegistered": "You are registered",
+  "eventCheckInSuccess": "Check-in successful",
+  "eventCheckInError": "Could not check in: {message}",
   "eventNoPlaces": "No spots left",
   "eventCancelled": "Event cancelled",
   "eventOrganizerLabel": "Organizer: {id}",
   "@eventOrganizerLabel": {
     "placeholders": {
       "id": {
+        "type": "String"
+      }
+    }
+  },
+  "@eventJoinError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "@eventCheckInError": {
+    "placeholders": {
+      "message": {
         "type": "String"
       }
     }
@@ -320,6 +339,17 @@
   "activityDetailsTitle": "Activity",
   "cityDetailsTitle": "City",
   "clubDetailsTitle": "Club",
+  "clubJoin": "Join",
+  "clubJoinSuccess": "You joined the club",
+  "clubJoinError": "Could not join: {message}",
+  "clubYouAreMember": "You are a member",
+  "@clubJoinError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "territoryDetailsTitle": "Territory",
   "detailType": "Type",
   "detailStatus": "Status",

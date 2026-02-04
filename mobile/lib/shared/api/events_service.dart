@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'api_client.dart';
+import 'users_service.dart' show ApiException;
 import '../models/event_list_item_model.dart';
 import '../models/event_details_model.dart';
 import '../models/event_start_location.dart';
@@ -133,43 +134,45 @@ class EventsService {
     throw UnimplementedError('createEvent not implemented yet');
   }
 
-  /// Выполняет POST /api/events/:id/join запрос к backend
-  /// 
-  /// Записывает текущего пользователя на событие.
-  /// 
-  /// [eventId] - уникальный идентификатор события
-  /// 
-  /// TODO: Реализовать POST метод в ApiClient
-  /// TODO: Получить userId из авторизации
-  /// TODO: Добавить обработку ошибок HTTP запросов
+  /// Выполняет POST /api/events/:id/join запрос к backend.
+  ///
+  /// Записывает текущего пользователя на событие (userId из auth).
+  /// Бросает [ApiException] при 4xx/5xx с code и message из ответа ADR-0002.
   Future<void> joinEvent(String eventId) async {
-    // TODO: Реализовать POST запрос
-    // final response = await _apiClient.post('/api/events/$eventId/join');
-    throw UnimplementedError('joinEvent not implemented yet');
+    final response = await _apiClient.post('/api/events/$eventId/join');
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    _throwApiException(response, 'join_event_error');
   }
 
-  /// Выполняет POST /api/events/:id/check-in запрос к backend
-  /// 
-  /// Выполняет check-in на событие через GPS.
-  /// 
-  /// [eventId] - уникальный идентификатор события
-  /// [longitude] - долгота текущей позиции пользователя
-  /// [latitude] - широта текущей позиции пользователя
-  /// 
-  /// TODO: Реализовать POST метод в ApiClient
-  /// TODO: Получить координаты из LocationService
-  /// TODO: Добавить GPS проверку на backend
-  /// TODO: Добавить обработку ошибок HTTP запросов
+  /// Выполняет POST /api/events/:id/check-in запрос к backend.
+  ///
+  /// Check-in на событие с координатами (backend проверяет радиус и окно времени).
+  /// Бросает [ApiException] при 4xx/5xx с code и message из ответа ADR-0002.
   Future<void> checkInEvent(
     String eventId, {
     required double longitude,
     required double latitude,
   }) async {
-    // TODO: Реализовать POST запрос
-    // final response = await _apiClient.post(
-    //   '/api/events/$eventId/check-in',
-    //   body: {'longitude': longitude, 'latitude': latitude},
-    // );
-    throw UnimplementedError('checkInEvent not implemented yet');
+    final response = await _apiClient.post(
+      '/api/events/$eventId/check-in',
+      body: {'longitude': longitude, 'latitude': latitude},
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    _throwApiException(response, 'check_in_error');
+  }
+
+  void _throwApiException(dynamic response, String fallbackCode) {
+    String errorCode = fallbackCode;
+    String errorMessage = 'Request failed (${response.statusCode})';
+    try {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
+      if (decoded != null) {
+        errorCode = (decoded['code'] as String?) ?? errorCode;
+        errorMessage = (decoded['message'] as String?) ?? errorMessage;
+      }
+    } on FormatException {
+      // Non-JSON response
+    }
+    throw ApiException(errorCode, errorMessage);
   }
 }

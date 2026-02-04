@@ -70,8 +70,9 @@ void main() async {
   // Single ApiClient and shared services (DI) — created once at app start
   ServiceLocator.init();
 
-  // Инициализация сервиса текущего города (кеш + профиль).
+  // Инициализация сервисов текущего города и клуба (кеш + профиль).
   await ServiceLocator.currentCityService.init();
+  await ServiceLocator.currentClubService.init();
 
   // Слушаем изменения состояния авторизации
   // При логине/логауте обновляем токен и уведомляем роутер

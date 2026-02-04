@@ -324,6 +324,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventJoinTodo => 'Join event - TODO';
 
   @override
+  String get eventJoinSuccess => 'You are registered';
+
+  @override
+  String eventJoinError(String message) {
+    return 'Could not join: $message';
+  }
+
+  @override
+  String get eventYouAreRegistered => 'You are registered';
+
+  @override
+  String get eventCheckInSuccess => 'Check-in successful';
+
+  @override
+  String eventCheckInError(String message) {
+    return 'Could not check in: $message';
+  }
+
+  @override
   String get eventNoPlaces => 'No spots left';
 
   @override
@@ -576,6 +595,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clubDetailsTitle => 'Club';
+
+  @override
+  String get clubJoin => 'Join';
+
+  @override
+  String get clubJoinSuccess => 'You joined the club';
+
+  @override
+  String clubJoinError(String message) {
+    return 'Could not join: $message';
+  }
+
+  @override
+  String get clubYouAreMember => 'You are a member';
 
   @override
   String get territoryDetailsTitle => 'Territory';

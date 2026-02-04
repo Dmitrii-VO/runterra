@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
+import '../../shared/api/users_service.dart' show ApiException;
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/club_model.dart';
 import '../../shared/ui/details_scaffold.dart';
@@ -33,17 +34,42 @@ class ClubDetailsScreen extends StatefulWidget {
 class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
   /// Future for club details.
   late Future<ClubModel> _clubFuture;
+  /// True while join request is in progress.
+  bool _isJoining = false;
 
   /// Creates Future for loading club data.
   Future<ClubModel> _fetchClub() async {
     return ServiceLocator.clubsService.getClubById(widget.clubId);
   }
-  
+
   /// Reload data
   void _retry() {
     setState(() {
       _clubFuture = _fetchClub();
     });
+  }
+
+  /// Join club and refresh on success; show SnackBar on error.
+  Future<void> _onJoinClub() async {
+    if (_isJoining) return;
+    setState(() => _isJoining = true);
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      await ServiceLocator.clubsService.joinClub(widget.clubId);
+      if (!mounted) return;
+      await ServiceLocator.currentClubService.setCurrentClubId(widget.clubId);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.clubJoinSuccess)),
+      );
+      _retry();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.clubJoinError(e.message))),
+      );
+    } finally {
+      if (mounted) setState(() => _isJoining = false);
+    }
   }
 
   @override
@@ -101,6 +127,31 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
                     ],
+                    const SizedBox(height: 24),
+                    // Участие в клубе
+                    if (club.isMember == true)
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: null,
+                          child: Text(AppLocalizations.of(context)!.clubYouAreMember),
+                        ),
+                      )
+                    else
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _isJoining ? null : _onJoinClub,
+                          icon: _isJoining
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.person_add),
+                          label: Text(AppLocalizations.of(context)!.clubJoin),
+                        ),
+                      ),
                   ],
                 ),
               ),

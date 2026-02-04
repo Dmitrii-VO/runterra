@@ -212,7 +212,7 @@ describe('API Routes', () => {
       expect(res.body.participant.status).toBe('registered');
     });
 
-    it('should return 400 with error when repo returns business error', async () => {
+    it('should return 400 with ADR-0002 envelope when repo returns business error', async () => {
       mockEventsRepository.joinEvent.mockResolvedValueOnce({ error: 'Event is full' });
 
       const res = await request(app)
@@ -220,8 +220,9 @@ describe('API Routes', () => {
         .set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(400);
-      expect(res.body.success).toBe(false);
-      expect(res.body.error).toBe('Event is full');
+      expect(res.body.code).toBe('event_full');
+      expect(res.body.message).toBe('Event is full');
+      expect(res.body.details).toEqual({ eventId: 'ev-1' });
     });
   });
 
@@ -240,25 +241,25 @@ describe('API Routes', () => {
       });
     });
 
-    it('should return 400 when longitude or latitude is missing', async () => {
+    it('should return 400 with ADR-0002 when longitude or latitude is missing', async () => {
       const res = await request(app)
         .post('/api/events/ev-1/check-in')
         .set('Authorization', 'Bearer test-token')
         .send({ latitude: 59.93 });
 
       expect(res.status).toBe(400);
-      expect(res.body.success).toBe(false);
-      expect(res.body.error).toMatch(/coordinates/i);
+      expect(res.body.code).toBe('validation_error');
+      expect(res.body.message).toMatch(/validation/i);
     });
 
-    it('should return 400 when coordinates are not numbers', async () => {
+    it('should return 400 with ADR-0002 when coordinates are not numbers', async () => {
       const res = await request(app)
         .post('/api/events/ev-1/check-in')
         .set('Authorization', 'Bearer test-token')
         .send({ longitude: '30.33', latitude: '59.93' });
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toMatch(/coordinates/i);
+      expect(res.body.code).toBe('validation_error');
     });
 
     it('should return 200 with participant when check-in succeeds', async () => {
@@ -273,7 +274,7 @@ describe('API Routes', () => {
       expect(res.body.participant.status).toBe('checked_in');
     });
 
-    it('should return 400 when repo returns error (e.g. too far)', async () => {
+    it('should return 400 with ADR-0002 when repo returns error (e.g. too far)', async () => {
       mockEventsRepository.checkIn.mockResolvedValueOnce({
         error: 'Too far from event location. Distance: 600m, max: 500m',
       });
@@ -284,8 +285,8 @@ describe('API Routes', () => {
         .send({ longitude: 30.3351, latitude: 59.9343 });
 
       expect(res.status).toBe(400);
-      expect(res.body.success).toBe(false);
-      expect(res.body.error).toMatch(/Too far/i);
+      expect(res.body.code).toBe('check_in_too_far');
+      expect(res.body.message).toMatch(/Too far/i);
     });
   });
 

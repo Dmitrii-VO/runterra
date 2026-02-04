@@ -325,6 +325,25 @@ class AppLocalizationsRu extends AppLocalizations {
   String get eventJoinTodo => 'Запись на событие - TODO';
 
   @override
+  String get eventJoinSuccess => 'Вы записаны';
+
+  @override
+  String eventJoinError(String message) {
+    return 'Не удалось записаться: $message';
+  }
+
+  @override
+  String get eventYouAreRegistered => 'Вы записаны';
+
+  @override
+  String get eventCheckInSuccess => 'Отметка о прибытии принята';
+
+  @override
+  String eventCheckInError(String message) {
+    return 'Не удалось отметиться: $message';
+  }
+
+  @override
   String get eventNoPlaces => 'Нет свободных мест';
 
   @override
@@ -577,6 +596,20 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get clubDetailsTitle => 'Клуб';
+
+  @override
+  String get clubJoin => 'Присоединиться';
+
+  @override
+  String get clubJoinSuccess => 'Вы вступили в клуб';
+
+  @override
+  String clubJoinError(String message) {
+    return 'Не удалось вступить: $message';
+  }
+
+  @override
+  String get clubYouAreMember => 'Вы в клубе';
 
   @override
   String get territoryDetailsTitle => 'Территория';
