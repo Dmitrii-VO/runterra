@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'api_client.dart';
+import 'users_service.dart' show ApiException;
 import '../models/club_model.dart';
 
 /// Сервис для работы с клубами
@@ -100,6 +101,55 @@ class ClubsService {
           response.body.substring(0, 200),
         );
       }
+      rethrow;
+    }
+  }
+
+  /// Выполняет POST /api/clubs — создание клуба.
+  ///
+  /// Возвращает созданный клуб (ClubModel).
+  /// Бросает [ApiException] при 4xx/5xx или не-JSON ответе.
+  Future<ClubModel> createClub({
+    required String name,
+    String? description,
+    required String cityId,
+  }) async {
+    final body = <String, dynamic>{
+      'name': name,
+      'cityId': cityId,
+    };
+    if (description != null && description.isNotEmpty) {
+      body['description'] = description;
+    }
+    final response = await _apiClient.post('/api/clubs', body: body);
+
+    if (response.statusCode != 201) {
+      String errorMessage = 'Failed to create club (${response.statusCode})';
+      String errorCode = 'create_club_error';
+      try {
+        final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
+        if (decoded != null) {
+          errorCode = (decoded['code'] as String?) ?? errorCode;
+          errorMessage = (decoded['message'] as String?) ?? errorMessage;
+        }
+      } on FormatException {
+        // Non-JSON response
+      }
+      throw ApiException(errorCode, errorMessage);
+    }
+
+    final contentType = response.headers['content-type'] ?? '';
+    if (!contentType.contains('application/json')) {
+      throw ApiException(
+        'invalid_response',
+        'Server returned non-JSON. Status: ${response.statusCode}',
+      );
+    }
+    try {
+      final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+      return ClubModel.fromJson(jsonData);
+    } catch (e) {
+      if (e is ApiException) rethrow;
       rethrow;
     }
   }

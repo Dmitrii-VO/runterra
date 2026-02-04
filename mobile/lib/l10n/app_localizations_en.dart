@@ -359,6 +359,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapFiltersTooltip => 'Filters';
 
   @override
+  String get mapClubsSheetTitle => 'Clubs';
+
+  @override
+  String get mapClubsEmpty => 'No clubs in this city';
+
+  @override
   String get mapMyLocationTooltip => 'My location';
 
   @override
@@ -644,4 +650,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get editProfileEditAction => 'Edit';
+
+  @override
+  String get createClubTitle => 'Create club';
+
+  @override
+  String get createClubNameHint => 'Club name';
+
+  @override
+  String get createClubDescriptionHint => 'Description (optional)';
+
+  @override
+  String get createClubSave => 'Create';
+
+  @override
+  String get createClubNameRequired => 'Club name is required';
+
+  @override
+  String get createClubCityRequired => 'Select your city in profile first';
+
+  @override
+  String createClubError(String message) {
+    return 'Could not create club: $message';
+  }
 }

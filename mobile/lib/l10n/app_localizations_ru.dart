@@ -360,6 +360,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get mapFiltersTooltip => 'Фильтры';
 
   @override
+  String get mapClubsSheetTitle => 'Клубы';
+
+  @override
+  String get mapClubsEmpty => 'В этом городе пока нет клубов';
+
+  @override
   String get mapMyLocationTooltip => 'Моё местоположение';
 
   @override
@@ -645,4 +651,27 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get editProfileEditAction => 'Редактировать';
+
+  @override
+  String get createClubTitle => 'Создать клуб';
+
+  @override
+  String get createClubNameHint => 'Название клуба';
+
+  @override
+  String get createClubDescriptionHint => 'Описание (необязательно)';
+
+  @override
+  String get createClubSave => 'Создать';
+
+  @override
+  String get createClubNameRequired => 'Укажите название клуба';
+
+  @override
+  String get createClubCityRequired => 'Сначала выберите город в профиле';
+
+  @override
+  String createClubError(String message) {
+    return 'Не удалось создать клуб: $message';
+  }
 }

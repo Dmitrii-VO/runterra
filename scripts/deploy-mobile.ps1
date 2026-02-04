@@ -51,6 +51,10 @@ if (-not (Test-Path $ApkPath)) {
 }
 
 Write-Host "`n=== 3. Upload to Firebase App Distribution ===" -ForegroundColor Cyan
+Write-Host "APK size: $([math]::Round((Get-Item $ApkPath).Length / 1MB, 2)) MB. Upload can take 5-15 min for large debug APK; progress may not show." -ForegroundColor Gray
+if ($env:FIREBASE_DEBUG) {
+    Write-Host "FIREBASE_DEBUG is set - verbose Firebase CLI output enabled." -ForegroundColor Yellow
+}
 firebase appdistribution:distribute $ApkPath `
     --app $appId `
     --release-notes $ReleaseNotes `

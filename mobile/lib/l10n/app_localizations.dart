@@ -758,6 +758,18 @@ abstract class AppLocalizations {
   /// **'Filters'**
   String get mapFiltersTooltip;
 
+  /// No description provided for @mapClubsSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clubs'**
+  String get mapClubsSheetTitle;
+
+  /// No description provided for @mapClubsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No clubs in this city'**
+  String get mapClubsEmpty;
+
   /// No description provided for @mapMyLocationTooltip.
   ///
   /// In en, this message translates to:
@@ -1255,6 +1267,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit'**
   String get editProfileEditAction;
+
+  /// No description provided for @createClubTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create club'**
+  String get createClubTitle;
+
+  /// No description provided for @createClubNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Club name'**
+  String get createClubNameHint;
+
+  /// No description provided for @createClubDescriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Description (optional)'**
+  String get createClubDescriptionHint;
+
+  /// No description provided for @createClubSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get createClubSave;
+
+  /// No description provided for @createClubNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Club name is required'**
+  String get createClubNameRequired;
+
+  /// No description provided for @createClubCityRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Select your city in profile first'**
+  String get createClubCityRequired;
+
+  /// No description provided for @createClubError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not create club: {message}'**
+  String createClubError(String message);
 }
 
 class _AppLocalizationsDelegate

@@ -256,6 +256,22 @@ flutter install
 - Проверьте, что Mapbox токен указан в `AndroidManifest.xml`
 - Убедитесь, что есть интернет-соединение
 
+### Deploy зависает на «Upload to Firebase App Distribution» / «uploading binary...»
+
+**Проблема:** Скрипт деплоя останавливается на шаге загрузки бинарника в Firebase App Distribution, прогресс не отображается.
+
+**Что попробовать:**
+
+1. **Подождать 5–15 минут** — debug APK может быть 50–100 МБ; загрузка идёт, но CLI не всегда показывает прогресс.
+2. **Проверить сеть** — отключить VPN, попробовать другой Wi‑Fi; корпоративный прокси/файрвол может резать или блокировать загрузку.
+3. **Запуск с отладкой** (увидеть, что происходит):
+   - PowerShell: `$env:FIREBASE_DEBUG="*"; .\scripts\deploy-mobile.ps1`
+   - Или: `$env:DEPLOY_DEBUG="1"; .\scripts\deploy-mobile.ps1` (если скрипт поддерживает).
+4. **Обновить Firebase CLI:** `npm install -g firebase-tools`
+5. **Проверить авторизацию:** `firebase login` (перелогиниться при необходимости).
+6. **Собрать release APK** (меньше размер) — в скрипте заменить `flutter build apk --debug` на `--release` и путь на `app-release.apk`; затем запустить деплой.
+7. **Ручная загрузка:** Firebase Console → App Distribution → выбрать приложение → «Release» → загрузить APK вручную; тестеров уведомить отдельно.
+
 ## Следующие шаги
 
 После тестирования skeleton:

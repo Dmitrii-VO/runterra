@@ -12,19 +12,21 @@ import '../../shared/models/territory_map_model.dart';
 import '../../shared/models/city_model.dart';
 import '../city/city_picker_dialog.dart';
 import 'widgets/territory_bottom_sheet.dart';
-import 'widgets/map_filters.dart';
+import '../../shared/models/club_model.dart';
 
 /// Экран карты (MVP)
 /// 
 /// Отображает карту с территориями и событиями.
 /// Реализует:
-/// - Стартовая позиция: GPS координаты пользователя (fallback: СПб)
+/// - Стартовая позиция: центр города (fallback: СПб)
 /// - Территории: круги с цветами статусов
 /// - События: маркеры на карте
-/// - Фильтры: минимум (сегодня/неделя, мой клуб, активные территории)
 /// - Кнопка "Моё местоположение"
+/// - При [showClubs] true: после загрузки показывается bottom sheet со списком клубов города
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
+  const MapScreen({super.key, this.showClubs = false});
+
+  final bool showClubs;
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -33,10 +35,9 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   YandexMapController? _mapController;
   MapDataModel? _mapData;
-  MapFilters _filters = MapFilters();
-  bool _showFilters = false;
   bool _isMapReady = false;
   CityModel? _currentCity;
+  bool _clubsSheetShown = false;
   
   // Дефолтные координаты СПб (fallback)
   static const double _defaultLongitude = 30.3351;
@@ -138,12 +139,8 @@ class _MapScreenState extends State<MapScreen> {
     }
 
     try {
-
       final data = await ServiceLocator.mapService.getMapData(
         cityId: cityId,
-        dateFilter: _filters.dateFilter,
-        clubId: _filters.clubId,
-        onlyActive: _filters.onlyActive,
       );
 
       if (mounted) {
@@ -162,9 +159,6 @@ class _MapScreenState extends State<MapScreen> {
           await ServiceLocator.refreshAuthToken();
           final retryData = await ServiceLocator.mapService.getMapData(
             cityId: cityId,
-            dateFilter: _filters.dateFilter,
-            clubId: _filters.clubId,
-            onlyActive: _filters.onlyActive,
           );
           if (mounted) {
             setState(() {
@@ -367,7 +361,115 @@ class _MapScreenState extends State<MapScreen> {
       if (_mapData != null) {
         _updateMapObjects();
       }
+      if (widget.showClubs && _currentCity != null && !_clubsSheetShown && mounted) {
+        _clubsSheetShown = true;
+        _showClubsBottomSheet();
+      }
     }
+  }
+
+  /// Показывает bottom sheet со списком клубов города (при переходе по «Найти клуб»)
+  void _showClubsBottomSheet() {
+    final cityId = _currentCity?.id;
+    if (cityId == null || cityId.isEmpty) return;
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.5,
+          minChildSize: 0.25,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return FutureBuilder<List<ClubModel>>(
+              future: ServiceLocator.clubsService.getClubs(cityId: cityId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const CircularProgressIndicator(),
+                          const SizedBox(height: 16),
+                          Text(AppLocalizations.of(context)!.mapClubsSheetTitle),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                if (snapshot.hasError) {
+                  return Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          AppLocalizations.of(context)!.mapClubsSheetTitle,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(snapshot.error.toString()),
+                        const SizedBox(height: 16),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(AppLocalizations.of(context)!.cancel),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                final clubs = snapshot.data ?? [];
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        AppLocalizations.of(context)!.mapClubsSheetTitle,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                    Flexible(
+                      child: clubs.isEmpty
+                          ? Padding(
+                              padding: const EdgeInsets.all(24.0),
+                              child: Center(
+                                child: Text(
+                                  AppLocalizations.of(context)!.mapClubsEmpty,
+                                  style: Theme.of(context).textTheme.bodyLarge,
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              controller: scrollController,
+                              itemCount: clubs.length,
+                              itemBuilder: (context, index) {
+                                final club = clubs[index];
+                                return ListTile(
+                                  title: Text(club.name),
+                                  subtitle: club.description != null && club.description!.isNotEmpty
+                                      ? Text(club.description!)
+                                      : null,
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    context.push('/club/${club.id}');
+                                  },
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
+    );
   }
 
   /// Центрирует карту на стартовой позиции
@@ -486,7 +588,7 @@ class _MapScreenState extends State<MapScreen> {
               debugPrint('MapScreen: Building YandexMap widget');
               return YandexMap(
                 onMapCreated: _onMapCreated,
-                onCameraPositionChanged: (position, _reason, _finished) {
+                onCameraPositionChanged: (position, reason, finished) {
                   _handleCameraPositionChanged(position);
                 },
                 mapObjects: _territoryCircles,
@@ -524,36 +626,11 @@ class _MapScreenState extends State<MapScreen> {
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                     ),
-                    IconButton(
-                      icon: Icon(_showFilters ? Icons.filter_list : Icons.filter_list_outlined),
-                      onPressed: () {
-                        setState(() {
-                          _showFilters = !_showFilters;
-                        });
-                      },
-                      tooltip: AppLocalizations.of(context)!.mapFiltersTooltip,
-                    ),
                   ],
                 ),
               ),
             ),
           ),
-
-          // Панель фильтров
-          if (_showFilters)
-            Positioned(
-              top: 80,
-              right: 16,
-              child: MapFiltersPanel(
-                initialFilters: _filters,
-                onFiltersChanged: (filters) {
-                  setState(() {
-                    _filters = filters;
-                  });
-                  _loadMapData();
-                },
-              ),
-            ),
 
           // Кнопка "Моё местоположение"
           if (_mapController != null)

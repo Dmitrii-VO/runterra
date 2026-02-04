@@ -4,6 +4,7 @@ import 'l10n/app_localizations.dart';
 import 'features/activity/activity_details_screen.dart';
 import 'features/city/city_details_screen.dart';
 import 'features/club/club_details_screen.dart';
+import 'features/club/create_club_screen.dart';
 import 'features/login/login_screen.dart';
 import 'features/territory/territory_details_screen.dart';
 import 'features/map/map_screen.dart';
@@ -107,7 +108,10 @@ class RunterraApp extends StatelessWidget {
         routes: [
           GoRoute(
             path: '/map',
-            builder: (context, state) => const MapScreen(),
+            builder: (context, state) {
+              final showClubs = state.uri.queryParameters['showClubs'] == 'true';
+              return MapScreen(showClubs: showClubs);
+            },
           ),
           GoRoute(
             path: '/run',
@@ -137,6 +141,11 @@ class RunterraApp extends StatelessWidget {
           final user = state.extra as ProfileUserData;
           return EditProfileScreen(user: user);
         },
+      ),
+      // Создание клуба (без BottomNav)
+      GoRoute(
+        path: '/club/create',
+        builder: (context, state) => const CreateClubScreen(),
       ),
       // Отдельный маршрут для ClubDetailsScreen (без BottomNav)
       GoRoute(

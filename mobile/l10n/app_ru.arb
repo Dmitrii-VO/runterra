@@ -110,6 +110,8 @@
   "participantN": "Участник {n}",
   "mapTitle": "Карта",
   "mapFiltersTooltip": "Фильтры",
+  "mapClubsSheetTitle": "Клубы",
+  "mapClubsEmpty": "В этом городе пока нет клубов",
   "mapMyLocationTooltip": "Моё местоположение",
   "mapLocationDeniedSnackbar": "Доступ к геолокации не предоставлен. Используется позиция по умолчанию.",
   "mapLoadErrorSnackbar": "Ошибка загрузки данных: {error}",
@@ -192,5 +194,19 @@
   "editProfilePhotoUrl": "URL фото",
   "editProfileSave": "Сохранить",
   "editProfileNameRequired": "Укажите имя",
-  "editProfileEditAction": "Редактировать"
+  "editProfileEditAction": "Редактировать",
+  "createClubTitle": "Создать клуб",
+  "createClubNameHint": "Название клуба",
+  "createClubDescriptionHint": "Описание (необязательно)",
+  "createClubSave": "Создать",
+  "createClubNameRequired": "Укажите название клуба",
+  "createClubCityRequired": "Сначала выберите город в профиле",
+  "createClubError": "Не удалось создать клуб: {message}",
+  "@createClubError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  }
 }

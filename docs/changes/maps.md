@@ -2,6 +2,20 @@
 
 ## История изменений
 
+### 2026-02-04 — Code review: кнопка закрытия bottom sheet клубов
+
+- **Контекст:** Проверка реализации раздела «Карта и трекинг» из infra/README.md.
+- **Найдена проблема:** В `_showClubsBottomSheet()` при ошибке загрузки списка клубов кнопка отображала текст «Повторить» (`retry`), но фактически закрывала bottom sheet через `Navigator.pop(context)`. Это вводило пользователя в заблуждение.
+- **Исправление:** Текст кнопки заменён с `retry` на `cancel` («Закрыть»), что соответствует фактическому поведению.
+- **Файлы:** `mobile/lib/features/map/map_screen.dart`.
+
+### 2026-02-04 — Кнопка «Найти клуб» и удаление фильтров с карты
+
+- **Контекст:** Пункты раздела «Карта и трекинг» в infra/README.md: переход на карту с отображением клубов; убрать фильтры «сегодня / неделя / мой клуб» с карты.
+- **Найти клуб:** FindClubAction ведёт на `/map?showClubs=true`. MapScreen принимает параметр `showClubs`; после загрузки карты и города при `showClubs == true` один раз показывается bottom sheet (DraggableScrollableSheet) со списком клубов города — загрузка через ClubsService.getClubs(cityId), заголовок «Клубы», тап по клубу — закрытие sheet и переход на `/club/:id`. i18n: mapClubsSheetTitle, mapClubsEmpty.
+- **Удаление фильтров:** С MapScreen удалены состояние `_showFilters`, поле `_filters`, кнопка фильтра в AppBar, виджет MapFiltersPanel. Вызовы getMapData выполняются только с параметром cityId (без dateFilter, clubId, onlyActive). Файл map_filters.dart оставлен в проекте для возможного использования в «Слоях карты».
+- **Файлы:** `mobile/lib/shared/navigation/navigation_handler.dart`, `mobile/lib/app.dart`, `mobile/lib/features/map/map_screen.dart`, `mobile/l10n/app_en.arb`, `mobile/l10n/app_ru.arb`.
+
 ### 2026-02-04 — Трекинг пробежки на карте (маршрут в реальном времени)
 
 - **Контекст:** Реализация первого пункта раздела «Карта и трекинг» в infra/README.md — отображение маршрута в реальном времени во время бега.

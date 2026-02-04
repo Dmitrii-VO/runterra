@@ -23,8 +23,8 @@ class NavigationHandler {
   /// - OpenMapAction → /map
   /// - FindTrainingAction → TODO: экран поиска тренировок
   /// - StartRunAction → TODO: экран начала пробежки
-  /// - FindClubAction → TODO: экран поиска клубов
-  /// - CreateClubAction → TODO: экран создания клуба
+  /// - FindClubAction → /map?showClubs=true (карта с отображением клубов)
+  /// - CreateClubAction → /club/create
   void handle(UserAction action) {
     switch (action) {
       case SelectClubAction(clubId: final clubId):
@@ -49,10 +49,10 @@ class NavigationHandler {
         router.go('/run');
         break;
       case FindClubAction():
-        router.go('/map');
+        router.go('/map?showClubs=true');
         break;
       case CreateClubAction():
-        // TODO: Реализовать навигацию к экрану создания клуба
+        router.push('/club/create');
         break;
     }
   }

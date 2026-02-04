@@ -166,6 +166,8 @@
   },
   "mapTitle": "Map",
   "mapFiltersTooltip": "Filters",
+  "mapClubsSheetTitle": "Clubs",
+  "mapClubsEmpty": "No clubs in this city",
   "mapMyLocationTooltip": "My location",
   "mapLocationDeniedSnackbar": "Location access not granted. Using default position.",
   "mapLoadErrorSnackbar": "Error loading data: {error}",
@@ -366,5 +368,19 @@
   "editProfilePhotoUrl": "Photo URL",
   "editProfileSave": "Save",
   "editProfileNameRequired": "Name is required",
-  "editProfileEditAction": "Edit"
+  "editProfileEditAction": "Edit",
+  "createClubTitle": "Create club",
+  "createClubNameHint": "Club name",
+  "createClubDescriptionHint": "Description (optional)",
+  "createClubSave": "Create",
+  "createClubNameRequired": "Club name is required",
+  "createClubCityRequired": "Select your city in profile first",
+  "createClubError": "Could not create club: {message}",
+  "@createClubError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  }
 }
