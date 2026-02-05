@@ -53,6 +53,14 @@ export class ClubMembersRepository extends BaseRepository {
     return rowToMembership(row);
   }
 
+  async findActiveByUser(userId: string): Promise<ClubMembershipRow[]> {
+    const rows = await this.queryMany<ClubMemberRow>(
+      'SELECT * FROM club_members WHERE user_id = $1 AND status = $2 ORDER BY created_at ASC',
+      [userId, 'active'],
+    );
+    return rows.map(rowToMembership);
+  }
+
   /** Get primary (first) club id for user (MVP: one club). */
   async findPrimaryClubIdByUser(userId: string): Promise<string | null> {
     const row = await this.queryOne<{ club_id: string }>(

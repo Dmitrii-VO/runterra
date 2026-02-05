@@ -4,6 +4,12 @@
 
 ### 2026-02-04
 
+- **Список участников события (имена вместо mock):**
+  - **Backend:** Добавлен `GET /api/events/:id/participants` — возвращает список участников с `userId`, `name`, `avatarUrl`, `status`, `checkedInAt` (ISO). Данные пользователей подмешиваются через `UsersRepository.findByIds`, чтобы отображать реальные имена вместо `Participant N`.
+  - **Mobile:** `ParticipantsList` переведён на загрузку данных через `EventsService.getEventParticipants(eventId)` и отображение имён; при отсутствии имён используется fallback `Participant N`. Поддержан empty/error state и кнопка retry.
+
+**Файлы:** `backend/src/api/events.routes.ts`, `backend/src/modules/events/event.dto.ts`, `backend/src/db/repositories/users.repository.ts`, `mobile/lib/shared/api/events_service.dart`, `mobile/lib/features/events/widgets/participants_list.dart`, `mobile/lib/shared/models/event_participant_model.dart`, `mobile/lib/features/events/event_details_screen.dart`.
+
 - **События для примера (seed-данные):** Добавлена миграция `005_seed_example_events.sql`: вставка 5 демо-событий для города `spb` (status `open`, типы `group_run`, `training`, `club_event`), даты старта в будущем (NOW() + 1–7 дней), координаты в границах Санкт-Петербурга, организатор `demo-club-1` (club). Используются фиксированные UUID и `ON CONFLICT (id) DO NOTHING` для идемпотентности. После применения миграции список событий и карта показывают примеры без изменений в коде приложения.
 
 **Файлы:** `backend/src/db/migrations/005_seed_example_events.sql`.

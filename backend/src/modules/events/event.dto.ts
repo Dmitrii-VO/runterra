@@ -207,3 +207,28 @@ export interface EventListItemDto {
   /** Идентификатор города, в котором проходит событие */
   cityId: string;
 }
+
+/**
+ * DTO для отображения участника события
+ *
+ * Используется в списке участников события (GET /api/events/:id/participants).
+ */
+export interface EventParticipantViewDto {
+  /** Уникальный идентификатор записи участника */
+  id: string;
+
+  /** ID пользователя */
+  userId: string;
+
+  /** Имя пользователя (может отсутствовать, если не найден) */
+  name: string | null;
+
+  /** URL аватара (опционально) */
+  avatarUrl?: string;
+
+  /** Статус участия */
+  status: 'registered' | 'checked_in' | 'cancelled' | 'no_show';
+
+  /** Время check-in (ISO) */
+  checkedInAt?: string;
+}

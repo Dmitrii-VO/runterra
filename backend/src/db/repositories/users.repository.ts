@@ -58,6 +58,16 @@ export class UsersRepository extends BaseRepository {
     return rows.map(rowToUser);
   }
 
+  async findByIds(ids: string[]): Promise<User[]> {
+    const uniqueIds = Array.from(new Set(ids));
+    if (uniqueIds.length === 0) return [];
+    const rows = await this.queryMany<UserRow>(
+      'SELECT * FROM users WHERE id = ANY($1)',
+      [uniqueIds]
+    );
+    return rows.map(rowToUser);
+  }
+
   async create(data: {
     firebaseUid: string;
     email: string;

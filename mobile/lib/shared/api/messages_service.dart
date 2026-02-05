@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'api_client.dart';
 import '../models/message_model.dart';
 import '../models/chat_model.dart';
@@ -36,13 +37,17 @@ class MessagesService {
   /// TODO: Добавить фильтрацию по клубам, в которых состоит пользователь
   /// TODO: Добавить сортировку по дате последнего сообщения
   Future<List<ClubChatModel>> getClubChats() async {
-    // TODO: Реализовать реальный запрос к backend API
-    // final response = await _apiClient.get('/api/messages/clubs');
-    // final jsonData = jsonDecode(response.body) as List<dynamic>;
-    // return jsonData.map((json) => ClubChatModel.fromJson(json as Map<String, dynamic>)).toList();
-    
-    // Заглушка: возвращаем пустой список
-    return [];
+    final response = await _apiClient.get('/api/messages/clubs');
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Ошибка сервера: ${response.statusCode}\n'
+        'Убедитесь, что backend сервер запущен (npm run dev в папке backend)',
+      );
+    }
+    final jsonData = jsonDecode(response.body) as List<dynamic>;
+    return jsonData
+        .map((json) => ClubChatModel.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 
   /// Выполняет GET запрос для получения сообщений конкретного личного чата

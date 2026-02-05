@@ -4,6 +4,17 @@
 
 ### 2026-02-04
 
+- **Профиль — заполнение club + fallback по primaryClubId:**
+  - **Backend:** В `GET /api/users/me/profile` поле `club` больше не `undefined` — при наличии `primaryClubId` заполняется объект `{ id, name, role }` (role = member, name = `Club <id>`).
+  - **Mobile:** В `ProfileScreen` добавлен fallback: если `profile.club` отсутствует, но `user.primaryClubId` есть, UI показывает клуб и корректно определяет `hasClub`.
+
+**Файлы:** `backend/src/api/users.routes.ts`, `mobile/lib/features/profile/profile_screen.dart`.
+
+- **Автосоздание пользователя из auth-данных:**
+  - **Backend:** При первом входе в `GET /api/users/me/profile` имя и email берутся из `req.authUser` (displayName/email), avatarUrl — из `photoURL` (fallback на дефолтные значения).
+
+**Файлы:** `backend/src/api/users.routes.ts`.
+
 - **Профиль — primaryClubId (фильтр «Мой клуб»):** В GET `/api/users/me/profile` в объект `user` добавлено опциональное поле `primaryClubId` (идентификатор основного клуба пользователя для фильтра «Мой клуб»). Значение берётся из таблицы `club_members`: первый активный клуб пользователя по `created_at` (`getClubMembersRepository().findPrimaryClubIdByUser(user.id)`). В `ProfileDto.user` и мобильной модели `ProfileUserData` добавлено поле `primaryClubId?: string`. Используется в CurrentClubService при инициализации и на экране событий для фильтра «Мой клуб».
 
 **Файлы:** `backend/src/modules/users/profile.dto.ts`, `backend/src/api/users.routes.ts`, `mobile/lib/shared/models/profile_model.dart`.

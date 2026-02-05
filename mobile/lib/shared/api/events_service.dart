@@ -3,6 +3,7 @@ import 'api_client.dart';
 import 'users_service.dart' show ApiException;
 import '../models/event_list_item_model.dart';
 import '../models/event_details_model.dart';
+import '../models/event_participant_model.dart';
 import '../models/event_start_location.dart';
 
 /// Сервис для работы с событиями
@@ -105,6 +106,23 @@ class EventsService {
     final response = await _apiClient.get('/api/events/$id');
     final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
     return EventDetailsModel.fromJson(jsonData);
+  }
+
+  /// Выполняет GET /api/events/:id/participants запрос к backend
+  ///
+  /// Возвращает список участников события.
+  Future<List<EventParticipantModel>> getEventParticipants(String eventId) async {
+    final response = await _apiClient.get('/api/events/$eventId/participants');
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Ошибка сервера: ${response.statusCode}\n'
+        'Убедитесь, что backend сервер запущен (npm run dev в папке backend)',
+      );
+    }
+    final jsonData = jsonDecode(response.body) as List<dynamic>;
+    return jsonData
+        .map((json) => EventParticipantModel.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 
   /// Выполняет POST /api/events запрос к backend

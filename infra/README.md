@@ -1,4 +1,4 @@
-# Infrastructure
+﻿# Infrastructure
 
 Инфраструктура проекта Runterra.
 
@@ -157,3 +157,44 @@ GitHub Actions CI (`ci.yml`) запускается на каждый push/PR в
   - **События (join/check-in):** Backend: `userId` из auth (Firebase UID → users.id), ошибки в формате ADR-0002. Mobile: `EventsService.joinEvent`/`checkInEvent`, кнопка «Присоединиться» на EventDetailsScreen, SnackBar успеха/ошибки, i18n. Подробности — [docs/changes/events.md](../docs/changes/events.md).
   - **Клубы (присоединение к клубу):** Backend: миграция `006_club_members`, `POST /api/clubs/:id/join`, `GET /api/clubs/:id` с isMember/membershipStatus. Mobile: `ClubsService.joinClub`, кнопка «Присоединиться» и состояние «Вы в клубе» на ClubDetailsScreen. Подробности — [docs/changes/clubs.md](../docs/changes/clubs.md).
   - **Фильтр «Мой клуб»:** Backend: в профиле добавлено `user.primaryClubId` (из club_members). Mobile: CurrentClubService, чип «Мой клуб» на EventsScreen (подставляет clubId и перезапрашивает список); на карте фильтр по clubId отложен до системы слоёв. Подробности — [docs/changes/users.md](../docs/changes/users.md), [docs/changes/maps.md](../docs/changes/maps.md).
+
+### Аудит (2026-02-04)
+- [ ] Исправить bulk-insert GPS точек (плейсхолдеры) и добавить тест на 2+ точки
+- [ ] Привести clubId к единому формату (UUID или строка) во всех слоях: DB, API, WS, mobile
+- [ ] Внедрить Firebase Admin SDK и убрать заглушки авторизации
+- [ ] Обеспечить авто-создание пользователя по валидному токену (или явный onboarding)
+- [ ] Добавить проверку членства для клубных чатов (HTTP + WS)
+- [ ] Унифицировать формат ошибок API (code/message/details) во всех эндпоинтах
+- [ ] Зафиксировать production baseUrl для mobile (без localhost по умолчанию)
+- [ ] Убрать моки и подключить реальные данные для территорий/клубов/активностей
+- [ ] Доделать флоу событий в mobile (создание, join, check-in, фильтры)
+- [ ] Реализовать mobile chat API (messages_service) для клубных/личных чатов
+- [ ] Добавить транзакционную защиту от оверсабскрайба на события (participant_limit)
+- [ ] Исправить 500 на /api/messages при отсутствии auth (возвращать 401/403)
+
+#### Feedback (2026-02-04)
+
+##### Backend
+- [x] Общий профиль: в non-prod `FirebaseAuthProvider` возвращает фиксированный uid `mock-uid-123`, поэтому все пользователи мапятся в одну запись `users`
+  - Где: `backend/src/modules/auth/firebase.provider.ts`, `backend/src/auth/authMiddleware.ts`
+  - Решение: в non-prod uid теперь берётся из JWT-пэйлоада или хэша токена, чтобы разные токены давали разных пользователей
+- [x] Участники события: нет endpoint для списка участников с именами
+  - Где: отсутствует `GET /api/events/:id/participants`
+  - Решение: добавлен endpoint с join на `users` и отдачей имён/аватаров
+- [x] Профиль: `club` в `/api/users/me/profile` всегда `undefined`, несмотря на `primaryClubId`
+  - Где: `backend/src/api/users.routes.ts`
+  - Решение: `club` теперь заполняется по `primaryClubId` (fallback name `Club <id>`)
+- [x] Клубные чаты: нет endpoint для списка клубных чатов пользователя
+  - Где: отсутствует `GET /api/messages/clubs` или `GET /api/clubs/my`
+  - Решение: добавлен `GET /api/messages/clubs` с фильтром по членству
+
+##### Mobile
+- [x] Участники события: `ParticipantsList` генерирует `Participant N` (mock), имена не подтягиваются
+  - Где: `mobile/lib/features/events/widgets/participants_list.dart`
+  - Решение: подключен API `/api/events/:id/participants` и отображение реальных имён
+- [x] Профиль: UI определяет наличие клуба только по `profile.club`, игнорируя `primaryClubId`
+  - Где: `mobile/lib/features/profile/profile_screen.dart`, `mobile/lib/shared/models/profile_model.dart`
+  - Решение: добавлен fallback по `primaryClubId` (показ клуба и корректный `hasClub`)
+- [x] Сообщения/клубы: `MessagesService.getClubChats()` возвращает пустой список (stub)
+  - Где: `mobile/lib/shared/api/messages_service.dart`, `mobile/lib/features/messages/tabs/club_messages_tab.dart`
+  - Решение: подключен `GET /api/messages/clubs` и парсинг списка чатов

@@ -5,9 +5,9 @@
 
 import { Router, Request, Response } from 'express';
 import { CreateMessageSchema } from '../modules/messages';
-import type { MessageViewDto } from '../modules/messages/message.dto';
+import type { MessageViewDto, ClubChatViewDto } from '../modules/messages/message.dto';
 import { validateBody } from './validateBody';
-import { getMessagesRepository, getUsersRepository } from '../db/repositories';
+import { getMessagesRepository, getUsersRepository, getClubMembersRepository } from '../db/repositories';
 import { broadcast } from '../ws/chatWs';
 import { logger } from '../shared/logger';
 
@@ -32,6 +32,48 @@ function getAuthUid(req: Request): string {
   }
   return uid;
 }
+
+/**
+ * GET /api/messages/clubs
+ * Returns list of club chats for current user (membership-based).
+ */
+router.get('/clubs', async (req: Request, res: Response) => {
+  try {
+    const uid = getAuthUid(req);
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) {
+      res.status(401).json({
+        code: 'unauthorized',
+        message: 'User not found',
+      });
+      return;
+    }
+
+    const clubMembersRepo = getClubMembersRepository();
+    const memberships = await clubMembersRepo.findActiveByUser(user.id);
+    const chats: ClubChatViewDto[] = memberships.map((membership) => ({
+      id: membership.id,
+      clubId: membership.clubId,
+      clubName: `Club ${membership.clubId}`,
+      clubDescription: undefined,
+      clubLogo: undefined,
+      lastMessageAt: undefined,
+      lastMessageText: undefined,
+      lastMessageUserId: undefined,
+      createdAt: membership.createdAt.toISOString(),
+      updatedAt: membership.updatedAt.toISOString(),
+    }));
+
+    res.status(200).json(chats);
+  } catch (error) {
+    logger.error('Error fetching club chats', { error: error });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+    });
+  }
+});
 
 /**
  * GET /api/messages/clubs/:clubId

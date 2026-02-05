@@ -14,3 +14,16 @@ export interface MessageViewDto {
 export interface CreateMessageDto {
   text: string;
 }
+
+export interface ClubChatViewDto {
+  id: string;
+  clubId: string;
+  clubName?: string;
+  clubDescription?: string;
+  clubLogo?: string;
+  lastMessageAt?: string;
+  lastMessageText?: string;
+  lastMessageUserId?: string;
+  createdAt: string;
+  updatedAt: string;
+}

@@ -1,4 +1,67 @@
 import { AuthProvider, TokenVerificationResult, AuthUser } from './auth.provider';
+import crypto from 'crypto';
+
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  const payload = parts[1];
+  try {
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
+    const json = Buffer.from(padded, 'base64').toString('utf8');
+    return JSON.parse(json) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function getString(payload: Record<string, unknown> | null, key: string): string | undefined {
+  if (!payload) return undefined;
+  const value = payload[key];
+  return typeof value === 'string' && value.trim() !== '' ? value : undefined;
+}
+
+function getBoolean(payload: Record<string, unknown> | null, key: string): boolean | undefined {
+  if (!payload) return undefined;
+  const value = payload[key];
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    if (value.toLowerCase() === 'true') return true;
+    if (value.toLowerCase() === 'false') return false;
+  }
+  return undefined;
+}
+
+function hashToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex').slice(0, 32);
+}
+
+function deriveAuthUserFromToken(token: string): AuthUser {
+  const payload = decodeJwtPayload(token);
+  const uid =
+    getString(payload, 'user_id') ||
+    getString(payload, 'uid') ||
+    getString(payload, 'sub') ||
+    `stub-${hashToken(token)}`;
+  const email = getString(payload, 'email');
+  const displayName =
+    getString(payload, 'name') ||
+    getString(payload, 'displayName') ||
+    getString(payload, 'preferred_username') ||
+    email;
+  const emailVerified =
+    getBoolean(payload, 'email_verified') ??
+    getBoolean(payload, 'emailVerified');
+  const photoURL = getString(payload, 'picture') || getString(payload, 'photoURL');
+
+  return {
+    uid,
+    email,
+    emailVerified,
+    displayName,
+    photoURL,
+  };
+}
 
 /**
  * Провайдер авторизации через Firebase Authentication
@@ -49,17 +112,9 @@ export class FirebaseAuthProvider implements AuthProvider {
       };
     }
 
-    // TODO: Удалить mock-данные после реализации реальной проверки
-    const mockUser: AuthUser = {
-      uid: 'mock-uid-123',
-      email: 'mock@example.com',
-      emailVerified: true,
-      displayName: 'Mock User',
-    };
-
     return {
       valid: true,
-      user: mockUser,
+      user: deriveAuthUserFromToken(token),
     };
   }
 }

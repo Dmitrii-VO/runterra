@@ -7,10 +7,19 @@
  * - POST /api/events - создание события
  * - POST /api/events/:id/join - запись на событие
  * - POST /api/events/:id/check-in - check-in на событие
+ * - GET /api/events/:id/participants - список участников события
  */
 
 import { Router, Request, Response } from 'express';
-import { EventType, EventStatus, EventDetailsDto, EventListItemDto, CreateEventDto, CreateEventSchema } from '../modules/events';
+import {
+  EventType,
+  EventStatus,
+  EventDetailsDto,
+  EventListItemDto,
+  EventParticipantViewDto,
+  CreateEventDto,
+  CreateEventSchema,
+} from '../modules/events';
 import { validateBody } from './validateBody';
 import { getEventsRepository, getUsersRepository } from '../db/repositories';
 import { logger } from '../shared/logger';
@@ -130,6 +139,51 @@ router.get('/:id', async (req: Request, res: Response) => {
     res.status(200).json(eventDto);
   } catch (error) {
     logger.error('Error fetching event', { eventId: id, error });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/events/:id/participants
+ *
+ * Возвращает список участников события.
+ */
+router.get('/:id/participants', async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const repo = getEventsRepository();
+    const event = await repo.findById(id);
+    if (!event) {
+      res.status(404).json({ error: 'Event not found' });
+      return;
+    }
+
+    const participants = await repo.getParticipants(id);
+    if (participants.length === 0) {
+      res.status(200).json([]);
+      return;
+    }
+
+    const usersRepo = getUsersRepository();
+    const users = await usersRepo.findByIds(participants.map(participant => participant.userId));
+    const usersById = new Map(users.map(user => [user.id, user]));
+
+    const participantDtos: EventParticipantViewDto[] = participants.map(participant => {
+      const user = usersById.get(participant.userId);
+      return {
+        id: participant.id,
+        userId: participant.userId,
+        name: user?.name ?? null,
+        avatarUrl: user?.avatarUrl,
+        status: participant.status,
+        checkedInAt: participant.checkedInAt ? participant.checkedInAt.toISOString() : undefined,
+      };
+    });
+
+    res.status(200).json(participantDtos);
+  } catch (error) {
+    logger.error('Error fetching event participants', { eventId: id, error });
     res.status(500).json({ error: 'Internal server error' });
   }
 });

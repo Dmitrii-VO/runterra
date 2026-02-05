@@ -4,6 +4,12 @@
 
 ### 2026-02-04
 
+- **Список клубных чатов (membership-based):**
+  - **Backend:** Добавлен `GET /api/messages/clubs` — возвращает список чатов клубов пользователя на основе `club_members` (active). Формат ответа соответствует `ClubChatViewDto` (id, clubId, clubName, createdAt/updatedAt и т.д.).
+  - **Mobile:** `MessagesService.getClubChats()` теперь вызывает `GET /api/messages/clubs` и парсит список `ClubChatModel` вместо пустой заглушки. `ClubMessagesTab` начинает показывать клубы после вступления.
+
+**Файлы:** `backend/src/api/messages.routes.ts`, `backend/src/modules/messages/message.dto.ts`, `backend/src/db/repositories/club_members.repository.ts`, `mobile/lib/shared/api/messages_service.dart`.
+
 - **Удаление чата города:**
   - **Backend**
     - `messages.routes.ts`: удалены эндпоинты GET и POST `/api/messages/global`.

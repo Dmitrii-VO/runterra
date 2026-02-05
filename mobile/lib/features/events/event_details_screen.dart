@@ -354,7 +354,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     // TODO: Проверить время и показать секцию check-in
                     
                     // Список участников
-                    ParticipantsList(participantCount: event.participantCount),
+                    ParticipantsList(
+                      eventId: widget.eventId,
+                      participantCount: event.participantCount,
+                    ),
                   ],
                 ),
               ),

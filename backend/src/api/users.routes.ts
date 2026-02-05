@@ -70,8 +70,9 @@ router.get('/me/profile', async (req: Request, res: Response) => {
       // Создаём пользователя если не существует (первый вход)
       user = await usersRepo.create({
         firebaseUid,
-        email: 'user@example.com', // TODO: из Firebase token
-        name: 'New User',
+        email: req.authUser?.email ?? 'user@example.com', // TODO: из Firebase token
+        name: req.authUser?.displayName ?? 'New User',
+        avatarUrl: req.authUser?.photoURL,
       });
     }
     
@@ -81,6 +82,14 @@ router.get('/me/profile', async (req: Request, res: Response) => {
     const { getClubMembersRepository } = await import('../db/repositories');
     const clubMembersRepo = getClubMembersRepository();
     const primaryClubId = await clubMembersRepo.findPrimaryClubIdByUser(user.id);
+
+    const club = primaryClubId
+      ? {
+          id: primaryClubId,
+          name: `Club ${primaryClubId}`,
+          role: ClubRole.MEMBER,
+        }
+      : null;
 
     const profile: ProfileDto = {
       user: {
@@ -93,8 +102,7 @@ router.get('/me/profile', async (req: Request, res: Response) => {
         isMercenary: user.isMercenary,
         status: user.status,
       },
-      // TODO: получить клуб из таблицы club_memberships (полный объект)
-      club: undefined,
+      club,
       stats: {
         trainingCount: runStats.totalRuns,
         territoriesParticipated: 0, // TODO: из territories
