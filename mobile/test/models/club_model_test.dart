@@ -21,6 +21,23 @@ void main() {
       expect(club.status, 'active');
     });
 
+    test('fromJson parses membership fields when present', () {
+      final json = {
+        'id': 'club-1',
+        'name': 'Running Club',
+        'status': 'active',
+        'createdAt': '2026-01-01T00:00:00.000Z',
+        'updatedAt': '2026-01-15T12:00:00.000Z',
+        'isMember': true,
+        'membershipStatus': 'active',
+      };
+
+      final club = ClubModel.fromJson(json);
+
+      expect(club.isMember, true);
+      expect(club.membershipStatus, 'active');
+    });
+
     test('fromJson handles null description', () {
       final json = {
         'id': 'club-2',
@@ -60,11 +77,15 @@ void main() {
         status: 'active',
         createdAt: DateTime.utc(2026, 1, 1),
         updatedAt: DateTime.utc(2026, 1, 1),
+        isMember: true,
+        membershipStatus: 'active',
       );
 
       final json = club.toJson();
 
       expect(json.containsKey('description'), false);
+      expect(json.containsKey('isMember'), false);
+      expect(json.containsKey('membershipStatus'), false);
     });
   });
 }

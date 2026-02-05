@@ -6,6 +6,7 @@
 ## История изменений
 
 ### 2026-02-05
+- **Tests: events/clubs/users + mobile models:** Added API tests for event leave and club leave, membership flags, repository tests for leaveEvent and birthDate mapping, and Flutter model tests for EventDetails/Club membership fields.
 - **Fix: участие в событиях + создание события + расширение профиля:** Добавлены «Вы участвуете»/«Отменить участие» (backend `POST /api/events/:id/leave`, статус участия в деталях) и экран создания события на mobile (FAB → CreateEventScreen, `createEvent()` подключён к API). Профиль расширен личными данными (имя/фамилия/дата рождения/страна/пол), добавлена миграция `007_users_profile_fields.sql`, форма редактирования и секция отображения. Подробности — [changes/events.md](changes/events.md), [changes/users.md](changes/users.md).
 - **Fix: пол/дата рождения/клубы/текст join:** Пол ограничен «мужской/женский» (миграция `008_users_gender_restrict.sql`, UI без other/unknown), дата рождения возвращается без UTC‑сдвига, join‑текст больше не содержит TODO, добавлен выход из клуба (`POST /api/clubs/:id/leave` + кнопка). Подробности — [changes/users.md](changes/users.md), [changes/clubs.md](changes/clubs.md), [changes/events.md](changes/events.md).
 

@@ -4,6 +4,8 @@
 
 ### 2026-02-05
 
+- **Tests:** Added repository tests for birthDate date-only mapping and gender normalization.
+
 - **Профиль — расширенные личные данные (имя, фамилия, дата рождения, страна, пол):**
   - **Backend/DB:** Добавлена миграция `007_users_profile_fields.sql` (new columns: `first_name`, `last_name`, `birth_date`, `country`, `gender`). В `GET /api/users/me/profile` возвращаются новые поля, `PATCH /api/users/me/profile` принимает и сохраняет их.
   - **Mobile:** Расширены `ProfileUserData` и экран редактирования профиля (добавлены поля имени/фамилии, дата рождения, страна, пол, город). В профиле отображается секция «Личные данные».

@@ -1346,23 +1346,11 @@ abstract class AppLocalizations {
   /// **'Join'**
   String get clubJoin;
 
-  /// No description provided for @clubLeave.
-  ///
-  /// In en, this message translates to:
-  /// **'Leave club'**
-  String get clubLeave;
-
   /// No description provided for @clubJoinSuccess.
   ///
   /// In en, this message translates to:
   /// **'You joined the club'**
   String get clubJoinSuccess;
-
-  /// No description provided for @clubLeaveSuccess.
-  ///
-  /// In en, this message translates to:
-  /// **'You left the club'**
-  String get clubLeaveSuccess;
 
   /// No description provided for @clubJoinError.
   ///
@@ -1370,17 +1358,29 @@ abstract class AppLocalizations {
   /// **'Could not join: {message}'**
   String clubJoinError(String message);
 
-  /// No description provided for @clubLeaveError.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not leave: {message}'**
-  String clubLeaveError(String message);
-
   /// No description provided for @clubYouAreMember.
   ///
   /// In en, this message translates to:
   /// **'You are a member'**
   String get clubYouAreMember;
+
+  /// No description provided for @clubLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave club'**
+  String get clubLeave;
+
+  /// No description provided for @clubLeaveSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'You left the club'**
+  String get clubLeaveSuccess;
+
+  /// No description provided for @clubLeaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not leave: {message}'**
+  String clubLeaveError(String message);
 
   /// No description provided for @territoryDetailsTitle.
   ///

@@ -691,13 +691,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clubJoin => 'Join';
 
   @override
-  String get clubLeave => 'Leave club';
-
-  @override
   String get clubJoinSuccess => 'You joined the club';
-
-  @override
-  String get clubLeaveSuccess => 'You left the club';
 
   @override
   String clubJoinError(String message) {
@@ -705,12 +699,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get clubYouAreMember => 'You are a member';
+
+  @override
+  String get clubLeave => 'Leave club';
+
+  @override
+  String get clubLeaveSuccess => 'You left the club';
+
+  @override
   String clubLeaveError(String message) {
     return 'Could not leave: $message';
   }
-
-  @override
-  String get clubYouAreMember => 'You are a member';
 
   @override
   String get territoryDetailsTitle => 'Territory';

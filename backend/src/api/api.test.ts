@@ -186,6 +186,71 @@ describe('API Routes', () => {
     });
   });
 
+  describe('GET /api/events/:id participant status', () => {
+    const { mockEventsRepository } = require('../db/repositories');
+
+    beforeEach(() => {
+      mockEventsRepository.getParticipant.mockReset();
+    });
+
+    it('includes participant flags when user is registered', async () => {
+      mockEventsRepository.getParticipant.mockResolvedValueOnce({
+        id: 'p-1',
+        eventId: 'test-event-id',
+        userId: 'test-user-id',
+        status: 'registered',
+        createdAt: new Date(),
+      });
+
+      const res = await request(app)
+        .get('/api/events/test-event-id')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body.isParticipant).toBe(true);
+      expect(res.body.participantStatus).toBe('registered');
+    });
+
+    it('omits participant flags when no participation found', async () => {
+      mockEventsRepository.getParticipant.mockResolvedValueOnce(null);
+
+      const res = await request(app)
+        .get('/api/events/test-event-id')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body).not.toHaveProperty('isParticipant');
+      expect(res.body).not.toHaveProperty('participantStatus');
+    });
+  });
+
+  describe('GET /api/clubs/:id membership flags', () => {
+    const { mockClubMembersRepository } = require('../db/repositories');
+
+    beforeEach(() => {
+      mockClubMembersRepository.findByClubAndUser.mockReset();
+    });
+
+    it('sets isMember=false for inactive membership and keeps status', async () => {
+      mockClubMembersRepository.findByClubAndUser.mockResolvedValueOnce({
+        id: 'cm-1',
+        clubId: 'club-1',
+        userId: 'test-user-id',
+        status: 'inactive',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const res = await request(app)
+        .get('/api/clubs/club-1')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body.isMember).toBe(false);
+      expect(res.body.membershipStatus).toBe('inactive');
+    });
+  });
+
   describe('POST /api/events/:id/join', () => {
     const { mockEventsRepository } = require('../db/repositories');
 
@@ -287,6 +352,125 @@ describe('API Routes', () => {
       expect(res.status).toBe(400);
       expect(res.body.code).toBe('check_in_too_far');
       expect(res.body.message).toMatch(/Too far/i);
+    });
+  });
+
+  describe('POST /api/events/:id/leave', () => {
+    const { mockEventsRepository } = require('../db/repositories');
+
+    beforeEach(() => {
+      mockEventsRepository.leaveEvent.mockReset();
+    });
+
+    it('returns 200 with participant when leave succeeds', async () => {
+      mockEventsRepository.leaveEvent.mockResolvedValueOnce({
+        participant: {
+          id: 'p-1',
+          eventId: 'ev-1',
+          userId: 'user-1',
+          status: 'cancelled',
+          createdAt: new Date(),
+        },
+      });
+
+      const res = await request(app)
+        .post('/api/events/ev-1/leave')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.participant).toBeDefined();
+      expect(res.body.participant.status).toBe('cancelled');
+    });
+
+    it('maps not registered error to not_registered code', async () => {
+      mockEventsRepository.leaveEvent.mockResolvedValueOnce({
+        error: 'Not registered for this event',
+      });
+
+      const res = await request(app)
+        .post('/api/events/ev-1/leave')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('not_registered');
+    });
+
+    it('maps already cancelled error to already_cancelled code', async () => {
+      mockEventsRepository.leaveEvent.mockResolvedValueOnce({
+        error: 'Already cancelled participation',
+      });
+
+      const res = await request(app)
+        .post('/api/events/ev-1/leave')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('already_cancelled');
+    });
+  });
+
+  describe('POST /api/clubs/:id/leave', () => {
+    const { mockClubMembersRepository } = require('../db/repositories');
+
+    beforeEach(() => {
+      mockClubMembersRepository.findByClubAndUser.mockReset();
+      mockClubMembersRepository.deactivate.mockReset();
+    });
+
+    it('returns 200 when active membership is deactivated', async () => {
+      mockClubMembersRepository.findByClubAndUser.mockResolvedValueOnce({
+        id: 'cm-1',
+        clubId: 'club-1',
+        userId: 'test-user-id',
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      mockClubMembersRepository.deactivate.mockResolvedValueOnce({
+        id: 'cm-1',
+        clubId: 'club-1',
+        userId: 'test-user-id',
+        status: 'inactive',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const res = await request(app)
+        .post('/api/clubs/club-1/leave')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('inactive');
+    });
+
+    it('returns 400 when user is not a member', async () => {
+      mockClubMembersRepository.findByClubAndUser.mockResolvedValueOnce(null);
+
+      const res = await request(app)
+        .post('/api/clubs/club-1/leave')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('not_member');
+    });
+
+    it('returns 400 when membership already inactive', async () => {
+      mockClubMembersRepository.findByClubAndUser.mockResolvedValueOnce({
+        id: 'cm-1',
+        clubId: 'club-1',
+        userId: 'test-user-id',
+        status: 'inactive',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const res = await request(app)
+        .post('/api/clubs/club-1/leave')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('already_left');
     });
   });
 

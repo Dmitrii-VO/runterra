@@ -321,4 +321,47 @@ describe('EventsRepository', () => {
       jest.useRealTimers();
     });
   });
+
+  describe('leaveEvent', () => {
+    it('should return error when user is not registered', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
+      const result = await repo.leaveEvent('ev-1', 'user-1');
+
+      expect(result.error).toBe('Not registered for this event');
+      expect(result.participant).toBeUndefined();
+    });
+
+    it('should return error when participation already cancelled', async () => {
+      mockQuery.mockResolvedValueOnce({
+        rows: [participantRow({ status: 'cancelled' })],
+        rowCount: 1,
+      });
+
+      const result = await repo.leaveEvent('ev-1', 'user-1');
+
+      expect(result.error).toBe('Already cancelled participation');
+      expect(result.participant).toBeUndefined();
+    });
+
+    it('should cancel participation and update participant count', async () => {
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [participantRow({ status: 'registered' })],
+          rowCount: 1,
+        })
+        .mockResolvedValueOnce({
+          rows: [participantRow({ status: 'cancelled' })],
+          rowCount: 1,
+        })
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 })
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
+      const result = await repo.leaveEvent('ev-1', 'user-1');
+
+      expect(result.error).toBeUndefined();
+      expect(result.participant).toBeDefined();
+      expect(result.participant!.status).toBe('cancelled');
+    });
+  });
 });

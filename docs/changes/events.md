@@ -4,6 +4,8 @@
 
 ### 2026-02-05
 
+- **Tests:** Added API tests for participant flags in `GET /api/events/:id` and `POST /api/events/:id/leave`, repository tests for leaveEvent, and Flutter model tests for EventDetails.
+
 - **Отмена участия + состояние участия в деталях события:**
   - **Backend:** Добавлен `POST /api/events/:id/leave` для отмены участия; в `GET /api/events/:id` добавлены поля `isParticipant` и `participantStatus` для текущего пользователя. В репозитории реализовано `leaveEvent()` и обновление `participantCount` с возвратом статуса OPEN при освобождении мест.
   - **Mobile:** В `EventDetailsScreen` кнопка «Присоединиться» меняется на disabled «Вы участвуете», появляется кнопка «Отменить участие». Добавлены `EventsService.leaveEvent()` и обработка ошибок/успехов.

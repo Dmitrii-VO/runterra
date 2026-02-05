@@ -692,13 +692,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get clubJoin => 'Присоединиться';
 
   @override
-  String get clubLeave => 'Выйти из клуба';
-
-  @override
   String get clubJoinSuccess => 'Вы вступили в клуб';
-
-  @override
-  String get clubLeaveSuccess => 'Вы вышли из клуба';
 
   @override
   String clubJoinError(String message) {
@@ -706,12 +700,18 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get clubYouAreMember => 'Вы в клубе';
+
+  @override
+  String get clubLeave => 'Выйти из клуба';
+
+  @override
+  String get clubLeaveSuccess => 'Вы вышли из клуба';
+
+  @override
   String clubLeaveError(String message) {
     return 'Не удалось выйти: $message';
   }
-
-  @override
-  String get clubYouAreMember => 'Вы в клубе';
 
   @override
   String get territoryDetailsTitle => 'Территория';

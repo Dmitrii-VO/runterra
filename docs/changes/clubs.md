@@ -33,6 +33,8 @@
 
 ### 2026-02-05 — Выход из клуба (leave club)
 
+- **Tests:** Added API tests for club leave and membership flags, plus model tests for membership fields.
+
 - **Backend:** Добавлен `POST /api/clubs/:id/leave` — переводит membership в `inactive` (если есть активное). `GET /api/clubs/:id` теперь считает `isMember=true` только для `status=active`.
 - **Mobile:** Добавлен `ClubsService.leaveClub()` и кнопка «Выйти из клуба» на `ClubDetailsScreen`; при успешном выходе сбрасывается currentClubId.
 
