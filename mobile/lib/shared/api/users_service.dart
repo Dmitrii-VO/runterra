@@ -67,11 +67,26 @@ class UsersService {
   Future<void> updateProfile({
     String? currentCityId,
     String? name,
+    String? firstName,
+    String? lastName,
+    DateTime? birthDate,
+    String? country,
+    String? gender,
     String? avatarUrl,
   }) async {
     final body = <String, dynamic>{};
     if (currentCityId != null) body['currentCityId'] = currentCityId;
     if (name != null) body['name'] = name;
+    if (firstName != null) body['firstName'] = firstName;
+    if (lastName != null) body['lastName'] = lastName;
+    if (birthDate != null) {
+      body['birthDate'] =
+          '${birthDate.year.toString().padLeft(4, '0')}-'
+          '${birthDate.month.toString().padLeft(2, '0')}-'
+          '${birthDate.day.toString().padLeft(2, '0')}';
+    }
+    if (country != null) body['country'] = country;
+    if (gender != null) body['gender'] = gender;
     if (avatarUrl != null) body['avatarUrl'] = avatarUrl;
     if (body.isEmpty) return;
 

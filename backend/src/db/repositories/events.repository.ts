@@ -357,6 +357,35 @@ export class EventsRepository extends BaseRepository {
   }
 
   /**
+   * Cancel participation in event
+   */
+  async leaveEvent(eventId: string, userId: string): Promise<{ error?: string; participant?: EventParticipant }> {
+    const registration = await this.queryOne<ParticipantRow>(
+      'SELECT * FROM event_participants WHERE event_id = $1 AND user_id = $2',
+      [eventId, userId]
+    );
+
+    if (!registration) {
+      return { error: 'Not registered for this event' };
+    }
+
+    if (registration.status === 'cancelled') {
+      return { error: 'Already cancelled participation' };
+    }
+
+    const updated = await this.queryOne<ParticipantRow>(
+      `UPDATE event_participants
+       SET status = 'cancelled', updated_at = NOW()
+       WHERE id = $1 RETURNING *`,
+      [registration.id]
+    );
+
+    await this.updateParticipantCount(eventId);
+
+    return { participant: rowToParticipant(updated!) };
+  }
+
+  /**
    * Calculate distance between two GPS points using Haversine formula
    * Returns distance in meters
    */
@@ -393,18 +422,27 @@ export class EventsRepository extends BaseRepository {
       [eventId]
     );
     
-    // Check if should update status to FULL
+    // Check if should update status to FULL / OPEN (keep CANCELLED/COMPLETED)
     await this.query(
       `UPDATE events 
        SET status = CASE 
-         WHEN participant_limit IS NOT NULL AND participant_count >= participant_limit 
-         THEN 'full' 
-         ELSE status 
+         WHEN status IN ('cancelled', 'completed') THEN status
+         WHEN participant_limit IS NOT NULL AND participant_count >= participant_limit THEN 'full'
+         WHEN status = 'full' AND (participant_limit IS NULL OR participant_count < participant_limit) THEN 'open'
+         ELSE status
        END,
        updated_at = NOW()
        WHERE id = $1`,
       [eventId]
     );
+  }
+
+  async getParticipant(eventId: string, userId: string): Promise<EventParticipant | null> {
+    const row = await this.queryOne<ParticipantRow>(
+      'SELECT * FROM event_participants WHERE event_id = $1 AND user_id = $2',
+      [eventId, userId]
+    );
+    return row ? rowToParticipant(row) : null;
   }
 
   async getParticipants(eventId: string): Promise<EventParticipant[]> {

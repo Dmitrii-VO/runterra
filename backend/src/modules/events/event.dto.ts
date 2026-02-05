@@ -159,6 +159,12 @@ export interface EventDetailsDto {
   
   /** Дата последнего обновления */
   updatedAt: Date;
+
+  /** Является ли текущий пользователь участником события */
+  isParticipant?: boolean;
+
+  /** Статус участия текущего пользователя */
+  participantStatus?: 'registered' | 'checked_in' | 'cancelled' | 'no_show';
 }
 
 /**

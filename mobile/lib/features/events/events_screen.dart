@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/event_list_item_model.dart';
@@ -173,12 +174,7 @@ class _EventsScreenState extends State<EventsScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Переход на экран создания события (только для организаторов)
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context)!.eventsCreateTodo),
-            ),
-          );
+          context.push('/event/create');
         },
         tooltip: AppLocalizations.of(context)!.eventsCreateTooltip,
         child: const Icon(Icons.add),

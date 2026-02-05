@@ -99,6 +99,30 @@
   "eventsEmptyHint": "Try changing filters",
   "eventsCreateTodo": "Create event - TODO",
   "eventsCreateTooltip": "Create event",
+  "eventCreateTitle": "Create event",
+  "eventCreateName": "Event name",
+  "eventCreateNameRequired": "Event name is required",
+  "eventCreateType": "Event type",
+  "eventCreateDate": "Date",
+  "eventCreateTime": "Time",
+  "eventCreateCity": "City",
+  "eventCreateCityRequired": "Select a city in profile first",
+  "eventCreateOrganizerId": "Organizer ID",
+  "eventCreateOrganizerRequired": "Organizer is required",
+  "eventCreateOrganizerType": "Organizer type",
+  "eventCreateOrganizerClub": "Club",
+  "eventCreateOrganizerTrainer": "Trainer",
+  "eventCreateLocationName": "Location name",
+  "eventCreateLatitude": "Latitude",
+  "eventCreateLongitude": "Longitude",
+  "eventCreateCoordinatesRequired": "Coordinates are required",
+  "eventCreateCoordinatesInvalid": "Invalid coordinates",
+  "eventCreateParticipantLimit": "Participant limit",
+  "eventCreateLimitInvalid": "Invalid participant limit",
+  "eventCreateDescription": "Description",
+  "eventCreateSave": "Create",
+  "eventCreateSuccess": "Event created",
+  "eventCreateError": "Could not create event: {message}",
   "filterToday": "Today",
   "filterTomorrow": "Tomorrow",
   "filter7days": "7 days",
@@ -132,6 +156,10 @@
   "eventJoinSuccess": "You are registered",
   "eventJoinError": "Could not join: {message}",
   "eventYouAreRegistered": "You are registered",
+  "eventYouParticipate": "You participate",
+  "eventLeave": "Cancel participation",
+  "eventLeaveSuccess": "Participation cancelled",
+  "eventLeaveError": "Could not cancel: {message}",
   "eventCheckInSuccess": "Check-in successful",
   "eventCheckInError": "Could not check in: {message}",
   "eventNoPlaces": "No spots left",
@@ -144,7 +172,21 @@
       }
     }
   },
+  "@eventCreateError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "@eventJoinError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "@eventLeaveError": {
     "placeholders": {
       "message": {
         "type": "String"
@@ -395,10 +437,28 @@
   "cityNotSelected": "Not selected",
   "editProfileTitle": "Edit profile",
   "editProfileName": "Name",
+  "editProfileFirstName": "First name",
+  "editProfileLastName": "Last name",
+  "editProfileBirthDate": "Birth date",
+  "editProfileCountry": "Country",
+  "editProfileGender": "Gender",
+  "editProfileCity": "City",
   "editProfilePhotoUrl": "Photo URL",
   "editProfileSave": "Save",
   "editProfileNameRequired": "Name is required",
   "editProfileEditAction": "Edit",
+  "profilePersonalInfoTitle": "Personal info",
+  "profileFirstNameLabel": "First name",
+  "profileLastNameLabel": "Last name",
+  "profileBirthDateLabel": "Birth date",
+  "profileCountryLabel": "Country",
+  "profileGenderLabel": "Gender",
+  "profileCityLabel": "City",
+  "profileNotSpecified": "Not specified",
+  "genderMale": "Male",
+  "genderFemale": "Female",
+  "genderOther": "Other",
+  "genderUnknown": "Prefer not to say",
   "createClubTitle": "Create club",
   "createClubNameHint": "Club name",
   "createClubDescriptionHint": "Description (optional)",

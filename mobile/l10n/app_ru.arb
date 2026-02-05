@@ -71,6 +71,30 @@
   "eventsEmptyHint": "Попробуйте изменить фильтры",
   "eventsCreateTodo": "Создание события - TODO",
   "eventsCreateTooltip": "Создать событие",
+  "eventCreateTitle": "Создать событие",
+  "eventCreateName": "Название события",
+  "eventCreateNameRequired": "Укажите название события",
+  "eventCreateType": "Тип события",
+  "eventCreateDate": "Дата",
+  "eventCreateTime": "Время",
+  "eventCreateCity": "Город",
+  "eventCreateCityRequired": "Сначала выберите город в профиле",
+  "eventCreateOrganizerId": "ID организатора",
+  "eventCreateOrganizerRequired": "Укажите организатора",
+  "eventCreateOrganizerType": "Тип организатора",
+  "eventCreateOrganizerClub": "Клуб",
+  "eventCreateOrganizerTrainer": "Тренер",
+  "eventCreateLocationName": "Название локации",
+  "eventCreateLatitude": "Широта",
+  "eventCreateLongitude": "Долгота",
+  "eventCreateCoordinatesRequired": "Укажите координаты",
+  "eventCreateCoordinatesInvalid": "Некорректные координаты",
+  "eventCreateParticipantLimit": "Лимит участников",
+  "eventCreateLimitInvalid": "Некорректный лимит",
+  "eventCreateDescription": "Описание",
+  "eventCreateSave": "Создать",
+  "eventCreateSuccess": "Событие создано",
+  "eventCreateError": "Не удалось создать событие: {message}",
   "filterToday": "Сегодня",
   "filterTomorrow": "Завтра",
   "filter7days": "7 дней",
@@ -104,12 +128,23 @@
   "eventJoinSuccess": "Вы записаны",
   "eventJoinError": "Не удалось записаться: {message}",
   "eventYouAreRegistered": "Вы записаны",
+  "eventYouParticipate": "Вы участвуете",
+  "eventLeave": "Отменить участие",
+  "eventLeaveSuccess": "Участие отменено",
+  "eventLeaveError": "Не удалось отменить участие: {message}",
   "eventCheckInSuccess": "Отметка о прибытии принята",
   "eventCheckInError": "Не удалось отметиться: {message}",
   "eventNoPlaces": "Нет свободных мест",
   "eventCancelled": "Событие отменено",
   "eventOrganizerLabel": "Организатор: {id}",
   "@eventJoinError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "@eventLeaveError": {
     "placeholders": {
       "message": {
         "type": "String"
@@ -221,10 +256,35 @@
   "cityNotSelected": "Не выбран",
   "editProfileTitle": "Редактирование профиля",
   "editProfileName": "Имя",
+  "editProfileFirstName": "Имя",
+  "editProfileLastName": "Фамилия",
+  "editProfileBirthDate": "Дата рождения",
+  "editProfileCountry": "Страна",
+  "editProfileGender": "Пол",
+  "editProfileCity": "Город",
   "editProfilePhotoUrl": "URL фото",
   "editProfileSave": "Сохранить",
   "editProfileNameRequired": "Укажите имя",
   "editProfileEditAction": "Редактировать",
+  "profilePersonalInfoTitle": "Личные данные",
+  "profileFirstNameLabel": "Имя",
+  "profileLastNameLabel": "Фамилия",
+  "profileBirthDateLabel": "Дата рождения",
+  "profileCountryLabel": "Страна",
+  "profileGenderLabel": "Пол",
+  "profileCityLabel": "Город",
+  "profileNotSpecified": "Не указано",
+  "genderMale": "Мужской",
+  "genderFemale": "Женский",
+  "genderOther": "Другое",
+  "genderUnknown": "Не указано",
+  "@eventCreateError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "createClubTitle": "Создать клуб",
   "createClubNameHint": "Название клуба",
   "createClubDescriptionHint": "Описание (необязательно)",

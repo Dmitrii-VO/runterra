@@ -10,6 +10,11 @@ interface UserRow {
   firebase_uid: string;
   email: string;
   name: string;
+  first_name: string | null;
+  last_name: string | null;
+  birth_date: Date | string | null;
+  country: string | null;
+  gender: string | null;
   avatar_url: string | null;
   city_id: string | null;
   is_mercenary: boolean;
@@ -24,6 +29,11 @@ function rowToUser(row: UserRow): User {
     firebaseUid: row.firebase_uid,
     email: row.email,
     name: row.name,
+    firstName: row.first_name || undefined,
+    lastName: row.last_name || undefined,
+    birthDate: row.birth_date ? new Date(row.birth_date) : undefined,
+    country: row.country || undefined,
+    gender: (row.gender as User['gender']) || undefined,
     avatarUrl: row.avatar_url || undefined,
     cityId: row.city_id || undefined,
     isMercenary: row.is_mercenary,
@@ -72,18 +82,31 @@ export class UsersRepository extends BaseRepository {
     firebaseUid: string;
     email: string;
     name: string;
+    firstName?: string;
+    lastName?: string;
+    birthDate?: Date | string;
+    country?: string;
+    gender?: User['gender'];
     avatarUrl?: string;
     cityId?: string;
     isMercenary?: boolean;
   }): Promise<User> {
     const row = await this.queryOne<UserRow>(
-      `INSERT INTO users (firebase_uid, email, name, avatar_url, city_id, is_mercenary)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO users (
+        firebase_uid, email, name, first_name, last_name, birth_date, country, gender,
+        avatar_url, city_id, is_mercenary
+      )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
       [
         data.firebaseUid,
         data.email,
         data.name,
+        data.firstName || null,
+        data.lastName || null,
+        data.birthDate || null,
+        data.country || null,
+        data.gender || null,
         data.avatarUrl || null,
         data.cityId || null,
         data.isMercenary || false,
@@ -94,6 +117,11 @@ export class UsersRepository extends BaseRepository {
 
   async update(id: string, data: Partial<{
     name: string;
+    firstName: string;
+    lastName: string;
+    birthDate: Date | string | null;
+    country: string;
+    gender: User['gender'];
     avatarUrl: string;
     cityId: string;
     isMercenary: boolean;
@@ -106,6 +134,26 @@ export class UsersRepository extends BaseRepository {
     if (data.name !== undefined) {
       fields.push(`name = $${paramIndex++}`);
       values.push(data.name);
+    }
+    if (data.firstName !== undefined) {
+      fields.push(`first_name = $${paramIndex++}`);
+      values.push(data.firstName);
+    }
+    if (data.lastName !== undefined) {
+      fields.push(`last_name = $${paramIndex++}`);
+      values.push(data.lastName);
+    }
+    if (data.birthDate !== undefined) {
+      fields.push(`birth_date = $${paramIndex++}`);
+      values.push(data.birthDate);
+    }
+    if (data.country !== undefined) {
+      fields.push(`country = $${paramIndex++}`);
+      values.push(data.country);
+    }
+    if (data.gender !== undefined) {
+      fields.push(`gender = $${paramIndex++}`);
+      values.push(data.gender);
     }
     if (data.avatarUrl !== undefined) {
       fields.push(`avatar_url = $${paramIndex++}`);

@@ -2,6 +2,14 @@
 
 ## История изменений
 
+### 2026-02-05
+
+- **Профиль — расширенные личные данные (имя, фамилия, дата рождения, страна, пол):**
+  - **Backend/DB:** Добавлена миграция `007_users_profile_fields.sql` (new columns: `first_name`, `last_name`, `birth_date`, `country`, `gender`). В `GET /api/users/me/profile` возвращаются новые поля, `PATCH /api/users/me/profile` принимает и сохраняет их.
+  - **Mobile:** Расширены `ProfileUserData` и экран редактирования профиля (добавлены поля имени/фамилии, дата рождения, страна, пол, город). В профиле отображается секция «Личные данные».
+
+**Файлы:** `backend/src/db/migrations/007_users_profile_fields.sql`, `backend/src/api/users.routes.ts`, `backend/src/db/repositories/users.repository.ts`, `backend/src/modules/users/user.dto.ts`, `backend/src/modules/users/profile.dto.ts`, `mobile/lib/shared/models/profile_model.dart`, `mobile/lib/features/profile/edit_profile_screen.dart`, `mobile/lib/shared/ui/profile/personal_info_section.dart`, `mobile/lib/features/profile/profile_screen.dart`, `mobile/lib/shared/api/users_service.dart`, `mobile/l10n/*.arb`.
+
 ### 2026-02-04
 
 - **Профиль — заполнение club + fallback по primaryClubId:**

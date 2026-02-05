@@ -67,6 +67,11 @@ export interface ProfileDto {
   user: {
     id: string;
     name: string;
+    firstName?: string;
+    lastName?: string;
+    birthDate?: string;
+    country?: string;
+    gender?: 'male' | 'female' | 'other' | 'unknown';
     avatarUrl?: string;
     cityId?: string;
     cityName?: string; // Название города (для удобства)

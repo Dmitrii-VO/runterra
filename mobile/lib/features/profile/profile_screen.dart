@@ -11,6 +11,7 @@ import '../../shared/ui/profile/header_section.dart';
 import '../../shared/ui/profile/stats_section.dart';
 import '../../shared/ui/profile/activity_section.dart';
 import '../../shared/ui/profile/quick_actions_section.dart';
+import '../../shared/ui/profile/personal_info_section.dart';
 import '../../shared/ui/profile/notifications_section.dart';
 import '../../shared/ui/profile/settings_section.dart';
 import '../city/city_picker_dialog.dart';
@@ -160,6 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return ListView(
       children: [
         ProfileHeaderSection(user: profile.user, club: resolvedClub),
+        ProfilePersonalInfoSection(user: profile.user),
         ProfileStatsSection(stats: profile.stats),
         _CitySection(
           currentCityId: profile.user.cityId,

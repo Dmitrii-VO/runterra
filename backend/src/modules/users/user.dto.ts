@@ -75,8 +75,17 @@ export interface UserViewDto {
  * Maps User entity to UserViewDto (omits firebaseUid).
  */
 export function userToViewDto(user: User): UserViewDto {
-  const { firebaseUid: _omit, ...rest } = user;
-  return rest as UserViewDto;
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    avatarUrl: user.avatarUrl,
+    cityId: user.cityId,
+    isMercenary: user.isMercenary,
+    status: user.status,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
 }
 
 /**
@@ -91,6 +100,21 @@ export interface UpdateUserDto {
   
   /** Имя пользователя */
   name?: string;
+
+  /** Имя (раздельно, для профиля) */
+  firstName?: string;
+
+  /** Фамилия (раздельно, для профиля) */
+  lastName?: string;
+
+  /** Дата рождения (YYYY-MM-DD) */
+  birthDate?: string;
+
+  /** Страна */
+  country?: string;
+
+  /** Пол */
+  gender?: 'male' | 'female' | 'other' | 'unknown';
   
   /** URL фото профиля */
   avatarUrl?: string;
@@ -114,6 +138,16 @@ export interface UpdateProfileDto {
   currentCityId?: string;
   /** Имя пользователя */
   name?: string;
+  /** Имя (раздельно, для профиля) */
+  firstName?: string;
+  /** Фамилия (раздельно, для профиля) */
+  lastName?: string;
+  /** Дата рождения (YYYY-MM-DD) */
+  birthDate?: string;
+  /** Страна */
+  country?: string;
+  /** Пол */
+  gender?: 'male' | 'female' | 'other' | 'unknown';
   /** URL фото профиля */
   avatarUrl?: string;
 }
@@ -125,5 +159,10 @@ export interface UpdateProfileDto {
 export const UpdateProfileSchema = z.object({
   currentCityId: z.string().optional(),
   name: z.string().min(1, 'Name is required').max(100).optional(),
+  firstName: z.string().min(1).max(100).optional(),
+  lastName: z.string().min(1).max(100).optional(),
+  birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  country: z.string().max(100).optional(),
+  gender: z.enum(['male', 'female', 'other', 'unknown']).optional(),
   avatarUrl: z.union([z.string().url(), z.literal('')]).optional(),
 });

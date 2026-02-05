@@ -42,6 +42,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   late Future<EventDetailsModel> _eventFuture;
   /// True while join/check-in request is in progress.
   bool _isJoining = false;
+  /// True while leave request is in progress.
+  bool _isLeaving = false;
 
   /// Creates Future for loading event data.
   Future<EventDetailsModel> _fetchEvent() async {
@@ -74,6 +76,28 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       );
     } finally {
       if (mounted) setState(() => _isJoining = false);
+    }
+  }
+
+  /// Leave event and refresh on success; show SnackBar on error.
+  Future<void> _onLeaveEvent() async {
+    if (_isLeaving) return;
+    setState(() => _isLeaving = true);
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      await ServiceLocator.eventsService.leaveEvent(widget.eventId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.eventLeaveSuccess)),
+      );
+      _retry();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.eventLeaveError(e.message))),
+      );
+    } finally {
+      if (mounted) setState(() => _isLeaving = false);
     }
   }
 
@@ -159,6 +183,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           // Состояние успеха - отображение данных события
           if (snapshot.hasData) {
             final event = snapshot.data!;
+            final isParticipant = event.isParticipant == true ||
+                event.participantStatus == 'registered' ||
+                event.participantStatus == 'checked_in';
             return SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -310,7 +337,30 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
-                    if (event.status == 'open')
+                    if (isParticipant) ...[
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: null,
+                          child: Text(AppLocalizations.of(context)!.eventYouParticipate),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _isLeaving ? null : _onLeaveEvent,
+                          icon: _isLeaving
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.close),
+                          label: Text(AppLocalizations.of(context)!.eventLeave),
+                        ),
+                      ),
+                    ] else if (event.status == 'open') ...[
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
@@ -328,16 +378,16 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                                 : AppLocalizations.of(context)!.eventJoin,
                           ),
                         ),
-                      )
-                    else if (event.status == 'full')
+                      ),
+                    ] else if (event.status == 'full') ...[
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton(
                           onPressed: null,
                           child: Text(AppLocalizations.of(context)!.eventNoPlaces),
                         ),
-                      )
-                    else if (event.status == 'cancelled')
+                      ),
+                    ] else if (event.status == 'cancelled') ...[
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton(
@@ -345,6 +395,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                           child: Text(AppLocalizations.of(context)!.eventCancelled),
                         ),
                       ),
+                    ],
                     
                     // TODO: Кнопка "Вы записаны" если пользователь уже записан
                     

@@ -23,6 +23,7 @@ class ProfileHeaderSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final displayName = _getDisplayName();
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Padding(
@@ -50,7 +51,7 @@ class ProfileHeaderSection extends StatelessWidget {
                 children: [
                   // Имя
                   Text(
-                    user.name,
+                    displayName,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 4),
@@ -125,5 +126,17 @@ class ProfileHeaderSection extends StatelessWidget {
       default:
         return role;
     }
+  }
+
+  String _getDisplayName() {
+    final parts = <String>[];
+    if (user.firstName != null && user.firstName!.isNotEmpty) {
+      parts.add(user.firstName!);
+    }
+    if (user.lastName != null && user.lastName!.isNotEmpty) {
+      parts.add(user.lastName!);
+    }
+    if (parts.isNotEmpty) return parts.join(' ');
+    return user.name;
   }
 }

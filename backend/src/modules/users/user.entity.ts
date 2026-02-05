@@ -38,6 +38,21 @@ export interface User {
   
   /** Имя пользователя */
   name: string;
+
+  /** Имя (раздельно, для профиля) */
+  firstName?: string;
+
+  /** Фамилия (раздельно, для профиля) */
+  lastName?: string;
+
+  /** Дата рождения */
+  birthDate?: Date;
+
+  /** Страна */
+  country?: string;
+
+  /** Пол */
+  gender?: 'male' | 'female' | 'other' | 'unknown';
   
   /** URL фото профиля */
   avatarUrl?: string;

@@ -128,10 +128,6 @@ class EventsService {
   /// Выполняет POST /api/events запрос к backend
   /// 
   /// Создает новое событие.
-  /// 
-  /// TODO: Реализовать POST метод в ApiClient
-  /// TODO: Добавить валидацию данных
-  /// TODO: Добавить обработку ошибок HTTP запросов
   Future<EventDetailsModel> createEvent({
     required String name,
     required String type,
@@ -140,16 +136,34 @@ class EventsService {
     String? locationName,
     required String organizerId,
     required String organizerType,
+    required String cityId,
     String? difficultyLevel,
     String? description,
     int? participantLimit,
     String? territoryId,
   }) async {
-    // TODO: Реализовать POST запрос
-    // final response = await _apiClient.post('/api/events', body: {...});
-    // final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
-    // return EventDetailsModel.fromJson(jsonData);
-    throw UnimplementedError('createEvent not implemented yet');
+    final response = await _apiClient.post(
+      '/api/events',
+      body: {
+        'name': name,
+        'type': type,
+        'startDateTime': startDateTime.toIso8601String(),
+        'startLocation': startLocation.toJson(),
+        if (locationName != null) 'locationName': locationName,
+        'organizerId': organizerId,
+        'organizerType': organizerType,
+        if (difficultyLevel != null) 'difficultyLevel': difficultyLevel,
+        if (description != null) 'description': description,
+        if (participantLimit != null) 'participantLimit': participantLimit,
+        if (territoryId != null) 'territoryId': territoryId,
+        'cityId': cityId,
+      },
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _throwApiException(response, 'create_event_error');
+    }
+    final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+    return EventDetailsModel.fromJson(jsonData);
   }
 
   /// Выполняет POST /api/events/:id/join запрос к backend.
@@ -192,5 +206,14 @@ class EventsService {
       // Non-JSON response
     }
     throw ApiException(errorCode, errorMessage);
+  }
+
+  /// Выполняет POST /api/events/:id/leave запрос к backend.
+  ///
+  /// Отменяет участие в событии. Бросает [ApiException] при ошибках.
+  Future<void> leaveEvent(String eventId) async {
+    final response = await _apiClient.post('/api/events/$eventId/leave');
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    _throwApiException(response, 'leave_event_error');
   }
 }

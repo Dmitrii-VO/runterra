@@ -12,6 +12,7 @@ import 'features/run/run_screen.dart';
 import 'features/messages/messages_screen.dart';
 import 'features/events/events_screen.dart';
 import 'features/events/event_details_screen.dart';
+import 'features/events/create_event_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'features/profile/edit_profile_screen.dart';
 import 'shared/models/profile_model.dart';
@@ -178,6 +179,11 @@ class RunterraApp extends StatelessWidget {
           final activityId = state.pathParameters['id'] ?? '';
           return ActivityDetailsScreen(activityId: activityId);
         },
+      ),
+      // Отдельный маршрут для CreateEventScreen (без BottomNav)
+      GoRoute(
+        path: '/event/create',
+        builder: (context, state) => const CreateEventScreen(),
       ),
       // Отдельный маршрут для EventDetailsScreen (без BottomNav)
       GoRoute(

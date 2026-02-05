@@ -2,6 +2,17 @@
 
 ## История изменений
 
+### 2026-02-05
+
+- **Отмена участия + состояние участия в деталях события:**
+  - **Backend:** Добавлен `POST /api/events/:id/leave` для отмены участия; в `GET /api/events/:id` добавлены поля `isParticipant` и `participantStatus` для текущего пользователя. В репозитории реализовано `leaveEvent()` и обновление `participantCount` с возвратом статуса OPEN при освобождении мест.
+  - **Mobile:** В `EventDetailsScreen` кнопка «Присоединиться» меняется на disabled «Вы участвуете», появляется кнопка «Отменить участие». Добавлены `EventsService.leaveEvent()` и обработка ошибок/успехов.
+
+- **Создание события (mobile):**
+  - **Mobile:** Реализован экран `CreateEventScreen` и навигация с FAB на экране событий. `EventsService.createEvent()` подключён к `POST /api/events`; форма собирает основные поля (тип, дата/время, координаты, организатор, лимит).
+
+**Файлы:** `backend/src/api/events.routes.ts`, `backend/src/db/repositories/events.repository.ts`, `backend/src/modules/events/event.dto.ts`, `mobile/lib/shared/api/events_service.dart`, `mobile/lib/shared/models/event_details_model.dart`, `mobile/lib/features/events/event_details_screen.dart`, `mobile/lib/features/events/create_event_screen.dart`, `mobile/lib/features/events/events_screen.dart`, `mobile/lib/app.dart`, `mobile/l10n/*.arb`.
+
 ### 2026-02-04
 
 - **Список участников события (имена вместо mock):**

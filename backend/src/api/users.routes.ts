@@ -22,6 +22,14 @@ import { logger } from '../shared/logger';
 
 const router = Router();
 
+function splitDisplayName(displayName?: string): { firstName?: string; lastName?: string } {
+  if (!displayName) return {};
+  const parts = displayName.trim().split(/\s+/);
+  if (parts.length === 0) return {};
+  if (parts.length === 1) return { firstName: parts[0] };
+  return { firstName: parts[0], lastName: parts.slice(1).join(' ') };
+}
+
 /**
  * GET /api/users
  * 
@@ -68,10 +76,14 @@ router.get('/me/profile', async (req: Request, res: Response) => {
     let user = await usersRepo.findByFirebaseUid(firebaseUid);
     if (!user) {
       // Создаём пользователя если не существует (первый вход)
+      const displayName = req.authUser?.displayName ?? 'New User';
+      const { firstName, lastName } = splitDisplayName(displayName);
       user = await usersRepo.create({
         firebaseUid,
         email: req.authUser?.email ?? 'user@example.com', // TODO: из Firebase token
-        name: req.authUser?.displayName ?? 'New User',
+        name: displayName,
+        firstName: firstName ?? displayName,
+        lastName,
         avatarUrl: req.authUser?.photoURL,
       });
     }
@@ -95,6 +107,11 @@ router.get('/me/profile', async (req: Request, res: Response) => {
       user: {
         id: user.id,
         name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        birthDate: user.birthDate ? user.birthDate.toISOString().slice(0, 10) : undefined,
+        country: user.country,
+        gender: user.gender,
         avatarUrl: user.avatarUrl,
         cityId: user.cityId,
         cityName: user.cityId ? findCityById(user.cityId)?.name : undefined,
@@ -150,11 +167,42 @@ router.patch('/me/profile', validateBody(UpdateProfileSchema), async (req: Reque
       return;
     }
 
-    const body = req.body as { currentCityId?: string; name?: string; avatarUrl?: string };
-    const updates: { cityId?: string; name?: string; avatarUrl?: string } = {};
+    const body = req.body as {
+      currentCityId?: string;
+      name?: string;
+      firstName?: string;
+      lastName?: string;
+      birthDate?: string;
+      country?: string;
+      gender?: 'male' | 'female' | 'other' | 'unknown';
+      avatarUrl?: string;
+    };
+    const updates: {
+      cityId?: string;
+      name?: string;
+      firstName?: string;
+      lastName?: string;
+      birthDate?: string | Date | null;
+      country?: string;
+      gender?: 'male' | 'female' | 'other' | 'unknown';
+      avatarUrl?: string;
+    } = {};
     if (body.currentCityId !== undefined) updates.cityId = body.currentCityId;
     if (body.name !== undefined) updates.name = body.name;
+    if (body.firstName !== undefined) updates.firstName = body.firstName;
+    if (body.lastName !== undefined) updates.lastName = body.lastName;
+    if (body.birthDate !== undefined) updates.birthDate = body.birthDate;
+    if (body.country !== undefined) updates.country = body.country;
+    if (body.gender !== undefined) updates.gender = body.gender;
     if (body.avatarUrl !== undefined) updates.avatarUrl = body.avatarUrl;
+
+    if (body.firstName !== undefined || body.lastName !== undefined) {
+      const resolvedFirstName = body.firstName ?? user.firstName ?? user.name;
+      const resolvedLastName = body.lastName ?? user.lastName;
+      const combinedName = [resolvedFirstName, resolvedLastName].filter(Boolean).join(' ').trim();
+      if (combinedName) updates.name = combinedName;
+    }
+
     if (Object.keys(updates).length > 0) {
       await usersRepo.update(user.id, updates);
     }

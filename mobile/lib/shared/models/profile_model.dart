@@ -85,6 +85,21 @@ class ProfileUserData {
   
   /// Имя пользователя
   final String name;
+
+  /// Имя (раздельно)
+  final String? firstName;
+
+  /// Фамилия (раздельно)
+  final String? lastName;
+
+  /// Дата рождения
+  final DateTime? birthDate;
+
+  /// Страна
+  final String? country;
+
+  /// Пол
+  final String? gender;
   
   /// URL фото профиля (опционально)
   final String? avatarUrl;
@@ -109,6 +124,11 @@ class ProfileUserData {
   ProfileUserData({
     required this.id,
     required this.name,
+    this.firstName,
+    this.lastName,
+    this.birthDate,
+    this.country,
+    this.gender,
     this.avatarUrl,
     this.cityId,
     this.cityName,
@@ -122,6 +142,13 @@ class ProfileUserData {
     return ProfileUserData(
       id: json['id'] as String,
       name: json['name'] as String,
+      firstName: json['firstName'] as String?,
+      lastName: json['lastName'] as String?,
+      birthDate: json['birthDate'] != null
+          ? DateTime.parse(json['birthDate'] as String)
+          : null,
+      country: json['country'] as String?,
+      gender: json['gender'] as String?,
       avatarUrl: json['avatarUrl'] as String?,
       cityId: json['cityId'] as String?,
       cityName: json['cityName'] as String?,
@@ -136,6 +163,11 @@ class ProfileUserData {
     return {
       'id': id,
       'name': name,
+      if (firstName != null) 'firstName': firstName,
+      if (lastName != null) 'lastName': lastName,
+      if (birthDate != null) 'birthDate': birthDate!.toIso8601String(),
+      if (country != null) 'country': country,
+      if (gender != null) 'gender': gender,
       if (avatarUrl != null) 'avatarUrl': avatarUrl,
       if (cityId != null) 'cityId': cityId,
       if (cityName != null) 'cityName': cityName,

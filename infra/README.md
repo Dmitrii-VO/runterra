@@ -198,3 +198,16 @@ GitHub Actions CI (`ci.yml`) запускается на каждый push/PR в
 - [x] Сообщения/клубы: `MessagesService.getClubChats()` возвращает пустой список (stub)
   - Где: `mobile/lib/shared/api/messages_service.dart`, `mobile/lib/features/messages/tabs/club_messages_tab.dart`
   - Решение: подключен `GET /api/messages/clubs` и парсинг списка чатов
+
+#### Feedback (2026-02-05)
+
+##### Mobile
+- [x] События: после «Присоединиться» кнопка должна стать некликабельной «Вы участвуете», и должна появиться кнопка «Отменить участие»
+  - Где: `mobile/lib/features/events/event_details_screen.dart`, `mobile/lib/shared/api/events_service.dart`
+  - Решение: добавлен `POST /api/events/:id/leave`, `EventDetails` теперь содержит `isParticipant/participantStatus`; в UI показываются «Вы участвуете» + «Отменить участие», добавлены тексты и обработка ошибок
+- [x] События: создание события не реализовано
+  - Где: `mobile/lib/shared/api/events_service.dart` (createEvent), UI экран/форма отсутствует
+  - Решение: реализован `CreateEventScreen` + навигация с FAB, `createEvent()` подключен к backend
+- [x] Профиль: расширить редактирование профиля (Имя, Фамилия, Дата рождения, Страна, Город, Пол)
+  - Где: `backend/src/api/users.routes.ts`, `backend/src/modules/users/user.dto.ts`, `mobile/lib/features/profile/edit_profile_screen.dart`, `mobile/lib/shared/models/profile_model.dart`
+  - Решение: добавлены поля пользователя + миграция, расширены profile DTO/patch, обновлены формы и отображение в профиле

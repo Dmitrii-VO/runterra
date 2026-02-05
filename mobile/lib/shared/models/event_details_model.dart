@@ -83,6 +83,12 @@ class EventDetailsModel {
   /// Дата последнего обновления
   final DateTime updatedAt;
 
+  /// Признак участия текущего пользователя
+  final bool? isParticipant;
+
+  /// Статус участия текущего пользователя
+  final String? participantStatus;
+
   EventDetailsModel({
     required this.id,
     required this.name,
@@ -101,6 +107,8 @@ class EventDetailsModel {
     required this.cityId,
     required this.createdAt,
     required this.updatedAt,
+    this.isParticipant,
+    this.participantStatus,
   });
 
   /// Создает EventDetailsModel из JSON
@@ -130,6 +138,8 @@ class EventDetailsModel {
       cityId: json['cityId'] as String? ?? '',
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
+      isParticipant: json['isParticipant'] as bool?,
+      participantStatus: json['participantStatus'] as String?,
     );
   }
 
@@ -155,6 +165,8 @@ class EventDetailsModel {
       'cityId': cityId,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      if (isParticipant != null) 'isParticipant': isParticipant,
+      if (participantStatus != null) 'participantStatus': participantStatus,
     };
   }
 }

@@ -6,6 +6,7 @@
  * - GET /api/events/:id - событие по ID
  * - POST /api/events - создание события
  * - POST /api/events/:id/join - запись на событие
+ * - POST /api/events/:id/leave - отмена участия
  * - POST /api/events/:id/check-in - check-in на событие
  * - GET /api/events/:id/participants - список участников события
  */
@@ -116,6 +117,22 @@ router.get('/:id', async (req: Request, res: Response) => {
       return;
     }
     
+    let isParticipant: boolean | undefined;
+    let participantStatus: EventDetailsDto['participantStatus'];
+
+    const uid = req.authUser?.uid;
+    if (uid) {
+      const usersRepo = getUsersRepository();
+      const user = await usersRepo.findByFirebaseUid(uid);
+      if (user) {
+        const participant = await repo.getParticipant(id, user.id);
+        if (participant) {
+          isParticipant = participant.status === 'registered' || participant.status === 'checked_in';
+          participantStatus = participant.status;
+        }
+      }
+    }
+
     const eventDto: EventDetailsDto = {
       id: event.id,
       name: event.name,
@@ -134,6 +151,8 @@ router.get('/:id', async (req: Request, res: Response) => {
       cityId: event.cityId,
       createdAt: event.createdAt,
       updatedAt: event.updatedAt,
+      isParticipant,
+      participantStatus,
     };
 
     res.status(200).json(eventDto);
@@ -319,6 +338,72 @@ router.post('/:id/join', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error joining event', { eventId: id, error });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+      details: undefined,
+    });
+  }
+});
+
+/**
+ * POST /api/events/:id/leave
+ *
+ * Отмена участия в событии.
+ * userId берётся из auth (Firebase UID → users.id).
+ * Ошибки возвращаются в формате ADR-0002 { code, message, details? }.
+ */
+router.post('/:id/leave', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const uid = req.authUser?.uid;
+  if (!uid) {
+    res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+      details: { reason: 'missing_header' },
+    });
+    return;
+  }
+
+  try {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) {
+      res.status(400).json({
+        code: 'validation_error',
+        message: 'Authentication required',
+        details: {
+          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+        },
+      });
+      return;
+    }
+
+    const repo = getEventsRepository();
+    const result = await repo.leaveEvent(id, user.id);
+
+    if (result.error) {
+      const code = result.error.includes('Not registered')
+        ? 'not_registered'
+        : result.error.includes('Already cancelled')
+          ? 'already_cancelled'
+          : 'leave_failed';
+      res.status(400).json({
+        code,
+        message: result.error,
+        details: { eventId: id },
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Participation cancelled',
+      eventId: id,
+      participant: result.participant,
+    });
+  } catch (error) {
+    logger.error('Error leaving event', { eventId: id, error });
     res.status(500).json({
       code: 'internal_error',
       message: 'Internal server error',
