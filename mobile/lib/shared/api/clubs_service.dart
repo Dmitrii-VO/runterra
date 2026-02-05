@@ -172,4 +172,23 @@ class ClubsService {
     }
     throw ApiException(errorCode, errorMessage);
   }
+
+  /// Выполняет POST /api/clubs/:id/leave — выход из клуба.
+  /// Бросает [ApiException] при 4xx/5xx с code и message из ответа.
+  Future<void> leaveClub(String clubId) async {
+    final response = await _apiClient.post('/api/clubs/$clubId/leave');
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    String errorCode = 'leave_club_error';
+    String errorMessage = 'Failed to leave club (${response.statusCode})';
+    try {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
+      if (decoded != null) {
+        errorCode = (decoded['code'] as String?) ?? errorCode;
+        errorMessage = (decoded['message'] as String?) ?? errorMessage;
+      }
+    } on FormatException {
+      // Non-JSON response
+    }
+    throw ApiException(errorCode, errorMessage);
+  }
 }

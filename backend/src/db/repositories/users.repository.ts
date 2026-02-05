@@ -31,9 +31,9 @@ function rowToUser(row: UserRow): User {
     name: row.name,
     firstName: row.first_name || undefined,
     lastName: row.last_name || undefined,
-    birthDate: row.birth_date ? new Date(row.birth_date) : undefined,
+    birthDate: toDateOnlyString(row.birth_date),
     country: row.country || undefined,
-    gender: (row.gender as User['gender']) || undefined,
+    gender: row.gender === 'male' || row.gender === 'female' ? row.gender : undefined,
     avatarUrl: row.avatar_url || undefined,
     cityId: row.city_id || undefined,
     isMercenary: row.is_mercenary,
@@ -41,6 +41,15 @@ function rowToUser(row: UserRow): User {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+function toDateOnlyString(value: Date | string | null): string | undefined {
+  if (!value) return undefined;
+  if (typeof value === 'string') return value.slice(0, 10);
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 export class UsersRepository extends BaseRepository {
@@ -84,7 +93,7 @@ export class UsersRepository extends BaseRepository {
     name: string;
     firstName?: string;
     lastName?: string;
-    birthDate?: Date | string;
+    birthDate?: string;
     country?: string;
     gender?: User['gender'];
     avatarUrl?: string;
@@ -119,7 +128,7 @@ export class UsersRepository extends BaseRepository {
     name: string;
     firstName: string;
     lastName: string;
-    birthDate: Date | string | null;
+    birthDate: string | null;
     country: string;
     gender: User['gender'];
     avatarUrl: string;

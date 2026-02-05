@@ -168,8 +168,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               items: [
                 DropdownMenuItem(value: 'male', child: Text(l10n.genderMale)),
                 DropdownMenuItem(value: 'female', child: Text(l10n.genderFemale)),
-                DropdownMenuItem(value: 'other', child: Text(l10n.genderOther)),
-                DropdownMenuItem(value: 'unknown', child: Text(l10n.genderUnknown)),
               ],
               onChanged: _saving ? null : (value) => setState(() => _gender = value),
             ),

@@ -45,14 +45,14 @@ export interface User {
   /** Фамилия (раздельно, для профиля) */
   lastName?: string;
 
-  /** Дата рождения */
-  birthDate?: Date;
+  /** Дата рождения (YYYY-MM-DD) */
+  birthDate?: string;
 
   /** Страна */
   country?: string;
 
   /** Пол */
-  gender?: 'male' | 'female' | 'other' | 'unknown';
+  gender?: 'male' | 'female';
   
   /** URL фото профиля */
   avatarUrl?: string;

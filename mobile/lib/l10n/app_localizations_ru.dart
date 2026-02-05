@@ -396,7 +396,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get eventJoin => 'Присоединиться';
 
   @override
-  String get eventJoinTodo => 'Запись на событие - TODO';
+  String get eventJoinTodo => 'Записываем...';
+
+  @override
+  String get eventJoinInProgress => 'Записываем...';
 
   @override
   String get eventJoinSuccess => 'Вы записаны';
@@ -689,11 +692,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String get clubJoin => 'Присоединиться';
 
   @override
+  String get clubLeave => 'Выйти из клуба';
+
+  @override
   String get clubJoinSuccess => 'Вы вступили в клуб';
+
+  @override
+  String get clubLeaveSuccess => 'Вы вышли из клуба';
 
   @override
   String clubJoinError(String message) {
     return 'Не удалось вступить: $message';
+  }
+
+  @override
+  String clubLeaveError(String message) {
+    return 'Не удалось выйти: $message';
   }
 
   @override

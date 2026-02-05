@@ -395,7 +395,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventJoin => 'Join';
 
   @override
-  String get eventJoinTodo => 'Join event - TODO';
+  String get eventJoinTodo => 'Joining...';
+
+  @override
+  String get eventJoinInProgress => 'Joining...';
 
   @override
   String get eventJoinSuccess => 'You are registered';
@@ -688,11 +691,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clubJoin => 'Join';
 
   @override
+  String get clubLeave => 'Leave club';
+
+  @override
   String get clubJoinSuccess => 'You joined the club';
+
+  @override
+  String get clubLeaveSuccess => 'You left the club';
 
   @override
   String clubJoinError(String message) {
     return 'Could not join: $message';
+  }
+
+  @override
+  String clubLeaveError(String message) {
+    return 'Could not leave: $message';
   }
 
   @override

@@ -53,6 +53,28 @@ export class ClubMembersRepository extends BaseRepository {
     return rowToMembership(row);
   }
 
+  async deactivate(clubId: string, userId: string): Promise<ClubMembershipRow | null> {
+    const row = await this.queryOne<ClubMemberRow>(
+      `UPDATE club_members
+       SET status = 'inactive', updated_at = NOW()
+       WHERE club_id = $1 AND user_id = $2
+       RETURNING *`,
+      [clubId, userId],
+    );
+    return row ? rowToMembership(row) : null;
+  }
+
+  async activate(clubId: string, userId: string): Promise<ClubMembershipRow | null> {
+    const row = await this.queryOne<ClubMemberRow>(
+      `UPDATE club_members
+       SET status = 'active', updated_at = NOW()
+       WHERE club_id = $1 AND user_id = $2
+       RETURNING *`,
+      [clubId, userId],
+    );
+    return row ? rowToMembership(row) : null;
+  }
+
   async findActiveByUser(userId: string): Promise<ClubMembershipRow[]> {
     const rows = await this.queryMany<ClubMemberRow>(
       'SELECT * FROM club_members WHERE user_id = $1 AND status = $2 ORDER BY created_at ASC',

@@ -152,7 +152,8 @@
   "eventMapTodo": "Map (TODO)",
   "eventParticipation": "Participation",
   "eventJoin": "Join",
-  "eventJoinTodo": "Join event - TODO",
+  "eventJoinTodo": "Joining...",
+  "eventJoinInProgress": "Joining...",
   "eventJoinSuccess": "You are registered",
   "eventJoinError": "Could not join: {message}",
   "eventYouAreRegistered": "You are registered",
@@ -385,7 +386,17 @@
   "clubJoinSuccess": "You joined the club",
   "clubJoinError": "Could not join: {message}",
   "clubYouAreMember": "You are a member",
+  "clubLeave": "Leave club",
+  "clubLeaveSuccess": "You left the club",
+  "clubLeaveError": "Could not leave: {message}",
   "@clubJoinError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "@clubLeaveError": {
     "placeholders": {
       "message": {
         "type": "String"

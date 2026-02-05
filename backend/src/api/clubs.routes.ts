@@ -6,6 +6,7 @@
  * - GET /api/clubs/:id - клуб по ID (при auth — isMember, membershipStatus)
  * - POST /api/clubs - создание клуба
  * - POST /api/clubs/:id/join - присоединение к клубу
+ * - POST /api/clubs/:id/leave - выход из клуба
  */
 
 import { Router, Request, Response } from 'express';
@@ -85,7 +86,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       if (user) {
         const clubMembersRepo = getClubMembersRepository();
         const membership = await clubMembersRepo.findByClubAndUser(id, user.id);
-        mockClub.isMember = !!membership;
+        mockClub.isMember = membership?.status === 'active';
         if (membership) mockClub.membershipStatus = membership.status;
       }
     } catch (error) {
@@ -155,6 +156,17 @@ router.post('/:id/join', async (req: Request, res: Response) => {
     const clubMembersRepo = getClubMembersRepository();
     const existing = await clubMembersRepo.findByClubAndUser(clubId, user.id);
     if (existing) {
+      if (existing.status !== 'active') {
+        const membership = await clubMembersRepo.activate(clubId, user.id);
+        res.status(201).json({
+          id: membership?.id ?? existing.id,
+          clubId: existing.clubId,
+          userId: existing.userId,
+          status: membership?.status ?? 'active',
+          createdAt: existing.createdAt,
+        });
+        return;
+      }
       res.status(400).json({
         code: 'already_member',
         message: 'Already a member of this club',
@@ -173,6 +185,75 @@ router.post('/:id/join', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error joining club', { clubId, error });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+      details: undefined,
+    });
+  }
+});
+
+/**
+ * POST /api/clubs/:id/leave
+ *
+ * Выход текущего пользователя из клуба.
+ * userId из auth (Firebase UID → users.id).
+ */
+router.post('/:id/leave', async (req: Request, res: Response) => {
+  const { id: clubId } = req.params;
+  const uid = req.authUser?.uid;
+  if (!uid) {
+    res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+      details: { reason: 'missing_header' },
+    });
+    return;
+  }
+
+  try {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) {
+      res.status(400).json({
+        code: 'validation_error',
+        message: 'Authentication required',
+        details: {
+          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+        },
+      });
+      return;
+    }
+
+    const clubMembersRepo = getClubMembersRepository();
+    const existing = await clubMembersRepo.findByClubAndUser(clubId, user.id);
+    if (!existing) {
+      res.status(400).json({
+        code: 'not_member',
+        message: 'Not a member of this club',
+        details: { clubId },
+      });
+      return;
+    }
+    if (existing.status !== 'active') {
+      res.status(400).json({
+        code: 'already_left',
+        message: 'Already left this club',
+        details: { clubId },
+      });
+      return;
+    }
+
+    const membership = await clubMembersRepo.deactivate(clubId, user.id);
+    res.status(200).json({
+      id: membership?.id ?? existing.id,
+      clubId: existing.clubId,
+      userId: existing.userId,
+      status: membership?.status ?? 'inactive',
+      createdAt: existing.createdAt,
+    });
+  } catch (error) {
+    logger.error('Error leaving club', { clubId, error });
     res.status(500).json({
       code: 'internal_error',
       message: 'Internal server error',

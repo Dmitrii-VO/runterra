@@ -71,7 +71,7 @@ export interface ProfileDto {
     lastName?: string;
     birthDate?: string;
     country?: string;
-    gender?: 'male' | 'female' | 'other' | 'unknown';
+    gender?: 'male' | 'female';
     avatarUrl?: string;
     cityId?: string;
     cityName?: string; // Название города (для удобства)

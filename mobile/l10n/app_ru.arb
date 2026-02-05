@@ -124,7 +124,8 @@
   "eventMapTodo": "Карта (TODO)",
   "eventParticipation": "Участие",
   "eventJoin": "Присоединиться",
-  "eventJoinTodo": "Запись на событие - TODO",
+  "eventJoinTodo": "Записываем...",
+  "eventJoinInProgress": "Записываем...",
   "eventJoinSuccess": "Вы записаны",
   "eventJoinError": "Не удалось записаться: {message}",
   "eventYouAreRegistered": "Вы записаны",
@@ -231,7 +232,17 @@
   "clubJoinSuccess": "Вы вступили в клуб",
   "clubJoinError": "Не удалось вступить: {message}",
   "clubYouAreMember": "Вы в клубе",
+  "clubLeave": "Выйти из клуба",
+  "clubLeaveSuccess": "Вы вышли из клуба",
+  "clubLeaveError": "Не удалось выйти: {message}",
   "@clubJoinError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "@clubLeaveError": {
     "placeholders": {
       "message": {
         "type": "String"

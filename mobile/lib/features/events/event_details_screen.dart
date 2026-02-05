@@ -374,7 +374,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                               : const Icon(Icons.person_add),
                           label: Text(
                             _isJoining
-                                ? AppLocalizations.of(context)!.eventJoinTodo
+                                ? AppLocalizations.of(context)!.eventJoinInProgress
                                 : AppLocalizations.of(context)!.eventJoin,
                           ),
                         ),

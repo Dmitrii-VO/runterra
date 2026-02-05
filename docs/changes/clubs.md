@@ -30,3 +30,10 @@
 - **Mobile:**
   - `ClubsService.joinClub(clubId)`: POST /api/clubs/:id/join, при не-2xx — ApiException(code, message). Модель `ClubModel` расширена полями isMember и membershipStatus (парсятся из GET /api/clubs/:id).
   - На `ClubDetailsScreen`: кнопка «Присоединиться» (при !isMember) вызывает joinClub; при успехе — setCurrentClubId(clubId), SnackBar «Вы вступили в клуб», перезагрузка клуба; при isMember отображается «Вы в клубе» (OutlinedButton disabled). i18n: clubJoin, clubJoinSuccess, clubJoinError(message), clubYouAreMember.
+
+### 2026-02-05 — Выход из клуба (leave club)
+
+- **Backend:** Добавлен `POST /api/clubs/:id/leave` — переводит membership в `inactive` (если есть активное). `GET /api/clubs/:id` теперь считает `isMember=true` только для `status=active`.
+- **Mobile:** Добавлен `ClubsService.leaveClub()` и кнопка «Выйти из клуба» на `ClubDetailsScreen`; при успешном выходе сбрасывается currentClubId.
+
+**Файлы:** `backend/src/api/clubs.routes.ts`, `backend/src/db/repositories/club_members.repository.ts`, `mobile/lib/shared/api/clubs_service.dart`, `mobile/lib/features/club/club_details_screen.dart`, `mobile/l10n/*.arb`.

@@ -109,7 +109,7 @@ router.get('/me/profile', async (req: Request, res: Response) => {
         name: user.name,
         firstName: user.firstName,
         lastName: user.lastName,
-        birthDate: user.birthDate ? user.birthDate.toISOString().slice(0, 10) : undefined,
+        birthDate: user.birthDate,
         country: user.country,
         gender: user.gender,
         avatarUrl: user.avatarUrl,
@@ -174,7 +174,7 @@ router.patch('/me/profile', validateBody(UpdateProfileSchema), async (req: Reque
       lastName?: string;
       birthDate?: string;
       country?: string;
-      gender?: 'male' | 'female' | 'other' | 'unknown';
+      gender?: 'male' | 'female';
       avatarUrl?: string;
     };
     const updates: {
@@ -182,9 +182,9 @@ router.patch('/me/profile', validateBody(UpdateProfileSchema), async (req: Reque
       name?: string;
       firstName?: string;
       lastName?: string;
-      birthDate?: string | Date | null;
+      birthDate?: string | null;
       country?: string;
-      gender?: 'male' | 'female' | 'other' | 'unknown';
+      gender?: 'male' | 'female';
       avatarUrl?: string;
     } = {};
     if (body.currentCityId !== undefined) updates.cityId = body.currentCityId;

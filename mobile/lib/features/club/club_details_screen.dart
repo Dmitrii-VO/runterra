@@ -36,6 +36,8 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
   late Future<ClubModel> _clubFuture;
   /// True while join request is in progress.
   bool _isJoining = false;
+  /// True while leave request is in progress.
+  bool _isLeaving = false;
 
   /// Creates Future for loading club data.
   Future<ClubModel> _fetchClub() async {
@@ -69,6 +71,30 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
       );
     } finally {
       if (mounted) setState(() => _isJoining = false);
+    }
+  }
+
+  Future<void> _onLeaveClub() async {
+    if (_isLeaving) return;
+    setState(() => _isLeaving = true);
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      await ServiceLocator.clubsService.leaveClub(widget.clubId);
+      if (!mounted) return;
+      if (ServiceLocator.currentClubService.currentClubId == widget.clubId) {
+        await ServiceLocator.currentClubService.setCurrentClubId(null);
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.clubLeaveSuccess)),
+      );
+      _retry();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.clubLeaveError(e.message))),
+      );
+    } finally {
+      if (mounted) setState(() => _isLeaving = false);
     }
   }
 
@@ -130,12 +156,26 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                     const SizedBox(height: 24),
                     // Участие в клубе
                     if (club.isMember == true)
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton(
-                          onPressed: null,
-                          child: Text(AppLocalizations.of(context)!.clubYouAreMember),
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          OutlinedButton(
+                            onPressed: null,
+                            child: Text(AppLocalizations.of(context)!.clubYouAreMember),
+                          ),
+                          const SizedBox(height: 8),
+                          OutlinedButton.icon(
+                            onPressed: _isLeaving ? null : _onLeaveClub,
+                            icon: _isLeaving
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.exit_to_app),
+                            label: Text(AppLocalizations.of(context)!.clubLeave),
+                          ),
+                        ],
                       )
                     else
                       SizedBox(

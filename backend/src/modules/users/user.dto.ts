@@ -114,7 +114,7 @@ export interface UpdateUserDto {
   country?: string;
 
   /** Пол */
-  gender?: 'male' | 'female' | 'other' | 'unknown';
+  gender?: 'male' | 'female';
   
   /** URL фото профиля */
   avatarUrl?: string;
@@ -147,7 +147,7 @@ export interface UpdateProfileDto {
   /** Страна */
   country?: string;
   /** Пол */
-  gender?: 'male' | 'female' | 'other' | 'unknown';
+  gender?: 'male' | 'female';
   /** URL фото профиля */
   avatarUrl?: string;
 }
@@ -163,6 +163,6 @@ export const UpdateProfileSchema = z.object({
   lastName: z.string().min(1).max(100).optional(),
   birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   country: z.string().max(100).optional(),
-  gender: z.enum(['male', 'female', 'other', 'unknown']).optional(),
+  gender: z.enum(['male', 'female']).optional(),
   avatarUrl: z.union([z.string().url(), z.literal('')]).optional(),
 });

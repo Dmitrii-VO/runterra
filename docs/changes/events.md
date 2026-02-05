@@ -11,6 +11,9 @@
 - **Создание события (mobile):**
   - **Mobile:** Реализован экран `CreateEventScreen` и навигация с FAB на экране событий. `EventsService.createEvent()` подключён к `POST /api/events`; форма собирает основные поля (тип, дата/время, координаты, организатор, лимит).
 
+- **Fix: текст состояния «Запись на событие»:**
+  - **Mobile:** При нажатии «Присоединиться» показан нормальный текст «Записываем…/Joining…» вместо TODO-строки.
+
 **Файлы:** `backend/src/api/events.routes.ts`, `backend/src/db/repositories/events.repository.ts`, `backend/src/modules/events/event.dto.ts`, `mobile/lib/shared/api/events_service.dart`, `mobile/lib/shared/models/event_details_model.dart`, `mobile/lib/features/events/event_details_screen.dart`, `mobile/lib/features/events/create_event_screen.dart`, `mobile/lib/features/events/events_screen.dart`, `mobile/lib/app.dart`, `mobile/l10n/*.arb`.
 
 ### 2026-02-04

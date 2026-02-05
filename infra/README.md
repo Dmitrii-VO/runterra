@@ -211,3 +211,19 @@ GitHub Actions CI (`ci.yml`) запускается на каждый push/PR в
 - [x] Профиль: расширить редактирование профиля (Имя, Фамилия, Дата рождения, Страна, Город, Пол)
   - Где: `backend/src/api/users.routes.ts`, `backend/src/modules/users/user.dto.ts`, `mobile/lib/features/profile/edit_profile_screen.dart`, `mobile/lib/shared/models/profile_model.dart`
   - Решение: добавлены поля пользователя + миграция, расширены profile DTO/patch, обновлены формы и отображение в профиле
+
+#### Feedback (2026-02-05, доп.)
+
+##### Mobile
+- [x] Профиль: пол должен быть только «мужской» или «женский»
+  - Где: `mobile/lib/features/profile/edit_profile_screen.dart`, `mobile/l10n/*.arb`, `backend/src/modules/users/user.dto.ts`
+  - Решение: enum и валидация ограничены `male|female`, UI показывает только эти варианты, миграция очищает некорректные значения
+- [x] Профиль: дата рождения сохраняется на день раньше (пример: 03.02.1994 → 02.02.1994)
+  - Где: `mobile/lib/shared/api/users_service.dart` (формат `YYYY-MM-DD`), `backend/src/db/repositories/users.repository.ts` (parse Date), `backend/src/api/users.routes.ts` (toISOString().slice(0,10))
+  - Решение: backend возвращает дату как `YYYY-MM-DD` без UTC сдвига, на стороне repo нормализация даты без `toISOString`
+- [x] События: после нажатия «Присоединиться» сначала показывается «Запись на событие - TODO»
+  - Где: `mobile/lib/features/events/event_details_screen.dart`, `mobile/l10n/*.arb`
+  - Решение: добавлен `eventJoinInProgress` и обновлены тексты без TODO
+- [x] Клубы: нет кнопки «Выйти из клуба»
+  - Где: `mobile/lib/features/club/club_details_screen.dart`, `mobile/lib/shared/api/clubs_service.dart`, backend clubs API
+  - Решение: добавлен `POST /api/clubs/:id/leave`, `ClubsService.leaveClub()`, UI кнопка «Выйти из клуба» и очистка currentClubId
