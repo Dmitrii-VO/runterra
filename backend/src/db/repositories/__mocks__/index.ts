@@ -34,6 +34,7 @@ const mockEvent = {
   participantLimit: 20,
   participantCount: 5,
   territoryId: 'territory-1',
+  cityId: 'spb',
   createdAt: new Date(),
   updatedAt: new Date(),
 };
@@ -71,6 +72,7 @@ export const mockEventsRepository = {
   create: jest.fn().mockResolvedValue(mockEvent),
   joinEvent: jest.fn().mockResolvedValue({ participant: mockParticipant }),
   checkIn: jest.fn().mockResolvedValue({ participant: { ...mockParticipant, status: 'checked_in' as const } }),
+  getParticipant: jest.fn().mockResolvedValue(null),
   getParticipants: jest.fn().mockResolvedValue([]),
 };
 
