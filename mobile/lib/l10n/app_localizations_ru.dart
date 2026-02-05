@@ -235,6 +235,80 @@ class AppLocalizationsRu extends AppLocalizations {
   String get eventsCreateTooltip => 'Создать событие';
 
   @override
+  String get eventCreateTitle => 'Создать событие';
+
+  @override
+  String get eventCreateName => 'Название события';
+
+  @override
+  String get eventCreateNameRequired => 'Укажите название события';
+
+  @override
+  String get eventCreateType => 'Тип события';
+
+  @override
+  String get eventCreateDate => 'Дата';
+
+  @override
+  String get eventCreateTime => 'Время';
+
+  @override
+  String get eventCreateCity => 'Город';
+
+  @override
+  String get eventCreateCityRequired => 'Сначала выберите город в профиле';
+
+  @override
+  String get eventCreateOrganizerId => 'ID организатора';
+
+  @override
+  String get eventCreateOrganizerRequired => 'Укажите организатора';
+
+  @override
+  String get eventCreateOrganizerType => 'Тип организатора';
+
+  @override
+  String get eventCreateOrganizerClub => 'Клуб';
+
+  @override
+  String get eventCreateOrganizerTrainer => 'Тренер';
+
+  @override
+  String get eventCreateLocationName => 'Название локации';
+
+  @override
+  String get eventCreateLatitude => 'Широта';
+
+  @override
+  String get eventCreateLongitude => 'Долгота';
+
+  @override
+  String get eventCreateCoordinatesRequired => 'Укажите координаты';
+
+  @override
+  String get eventCreateCoordinatesInvalid => 'Некорректные координаты';
+
+  @override
+  String get eventCreateParticipantLimit => 'Лимит участников';
+
+  @override
+  String get eventCreateLimitInvalid => 'Некорректный лимит';
+
+  @override
+  String get eventCreateDescription => 'Описание';
+
+  @override
+  String get eventCreateSave => 'Создать';
+
+  @override
+  String get eventCreateSuccess => 'Событие создано';
+
+  @override
+  String eventCreateError(String message) {
+    return 'Не удалось создать событие: $message';
+  }
+
+  @override
   String get filterToday => 'Сегодня';
 
   @override
@@ -334,6 +408,20 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get eventYouAreRegistered => 'Вы записаны';
+
+  @override
+  String get eventYouParticipate => 'Вы участвуете';
+
+  @override
+  String get eventLeave => 'Отменить участие';
+
+  @override
+  String get eventLeaveSuccess => 'Участие отменено';
+
+  @override
+  String eventLeaveError(String message) {
+    return 'Не удалось отменить участие: $message';
+  }
 
   @override
   String get eventCheckInSuccess => 'Отметка о прибытии принята';
@@ -674,6 +762,24 @@ class AppLocalizationsRu extends AppLocalizations {
   String get editProfileName => 'Имя';
 
   @override
+  String get editProfileFirstName => 'Имя';
+
+  @override
+  String get editProfileLastName => 'Фамилия';
+
+  @override
+  String get editProfileBirthDate => 'Дата рождения';
+
+  @override
+  String get editProfileCountry => 'Страна';
+
+  @override
+  String get editProfileGender => 'Пол';
+
+  @override
+  String get editProfileCity => 'Город';
+
+  @override
   String get editProfilePhotoUrl => 'URL фото';
 
   @override
@@ -684,6 +790,42 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get editProfileEditAction => 'Редактировать';
+
+  @override
+  String get profilePersonalInfoTitle => 'Личные данные';
+
+  @override
+  String get profileFirstNameLabel => 'Имя';
+
+  @override
+  String get profileLastNameLabel => 'Фамилия';
+
+  @override
+  String get profileBirthDateLabel => 'Дата рождения';
+
+  @override
+  String get profileCountryLabel => 'Страна';
+
+  @override
+  String get profileGenderLabel => 'Пол';
+
+  @override
+  String get profileCityLabel => 'Город';
+
+  @override
+  String get profileNotSpecified => 'Не указано';
+
+  @override
+  String get genderMale => 'Мужской';
+
+  @override
+  String get genderFemale => 'Женский';
+
+  @override
+  String get genderOther => 'Другое';
+
+  @override
+  String get genderUnknown => 'Не указано';
 
   @override
   String get createClubTitle => 'Создать клуб';

@@ -524,6 +524,150 @@ abstract class AppLocalizations {
   /// **'Create event'**
   String get eventsCreateTooltip;
 
+  /// No description provided for @eventCreateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create event'**
+  String get eventCreateTitle;
+
+  /// No description provided for @eventCreateName.
+  ///
+  /// In en, this message translates to:
+  /// **'Event name'**
+  String get eventCreateName;
+
+  /// No description provided for @eventCreateNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Event name is required'**
+  String get eventCreateNameRequired;
+
+  /// No description provided for @eventCreateType.
+  ///
+  /// In en, this message translates to:
+  /// **'Event type'**
+  String get eventCreateType;
+
+  /// No description provided for @eventCreateDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get eventCreateDate;
+
+  /// No description provided for @eventCreateTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get eventCreateTime;
+
+  /// No description provided for @eventCreateCity.
+  ///
+  /// In en, this message translates to:
+  /// **'City'**
+  String get eventCreateCity;
+
+  /// No description provided for @eventCreateCityRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a city in profile first'**
+  String get eventCreateCityRequired;
+
+  /// No description provided for @eventCreateOrganizerId.
+  ///
+  /// In en, this message translates to:
+  /// **'Organizer ID'**
+  String get eventCreateOrganizerId;
+
+  /// No description provided for @eventCreateOrganizerRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Organizer is required'**
+  String get eventCreateOrganizerRequired;
+
+  /// No description provided for @eventCreateOrganizerType.
+  ///
+  /// In en, this message translates to:
+  /// **'Organizer type'**
+  String get eventCreateOrganizerType;
+
+  /// No description provided for @eventCreateOrganizerClub.
+  ///
+  /// In en, this message translates to:
+  /// **'Club'**
+  String get eventCreateOrganizerClub;
+
+  /// No description provided for @eventCreateOrganizerTrainer.
+  ///
+  /// In en, this message translates to:
+  /// **'Trainer'**
+  String get eventCreateOrganizerTrainer;
+
+  /// No description provided for @eventCreateLocationName.
+  ///
+  /// In en, this message translates to:
+  /// **'Location name'**
+  String get eventCreateLocationName;
+
+  /// No description provided for @eventCreateLatitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Latitude'**
+  String get eventCreateLatitude;
+
+  /// No description provided for @eventCreateLongitude.
+  ///
+  /// In en, this message translates to:
+  /// **'Longitude'**
+  String get eventCreateLongitude;
+
+  /// No description provided for @eventCreateCoordinatesRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Coordinates are required'**
+  String get eventCreateCoordinatesRequired;
+
+  /// No description provided for @eventCreateCoordinatesInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid coordinates'**
+  String get eventCreateCoordinatesInvalid;
+
+  /// No description provided for @eventCreateParticipantLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Participant limit'**
+  String get eventCreateParticipantLimit;
+
+  /// No description provided for @eventCreateLimitInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid participant limit'**
+  String get eventCreateLimitInvalid;
+
+  /// No description provided for @eventCreateDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get eventCreateDescription;
+
+  /// No description provided for @eventCreateSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get eventCreateSave;
+
+  /// No description provided for @eventCreateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Event created'**
+  String get eventCreateSuccess;
+
+  /// No description provided for @eventCreateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not create event: {message}'**
+  String eventCreateError(String message);
+
   /// No description provided for @filterToday.
   ///
   /// In en, this message translates to:
@@ -721,6 +865,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You are registered'**
   String get eventYouAreRegistered;
+
+  /// No description provided for @eventYouParticipate.
+  ///
+  /// In en, this message translates to:
+  /// **'You participate'**
+  String get eventYouParticipate;
+
+  /// No description provided for @eventLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel participation'**
+  String get eventLeave;
+
+  /// No description provided for @eventLeaveSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Participation cancelled'**
+  String get eventLeaveSuccess;
+
+  /// No description provided for @eventLeaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not cancel: {message}'**
+  String eventLeaveError(String message);
 
   /// No description provided for @eventCheckInSuccess.
   ///
@@ -1298,6 +1466,42 @@ abstract class AppLocalizations {
   /// **'Name'**
   String get editProfileName;
 
+  /// No description provided for @editProfileFirstName.
+  ///
+  /// In en, this message translates to:
+  /// **'First name'**
+  String get editProfileFirstName;
+
+  /// No description provided for @editProfileLastName.
+  ///
+  /// In en, this message translates to:
+  /// **'Last name'**
+  String get editProfileLastName;
+
+  /// No description provided for @editProfileBirthDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Birth date'**
+  String get editProfileBirthDate;
+
+  /// No description provided for @editProfileCountry.
+  ///
+  /// In en, this message translates to:
+  /// **'Country'**
+  String get editProfileCountry;
+
+  /// No description provided for @editProfileGender.
+  ///
+  /// In en, this message translates to:
+  /// **'Gender'**
+  String get editProfileGender;
+
+  /// No description provided for @editProfileCity.
+  ///
+  /// In en, this message translates to:
+  /// **'City'**
+  String get editProfileCity;
+
   /// No description provided for @editProfilePhotoUrl.
   ///
   /// In en, this message translates to:
@@ -1321,6 +1525,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit'**
   String get editProfileEditAction;
+
+  /// No description provided for @profilePersonalInfoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal info'**
+  String get profilePersonalInfoTitle;
+
+  /// No description provided for @profileFirstNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'First name'**
+  String get profileFirstNameLabel;
+
+  /// No description provided for @profileLastNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Last name'**
+  String get profileLastNameLabel;
+
+  /// No description provided for @profileBirthDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Birth date'**
+  String get profileBirthDateLabel;
+
+  /// No description provided for @profileCountryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Country'**
+  String get profileCountryLabel;
+
+  /// No description provided for @profileGenderLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Gender'**
+  String get profileGenderLabel;
+
+  /// No description provided for @profileCityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'City'**
+  String get profileCityLabel;
+
+  /// No description provided for @profileNotSpecified.
+  ///
+  /// In en, this message translates to:
+  /// **'Not specified'**
+  String get profileNotSpecified;
+
+  /// No description provided for @genderMale.
+  ///
+  /// In en, this message translates to:
+  /// **'Male'**
+  String get genderMale;
+
+  /// No description provided for @genderFemale.
+  ///
+  /// In en, this message translates to:
+  /// **'Female'**
+  String get genderFemale;
+
+  /// No description provided for @genderOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get genderOther;
+
+  /// No description provided for @genderUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Prefer not to say'**
+  String get genderUnknown;
 
   /// No description provided for @createClubTitle.
   ///

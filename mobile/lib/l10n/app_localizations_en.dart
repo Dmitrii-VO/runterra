@@ -234,6 +234,80 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventsCreateTooltip => 'Create event';
 
   @override
+  String get eventCreateTitle => 'Create event';
+
+  @override
+  String get eventCreateName => 'Event name';
+
+  @override
+  String get eventCreateNameRequired => 'Event name is required';
+
+  @override
+  String get eventCreateType => 'Event type';
+
+  @override
+  String get eventCreateDate => 'Date';
+
+  @override
+  String get eventCreateTime => 'Time';
+
+  @override
+  String get eventCreateCity => 'City';
+
+  @override
+  String get eventCreateCityRequired => 'Select a city in profile first';
+
+  @override
+  String get eventCreateOrganizerId => 'Organizer ID';
+
+  @override
+  String get eventCreateOrganizerRequired => 'Organizer is required';
+
+  @override
+  String get eventCreateOrganizerType => 'Organizer type';
+
+  @override
+  String get eventCreateOrganizerClub => 'Club';
+
+  @override
+  String get eventCreateOrganizerTrainer => 'Trainer';
+
+  @override
+  String get eventCreateLocationName => 'Location name';
+
+  @override
+  String get eventCreateLatitude => 'Latitude';
+
+  @override
+  String get eventCreateLongitude => 'Longitude';
+
+  @override
+  String get eventCreateCoordinatesRequired => 'Coordinates are required';
+
+  @override
+  String get eventCreateCoordinatesInvalid => 'Invalid coordinates';
+
+  @override
+  String get eventCreateParticipantLimit => 'Participant limit';
+
+  @override
+  String get eventCreateLimitInvalid => 'Invalid participant limit';
+
+  @override
+  String get eventCreateDescription => 'Description';
+
+  @override
+  String get eventCreateSave => 'Create';
+
+  @override
+  String get eventCreateSuccess => 'Event created';
+
+  @override
+  String eventCreateError(String message) {
+    return 'Could not create event: $message';
+  }
+
+  @override
   String get filterToday => 'Today';
 
   @override
@@ -333,6 +407,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get eventYouAreRegistered => 'You are registered';
+
+  @override
+  String get eventYouParticipate => 'You participate';
+
+  @override
+  String get eventLeave => 'Cancel participation';
+
+  @override
+  String get eventLeaveSuccess => 'Participation cancelled';
+
+  @override
+  String eventLeaveError(String message) {
+    return 'Could not cancel: $message';
+  }
 
   @override
   String get eventCheckInSuccess => 'Check-in successful';
@@ -673,6 +761,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editProfileName => 'Name';
 
   @override
+  String get editProfileFirstName => 'First name';
+
+  @override
+  String get editProfileLastName => 'Last name';
+
+  @override
+  String get editProfileBirthDate => 'Birth date';
+
+  @override
+  String get editProfileCountry => 'Country';
+
+  @override
+  String get editProfileGender => 'Gender';
+
+  @override
+  String get editProfileCity => 'City';
+
+  @override
   String get editProfilePhotoUrl => 'Photo URL';
 
   @override
@@ -683,6 +789,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get editProfileEditAction => 'Edit';
+
+  @override
+  String get profilePersonalInfoTitle => 'Personal info';
+
+  @override
+  String get profileFirstNameLabel => 'First name';
+
+  @override
+  String get profileLastNameLabel => 'Last name';
+
+  @override
+  String get profileBirthDateLabel => 'Birth date';
+
+  @override
+  String get profileCountryLabel => 'Country';
+
+  @override
+  String get profileGenderLabel => 'Gender';
+
+  @override
+  String get profileCityLabel => 'City';
+
+  @override
+  String get profileNotSpecified => 'Not specified';
+
+  @override
+  String get genderMale => 'Male';
+
+  @override
+  String get genderFemale => 'Female';
+
+  @override
+  String get genderOther => 'Other';
+
+  @override
+  String get genderUnknown => 'Prefer not to say';
 
   @override
   String get createClubTitle => 'Create club';
