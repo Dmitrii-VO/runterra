@@ -11,6 +11,7 @@
 
 import { Router, Request, Response } from 'express';
 import { ClubStatus, ClubViewDto, CreateClubDto, CreateClubSchema } from '../modules/clubs';
+import { findCityById } from '../modules/cities/cities.config';
 import { validateBody } from './validateBody';
 import { getUsersRepository, getClubMembersRepository } from '../db/repositories';
 import { logger } from '../shared/logger';
@@ -68,14 +69,28 @@ router.get('/', (req: Request, res: Response) => {
 router.get('/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
 
-  const mockClub: ClubViewDto & { isMember?: boolean; membershipStatus?: string } = {
+  const cityId = 'spb';
+  const city = findCityById(cityId);
+  const mockClub: ClubViewDto & {
+    isMember: boolean;
+    membershipStatus?: string;
+    cityName?: string;
+    membersCount?: number;
+    territoriesCount?: number;
+    cityRank?: number;
+  } = {
     id,
     name: `Club ${id}`,
     description: `Description for club ${id}`,
     status: ClubStatus.ACTIVE,
-    cityId: 'spb',
+    cityId,
     createdAt: new Date(),
     updatedAt: new Date(),
+    isMember: false,
+    cityName: city?.name,
+    membersCount: 0,
+    territoriesCount: 0,
+    cityRank: 0,
   };
 
   const uid = req.authUser?.uid;

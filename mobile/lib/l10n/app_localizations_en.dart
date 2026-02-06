@@ -713,6 +713,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get clubChatButton => 'Club chat';
+
+  @override
+  String get clubMembersLabel => 'Members';
+
+  @override
+  String get clubTerritoriesLabel => 'Territories';
+
+  @override
+  String get clubCityRankLabel => 'City rank';
+
+  @override
+  String get clubMetricPlaceholder => '—';
+
+  @override
   String get territoryDetailsTitle => 'Territory';
 
   @override

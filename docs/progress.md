@@ -5,6 +5,11 @@
 
 ## История изменений
 
+### 2026-02-06
+- **Расширение экрана клуба (ClubDetailsScreen, infra/README.md):** На экране деталей клуба добавлены: (1) город клуба — отображается под названием (cityName из backend или cityId); (2) метрики MVP — три карточки: участники, территории, рейтинг в городе (значения из API или заглушка «—»); (3) кнопка «Чат клуба» — переход на экран Сообщения с открытой вкладкой «Клуб» (`/messages?tab=club`). Backend: GET `/api/clubs/:id` дополнен полями `cityName` (из конфига городов), `membersCount`, `territoriesCount`, `cityRank` (плейсхолдеры 0). Mobile: ClubModel расширен полями cityId, cityName, membersCount, territoriesCount, cityRank; MessagesScreen принимает `initialTabIndex` для открытия с нужной вкладки; маршрут `/messages?tab=club` передаёт initialTabIndex: 1. i18n: clubChatButton, clubMembersLabel, clubTerritoriesLabel, clubCityRankLabel, clubMetricPlaceholder (EN/RU). Подробности — [changes/clubs.md](changes/clubs.md).
+
+- **Проверка логов runterra (errors-runbook):** Просмотрены journalctl и error-2026-02-06.log. Новых ошибок не найдено: в логах за 06.02 только warn (POST/GET "/" → 404 — ожидаемо). Ошибки уровня error в journalctl — исторические от 03.02 (global messages / string_to_uuid), уже в разделе «Исправлено» runbook. В progress и runbook добавлено примечание про ожидаемые 404 на "/".
+
 ### 2026-02-05
 - **Tests: events/clubs/users + mobile models:** Added API tests for event leave and club leave, membership flags, repository tests for leaveEvent and birthDate mapping, and Flutter model tests for EventDetails/Club membership fields.
 - **Fix: участие в событиях + создание события + расширение профиля:** Добавлены «Вы участвуете»/«Отменить участие» (backend `POST /api/events/:id/leave`, статус участия в деталях) и экран создания события на mobile (FAB → CreateEventScreen, `createEvent()` подключён к API). Профиль расширен личными данными (имя/фамилия/дата рождения/страна/пол), добавлена миграция `007_users_profile_fields.sql`, форма редактирования и секция отображения. Подробности — [changes/events.md](changes/events.md), [changes/users.md](changes/users.md).

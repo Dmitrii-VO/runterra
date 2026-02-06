@@ -12,6 +12,12 @@ class ClubModel {
   /// Описание клуба (опционально)
   final String? description;
   
+  /// Идентификатор города клуба
+  final String? cityId;
+
+  /// Название города (из конфига backend, для отображения)
+  final String? cityName;
+
   /// Статус клуба
   /// 
   /// Возможные значения: 'active', 'inactive', 'disbanded', 'pending'
@@ -29,15 +35,29 @@ class ClubModel {
   /// Статус членства: pending, active, inactive, suspended (если isMember == true)
   final String? membershipStatus;
 
+  /// Количество участников (MVP метрика, placeholder если нет с backend)
+  final int? membersCount;
+
+  /// Количество удерживаемых территорий (MVP метрика)
+  final int? territoriesCount;
+
+  /// Рейтинг в городе (MVP метрика)
+  final int? cityRank;
+
   ClubModel({
     required this.id,
     required this.name,
     this.description,
+    this.cityId,
+    this.cityName,
     required this.status,
     required this.createdAt,
     required this.updatedAt,
     this.isMember,
     this.membershipStatus,
+    this.membersCount,
+    this.territoriesCount,
+    this.cityRank,
   });
 
   /// Создает ClubModel из JSON
@@ -49,11 +69,16 @@ class ClubModel {
       id: json['id'] as String,
       name: json['name'] as String,
       description: json['description'] as String?,
+      cityId: json['cityId'] as String?,
+      cityName: json['cityName'] as String?,
       status: json['status'] as String,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       isMember: json['isMember'] as bool?,
       membershipStatus: json['membershipStatus'] as String?,
+      membersCount: (json['membersCount'] as num?)?.toInt(),
+      territoriesCount: (json['territoriesCount'] as num?)?.toInt(),
+      cityRank: (json['cityRank'] as num?)?.toInt(),
     );
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../models/profile_model.dart';
 import '../../models/profile_club_model.dart';
@@ -57,9 +58,19 @@ class ProfileHeaderSection extends StatelessWidget {
                   const SizedBox(height: 4),
                   // Статус и клуб. Явная логика: club != null | isMercenary | иначе "Без клуба"
                   if (club != null) ...[
-                    Text(
-                      club!.name,
-                      style: Theme.of(context).textTheme.bodyLarge,
+                    InkWell(
+                      onTap: () => context.push('/club/${club!.id}'),
+                      borderRadius: BorderRadius.circular(4),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: Text(
+                          club!.name,
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                                decoration: TextDecoration.underline,
+                              ),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(

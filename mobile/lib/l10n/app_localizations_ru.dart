@@ -714,6 +714,21 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get clubChatButton => 'Чат клуба';
+
+  @override
+  String get clubMembersLabel => 'Участники';
+
+  @override
+  String get clubTerritoriesLabel => 'Территории';
+
+  @override
+  String get clubCityRankLabel => 'Рейтинг в городе';
+
+  @override
+  String get clubMetricPlaceholder => '—';
+
+  @override
   String get territoryDetailsTitle => 'Территория';
 
   @override

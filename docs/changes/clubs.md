@@ -2,6 +2,17 @@
 
 ## История изменений
 
+### 2026-02-06 — Расширение экрана клуба (город, метрики, чат)
+
+- **Контекст:** Задача из infra/README.md — расширить экран клуба по docs/product_spec.md §5.3 (город, метрики MVP, переход в чат клуба).
+- **Backend:** GET `/api/clubs/:id` дополнен полями: `cityName` (из `findCityById(cityId)`), `membersCount`, `territoriesCount`, `cityRank` (плейсхолдеры 0). Импорт `findCityById` из `modules/cities/cities.config`.
+- **Mobile ClubModel:** Добавлены поля `cityId`, `cityName`, `membersCount`, `territoriesCount`, `cityRank` (все опциональные); парсинг в `fromJson`.
+- **Mobile ClubDetailsScreen:** Под названием клуба отображается город (иконка + cityName ?? cityId ?? «—»); блок метрик — три карточки (участники, территории, рейтинг в городе) с значениями из модели или «—»; кнопка «Чат клуба» — `context.go('/messages?tab=club')`. Добавлен helper `_buildMetricChip`.
+- **Навигация к чату клуба:** Маршрут `/messages` поддерживает query `tab=club` (и `tab=coach`); `MessagesScreen` принимает `initialTabIndex` и передаёт его в `DefaultTabController(initialIndex: index)`. Кнопка «Чат клуба» открывает Сообщения с вкладкой «Клуб».
+- **i18n:** clubChatButton, clubMembersLabel, clubTerritoriesLabel, clubCityRankLabel, clubMetricPlaceholder (EN/RU).
+- **Тесты:** В `club_model_test.dart` добавлен тест парсинга city и metrics из JSON.
+- **Файлы:** `backend/src/api/clubs.routes.ts`, `mobile/lib/shared/models/club_model.dart`, `mobile/lib/features/club/club_details_screen.dart`, `mobile/lib/features/messages/messages_screen.dart`, `mobile/lib/app.dart`, `mobile/l10n/app_en.arb`, `mobile/l10n/app_ru.arb`, `mobile/test/models/club_model_test.dart`.
+
 ### 2026-02-04 — Кнопка «Создать клуб» (функциональное создание)
 
 - **Контекст:** Пункт раздела «Карта и трекинг» в infra/README.md — сделать кнопку «Создать клуб» функциональной.

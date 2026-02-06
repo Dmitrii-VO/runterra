@@ -11,13 +11,19 @@ import 'tabs/coach_tab.dart';
 /// - Клуб (чаты клубов)
 /// - Тренер (заглушка)
 ///
-/// Использует TabBar для переключения.
+/// [initialTabIndex] — индекс вкладки при открытии (0 — Личные, 1 — Клуб, 2 — Тренер).
+/// Передаётся из маршрута, например /messages?tab=club → initialTabIndex: 1.
 class MessagesScreen extends StatelessWidget {
-  const MessagesScreen({super.key});
+  /// Индекс начальной вкладки (0/1/2). По умолчанию 0.
+  final int initialTabIndex;
+
+  const MessagesScreen({super.key, this.initialTabIndex = 0});
 
   @override
   Widget build(BuildContext context) {
+    final index = initialTabIndex.clamp(0, 2);
     return DefaultTabController(
+      initialIndex: index,
       length: 3,
       child: Scaffold(
         appBar: AppBar(

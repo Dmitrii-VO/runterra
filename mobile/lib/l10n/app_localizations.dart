@@ -1382,6 +1382,36 @@ abstract class AppLocalizations {
   /// **'Could not leave: {message}'**
   String clubLeaveError(String message);
 
+  /// No description provided for @clubChatButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Club chat'**
+  String get clubChatButton;
+
+  /// No description provided for @clubMembersLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Members'**
+  String get clubMembersLabel;
+
+  /// No description provided for @clubTerritoriesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Territories'**
+  String get clubTerritoriesLabel;
+
+  /// No description provided for @clubCityRankLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'City rank'**
+  String get clubCityRankLabel;
+
+  /// No description provided for @clubMetricPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'—'**
+  String get clubMetricPlaceholder;
+
   /// No description provided for @territoryDetailsTitle.
   ///
   /// In en, this message translates to:

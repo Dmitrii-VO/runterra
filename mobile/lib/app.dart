@@ -123,7 +123,11 @@ class RunterraApp extends StatelessWidget {
           ),
           GoRoute(
             path: '/messages',
-            builder: (context, state) => const MessagesScreen(),
+            builder: (context, state) {
+              final tab = state.uri.queryParameters['tab'];
+              final initialTabIndex = tab == 'club' ? 1 : (tab == 'coach' ? 2 : 0);
+              return MessagesScreen(initialTabIndex: initialTabIndex);
+            },
           ),
           GoRoute(
             path: '/events',

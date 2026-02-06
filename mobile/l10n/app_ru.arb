@@ -235,6 +235,11 @@
   "clubLeave": "Выйти из клуба",
   "clubLeaveSuccess": "Вы вышли из клуба",
   "clubLeaveError": "Не удалось выйти: {message}",
+  "clubChatButton": "Чат клуба",
+  "clubMembersLabel": "Участники",
+  "clubTerritoriesLabel": "Территории",
+  "clubCityRankLabel": "Рейтинг в городе",
+  "clubMetricPlaceholder": "—",
   "@clubJoinError": {
     "placeholders": {
       "message": {

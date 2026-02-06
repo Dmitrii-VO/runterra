@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/api/users_service.dart' show ApiException;
 import '../../shared/di/service_locator.dart';
@@ -49,6 +50,35 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
     setState(() {
       _clubFuture = _fetchClub();
     });
+  }
+
+  Widget _buildMetricChip(BuildContext context, String label, String value) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              value,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   /// Join club and refresh on success; show SnackBar on error.
@@ -129,6 +159,8 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
           // Состояние успеха - отображение данных клуба
           if (snapshot.hasData) {
             final club = snapshot.data!;
+            final l10n = AppLocalizations.of(context)!;
+            final cityDisplay = club.cityName ?? club.cityId ?? l10n.clubMetricPlaceholder;
             return SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -140,11 +172,64 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                       club.name,
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
+                    const SizedBox(height: 12),
+                    // Город
+                    Row(
+                      children: [
+                        Icon(Icons.location_city, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        const SizedBox(width: 6),
+                        Text(
+                          cityDisplay,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 16),
+                    // Метрики MVP (участники, территории, рейтинг)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildMetricChip(
+                            context,
+                            l10n.clubMembersLabel,
+                            club.membersCount != null ? '${club.membersCount}' : l10n.clubMetricPlaceholder,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildMetricChip(
+                            context,
+                            l10n.clubTerritoriesLabel,
+                            club.territoriesCount != null ? '${club.territoriesCount}' : l10n.clubMetricPlaceholder,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildMetricChip(
+                            context,
+                            l10n.clubCityRankLabel,
+                            club.cityRank != null ? '${club.cityRank}' : l10n.clubMetricPlaceholder,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    // Кнопка «Чат клуба» — переход в Сообщения, вкладка Клуб
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => context.go('/messages?tab=club'),
+                        icon: const Icon(Icons.chat),
+                        label: Text(l10n.clubChatButton),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
                     // Описание клуба (если есть)
-                    if (club.description != null) ...[
+                    if (club.description != null && club.description!.isNotEmpty) ...[
                       Text(
-                        AppLocalizations.of(context)!.detailDescription,
+                        l10n.detailDescription,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 8),
@@ -152,8 +237,8 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                         club.description!,
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
+                      const SizedBox(height: 24),
                     ],
-                    const SizedBox(height: 24),
                     // Участие в клубе
                     if (club.isMember == true)
                       Column(

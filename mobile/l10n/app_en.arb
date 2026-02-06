@@ -389,6 +389,11 @@
   "clubLeave": "Leave club",
   "clubLeaveSuccess": "You left the club",
   "clubLeaveError": "Could not leave: {message}",
+  "clubChatButton": "Club chat",
+  "clubMembersLabel": "Members",
+  "clubTerritoriesLabel": "Territories",
+  "clubCityRankLabel": "City rank",
+  "clubMetricPlaceholder": "—",
   "@clubJoinError": {
     "placeholders": {
       "message": {

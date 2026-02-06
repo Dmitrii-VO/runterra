@@ -38,6 +38,29 @@ void main() {
       expect(club.membershipStatus, 'active');
     });
 
+    test('fromJson parses city and metrics when present', () {
+      final json = {
+        'id': 'club-1',
+        'name': 'Running Club',
+        'status': 'active',
+        'cityId': 'spb',
+        'cityName': 'Санкт-Петербург',
+        'createdAt': '2026-01-01T00:00:00.000Z',
+        'updatedAt': '2026-01-15T12:00:00.000Z',
+        'membersCount': 5,
+        'territoriesCount': 2,
+        'cityRank': 3,
+      };
+
+      final club = ClubModel.fromJson(json);
+
+      expect(club.cityId, 'spb');
+      expect(club.cityName, 'Санкт-Петербург');
+      expect(club.membersCount, 5);
+      expect(club.territoriesCount, 2);
+      expect(club.cityRank, 3);
+    });
+
     test('fromJson handles null description', () {
       final json = {
         'id': 'club-2',
