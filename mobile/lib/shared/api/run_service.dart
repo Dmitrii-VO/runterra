@@ -64,7 +64,37 @@ class RunService {
     // Listen to position updates
     _positionSubscription = _locationService.positionStream.listen(
       (position) {
+        // Append new GPS point to internal buffer
         _gpsPoints.add(position);
+
+        // Calculate incremental distance based on the last segment.
+        double newDistance = _currentSession?.distance ?? 0.0;
+        if (_gpsPoints.length > 1) {
+          final lastIndex = _gpsPoints.length - 1;
+          final prev = _gpsPoints[lastIndex - 1];
+          final curr = _gpsPoints[lastIndex];
+          final increment = Geolocator.distanceBetween(
+            prev.latitude,
+            prev.longitude,
+            curr.latitude,
+          );
+          newDistance += increment;
+        }
+
+        // Keep RunSession.gpsPoints and distance in sync so UI (RunScreen/RunRouteMap)
+        // sees the live route and meters during the run, not only after stopRun().
+        if (_currentSession != null) {
+          _currentSession = RunSession(
+            id: _currentSession!.id,
+            activityId: _currentSession!.activityId,
+            startedAt: _currentSession!.startedAt,
+            status: _currentSession!.status,
+            duration: _currentSession!.duration,
+            distance: newDistance,
+            gpsStatus: _currentSession!.gpsStatus,
+            gpsPoints: List.from(_gpsPoints),
+          );
+        }
       },
       onError: (error) {
         // Handle GPS errors (will be reflected in gpsStatus)
@@ -156,20 +186,6 @@ class RunService {
     final endTime = DateTime.now();
     final duration = endTime.difference(_startTime!);
 
-    // TODO: Calculate real distance from GPS points
-    // For now, use a placeholder calculation
-    double distance = 0.0;
-    if (_gpsPoints.length > 1) {
-      for (int i = 1; i < _gpsPoints.length; i++) {
-        distance += Geolocator.distanceBetween(
-          _gpsPoints[i - 1].latitude,
-          _gpsPoints[i - 1].longitude,
-          _gpsPoints[i].latitude,
-          _gpsPoints[i].longitude,
-        );
-      }
-    }
-
     // Update session with final data
     _currentSession = RunSession(
       id: _currentSession!.id,
@@ -177,7 +193,8 @@ class RunService {
       startedAt: _currentSession!.startedAt,
       status: RunSessionStatus.completed,
       duration: duration,
-      distance: distance,
+      // Distance already accumulated during tracking from _gpsPoints stream.
+      distance: _currentSession!.distance,
       gpsStatus: _currentSession!.gpsStatus,
       gpsPoints: List.from(_gpsPoints),
     );

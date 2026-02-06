@@ -91,19 +91,9 @@ class _RunScreenState extends State<RunScreen> {
         if (_session?.gpsStatus == GpsStatus.searching) {
           _runService.updateGpsStatus(GpsStatus.recording);
         }
-        if (_session != null && _session!.gpsPoints.length > 1 && mounted) {
-          final gpsPoints = List.from(_session!.gpsPoints);
-          final lastIndex = gpsPoints.length - 1;
-          final increment = Geolocator.distanceBetween(
-            gpsPoints[lastIndex - 1].latitude,
-            gpsPoints[lastIndex - 1].longitude,
-            gpsPoints[lastIndex].latitude,
-            gpsPoints[lastIndex].longitude,
-          );
-          final newDistance = (_session!.distance) + increment;
-          _runService.updateSessionMetrics(distance: newDistance);
+        if (mounted) {
+          setState(() => _session = _runService.currentSession);
         }
-        if (mounted) setState(() => _session = _runService.currentSession);
       },
       onError: (_) {
         _runService.updateGpsStatus(GpsStatus.error);
@@ -138,30 +128,10 @@ class _RunScreenState extends State<RunScreen> {
           // Update GPS status to recording when first position is received
           if (_session?.gpsStatus == GpsStatus.searching) {
             _runService.updateGpsStatus(GpsStatus.recording);
-            setState(() {
-              _session = _runService.currentSession;
-            });
           }
-
-          // Update distance (calculated from GPS points)
-          // Optimization: only calculate increment from last point to avoid O(n²)
-          if (_session != null && _session!.gpsPoints.length > 1) {
-            final gpsPoints = List.from(_session!.gpsPoints); // Copy list to maintain immutability
-            final lastIndex = gpsPoints.length - 1;
-            // Calculate only the increment from previous point to current
-            final increment = Geolocator.distanceBetween(
-              gpsPoints[lastIndex - 1].latitude,
-              gpsPoints[lastIndex - 1].longitude,
-              gpsPoints[lastIndex].latitude,
-              gpsPoints[lastIndex].longitude,
-            );
-            // Add increment to existing distance
-            final newDistance = (_session!.distance) + increment;
-            _runService.updateSessionMetrics(distance: newDistance);
-            setState(() {
-              _session = _runService.currentSession;
-            });
-          }
+          setState(() {
+            _session = _runService.currentSession;
+          });
         },
         onError: (error) {
           _runService.updateGpsStatus(GpsStatus.error);
