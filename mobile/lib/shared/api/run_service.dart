@@ -77,6 +77,7 @@ class RunService {
             prev.latitude,
             prev.longitude,
             curr.latitude,
+            curr.longitude,
           );
           newDistance += increment;
         }
