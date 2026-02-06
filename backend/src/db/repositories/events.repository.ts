@@ -7,6 +7,7 @@ import { Event } from '../../modules/events/event.entity';
 import { EventType } from '../../modules/events/event.type';
 import { EventStatus } from '../../modules/events/event.status';
 import { EventListItemDto, EventDetailsDto } from '../../modules/events/event.dto';
+import { PoolClient } from 'pg';
 
 interface EventRow {
   id: string;
@@ -236,54 +237,91 @@ export class EventsRepository extends BaseRepository {
    * Returns error message if cannot join, null if success
    */
   async joinEvent(eventId: string, userId: string): Promise<{ error?: string; participant?: EventParticipant }> {
-    // Check if event exists and is open
-    const event = await this.findById(eventId);
-    if (!event) {
-      return { error: 'Event not found' };
-    }
-    
-    if (event.status !== EventStatus.OPEN) {
-      return { error: `Cannot join event with status: ${event.status}` };
-    }
-    
-    // Check participant limit
-    if (event.participantLimit && event.participantCount >= event.participantLimit) {
-      return { error: 'Event is full' };
-    }
-    
-    // Check if already registered
-    const existing = await this.queryOne<ParticipantRow>(
-      'SELECT * FROM event_participants WHERE event_id = $1 AND user_id = $2',
-      [eventId, userId]
-    );
-    
-    if (existing) {
-      if (existing.status === 'registered' || existing.status === 'checked_in') {
+    const pool = this.getPool();
+    const client = await pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      // Lock event row to make participant_limit checks and count updates atomic.
+      const eventRes = await client.query<EventRow>(
+        'SELECT * FROM events WHERE id = $1 FOR UPDATE',
+        [eventId]
+      );
+      const eventRow = eventRes.rows[0];
+      if (!eventRow) {
+        await client.query('ROLLBACK');
+        return { error: 'Event not found' };
+      }
+      const event = rowToEvent(eventRow);
+
+      if (event.status !== EventStatus.OPEN) {
+        await client.query('ROLLBACK');
+        return { error: `Cannot join event with status: ${event.status}` };
+      }
+
+      const existingRes = await client.query<ParticipantRow>(
+        'SELECT * FROM event_participants WHERE event_id = $1 AND user_id = $2 FOR UPDATE',
+        [eventId, userId]
+      );
+      const existing = existingRes.rows[0];
+      if (existing && (existing.status === 'registered' || existing.status === 'checked_in')) {
+        await client.query('ROLLBACK');
         return { error: 'Already registered for this event' };
       }
-      // Re-register if was cancelled
-      const updated = await this.queryOne<ParticipantRow>(
-        `UPDATE event_participants 
-         SET status = 'registered', updated_at = NOW() 
-         WHERE id = $1 RETURNING *`,
-        [existing.id]
+
+      const activeCount = await this.getActiveParticipantCount(client, eventId);
+      if (event.participantLimit && activeCount >= event.participantLimit) {
+        await client.query('ROLLBACK');
+        return { error: 'Event is full' };
+      }
+
+      let participantRow: ParticipantRow;
+      if (existing) {
+        const updatedRes = await client.query<ParticipantRow>(
+          `UPDATE event_participants
+           SET status = 'registered', updated_at = NOW()
+           WHERE id = $1 RETURNING *`,
+          [existing.id]
+        );
+        participantRow = updatedRes.rows[0];
+      } else {
+        const insertRes = await client.query<ParticipantRow>(
+          `INSERT INTO event_participants (event_id, user_id, status)
+           VALUES ($1, $2, 'registered')
+           RETURNING *`,
+          [eventId, userId]
+        );
+        participantRow = insertRes.rows[0];
+      }
+
+      const newActiveCount = await this.getActiveParticipantCount(client, eventId);
+      await client.query(
+        `UPDATE events
+         SET participant_count = $2,
+             status = CASE
+               WHEN status IN ('cancelled', 'completed') THEN status
+               WHEN participant_limit IS NOT NULL AND $2 >= participant_limit THEN 'full'
+               WHEN status = 'full' AND (participant_limit IS NULL OR $2 < participant_limit) THEN 'open'
+               ELSE status
+             END,
+             updated_at = NOW()
+         WHERE id = $1`,
+        [eventId, newActiveCount]
       );
-      await this.updateParticipantCount(eventId);
-      return { participant: rowToParticipant(updated!) };
+
+      await client.query('COMMIT');
+      return { participant: rowToParticipant(participantRow) };
+    } catch (error) {
+      try {
+        await client.query('ROLLBACK');
+      } catch {
+        // ignore rollback errors and rethrow original failure
+      }
+      throw error;
+    } finally {
+      client.release();
     }
-    
-    // Create new registration
-    const row = await this.queryOne<ParticipantRow>(
-      `INSERT INTO event_participants (event_id, user_id, status)
-       VALUES ($1, $2, 'registered')
-       RETURNING *`,
-      [eventId, userId]
-    );
-    
-    // Update participant count
-    await this.updateParticipantCount(eventId);
-    
-    return { participant: rowToParticipant(row!) };
   }
 
   /**
@@ -435,6 +473,16 @@ export class EventsRepository extends BaseRepository {
        WHERE id = $1`,
       [eventId]
     );
+  }
+
+  private async getActiveParticipantCount(client: PoolClient, eventId: string): Promise<number> {
+    const result = await client.query<{ count: string }>(
+      `SELECT COUNT(*)::text AS count
+       FROM event_participants
+       WHERE event_id = $1 AND status IN ('registered', 'checked_in')`,
+      [eventId]
+    );
+    return parseInt(result.rows[0]?.count ?? '0', 10);
   }
 
   async getParticipant(eventId: string, userId: string): Promise<EventParticipant | null> {

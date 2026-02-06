@@ -31,6 +31,8 @@ export interface TokenVerificationResult {
   user?: AuthUser;
   /** Сообщение об ошибке (если токен невалиден) */
   error?: string;
+  /** Технические детали ошибки/диагностики (опционально) */
+  details?: Record<string, unknown>;
 }
 
 /**

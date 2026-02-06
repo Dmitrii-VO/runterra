@@ -8,7 +8,9 @@ import { Server as HttpServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { parse as parseUrl } from 'url';
 import { getAuthProvider } from '../modules/auth';
+import { getUsersRepository, getClubMembersRepository } from '../db/repositories';
 import { logger } from '../shared/logger';
+import { isValidClubId } from '../shared/clubId';
 
 const WS_PATH = '/ws';
 
@@ -21,8 +23,6 @@ interface WsClient {
 const clients = new Map<WebSocket, WsClient>();
 
 let wss: WebSocketServer | null = null;
-
-const VALID_CHANNEL_RE = /^club:[0-9a-f-]{36}$/;
 
 /**
  * Broadcast payload to all connections subscribed to channelKey.
@@ -44,10 +44,39 @@ export function broadcast(channelKey: string, payload: object): void {
 
 /**
  * Validate that the user is allowed to subscribe to the given channel.
- * club:<clubId> — allowed for now (stub), but format is validated.
+ *
+ * Rules for MVP:
+ * - Only channels of the form "club:<clubId>" are supported.
+ * - User must be an ACTIVE member of the given club.
  */
-async function canSubscribe(_uid: string, channelKey: string): Promise<boolean> {
-  return VALID_CHANNEL_RE.test(channelKey);
+async function canSubscribe(uid: string, channelKey: string): Promise<boolean> {
+  if (!channelKey.startsWith('club:')) {
+    return false;
+  }
+
+  const clubId = channelKey.slice('club:'.length);
+  if (!isValidClubId(clubId)) {
+    return false;
+  }
+
+  try {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) {
+      return false;
+    }
+
+    const clubMembersRepo = getClubMembersRepository();
+    const membership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
+    return !!membership && membership.status === 'active';
+  } catch (error) {
+    logger.error('Error checking club membership for WS subscribe', {
+      uid,
+      channelKey,
+      error,
+    });
+    return false;
+  }
 }
 
 /**

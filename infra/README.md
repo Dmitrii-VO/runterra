@@ -162,18 +162,20 @@ GitHub Actions CI (`ci.yml`) запускается на каждый push/PR в
   - **Фильтр «Мой клуб»:** Backend: в профиле добавлено `user.primaryClubId` (из club_members). Mobile: CurrentClubService, чип «Мой клуб» на EventsScreen (подставляет clubId и перезапрашивает список); на карте фильтр по clubId отложен до системы слоёв. Подробности — [docs/changes/users.md](../docs/changes/users.md), [docs/changes/maps.md](../docs/changes/maps.md).
 
 ### Аудит (2026-02-04)
-- [ ] Исправить bulk-insert GPS точек (плейсхолдеры) и добавить тест на 2+ точки
-- [ ] Привести clubId к единому формату (UUID или строка) во всех слоях: DB, API, WS, mobile
-- [ ] Внедрить Firebase Admin SDK и убрать заглушки авторизации
-- [ ] Обеспечить авто-создание пользователя по валидному токену (или явный onboarding)
-- [ ] Добавить проверку членства для клубных чатов (HTTP + WS)
-- [ ] Унифицировать формат ошибок API (code/message/details) во всех эндпоинтах
-- [ ] Зафиксировать production baseUrl для mobile (без localhost по умолчанию)
-- [ ] Убрать моки и подключить реальные данные для территорий/клубов/активностей
-- [ ] Доделать флоу событий в mobile (создание, join, check-in, фильтры)
-- [ ] Реализовать mobile chat API (messages_service) для клубных/личных чатов
-- [ ] Добавить транзакционную защиту от оверсабскрайба на события (participant_limit)
-- [ ] Исправить 500 на /api/messages при отсутствии auth (возвращать 401/403)
+- [x] Исправить bulk-insert GPS точек (плейсхолдеры) и добавить тест на 2+ точки
+- [x] Привести clubId к единому формату (UUID или строка) во всех слоях: DB, API, WS, mobile
+- [x] Внедрить Firebase Admin SDK и убрать заглушки авторизации
+- [x] Обеспечить авто-создание пользователя по валидному токену (или явный onboarding)
+- [x] Добавить проверку членства для клубных чатов (HTTP + WS)
+- [x] Унифицировать формат ошибок API (code/message/details) во всех эндпоинтах
+- [x] Доделать флоу событий в mobile (создание, join, check-in, фильтры)
+- [x] Зафиксировать production baseUrl для mobile (без localhost по умолчанию)
+- [x] Убрать моки и подключить реальные данные для территорий/клубов/активностей
+- [x] Реализовать mobile chat API (messages_service) для клубных/личных чатов
+- [x] Добавить транзакционную защиту от оверсабскрайба на события (participant_limit)
+- [x] Исправить 500 на /api/messages при отсутствии auth (возвращать 401/403)
+
+Примечание (2026-02-06): для `participant_limit` реализован транзакционный `joinEvent` с `SELECT ... FOR UPDATE` в `backend/src/db/repositories/events.repository.ts`.
 
 #### Feedback (2026-02-04)
 

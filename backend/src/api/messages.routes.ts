@@ -10,6 +10,7 @@ import { validateBody } from './validateBody';
 import { getMessagesRepository, getUsersRepository, getClubMembersRepository } from '../db/repositories';
 import { broadcast } from '../ws/chatWs';
 import { logger } from '../shared/logger';
+import { isValidClubId } from '../shared/clubId';
 
 const router = Router();
 
@@ -25,10 +26,15 @@ function parsePagination(query: { limit?: string; offset?: string }): { limit: n
   };
 }
 
-function getAuthUid(req: Request): string {
+function getAuthUidOrRespondUnauthorized(req: Request, res: Response): string | null {
   const uid = req.authUser?.uid;
   if (!uid) {
-    throw new Error('Auth user required');
+    res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+      details: { reason: 'missing_header' },
+    });
+    return null;
   }
   return uid;
 }
@@ -39,7 +45,8 @@ function getAuthUid(req: Request): string {
  */
 router.get('/clubs', async (req: Request, res: Response) => {
   try {
-    const uid = getAuthUid(req);
+    const uid = getAuthUidOrRespondUnauthorized(req, res);
+    if (!uid) return;
     const usersRepo = getUsersRepository();
     const user = await usersRepo.findByFirebaseUid(uid);
     if (!user) {
@@ -77,20 +84,55 @@ router.get('/clubs', async (req: Request, res: Response) => {
 
 /**
  * GET /api/messages/clubs/:clubId
- * Query: limit, offset. Access check: stub (allowed for now).
+ * Query: limit, offset.
+ * Access: only active members of the club.
  */
 router.get('/clubs/:clubId', async (req: Request, res: Response) => {
   const { clubId } = req.params;
+  if (!isValidClubId(clubId)) {
+    res.status(400).json({
+      code: 'validation_error',
+      message: 'Path validation failed',
+      details: {
+        fields: [
+          {
+            field: 'clubId',
+            message: 'clubId has invalid format',
+            code: 'invalid_format',
+          },
+        ],
+      },
+    });
+    return;
+  }
+
   try {
-    getAuthUid(req);
+    const uid = getAuthUidOrRespondUnauthorized(req, res);
+    if (!uid) return;
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) {
+      res.status(401).json({
+        code: 'unauthorized',
+        message: 'User not found',
+      });
+      return;
+    }
+
+    const clubMembersRepo = getClubMembersRepository();
+    const membership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
+    if (!membership || membership.status !== 'active') {
+      res.status(403).json({
+        code: 'forbidden',
+        message: 'User is not a member of this club',
+        details: { clubId },
+      });
+      return;
+    }
+
     const { limit, offset } = parsePagination(req.query as { limit?: string; offset?: string });
     const messagesRepo = getMessagesRepository();
-    const list = await messagesRepo.findByChannel(
-      'club',
-      clubId,
-      limit,
-      offset
-    );
+    const list = await messagesRepo.findByChannel('club', clubId, limit, offset);
     res.status(200).json(list);
   } catch (error) {
     logger.error('Error fetching club messages', { error: error, clubId });
@@ -103,21 +145,52 @@ router.get('/clubs/:clubId', async (req: Request, res: Response) => {
 
 /**
  * POST /api/messages/clubs/:clubId
- * Body: { text }. Access check: stub (allowed for now). Broadcasts to channel club:{clubId}.
+ * Body: { text }.
+ * Access: only active members of the club.
+ * Broadcasts to channel club:{clubId}.
  */
 router.post(
   '/clubs/:clubId',
   validateBody(CreateMessageSchema),
   async (req: Request, res: Response) => {
     const { clubId } = req.params;
+    if (!isValidClubId(clubId)) {
+      res.status(400).json({
+        code: 'validation_error',
+        message: 'Path validation failed',
+        details: {
+          fields: [
+            {
+              field: 'clubId',
+              message: 'clubId has invalid format',
+              code: 'invalid_format',
+            },
+          ],
+        },
+      });
+      return;
+    }
+
     try {
-      const uid = getAuthUid(req);
+      const uid = getAuthUidOrRespondUnauthorized(req, res);
+      if (!uid) return;
       const usersRepo = getUsersRepository();
       const user = await usersRepo.findByFirebaseUid(uid);
       if (!user) {
         res.status(401).json({
           code: 'unauthorized',
           message: 'User not found',
+        });
+        return;
+      }
+
+      const clubMembersRepo = getClubMembersRepository();
+      const membership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
+      if (!membership || membership.status !== 'active') {
+        res.status(403).json({
+          code: 'forbidden',
+          message: 'User is not a member of this club',
+          details: { clubId },
         });
         return;
       }

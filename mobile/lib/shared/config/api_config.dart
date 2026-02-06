@@ -22,12 +22,18 @@ class ApiConfig {
   /// Получает baseUrl для текущей платформы
   ///
   /// - Если задан API_BASE_URL (--dart-define) — возвращает его (для dev можно http://).
-  /// - Иначе — https с платформенным хостом (production: не передавать API_BASE_URL).
+  /// - Иначе —:
+  ///   - в debug: облачный dev backend (http://85.208.85.13:3000);
+  ///   - в release/production: фиксированный продакшн backend (https://85.208.85.13:3000).
   ///
   /// Для Android: использует localhost по умолчанию (эмулятор определяется через API_BASE_URL).
   /// Для физических Android устройств использует localhost (или IP через API_BASE_URL).
   /// Cloud dev server (backend on Cloud.ru). Used as default in debug when API_BASE_URL is not set.
   static const String _cloudDevBaseUrl = 'http://85.208.85.13:3000';
+
+  /// Production backend base URL. Used for mobile/desktop in release builds
+  /// when API_BASE_URL is not provided via --dart-define.
+  static const String _prodBaseUrl = 'https://85.208.85.13:3000';
 
   static String getBaseUrl() {
     final override = _envBaseUrl.trim();
@@ -38,35 +44,27 @@ class ApiConfig {
     if (kDebugMode) {
       return _cloudDevBaseUrl;
     }
-    const scheme = 'https://';
-    const port = ':3000';
-    
-    // Flutter Web: всегда localhost
+
+    // Flutter Web: в release также используем фиксированный production backend.
     if (kIsWeb) {
-      return '${scheme}localhost$port';
+      return _prodBaseUrl;
     }
-    
-    // For non-web platforms, use Platform from dart:io
-    // Conditional import ensures this works on Web (imports dart:html instead)
-    // On Web, io.Platform will not exist, so we check kIsWeb first
+
+    // Для мобильных/десктоп клиентов по умолчанию используем фиксированный продакшн backend.
+    // Локальная разработка и альтернативные окружения по-прежнему идут через API_BASE_URL.
     try {
-      // Use io.Platform (aliased import) to avoid direct Platform reference
-      // This works because conditional import resolves to Platform on mobile/desktop
-      // and to a different type on Web (but we return early for Web above)
-      if (io.Platform.isAndroid) {
-        // TODO: Add proper emulator detection if needed
-        // For now, use localhost for all Android (users can override via API_BASE_URL)
-        return '${scheme}localhost$port';
-      } else if (io.Platform.isIOS) {
-        return '${scheme}localhost$port';
-      } else if (io.Platform.isWindows || io.Platform.isLinux || io.Platform.isMacOS) {
-        return '${scheme}localhost$port';
+      if (io.Platform.isAndroid ||
+          io.Platform.isIOS ||
+          io.Platform.isWindows ||
+          io.Platform.isLinux ||
+          io.Platform.isMacOS) {
+        return _prodBaseUrl;
       }
-    } catch (e) {
-      // Fallback if Platform is unavailable (should not happen due to kIsWeb check)
-      return '${scheme}localhost$port';
+    } catch (_) {
+      // Fallback если Platform недоступен — используем продакшн backend.
+      return _prodBaseUrl;
     }
-    
-    return '${scheme}localhost$port';
+
+    return _prodBaseUrl;
   }
 }

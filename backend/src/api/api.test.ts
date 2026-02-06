@@ -86,6 +86,16 @@ describe('API Routes', () => {
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
     });
+
+    it('returns 400 for unknown cityId', async () => {
+      const res = await request(app)
+        .get('/api/clubs?cityId=unknown-city')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('code', 'validation_error');
+      expect(res.body?.details?.fields?.[0]?.code).toBe('city_not_found');
+    });
   });
 
   describe('GET /api/territories', () => {
@@ -132,6 +142,29 @@ describe('API Routes', () => {
       expect(res.body).toHaveProperty('events');
       expect(Array.isArray(res.body.territories)).toBe(true);
       expect(Array.isArray(res.body.events)).toBe(true);
+    });
+  });
+
+  describe('Messages clubId validation', () => {
+    it('GET /api/messages/clubs/:clubId returns 400 for invalid clubId format', async () => {
+      const res = await request(app)
+        .get('/api/messages/clubs/club:invalid')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('code', 'validation_error');
+      expect(res.body?.details?.fields?.[0]?.field).toBe('clubId');
+    });
+
+    it('POST /api/messages/clubs/:clubId returns 400 for invalid clubId format', async () => {
+      const res = await request(app)
+        .post('/api/messages/clubs/club:invalid')
+        .set('Authorization', 'Bearer test-token')
+        .send({ text: 'hello' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('code', 'validation_error');
+      expect(res.body?.details?.fields?.[0]?.field).toBe('clubId');
     });
   });
 

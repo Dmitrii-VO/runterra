@@ -16,6 +16,10 @@ jest.mock('../client', () => ({
   getDbPool: () => null,
   createDbPool: () => ({
     query: mockQuery,
+    connect: async () => ({
+      query: mockQuery,
+      release: () => {},
+    }),
     on: () => {},
   }),
 }));
@@ -76,7 +80,12 @@ describe('EventsRepository', () => {
 
   describe('joinEvent', () => {
     it('should return error when event does not exist', async () => {
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+      mockQuery.mockImplementation(async (sql: string) => {
+        if (sql.includes('SELECT * FROM events WHERE id = $1 FOR UPDATE')) {
+          return { rows: [], rowCount: 0 };
+        }
+        return { rows: [], rowCount: 0 };
+      });
 
       const result = await repo.joinEvent('non-existent', 'user-1');
 
@@ -85,9 +94,14 @@ describe('EventsRepository', () => {
     });
 
     it('should return error when event status is not open', async () => {
-      mockQuery.mockResolvedValueOnce({
-        rows: [eventRow({ status: EventStatus.FULL })],
-        rowCount: 1,
+      mockQuery.mockImplementation(async (sql: string) => {
+        if (sql.includes('SELECT * FROM events WHERE id = $1 FOR UPDATE')) {
+          return {
+            rows: [eventRow({ status: EventStatus.FULL })],
+            rowCount: 1,
+          };
+        }
+        return { rows: [], rowCount: 0 };
       });
 
       const result = await repo.joinEvent('ev-1', 'user-1');
@@ -97,9 +111,20 @@ describe('EventsRepository', () => {
     });
 
     it('should return error when event is full (participantCount >= limit)', async () => {
-      mockQuery.mockResolvedValueOnce({
-        rows: [eventRow({ participant_limit: 10, participant_count: 10 })],
-        rowCount: 1,
+      mockQuery.mockImplementation(async (sql: string) => {
+        if (sql.includes('SELECT * FROM events WHERE id = $1 FOR UPDATE')) {
+          return {
+            rows: [eventRow({ participant_limit: 10, participant_count: 10 })],
+            rowCount: 1,
+          };
+        }
+        if (sql.includes('SELECT * FROM event_participants WHERE event_id = $1 AND user_id = $2 FOR UPDATE')) {
+          return { rows: [], rowCount: 0 };
+        }
+        if (sql.includes('SELECT COUNT(*)::text AS count')) {
+          return { rows: [{ count: '10' }], rowCount: 1 };
+        }
+        return { rows: [], rowCount: 0 };
       });
 
       const result = await repo.joinEvent('ev-1', 'user-1');
@@ -109,15 +134,21 @@ describe('EventsRepository', () => {
     });
 
     it('should return error when user already registered', async () => {
-      mockQuery
-        .mockResolvedValueOnce({
-          rows: [eventRow()],
-          rowCount: 1,
-        })
-        .mockResolvedValueOnce({
-          rows: [participantRow({ status: 'registered' })],
-          rowCount: 1,
-        });
+      mockQuery.mockImplementation(async (sql: string) => {
+        if (sql.includes('SELECT * FROM events WHERE id = $1 FOR UPDATE')) {
+          return {
+            rows: [eventRow()],
+            rowCount: 1,
+          };
+        }
+        if (sql.includes('SELECT * FROM event_participants WHERE event_id = $1 AND user_id = $2 FOR UPDATE')) {
+          return {
+            rows: [participantRow({ status: 'registered' })],
+            rowCount: 1,
+          };
+        }
+        return { rows: [], rowCount: 0 };
+      });
 
       const result = await repo.joinEvent('ev-1', 'user-1');
 
@@ -126,18 +157,32 @@ describe('EventsRepository', () => {
     });
 
     it('should return participant when join succeeds for open event', async () => {
-      mockQuery
-        .mockResolvedValueOnce({
-          rows: [eventRow()],
-          rowCount: 1,
-        })
-        .mockResolvedValueOnce({ rows: [], rowCount: 0 })
-        .mockResolvedValueOnce({
-          rows: [participantRow()],
-          rowCount: 1,
-        })
-        .mockResolvedValueOnce({ rows: [], rowCount: 0 })
-        .mockResolvedValueOnce({ rows: [], rowCount: 0 });
+      let activeCountCalls = 0;
+      mockQuery.mockImplementation(async (sql: string) => {
+        if (sql.includes('SELECT * FROM events WHERE id = $1 FOR UPDATE')) {
+          return {
+            rows: [eventRow()],
+            rowCount: 1,
+          };
+        }
+        if (sql.includes('SELECT * FROM event_participants WHERE event_id = $1 AND user_id = $2 FOR UPDATE')) {
+          return { rows: [], rowCount: 0 };
+        }
+        if (sql.includes('SELECT COUNT(*)::text AS count')) {
+          activeCountCalls += 1;
+          return {
+            rows: [{ count: activeCountCalls === 1 ? '5' : '6' }],
+            rowCount: 1,
+          };
+        }
+        if (sql.includes('INSERT INTO event_participants')) {
+          return {
+            rows: [participantRow()],
+            rowCount: 1,
+          };
+        }
+        return { rows: [], rowCount: 0 };
+      });
 
       const result = await repo.joinEvent('ev-1', 'user-1');
 

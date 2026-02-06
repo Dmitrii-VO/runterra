@@ -45,20 +45,48 @@ router.get('/', (req: Request, res: Response) => {
     });
   }
 
-  // Заглушка: возвращаем массив из одного клуба в указанном городе
-  const mockClubs: ClubViewDto[] = [
+  const city = findCityById(cityId);
+  if (!city) {
+    return res.status(400).json({
+      code: 'validation_error',
+      message: 'Query validation failed',
+      details: {
+        fields: [
+          {
+            field: 'cityId',
+            message: 'Unknown cityId',
+            code: 'city_not_found',
+          },
+        ],
+      },
+    });
+  }
+
+  // Static sample clubs for MVP (no clubs table yet).
+  // Align ids with territories config for "owner club" examples.
+  const now = new Date();
+  const clubs: ClubViewDto[] = [
     {
-      id: '1',
-      name: 'Test Club',
-      description: 'Test club description',
+      id: 'club-1',
+      name: 'Runterra Крестовский',
+      description: 'Клуб утренних пробежек в Приморском парке Победы и на Крестовском острове.',
       status: ClubStatus.ACTIVE,
       cityId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'club-2',
+      name: 'Runterra Парк 300-летия',
+      description: 'Сообщество любителей набережной и парка 300-летия Санкт-Петербурга.',
+      status: ClubStatus.ACTIVE,
+      cityId,
+      createdAt: now,
+      updatedAt: now,
     },
   ];
 
-  res.status(200).json(mockClubs);
+  res.status(200).json(clubs);
 });
 
 /**

@@ -100,12 +100,13 @@ class EventsService {
   /// Парсит JSON ответ и преобразует его в типизированную модель.
   /// 
   /// [id] - уникальный идентификатор события
-  /// 
-  /// TODO: Добавить обработку ошибок HTTP запросов
   Future<EventDetailsModel> getEventById(String id) async {
     final response = await _apiClient.get('/api/events/$id');
-    final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
-    return EventDetailsModel.fromJson(jsonData);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+      return EventDetailsModel.fromJson(jsonData);
+    }
+    _throwApiException(response, 'get_event_error');
   }
 
   /// Выполняет GET /api/events/:id/participants запрос к backend
@@ -113,16 +114,13 @@ class EventsService {
   /// Возвращает список участников события.
   Future<List<EventParticipantModel>> getEventParticipants(String eventId) async {
     final response = await _apiClient.get('/api/events/$eventId/participants');
-    if (response.statusCode != 200) {
-      throw Exception(
-        'Ошибка сервера: ${response.statusCode}\n'
-        'Убедитесь, что backend сервер запущен (npm run dev в папке backend)',
-      );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final jsonData = jsonDecode(response.body) as List<dynamic>;
+      return jsonData
+          .map((json) => EventParticipantModel.fromJson(json as Map<String, dynamic>))
+          .toList();
     }
-    final jsonData = jsonDecode(response.body) as List<dynamic>;
-    return jsonData
-        .map((json) => EventParticipantModel.fromJson(json as Map<String, dynamic>))
-        .toList();
+    _throwApiException(response, 'get_event_participants_error');
   }
 
   /// Выполняет POST /api/events запрос к backend
@@ -193,7 +191,7 @@ class EventsService {
     _throwApiException(response, 'check_in_error');
   }
 
-  void _throwApiException(dynamic response, String fallbackCode) {
+  Never _throwApiException(dynamic response, String fallbackCode) {
     String errorCode = fallbackCode;
     String errorMessage = 'Request failed (${response.statusCode})';
     try {
