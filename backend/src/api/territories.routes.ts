@@ -12,6 +12,7 @@
 
 import { Router, Request, Response } from 'express';
 import { TerritoryStatus, TerritoryViewDto, CreateTerritoryDto, CreateTerritorySchema } from '../modules/territories';
+import { getTerritoriesForCity, getTerritoryById } from '../modules/territories/territories.config';
 import { validateBody } from './validateBody';
 import { isPointWithinCityBounds } from '../modules/cities/city.utils';
 
@@ -44,29 +45,8 @@ router.get('/', (req: Request, res: Response) => {
     });
   }
 
-  // Заглушка: возвращаем массив из одной территории в указанном городе
-  let mockTerritories: TerritoryViewDto[] = [
-    {
-      id: '1',
-      name: 'Test Territory',
-      status: TerritoryStatus.FREE,
-      coordinates: {
-        longitude: 37.6173,
-        latitude: 55.7558,
-      },
-      cityId,
-      clubId: 'club-1',
-      capturedByUserId: undefined,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  ];
-
-  if (clubId) {
-    mockTerritories = mockTerritories.filter((t) => t.clubId === clubId);
-  }
-
-  res.status(200).json(mockTerritories);
+  const territories = getTerritoriesForCity(cityId, clubId);
+  res.status(200).json(territories);
 });
 
 /**
@@ -79,22 +59,17 @@ router.get('/', (req: Request, res: Response) => {
 router.get('/:id', (req: Request, res: Response) => {
   const { id } = req.params;
 
-  // Заглушка: возвращаем территорию с переданным ID
-  const mockTerritory: TerritoryViewDto = {
-    id,
-    name: `Territory ${id}`,
-    status: TerritoryStatus.FREE,
-    coordinates: {
-      longitude: 37.6173,
-      latitude: 55.7558,
-    },
-    cityId: 'spb',
-    capturedByUserId: undefined,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
+  const territory = getTerritoryById(id);
+  if (!territory) {
+    res.status(404).json({
+      code: 'not_found',
+      message: 'Territory not found',
+      details: { territoryId: id },
+    });
+    return;
+  }
 
-  res.status(200).json(mockTerritory);
+  res.status(200).json(territory);
 });
 
 /**

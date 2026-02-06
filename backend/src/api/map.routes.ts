@@ -10,6 +10,7 @@ import { MapDataDto } from '../modules/map';
 import { TerritoryStatus, TerritoryViewDto } from '../modules/territories';
 import { EventType, EventStatus, EventListItemDto } from '../modules/events';
 import { getEventsRepository } from '../db/repositories';
+import { getTerritoriesForCity } from '../modules/territories/territories.config';
 import { findCityById } from '../modules/cities/cities.config';
 import { logger } from '../shared/logger';
 
@@ -65,60 +66,15 @@ router.get('/data', async (req: Request, res: Response) => {
   }
   
   try {
-    // Mock territories (территории пока не в БД)
-    let mockTerritories: TerritoryViewDto[] = [
-      {
-        id: 'territory-1',
-        name: 'Центральный парк',
-        status: TerritoryStatus.CAPTURED,
-        coordinates: {
-          longitude: 30.3351,
-          latitude: 59.9343,
-        },
-        cityId,
-        clubId: 'club-1',
-        capturedByUserId: 'user-1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 'territory-2',
-        name: 'Парк Победы',
-        status: TerritoryStatus.FREE,
-        coordinates: {
-          longitude: 30.3451,
-          latitude: 59.9443,
-        },
-        cityId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 'territory-3',
-        name: 'Летний сад',
-        status: TerritoryStatus.CONTESTED,
-        coordinates: {
-          longitude: 30.3251,
-          latitude: 59.9243,
-        },
-        cityId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ];
+    // Territories: static config (SPB popular running parks) until DB is introduced
+    let territories: TerritoryViewDto[] = getTerritoriesForCity(cityId, clubId);
     
     // Фильтр территорий: только активные
     if (onlyActive === 'true') {
-      mockTerritories = mockTerritories.filter(
+      territories = territories.filter(
         (t) => t.status === TerritoryStatus.CAPTURED || t.status === TerritoryStatus.CONTESTED,
       );
     }
-    
-    // Фильтр территорий: мой клуб
-    if (clubId) {
-      mockTerritories = mockTerritories.filter((t) => t.clubId === clubId);
-    }
-    
     // Получаем события из БД с фильтрами
     const repo = getEventsRepository();
     const events = await repo.findAll({
@@ -156,7 +112,7 @@ router.get('/data', async (req: Request, res: Response) => {
     
     const mapData: MapDataDto = {
       viewport,
-      territories: mockTerritories,
+      territories,
       events: eventsDto,
       meta: {
         version: '1.0.0',
@@ -167,7 +123,10 @@ router.get('/data', async (req: Request, res: Response) => {
     res.status(200).json(mapData);
   } catch (error) {
     logger.error('Error fetching map data', { error });
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+    });
   }
 });
 

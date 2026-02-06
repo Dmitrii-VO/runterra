@@ -1,12 +1,22 @@
 # Единая auth-абстракция (Backend)
 
-**Дата:** 2026-01-29
+**Дата:** 2026-01-29 (обновление 2026-02-06)
 
 ## Обновление (2026-02-04)
 
 - **Non-prod auth stub больше не даёт общий UID:** В `FirebaseAuthProvider` для non-production сред теперь вычисляется `uid` из JWT-пэйлоада (user_id/uid/sub) или детерминированного хэша токена. Это исключает ситуацию, когда все пользователи мапятся в одну запись `users` из-за фиксированного `mock-uid-123`. Реальная проверка Firebase Admin SDK по-прежнему требуется для production.
 
 **Файлы:** `backend/src/modules/auth/firebase.provider.ts`.
+
+## Обновление (2026-02-06) — интеграция Firebase Admin SDK
+
+- **Backend — реальная проверка Firebase ID токенов:**
+  - В `FirebaseAuthProvider.verifyToken` добавлена интеграция с `firebase-admin`: при наличии конфигурации окружения (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`) модуль инициализирует Admin SDK и использует `admin.auth().verifyIdToken(token)` для проверки токена и маппинга в `AuthUser`.
+  - В production окружении при отсутствии корректной конфигурации (`assertFirebaseAuthConfigured`) сервер не стартует; любая ошибка верификации токена приводит к `valid: false` с технической причиной.
+  - В non-production окружениях при отсутствии конфигурации Admin SDK сохраняется безопасная заглушка: uid детерминированно derive-ится из токена (`stub-<sha256>`), а остальные поля читаются из JWT payload; это упрощает локальную разработку без Firebase.
+- **Новая зависимость:** в `backend/package.json` добавлен пакет `firebase-admin`.
+
+**Файлы:** `backend/src/modules/auth/firebase.provider.ts`, `backend/package.json`.
 
 ## Проблема
 

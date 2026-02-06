@@ -2,6 +2,14 @@
 
 ## История изменений
 
+### 2026-02-06 — Fix: bulk-insert GPS точек run_gps_points
+
+- **Проблема:** В `RunsRepository.saveGpsPoints(runId, points)` bulk-insert в таблицу `run_gps_points` строился с некорректными плейсхолдерами: `offset = index * 4` при 5 столбцах (`run_id, longitude, latitude, timestamp, point_order`). В результате при наличии нескольких GPS-точек индексы параметров смещались, что потенциально могло приводить к ошибкам вставки или некорректным данным.
+- **Решение (backend):**
+  - Исправлен расчёт смещения для плейсхолдеров: теперь используется `offset = index * 5`, а значения передаются как `[runId, point.longitude, point.latitude, point.timestamp || null, index]` для каждой точки.
+  - Добавлен юнит-тест в `runs.repository.test.ts`, который вызывает `RunsRepository.create()` с двумя GPS-точками и проверяет, что второй вызов `mockQuery` (INSERT в `run_gps_points`) содержит корректный SQL (`INSERT INTO run_gps_points ...`) и массив параметров длиной 10 (2 точки × 5 полей) с ожидаемыми значениями (runId, координаты, порядковые индексы 0 и 1).
+- **Файлы:** `backend/src/db/repositories/runs.repository.ts`, `backend/src/db/repositories/runs.repository.test.ts`.
+
 ### 2026-02-04 — Fix: Повторный старт пробежки (Run already started)
 
 - **Проблема:** При нажатии «Начать пробежку» пользователь получал ошибку `Exception: Run already started`, хотя UI показывал idle-состояние с кнопкой «Начать». Причина: `RunService._currentSession` очищалась только при успешном `submitRun()` или явном `cancelRun()`. При ошибке сети или нажатии «Готово» UI переходил в idle, но сессия оставалась в памяти.

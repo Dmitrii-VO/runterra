@@ -160,16 +160,12 @@ TODO для будущей реализации:
 - `src/auth/service.ts` - сервис с заглушками для проверки токенов
 - `src/auth/index.ts` - экспорт модуля
 
-**ВАЖНО**: 
-- Нет реального подключения к Firebase Admin SDK
-- Нет проверки токенов (всегда возвращает mock-данные)
-- Нет env переменных для Firebase credentials
-- Нет автоматической инициализации
+**ВАЖНО (обновлено 2026-02-06)**: 
+- В production окружении backend использует реальную проверку ID токенов через Firebase Admin SDK (пакет `firebase-admin`), credentials читаются из переменных окружения (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`).
+- В non-production окружениях при отсутствии этих переменных остаётся техническая заглушка, которая derive-ит uid и прочие поля из JWT-пэйлоада (для удобства локальной разработки без настроенного Firebase).
 
 TODO для будущей реализации:
-- Подключить `firebase-admin` пакет
-- Инициализировать Firebase Admin SDK с credentials
-- Реализовать реальную проверку ID токенов через `admin.auth().verifyIdToken()`
+- Добавить отдельные конфигурации Firebase проектов для dev/staging/prod и описать их в документации.
 
 ## Модуль пользователей
 

@@ -1,5 +1,6 @@
 import { AuthProvider, TokenVerificationResult, AuthUser } from './auth.provider';
 import crypto from 'crypto';
+import admin from 'firebase-admin';
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
   const parts = token.split('.');
@@ -36,6 +37,63 @@ function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex').slice(0, 32);
 }
 
+let firebaseAdminApp: admin.app.App | null = null;
+
+/**
+ * Lazily initializes and returns Firebase Admin app instance.
+ *
+ * Uses service-account style credentials from env:
+ * - FIREBASE_PROJECT_ID
+ * - FIREBASE_CLIENT_EMAIL
+ * - FIREBASE_PRIVATE_KEY (\\n-separated, will be normalized)
+ *
+ * This is intentionally minimal and infrastructure-only; no product logic.
+ */
+function getFirebaseAdminApp(): admin.app.App {
+  if (firebaseAdminApp) {
+    return firebaseAdminApp;
+  }
+
+  if (admin.apps.length > 0) {
+    firebaseAdminApp = admin.app();
+    return firebaseAdminApp;
+  }
+
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+  if (!projectId || !clientEmail || !privateKey) {
+    throw new Error(
+      'Firebase Admin SDK credentials are not fully configured. ' +
+        'Expected FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY environment variables.',
+    );
+  }
+
+  // Support multi-line private keys encoded with \n in env files
+  privateKey = privateKey.replace(/\\n/g, '\n');
+
+  firebaseAdminApp = admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId,
+      clientEmail,
+      privateKey,
+    }),
+  });
+
+  return firebaseAdminApp;
+}
+
+function mapDecodedTokenToAuthUser(decoded: admin.auth.DecodedIdToken): AuthUser {
+  return {
+    uid: decoded.uid,
+    email: decoded.email ?? undefined,
+    emailVerified: decoded.email_verified ?? undefined,
+    displayName: decoded.name ?? undefined,
+    photoURL: decoded.picture ?? undefined,
+  };
+}
+
 function deriveAuthUserFromToken(token: string): AuthUser {
   const payload = decodeJwtPayload(token);
   const uid =
@@ -66,45 +124,22 @@ function deriveAuthUserFromToken(token: string): AuthUser {
 /**
  * Провайдер авторизации через Firebase Authentication
  *
- * ЗАГЛУШКА: На текущей стадии не выполняет реальных проверок токенов.
- * TODO: Подключить firebase-admin для проверки ID токенов
- * TODO: Инициализировать Firebase Admin SDK с credentials из env
- * TODO: Реализовать verifyToken с использованием admin.auth().verifyIdToken()
- *
- * SECURITY: STUB — MUST BE REPLACED
- * ВАЖНО: Эта реализация не должна использоваться в production без реальной проверки токенов.
+   * Реализация поверх Firebase Admin SDK с fallback-заглушкой в non-production.
+   *
+   * В production среде ожидается корректная настройка Firebase Admin SDK
+   * через переменные окружения, иначе сервер не стартует.
  */
 export class FirebaseAuthProvider implements AuthProvider {
   /**
    * Проверка токена Firebase ID Token
    *
-   * ЗАГЛУШКА: Всегда возвращает успешный результат с mock-данными.
-   *
-   * TODO: Реальная реализация:
-   * 1. Получить Firebase Admin SDK instance
-   * 2. Вызвать admin.auth().verifyIdToken(token)
-   * 3. Извлечь данные пользователя из DecodedIdToken
-   * 4. Вернуть AuthUser с реальными данными
-   * 5. Обработать ошибки (expired, invalid, revoked токены)
+   * В non-production, если Firebase Admin не сконфигурирован, используется
+   * безопасная заглушка, которая детерминированно derive-ит uid из токена.
    *
    * @param token - Firebase ID Token из заголовка Authorization
-   * @returns Результат проверки (всегда успешный в заглушке)
+   * @returns Результат проверки
    */
   async verifyToken(token: string): Promise<TokenVerificationResult> {
-    // TODO: Реальная проверка токена через firebase-admin
-    // const admin = getFirebaseAdmin();
-    // const decodedToken = await admin.auth().verifyIdToken(token);
-    // return { valid: true, user: mapDecodedTokenToUser(decodedToken) };
-
-    // SECURITY: STUB — MUST BE REPLACED
-    // В production это поведение недопустимо — должны использоваться реальные проверки через Firebase Admin SDK.
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error(
-        'SECURITY: FirebaseAuthProvider stub verifyToken() called in production. Replace stub with real Firebase Admin SDK integration before deploying.',
-      );
-    }
-
-    // ЗАГЛУШКА: возвращаем mock-данные для non-production окружений
     if (!token || token.trim() === '') {
       return {
         valid: false,
@@ -112,25 +147,75 @@ export class FirebaseAuthProvider implements AuthProvider {
       };
     }
 
-    return {
-      valid: true,
-      user: deriveAuthUserFromToken(token),
-    };
+    try {
+      const app = getFirebaseAdminApp();
+      const decoded = await app.auth().verifyIdToken(token);
+      return {
+        valid: true,
+        user: mapDecodedTokenToAuthUser(decoded),
+      };
+    } catch (error) {
+      const err = error as { code?: string; message?: string };
+
+      // Для production — любая ошибка верификации считается невалидным токеном
+      if (process.env.NODE_ENV === 'production') {
+        return {
+          valid: false,
+          error: 'Firebase ID token verification failed',
+          details: {
+            code: err.code,
+          },
+        };
+      }
+
+      // В non-production, если нет конфигурации Admin SDK, используем заглушку
+      const message = String(err.message || '');
+      const misconfig =
+        message.includes('FIREBASE_PROJECT_ID') ||
+        message.includes('FIREBASE_CLIENT_EMAIL') ||
+        message.includes('FIREBASE_PRIVATE_KEY');
+
+      if (misconfig) {
+        return {
+          valid: true,
+          user: deriveAuthUserFromToken(token),
+        };
+      }
+
+      return {
+        valid: false,
+        error: 'Firebase ID token verification failed (non-production)',
+        details: {
+          code: err.code,
+        },
+      };
+    }
   }
 }
 
 /**
  * Startup-check для модуля авторизации.
  *
- * SECURITY: STUB — MUST BE REPLACED
- * В production сервер не должен запускаться, пока Firebase Admin SDK не будет
- * корректно инициализирован и заглушка не будет заменена реальной реализацией.
+ * В production окружении гарантирует наличие корректной конфигурации
+ * Firebase Admin SDK (credentials через env). В non-production только
+ * выполняет лёгкую проверку без падения.
  */
 export function assertFirebaseAuthConfigured(): void {
   if (process.env.NODE_ENV === 'production') {
-    throw new Error(
-      'SECURITY: Firebase Admin SDK is not initialized. FirebaseAuthProvider stub must be replaced with real firebase-admin integration before running in production.',
-    );
+    // В production сразу проверяем, что все env для Firebase заданы.
+    const projectId = process.env.FIREBASE_PROJECT_ID;
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+    if (!projectId || !clientEmail || !privateKey) {
+      throw new Error(
+        'SECURITY: Firebase Admin SDK is not initialized. ' +
+          'Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY for production.',
+      );
+    }
+
+    // Пробуем лениво инициализировать Admin SDK, чтобы поймать ошибки конфигурации на старте.
+    getFirebaseAdminApp();
   }
 }
 

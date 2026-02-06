@@ -2,6 +2,24 @@
 
 ## История изменений
 
+### 2026-02-06 — Доделан флоу событий на mobile (создание, join, check-in, фильтры)
+
+- **Mobile — EventsService:** Методы `getEventById` и `getEventParticipants` теперь обрабатывают HTTP‑ошибки в едином стиле через `ApiException`: при не‑2xx ответах парсятся `code`/`message` из ADR‑ответа backend (или используется fallback‑код) и выбрасывается `ApiException`, как и для `createEvent`/`joinEvent`/`checkInEvent`/`leaveEvent`. Это устраняет "тихие" падения при 404/500 и унифицирует обработку ошибок во всех вызовах Events API на клиенте.
+- **Mobile — EventDetailsScreen:** Детальный экран события завершён с точки зрения участия и check‑in: помимо кнопок «Присоединиться» / «Вы участвуете» / «Отменить участие» добавлена check‑in кнопка для участников, которая использует `LocationService` через `ServiceLocator.locationService.getCurrentPosition()` и вызывает `EventsService.checkInEvent(eventId, longitude, latitude)`. Успех/ошибка отображаются через Snackbar с использованием `eventCheckInSuccess`/`eventCheckInError`.
+- **Mobile — EventsScreen:** Фильтры даты, «Только открытые» и «Мой клуб» проксируются в `EventsService.getEvents` (cityId, dateFilter, clubId, onlyOpen), таким образом минимальный флоу фильтрации реализован. Флоу «создание события» завершён: FAB ведёт на `CreateEventScreen`, который вызывает `EventsService.createEvent()` и после успешного ответа переходит на `EventDetailsScreen` по `event.id`.
+- **Итог:** На мобильном клиенте закрыт минимальный флоу событий: список с фильтрами (дата, только открытые, мой клуб), создание события, запись/отмена участия и check‑in через EventsService и экран деталей события, с унифицированной обработкой ошибок.
+
+### 2026-02-06 — Ограничение participant_limit и статус FULL (без полноценной транзакционной блокировки)
+
+- **Backend:** Логика `joinEvent(eventId, userId)` в `EventsRepository` по‑прежнему выполняет проверку лимита участия и статуса события (`OPEN`/`FULL`) и после каждой операции регистрации пересчитывает `participant_count` и статус события через `updateParticipantCount()` (при `participant_count >= participant_limit` статус становится `FULL`, при снижении — возвращается в `OPEN`). Явных транзакций или row‑level locking пока нет, что зафиксировано в комментариях как TODO для будущего этапа, когда будет подключена реальная БД и появится нагрузка; текущая реализация сохраняет инварианты статуса FULL в типовом случае без экстремальной конкуренции.
+
+### 2026-02-06 — Унификация формата ошибок Events API (ADR-0002)
+
+- **Backend:** Эндпоинты `GET /api/events`, `GET /api/events/:id`, `GET /api/events/:id/participants` и `POST /api/events` приведены к единому формату ошибок ADR-0002:
+  - Все ответы 500 теперь возвращают `{ code: "internal_error", message: "Internal server error" }` вместо `{ error: "Internal server error" }`.
+  - Случаи отсутствия события (`Event not found`) в `GET /api/events/:id` и `GET /api/events/:id/participants` теперь возвращают `404` с телом `{ code: "not_found", message: "Event not found", details: { eventId } }` вместо `{ error: "Event not found" }`.
+- **Итог:** Все errors в Events API (включая join/leave/check-in, описанные ранее) используют единый конверт `{ code, message, details? }` в соответствии с `docs/api-errors-and-validation.md`.
+
 ### 2026-02-05
 
 - **Tests:** Added API tests for participant flags in `GET /api/events/:id` and `POST /api/events/:id/leave`, repository tests for leaveEvent, and Flutter model tests for EventDetails.

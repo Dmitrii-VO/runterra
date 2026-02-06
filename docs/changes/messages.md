@@ -2,6 +2,37 @@
 
 ## История изменений
 
+### 2026-02-06 — Mobile MessagesService для клубных чатов (HTTP API) и stub личных чатов
+
+- **Mobile — MessagesService (club chats):**
+  - `getClubChats()` теперь полностью реализован против backend API: выполняет `GET /api/messages/clubs`, при 2xx парсит список `ClubChatModel`, при не‑2xx разбирает ADR‑ответ `{ code, message }` и выбрасывает `ApiException` (реиспользуется из `users_service.dart`) с соответствующим кодом/сообщением.
+  - `getClubChatMessages(clubId, { limit, offset })` реализован через `GET /api/messages/clubs/:clubId?limit=&offset=`, парсит список `MessageModel`; при ошибках также выбрасывает `ApiException`.
+  - `sendClubMessage(clubId, text)` реализован через `POST /api/messages/clubs/:clubId` с телом `{ text }`, успешный ответ 201 парсится в `MessageModel`, ошибки мапятся в `ApiException` c `code`/`message` из ADR‑ответа.
+- **Mobile — MessagesService (personal chats):**
+  - Личные чаты формально не входят в MVP и backend‑эндпоинтов для них нет, поэтому:
+    - `getPrivateChats()` и `getChatMessages(chatId)` возвращают пустые списки (stub), не выполняя сетевых запросов.
+    - `sendChatMessage(chatId, text)` явно маркирован как не реализованный и бросает `UnimplementedError('Personal chats are not implemented in MVP')`, чтобы не создавать ложных ожиданий.
+- **Итог:** На мобильном клиенте есть полноценный HTTP‑клиент для клубных чатов (список чатов, загрузка сообщений, отправка сообщений) поверх существующих backend‑эндпоинтов, а личные чаты зафиксированы как осознанная заглушка до появления соответствующего API на backend.
+
+### 2026-02-06 — Исправлен 500 на /api/messages при отсутствии auth (401/403 вместо 500)
+
+- **Backend:** В `messages.routes.ts` вспомогательная функция `getAuthUid` заменена на `getAuthUidOrRespondUnauthorized(req, res)`, которая:
+  - При отсутствии `req.authUser.uid` возвращает 401 с ADR‑ответом `{ code: "unauthorized", message: "Authorization required", details: { reason: "missing_header" } }` и прерывает обработку запроса.
+  - Используется во всех маршрутах `/api/messages/clubs*` (список клубных чатов, сообщения клуба, отправка сообщения), чтобы отсутствие auth не приводило к выбросу исключения и последующему 500.
+- **Итог:** При обращении к эндпоинтам `/api/messages/clubs` / `/api/messages/clubs/:clubId` / `POST /api/messages/clubs/:clubId` без заголовка Authorization сервер теперь корректно возвращает 401/403 (в зависимости от конкретной проверки), а не 500 internal_error.
+
+### 2026-02-06 — Проверка членства для клубных чатов (HTTP + WS) + clubId как строковый идентификатор
+
+- **Backend (DB):** Добавлена миграция `009_messages_channel_id_varchar.sql`, которая меняет тип столбца `messages.channel_id` с `UUID` на `VARCHAR(128)` с `USING channel_id::text`. Это выравнивает схему с тем, что идентификатор клуба (`club_members.club_id`, `clubId` в DTO) трактуется как строка, а не как строгий UUID, и позволяет использовать одинаковый формат идентификаторов для городов/клубов в каналах сообщений.
+- **Backend (HTTP — клубные чаты):**
+  - Эндпоинт `GET /api/messages/clubs/:clubId` теперь, помимо проверки auth (`Authorization: Bearer <token>`), находит пользователя по `firebaseUid` через `UsersRepository.findByFirebaseUid` и проверяет активное членство в клубе через `ClubMembersRepository.findByClubAndUser(clubId, user.id)`. При отсутствии пользователя возвращается `401 unauthorized` (`code: "unauthorized", message: "User not found"`), при отсутствии активного членства — `403 forbidden` с `code: "forbidden"`, `message: "User is not a member of this club"` и `details: { clubId }`.
+  - Эндпоинт `POST /api/messages/clubs/:clubId` использует тот же паттерн: перед созданием сообщения и broadcast-а проверяется, что пользователь существует и является активным участником клуба; иначе возвращается 401/403 по тем же правилам. Только после успешной проверки вызывается `MessagesRepository.create({ channelType: 'club', channelId: clubId, ... })` и выполняется `broadcast("club:{clubId}", dto)`.
+- **Backend (WS — подписка на клубные каналы):**
+  - В `chatWs.ts` регулярное выражение `VALID_CHANNEL_RE` ослаблено с `^club:[0-9a-f-]{36}$` до `^club:[A-Za-z0-9_-]{1,128}$`, чтобы разрешить каналы вида `club:{clubId}` с любыми строковыми ID (например, `club-1`, `spb-runner-club`), а не только UUID v4.
+  - Функция `canSubscribe(uid, channelKey)` теперь, помимо проверки формата канала, находит пользователя по `firebaseUid` (`UsersRepository.findByFirebaseUid`) и проверяет активное членство в клубе (`ClubMembersRepository.findByClubAndUser(clubId, user.id)`, статус `active`). Если пользователь не найден, не состоит в клубе или произошла ошибка БД, подписка запрещается и клиенту отправляется `{ type: 'error', message: 'Subscribe denied' }`.
+- **Итог:** Для клубных чатов установлен единый строковый формат clubId во всех слоях (БД, REST, WS, mobile) и реализована строгая проверка членства: доступ к истории и отправке сообщений по HTTP, а также подписка на real-time канал `club:{clubId}` по WebSocket разрешены только активным участникам соответствующего клуба.
+
+
 ### 2026-02-04
 
 - **Список клубных чатов (membership-based):**

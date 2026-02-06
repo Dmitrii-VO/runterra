@@ -200,10 +200,8 @@ if (user != null) {
 2. **Mobile:** Отправляет ID токен в заголовке `Authorization: Bearer <token>` при запросах к backend
 3. **Backend:** Проверяет токен через Firebase Admin SDK (требует настройки backend)
 
-**Текущий статус backend:** Backend имеет заглушки для проверки токенов. Реальная интеграция требует:
-- Установки `firebase-admin` в backend
-- Настройки Firebase Admin SDK credentials
-- Реализации проверки токенов в `backend/src/modules/auth/firebase.provider.ts`
+**Текущий статус backend (обновлено 2026-02-06):**  
+Backend использует Firebase Admin SDK для проверки токенов, если заданы credentials в окружении. Для production это обязательное требование; для локальной разработки без настроенного Firebase по‑прежнему доступна заглушка (derive uid из токена) в non-production.
 
 ## Troubleshooting
 

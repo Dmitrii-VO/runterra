@@ -36,7 +36,7 @@
 
 ---
 
-## Base URL и HTTPS (2026-01-29)
+## Base URL и HTTPS (2026-01-29, обновление 2026-02-06)
 
 **Тип:** Безопасность  
 **Проблема:** Все base URL использовали `http://`; GPS-координаты и данные профиля передавались в открытом виде.
@@ -45,13 +45,18 @@
 
 В `mobile/lib/shared/config/api_config.dart`:
 
-1. **Production по умолчанию — https.** Если переменная окружения не задана, `getBaseUrl()` возвращает URL с схемой `https://` и тем же платформенным хостом (localhost, 10.0.2.2 для Android эмулятора).
+1. **Production по умолчанию — https.** Изначально при отсутствии переменной окружения `getBaseUrl()` возвращал URL с схемой `https://` и тем же платформенным хостом (localhost, 10.0.2.2 для Android эмулятора).
 
 2. **Dev/emulator — http через env.** Для локальной разработки и эмулятора можно задать полный base URL через `--dart-define=API_BASE_URL=...` при запуске/сборке, например:
    - `--dart-define=API_BASE_URL=http://10.0.2.2:3000` (Android эмулятор)
    - `--dart-define=API_BASE_URL=http://localhost:3000` (десктоп / симулятор)
 
-3. **Реализация:** `String.fromEnvironment('API_BASE_URL', defaultValue: '')`; если значение задано — возвращается оно (без завершающего слэша); иначе — `https://` + хост + `:3000`.
+3. **Реализация (обновлено 2026-02-06):**
+   - Если задан `API_BASE_URL` — возвращается он (без завершающего слэша).
+   - Если не задан и сборка **debug** — используется облачный dev backend `http://85.208.85.13:3000`.
+   - Если не задан и сборка **release/production**:
+     - для Flutter Web — `https://localhost:3000` (ожидается reverse-proxy на том же origin);
+     - для mobile/desktop — фиксированный продакшн backend `https://85.208.85.13:3000` (без localhost по умолчанию).
 
 **Затронутые файлы:** `mobile/lib/shared/config/api_config.dart`.
 

@@ -181,7 +181,8 @@ export class RunsRepository extends BaseRepository {
     const placeholders: string[] = [];
     
     points.forEach((point, index) => {
-      const offset = index * 4;
+      // 5 columns per row: run_id, longitude, latitude, timestamp, point_order
+      const offset = index * 5;
       placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5})`);
       values.push(runId, point.longitude, point.latitude, point.timestamp || null, index);
     });

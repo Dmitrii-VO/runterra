@@ -96,7 +96,10 @@ router.get('/', async (req: Request, res: Response) => {
     res.status(200).json(eventsDto);
   } catch (error) {
     logger.error('Error fetching events', { error });
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+    });
   }
 });
 
@@ -113,7 +116,11 @@ router.get('/:id', async (req: Request, res: Response) => {
     const event = await repo.findById(id);
     
     if (!event) {
-      res.status(404).json({ error: 'Event not found' });
+      res.status(404).json({
+        code: 'not_found',
+        message: 'Event not found',
+        details: { eventId: id },
+      });
       return;
     }
     
@@ -158,7 +165,10 @@ router.get('/:id', async (req: Request, res: Response) => {
     res.status(200).json(eventDto);
   } catch (error) {
     logger.error('Error fetching event', { eventId: id, error });
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+    });
   }
 });
 
@@ -174,7 +184,11 @@ router.get('/:id/participants', async (req: Request, res: Response) => {
     const repo = getEventsRepository();
     const event = await repo.findById(id);
     if (!event) {
-      res.status(404).json({ error: 'Event not found' });
+      res.status(404).json({
+        code: 'not_found',
+        message: 'Event not found',
+        details: { eventId: id },
+      });
       return;
     }
 
@@ -203,7 +217,10 @@ router.get('/:id/participants', async (req: Request, res: Response) => {
     res.status(200).json(participantDtos);
   } catch (error) {
     logger.error('Error fetching event participants', { eventId: id, error });
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+    });
   }
 });
 
@@ -271,7 +288,10 @@ router.post('/', validateBody(CreateEventSchema), async (req: Request<{}, EventD
     res.status(201).json(eventDto);
   } catch (error) {
     logger.error('Error creating event', { error });
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+    });
   }
 });
 

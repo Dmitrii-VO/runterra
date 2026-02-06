@@ -25,7 +25,7 @@ class EventsScreen extends StatefulWidget {
 class _EventsScreenState extends State<EventsScreen> {
   late Future<List<EventListItemModel>> _eventsFuture;
   
-  // Состояние фильтров (TODO: не применяются, только UI)
+  // Состояние фильтров — проксируется в EventsService.getEvents и далее на backend.
   String? _selectedDateFilter;
   String? _selectedClubId;
   String? _selectedDifficultyLevel;
