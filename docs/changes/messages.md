@@ -1,101 +1,127 @@
-# Изменения: Messages
+﻿# РР·РјРµРЅРµРЅРёСЏ: Messages
 
-## История изменений
+## РСЃС‚РѕСЂРёСЏ РёР·РјРµРЅРµРЅРёР№
 
-### 2026-02-06 — Mobile MessagesService для клубных чатов (HTTP API) и stub личных чатов
+### 2026-02-06 вЂ” Mobile: РІРєР»Р°РґРєР° В«РљР»СѓР±В» РєР°Рє С‡Р°С‚ С‚РµРєСѓС‰РµРіРѕ РєР»СѓР±Р° (РёСЃС‚РѕСЂРёСЏ + РІРІРѕРґ)
 
-- **Mobile — MessagesService (club chats):**
-  - `getClubChats()` теперь полностью реализован против backend API: выполняет `GET /api/messages/clubs`, при 2xx парсит список `ClubChatModel`, при не‑2xx разбирает ADR‑ответ `{ code, message }` и выбрасывает `ApiException` (реиспользуется из `users_service.dart`) с соответствующим кодом/сообщением.
-  - `getClubChatMessages(clubId, { limit, offset })` реализован через `GET /api/messages/clubs/:clubId?limit=&offset=`, парсит список `MessageModel`; при ошибках также выбрасывает `ApiException`.
-  - `sendClubMessage(clubId, text)` реализован через `POST /api/messages/clubs/:clubId` с телом `{ text }`, успешный ответ 201 парсится в `MessageModel`, ошибки мапятся в `ApiException` c `code`/`message` из ADR‑ответа.
-- **Mobile — MessagesService (personal chats):**
-  - Личные чаты формально не входят в MVP и backend‑эндпоинтов для них нет, поэтому:
-    - `getPrivateChats()` и `getChatMessages(chatId)` возвращают пустые списки (stub), не выполняя сетевых запросов.
-    - `sendChatMessage(chatId, text)` явно маркирован как не реализованный и бросает `UnimplementedError('Personal chats are not implemented in MVP')`, чтобы не создавать ложных ожиданий.
-- **Итог:** На мобильном клиенте есть полноценный HTTP‑клиент для клубных чатов (список чатов, загрузка сообщений, отправка сообщений) поверх существующих backend‑эндпоинтов, а личные чаты зафиксированы как осознанная заглушка до появления соответствующего API на backend.
+- **Mobile (`ClubMessagesTab`)**:
+  - Р’РєР»Р°РґРєР° `РЎРѕРѕР±С‰РµРЅРёСЏ -> РљР»СѓР±` РїРµСЂРµРІРµРґРµРЅР° СЃ СЂРµР¶РёРјР° СЃРїРёСЃРєР° РєР»СѓР±РѕРІ РЅР° СЂРµР¶РёРј РѕРґРЅРѕРіРѕ РєР»СѓР±РЅРѕРіРѕ С‡Р°С‚Р° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
+  - Источник clubId: сначала `CurrentClubService.currentClubId`; если он пустой, выбирается релевантный доступный клуб из `GET /api/messages/clubs` и сохраняется в `CurrentClubService`.
+  - РџСЂРё РЅР°Р»РёС‡РёРё clubId Р·Р°РіСЂСѓР¶Р°РµС‚СЃСЏ РёСЃС‚РѕСЂРёСЏ С‡РµСЂРµР· `GET /api/messages/clubs/:clubId` (`MessagesService.getClubChatMessages`), СЃРѕРѕР±С‰РµРЅРёСЏ СЃРѕСЂС‚РёСЂСѓСЋС‚СЃСЏ РїРѕ РІСЂРµРјРµРЅРё (ASC) Рё РѕС‚РѕР±СЂР°Р¶Р°СЋС‚СЃСЏ РІ РІРёРґРµ С‡Р°С‚Р°.
+  - Р”РѕР±Р°РІР»РµРЅРѕ РїРѕР»Рµ РІРІРѕРґР° Рё РѕС‚РїСЂР°РІРєР° СЃРѕРѕР±С‰РµРЅРёР№ С‡РµСЂРµР· `POST /api/messages/clubs/:clubId` (`MessagesService.sendClubMessage`).
+  - Р’РЅСѓС‚СЂРё С‚РµР»Р° РІРєР»Р°РґРєРё Р±РѕР»СЊС€Рµ РЅРµ РѕС‚РѕР±СЂР°Р¶Р°РµС‚СЃСЏ Р·Р°РіРѕР»РѕРІРѕРє/РЅР°РґРїРёСЃСЊ СЃ РЅР°Р·РІР°РЅРёРµРј РєР»СѓР±Р°.
+  - РЎРѕСЃС‚РѕСЏРЅРёСЏ: loading, error СЃ retry, empty-state РїСЂРё РѕС‚СЃСѓС‚СЃС‚РІРёРё РєР»СѓР±Р° (`noClubChats`), snackbar РїСЂРё РѕС€РёР±РєРµ РѕС‚РїСЂР°РІРєРё.
+- **РС‚РѕРі:** Р·Р°РєСЂС‹С‚ С„СѓРЅРєС†РёРѕРЅР°Р»СЊРЅС‹Р№ РїСЂРѕР±РµР» РїРѕ РІРєР»Р°РґРєРµ РєР»СѓР±Р°: РµСЃС‚СЊ РёСЃС‚РѕСЂРёСЏ С‡Р°С‚Р° Рё composer РґР»СЏ РѕС‚РїСЂР°РІРєРё, Р±РµР· Р»РёС€РЅРµР№ РїРѕРґРїРёСЃРё РЅР°Р·РІР°РЅРёСЏ РєР»СѓР±Р° РІ РєРѕРЅС‚РµРЅС‚РЅРѕР№ РѕР±Р»Р°СЃС‚Рё.
 
-### 2026-02-06 — Исправлен 500 на /api/messages при отсутствии auth (401/403 вместо 500)
+### 2026-02-06 вЂ” Mobile: СЃС‚Р°Р±РёР»РёР·Р°С†РёСЏ ClubMessagesTab РїРѕСЃР»Рµ РїРµСЂРІРёС‡РЅРѕРіРѕ С„РёРєСЃР°
 
-- **Backend:** В `messages.routes.ts` вспомогательная функция `getAuthUid` заменена на `getAuthUidOrRespondUnauthorized(req, res)`, которая:
-  - При отсутствии `req.authUser.uid` возвращает 401 с ADR‑ответом `{ code: "unauthorized", message: "Authorization required", details: { reason: "missing_header" } }` и прерывает обработку запроса.
-  - Используется во всех маршрутах `/api/messages/clubs*` (список клубных чатов, сообщения клуба, отправка сообщения), чтобы отсутствие auth не приводило к выбросу исключения и последующему 500.
-- **Итог:** При обращении к эндпоинтам `/api/messages/clubs` / `/api/messages/clubs/:clubId` / `POST /api/messages/clubs/:clubId` без заголовка Authorization сервер теперь корректно возвращает 401/403 (в зависимости от конкретной проверки), а не 500 internal_error.
+- **Mobile (`ClubMessagesTab`)**:
+  - РСЃРїСЂР°РІР»РµРЅР° РёРґРµРЅС‚РёС„РёРєР°С†РёСЏ СЃРѕР±СЃС‚РІРµРЅРЅС‹С… СЃРѕРѕР±С‰РµРЅРёР№: РґР»СЏ `isMine` РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ `users.id` РёР· РїСЂРѕС„РёР»СЏ (`/api/users/me/profile`), СЃ fallback РЅР° Firebase uid.
+  - Р”РѕР±Р°РІР»РµРЅР° РїСЂРѕРІРµСЂРєР° Р°РєС‚СѓР°Р»СЊРЅРѕСЃС‚Рё РІС‹Р±СЂР°РЅРЅРѕРіРѕ `clubId` РїРѕ СЃРїРёСЃРєСѓ РґРѕСЃС‚СѓРїРЅС‹С… РєР»СѓР±РѕРІ (`GET /api/messages/clubs`): РµСЃР»Рё СЃРѕС…СЂР°РЅС‘РЅРЅС‹Р№ `currentClubId` Р±РѕР»СЊС€Рµ РЅРµРґРѕСЃС‚СѓРїРµРЅ, РѕРЅ РѕС‡РёС‰Р°РµС‚СЃСЏ Рё РїРµСЂРµРѕРїСЂРµРґРµР»СЏРµС‚СЃСЏ.
+  - Р’С‹Р±РѕСЂ fallback-РєР»СѓР±Р° Р±РѕР»СЊС€Рµ РЅРµ Р·Р°РІРёСЃРёС‚ РѕС‚ В«РїРµСЂРІРѕРіРѕ РІ СЃРїРёСЃРєРµВ»: РїСЂРёРѕСЂРёС‚РµС‚ вЂ” `primaryClubId`, Р·Р°С‚РµРј РЅР°РёР±РѕР»РµРµ Р°РєС‚РёРІРЅС‹Р№ РєР»СѓР± (РїРѕ `lastMessageAt`/`updatedAt`).
+  - Р”РѕР±Р°РІР»РµРЅР° РїРѕРґРіСЂСѓР·РєР° СЃС‚Р°СЂРѕР№ РёСЃС‚РѕСЂРёРё (pagination) РїСЂРё СЃРєСЂРѕР»Р»Рµ РІРІРµСЂС… С‡РµСЂРµР· `limit/offset`.
+  - Р”РѕР±Р°РІР»РµРЅРѕ РїРµСЂРёРѕРґРёС‡РµСЃРєРѕРµ РѕР±РЅРѕРІР»РµРЅРёРµ РІС…РѕРґСЏС‰РёС… СЃРѕРѕР±С‰РµРЅРёР№ (polling РєР°Р¶РґС‹Рµ 10 СЃРµРєСѓРЅРґ) СЃ merge РїРѕ `message.id`.
+  - Guarded against stale async responses: polling/history batches are ignored when the active `clubId` changes before the response arrives.
+  - РСЃРїСЂР°РІР»РµРЅ С‚РµРєСЃС‚ РѕС€РёР±РєРё Р·Р°РіСЂСѓР·РєРё: РґР»СЏ РёСЃС‚РѕСЂРёРё СЃРѕРѕР±С‰РµРЅРёР№ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ `messagesLoadError(...)`, Р° РЅРµ `clubChatsLoadError(...)`.
+  - РЈР»СѓС‡С€РµРЅ Р°РІС‚РѕСЃРєСЂРѕР»Р»: РїСЂРё РѕС‚РїСЂР°РІРєРµ/РЅРѕРІС‹С… СЃРѕРѕР±С‰РµРЅРёСЏС… РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РїР»Р°РІРЅС‹Р№ `animateTo` Рё Р°РІС‚РѕРїСЂРѕРєСЂСѓС‚РєР° С‚РѕР»СЊРєРѕ РєРѕРіРґР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РЅР°С…РѕРґРёС‚СЃСЏ РѕРєРѕР»Рѕ РЅРёР¶РЅРµР№ РіСЂР°РЅРёС†С‹ СЃРїРёСЃРєР°.
+- **РС‚РѕРі:** Р·Р°РєСЂС‹С‚С‹ РѕСЃРЅРѕРІРЅС‹Рµ СЂРёСЃРєРё СЂРµРіСЂРµСЃСЃРёР№ РІ UX Рё РґР°РЅРЅС‹С… РґР»СЏ РІРєР»Р°РґРєРё `РЎРѕРѕР±С‰РµРЅРёСЏ -> РљР»СѓР±` (stale club, РЅРµРІРµСЂРЅР°СЏ РјР°СЂРєРёСЂРѕРІРєР° В«РјРѕРёС…В» СЃРѕРѕР±С‰РµРЅРёР№, РѕС‚СЃСѓС‚СЃС‚РІРёРµ РѕР±РЅРѕРІР»РµРЅРёСЏ/РґРѕСЃС‚СѓРїР° Рє СЃС‚Р°СЂРѕР№ РёСЃС‚РѕСЂРёРё, РґРµСЂРіР°РЅС‹Р№ СЃРєСЂРѕР»Р»).
 
-### 2026-02-06 — Проверка членства для клубных чатов (HTTP + WS) + clubId как строковый идентификатор
+### 2026-02-06 вЂ” Mobile MessagesService РґР»СЏ РєР»СѓР±РЅС‹С… С‡Р°С‚РѕРІ (HTTP API) Рё stub Р»РёС‡РЅС‹С… С‡Р°С‚РѕРІ
 
-- **Backend (DB):** Добавлена миграция `009_messages_channel_id_varchar.sql`, которая меняет тип столбца `messages.channel_id` с `UUID` на `VARCHAR(128)` с `USING channel_id::text`. Это выравнивает схему с тем, что идентификатор клуба (`club_members.club_id`, `clubId` в DTO) трактуется как строка, а не как строгий UUID, и позволяет использовать одинаковый формат идентификаторов для городов/клубов в каналах сообщений.
-- **Backend (HTTP — клубные чаты):**
-  - Эндпоинт `GET /api/messages/clubs/:clubId` теперь, помимо проверки auth (`Authorization: Bearer <token>`), находит пользователя по `firebaseUid` через `UsersRepository.findByFirebaseUid` и проверяет активное членство в клубе через `ClubMembersRepository.findByClubAndUser(clubId, user.id)`. При отсутствии пользователя возвращается `401 unauthorized` (`code: "unauthorized", message: "User not found"`), при отсутствии активного членства — `403 forbidden` с `code: "forbidden"`, `message: "User is not a member of this club"` и `details: { clubId }`.
-  - Эндпоинт `POST /api/messages/clubs/:clubId` использует тот же паттерн: перед созданием сообщения и broadcast-а проверяется, что пользователь существует и является активным участником клуба; иначе возвращается 401/403 по тем же правилам. Только после успешной проверки вызывается `MessagesRepository.create({ channelType: 'club', channelId: clubId, ... })` и выполняется `broadcast("club:{clubId}", dto)`.
-- **Backend (WS — подписка на клубные каналы):**
-  - В `chatWs.ts` регулярное выражение `VALID_CHANNEL_RE` ослаблено с `^club:[0-9a-f-]{36}$` до `^club:[A-Za-z0-9_-]{1,128}$`, чтобы разрешить каналы вида `club:{clubId}` с любыми строковыми ID (например, `club-1`, `spb-runner-club`), а не только UUID v4.
-  - Функция `canSubscribe(uid, channelKey)` теперь, помимо проверки формата канала, находит пользователя по `firebaseUid` (`UsersRepository.findByFirebaseUid`) и проверяет активное членство в клубе (`ClubMembersRepository.findByClubAndUser(clubId, user.id)`, статус `active`). Если пользователь не найден, не состоит в клубе или произошла ошибка БД, подписка запрещается и клиенту отправляется `{ type: 'error', message: 'Subscribe denied' }`.
-- **Итог:** Для клубных чатов установлен единый строковый формат clubId во всех слоях (БД, REST, WS, mobile) и реализована строгая проверка членства: доступ к истории и отправке сообщений по HTTP, а также подписка на real-time канал `club:{clubId}` по WebSocket разрешены только активным участникам соответствующего клуба.
+- **Mobile вЂ” MessagesService (club chats):**
+  - `getClubChats()` С‚РµРїРµСЂСЊ РїРѕР»РЅРѕСЃС‚СЊСЋ СЂРµР°Р»РёР·РѕРІР°РЅ РїСЂРѕС‚РёРІ backend API: РІС‹РїРѕР»РЅСЏРµС‚ `GET /api/messages/clubs`, РїСЂРё 2xx РїР°СЂСЃРёС‚ СЃРїРёСЃРѕРє `ClubChatModel`, РїСЂРё РЅРµвЂ‘2xx СЂР°Р·Р±РёСЂР°РµС‚ ADRвЂ‘РѕС‚РІРµС‚ `{ code, message }` Рё РІС‹Р±СЂР°СЃС‹РІР°РµС‚ `ApiException` (СЂРµРёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РёР· `users_service.dart`) СЃ СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РёРј РєРѕРґРѕРј/СЃРѕРѕР±С‰РµРЅРёРµРј.
+  - `getClubChatMessages(clubId, { limit, offset })` СЂРµР°Р»РёР·РѕРІР°РЅ С‡РµСЂРµР· `GET /api/messages/clubs/:clubId?limit=&offset=`, РїР°СЂСЃРёС‚ СЃРїРёСЃРѕРє `MessageModel`; РїСЂРё РѕС€РёР±РєР°С… С‚Р°РєР¶Рµ РІС‹Р±СЂР°СЃС‹РІР°РµС‚ `ApiException`.
+  - `sendClubMessage(clubId, text)` СЂРµР°Р»РёР·РѕРІР°РЅ С‡РµСЂРµР· `POST /api/messages/clubs/:clubId` СЃ С‚РµР»РѕРј `{ text }`, СѓСЃРїРµС€РЅС‹Р№ РѕС‚РІРµС‚ 201 РїР°СЂСЃРёС‚СЃСЏ РІ `MessageModel`, РѕС€РёР±РєРё РјР°РїСЏС‚СЃСЏ РІ `ApiException` c `code`/`message` РёР· ADRвЂ‘РѕС‚РІРµС‚Р°.
+- **Mobile вЂ” MessagesService (personal chats):**
+  - Р›РёС‡РЅС‹Рµ С‡Р°С‚С‹ С„РѕСЂРјР°Р»СЊРЅРѕ РЅРµ РІС…РѕРґСЏС‚ РІ MVP Рё backendвЂ‘СЌРЅРґРїРѕРёРЅС‚РѕРІ РґР»СЏ РЅРёС… РЅРµС‚, РїРѕСЌС‚РѕРјСѓ:
+    - `getPrivateChats()` Рё `getChatMessages(chatId)` РІРѕР·РІСЂР°С‰Р°СЋС‚ РїСѓСЃС‚С‹Рµ СЃРїРёСЃРєРё (stub), РЅРµ РІС‹РїРѕР»РЅСЏСЏ СЃРµС‚РµРІС‹С… Р·Р°РїСЂРѕСЃРѕРІ.
+    - `sendChatMessage(chatId, text)` СЏРІРЅРѕ РјР°СЂРєРёСЂРѕРІР°РЅ РєР°Рє РЅРµ СЂРµР°Р»РёР·РѕРІР°РЅРЅС‹Р№ Рё Р±СЂРѕСЃР°РµС‚ `UnimplementedError('Personal chats are not implemented in MVP')`, С‡С‚РѕР±С‹ РЅРµ СЃРѕР·РґР°РІР°С‚СЊ Р»РѕР¶РЅС‹С… РѕР¶РёРґР°РЅРёР№.
+- **РС‚РѕРі:** РќР° РјРѕР±РёР»СЊРЅРѕРј РєР»РёРµРЅС‚Рµ РµСЃС‚СЊ РїРѕР»РЅРѕС†РµРЅРЅС‹Р№ HTTPвЂ‘РєР»РёРµРЅС‚ РґР»СЏ РєР»СѓР±РЅС‹С… С‡Р°С‚РѕРІ (СЃРїРёСЃРѕРє С‡Р°С‚РѕРІ, Р·Р°РіСЂСѓР·РєР° СЃРѕРѕР±С‰РµРЅРёР№, РѕС‚РїСЂР°РІРєР° СЃРѕРѕР±С‰РµРЅРёР№) РїРѕРІРµСЂС… СЃСѓС‰РµСЃС‚РІСѓСЋС‰РёС… backendвЂ‘СЌРЅРґРїРѕРёРЅС‚РѕРІ, Р° Р»РёС‡РЅС‹Рµ С‡Р°С‚С‹ Р·Р°С„РёРєСЃРёСЂРѕРІР°РЅС‹ РєР°Рє РѕСЃРѕР·РЅР°РЅРЅР°СЏ Р·Р°РіР»СѓС€РєР° РґРѕ РїРѕСЏРІР»РµРЅРёСЏ СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РµРіРѕ API РЅР° backend.
+
+### 2026-02-06 вЂ” РСЃРїСЂР°РІР»РµРЅ 500 РЅР° /api/messages РїСЂРё РѕС‚СЃСѓС‚СЃС‚РІРёРё auth (401/403 РІРјРµСЃС‚Рѕ 500)
+
+- **Backend:** Р’ `messages.routes.ts` РІСЃРїРѕРјРѕРіР°С‚РµР»СЊРЅР°СЏ С„СѓРЅРєС†РёСЏ `getAuthUid` Р·Р°РјРµРЅРµРЅР° РЅР° `getAuthUidOrRespondUnauthorized(req, res)`, РєРѕС‚РѕСЂР°СЏ:
+  - РџСЂРё РѕС‚СЃСѓС‚СЃС‚РІРёРё `req.authUser.uid` РІРѕР·РІСЂР°С‰Р°РµС‚ 401 СЃ ADRвЂ‘РѕС‚РІРµС‚РѕРј `{ code: "unauthorized", message: "Authorization required", details: { reason: "missing_header" } }` Рё РїСЂРµСЂС‹РІР°РµС‚ РѕР±СЂР°Р±РѕС‚РєСѓ Р·Р°РїСЂРѕСЃР°.
+  - РСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РІРѕ РІСЃРµС… РјР°СЂС€СЂСѓС‚Р°С… `/api/messages/clubs*` (СЃРїРёСЃРѕРє РєР»СѓР±РЅС‹С… С‡Р°С‚РѕРІ, СЃРѕРѕР±С‰РµРЅРёСЏ РєР»СѓР±Р°, РѕС‚РїСЂР°РІРєР° СЃРѕРѕР±С‰РµРЅРёСЏ), С‡С‚РѕР±С‹ РѕС‚СЃСѓС‚СЃС‚РІРёРµ auth РЅРµ РїСЂРёРІРѕРґРёР»Рѕ Рє РІС‹Р±СЂРѕСЃСѓ РёСЃРєР»СЋС‡РµРЅРёСЏ Рё РїРѕСЃР»РµРґСѓСЋС‰РµРјСѓ 500.
+- **РС‚РѕРі:** РџСЂРё РѕР±СЂР°С‰РµРЅРёРё Рє СЌРЅРґРїРѕРёРЅС‚Р°Рј `/api/messages/clubs` / `/api/messages/clubs/:clubId` / `POST /api/messages/clubs/:clubId` Р±РµР· Р·Р°РіРѕР»РѕРІРєР° Authorization СЃРµСЂРІРµСЂ С‚РµРїРµСЂСЊ РєРѕСЂСЂРµРєС‚РЅРѕ РІРѕР·РІСЂР°С‰Р°РµС‚ 401/403 (РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ РєРѕРЅРєСЂРµС‚РЅРѕР№ РїСЂРѕРІРµСЂРєРё), Р° РЅРµ 500 internal_error.
+
+### 2026-02-06 вЂ” РџСЂРѕРІРµСЂРєР° С‡Р»РµРЅСЃС‚РІР° РґР»СЏ РєР»СѓР±РЅС‹С… С‡Р°С‚РѕРІ (HTTP + WS) + clubId РєР°Рє СЃС‚СЂРѕРєРѕРІС‹Р№ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ
+
+- **Backend (DB):** Р”РѕР±Р°РІР»РµРЅР° РјРёРіСЂР°С†РёСЏ `009_messages_channel_id_varchar.sql`, РєРѕС‚РѕСЂР°СЏ РјРµРЅСЏРµС‚ С‚РёРї СЃС‚РѕР»Р±С†Р° `messages.channel_id` СЃ `UUID` РЅР° `VARCHAR(128)` СЃ `USING channel_id::text`. Р­С‚Рѕ РІС‹СЂР°РІРЅРёРІР°РµС‚ СЃС…РµРјСѓ СЃ С‚РµРј, С‡С‚Рѕ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РєР»СѓР±Р° (`club_members.club_id`, `clubId` РІ DTO) С‚СЂР°РєС‚СѓРµС‚СЃСЏ РєР°Рє СЃС‚СЂРѕРєР°, Р° РЅРµ РєР°Рє СЃС‚СЂРѕРіРёР№ UUID, Рё РїРѕР·РІРѕР»СЏРµС‚ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РѕРґРёРЅР°РєРѕРІС‹Р№ С„РѕСЂРјР°С‚ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРІ РґР»СЏ РіРѕСЂРѕРґРѕРІ/РєР»СѓР±РѕРІ РІ РєР°РЅР°Р»Р°С… СЃРѕРѕР±С‰РµРЅРёР№.
+- **Backend (HTTP вЂ” РєР»СѓР±РЅС‹Рµ С‡Р°С‚С‹):**
+  - Р­РЅРґРїРѕРёРЅС‚ `GET /api/messages/clubs/:clubId` С‚РµРїРµСЂСЊ, РїРѕРјРёРјРѕ РїСЂРѕРІРµСЂРєРё auth (`Authorization: Bearer <token>`), РЅР°С…РѕРґРёС‚ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РїРѕ `firebaseUid` С‡РµСЂРµР· `UsersRepository.findByFirebaseUid` Рё РїСЂРѕРІРµСЂСЏРµС‚ Р°РєС‚РёРІРЅРѕРµ С‡Р»РµРЅСЃС‚РІРѕ РІ РєР»СѓР±Рµ С‡РµСЂРµР· `ClubMembersRepository.findByClubAndUser(clubId, user.id)`. РџСЂРё РѕС‚СЃСѓС‚СЃС‚РІРёРё РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ `401 unauthorized` (`code: "unauthorized", message: "User not found"`), РїСЂРё РѕС‚СЃСѓС‚СЃС‚РІРёРё Р°РєС‚РёРІРЅРѕРіРѕ С‡Р»РµРЅСЃС‚РІР° вЂ” `403 forbidden` СЃ `code: "forbidden"`, `message: "User is not a member of this club"` Рё `details: { clubId }`.
+  - Р­РЅРґРїРѕРёРЅС‚ `POST /api/messages/clubs/:clubId` РёСЃРїРѕР»СЊР·СѓРµС‚ С‚РѕС‚ Р¶Рµ РїР°С‚С‚РµСЂРЅ: РїРµСЂРµРґ СЃРѕР·РґР°РЅРёРµРј СЃРѕРѕР±С‰РµРЅРёСЏ Рё broadcast-Р° РїСЂРѕРІРµСЂСЏРµС‚СЃСЏ, С‡С‚Рѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЃСѓС‰РµСЃС‚РІСѓРµС‚ Рё СЏРІР»СЏРµС‚СЃСЏ Р°РєС‚РёРІРЅС‹Рј СѓС‡Р°СЃС‚РЅРёРєРѕРј РєР»СѓР±Р°; РёРЅР°С‡Рµ РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ 401/403 РїРѕ С‚РµРј Р¶Рµ РїСЂР°РІРёР»Р°Рј. РўРѕР»СЊРєРѕ РїРѕСЃР»Рµ СѓСЃРїРµС€РЅРѕР№ РїСЂРѕРІРµСЂРєРё РІС‹Р·С‹РІР°РµС‚СЃСЏ `MessagesRepository.create({ channelType: 'club', channelId: clubId, ... })` Рё РІС‹РїРѕР»РЅСЏРµС‚СЃСЏ `broadcast("club:{clubId}", dto)`.
+- **Backend (WS вЂ” РїРѕРґРїРёСЃРєР° РЅР° РєР»СѓР±РЅС‹Рµ РєР°РЅР°Р»С‹):**
+  - Р’ `chatWs.ts` СЂРµРіСѓР»СЏСЂРЅРѕРµ РІС‹СЂР°Р¶РµРЅРёРµ `VALID_CHANNEL_RE` РѕСЃР»Р°Р±Р»РµРЅРѕ СЃ `^club:[0-9a-f-]{36}$` РґРѕ `^club:[A-Za-z0-9_-]{1,128}$`, С‡С‚РѕР±С‹ СЂР°Р·СЂРµС€РёС‚СЊ РєР°РЅР°Р»С‹ РІРёРґР° `club:{clubId}` СЃ Р»СЋР±С‹РјРё СЃС‚СЂРѕРєРѕРІС‹РјРё ID (РЅР°РїСЂРёРјРµСЂ, `club-1`, `spb-runner-club`), Р° РЅРµ С‚РѕР»СЊРєРѕ UUID v4.
+  - Р¤СѓРЅРєС†РёСЏ `canSubscribe(uid, channelKey)` С‚РµРїРµСЂСЊ, РїРѕРјРёРјРѕ РїСЂРѕРІРµСЂРєРё С„РѕСЂРјР°С‚Р° РєР°РЅР°Р»Р°, РЅР°С…РѕРґРёС‚ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РїРѕ `firebaseUid` (`UsersRepository.findByFirebaseUid`) Рё РїСЂРѕРІРµСЂСЏРµС‚ Р°РєС‚РёРІРЅРѕРµ С‡Р»РµРЅСЃС‚РІРѕ РІ РєР»СѓР±Рµ (`ClubMembersRepository.findByClubAndUser(clubId, user.id)`, СЃС‚Р°С‚СѓСЃ `active`). Р•СЃР»Рё РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РЅРµ РЅР°Р№РґРµРЅ, РЅРµ СЃРѕСЃС‚РѕРёС‚ РІ РєР»СѓР±Рµ РёР»Рё РїСЂРѕРёР·РѕС€Р»Р° РѕС€РёР±РєР° Р‘Р”, РїРѕРґРїРёСЃРєР° Р·Р°РїСЂРµС‰Р°РµС‚СЃСЏ Рё РєР»РёРµРЅС‚Сѓ РѕС‚РїСЂР°РІР»СЏРµС‚СЃСЏ `{ type: 'error', message: 'Subscribe denied' }`.
+- **РС‚РѕРі:** Р”Р»СЏ РєР»СѓР±РЅС‹С… С‡Р°С‚РѕРІ СѓСЃС‚Р°РЅРѕРІР»РµРЅ РµРґРёРЅС‹Р№ СЃС‚СЂРѕРєРѕРІС‹Р№ С„РѕСЂРјР°С‚ clubId РІРѕ РІСЃРµС… СЃР»РѕСЏС… (Р‘Р”, REST, WS, mobile) Рё СЂРµР°Р»РёР·РѕРІР°РЅР° СЃС‚СЂРѕРіР°СЏ РїСЂРѕРІРµСЂРєР° С‡Р»РµРЅСЃС‚РІР°: РґРѕСЃС‚СѓРї Рє РёСЃС‚РѕСЂРёРё Рё РѕС‚РїСЂР°РІРєРµ СЃРѕРѕР±С‰РµРЅРёР№ РїРѕ HTTP, Р° С‚Р°РєР¶Рµ РїРѕРґРїРёСЃРєР° РЅР° real-time РєР°РЅР°Р» `club:{clubId}` РїРѕ WebSocket СЂР°Р·СЂРµС€РµРЅС‹ С‚РѕР»СЊРєРѕ Р°РєС‚РёРІРЅС‹Рј СѓС‡Р°СЃС‚РЅРёРєР°Рј СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РµРіРѕ РєР»СѓР±Р°.
 
 
 ### 2026-02-04
 
-- **Список клубных чатов (membership-based):**
-  - **Backend:** Добавлен `GET /api/messages/clubs` — возвращает список чатов клубов пользователя на основе `club_members` (active). Формат ответа соответствует `ClubChatViewDto` (id, clubId, clubName, createdAt/updatedAt и т.д.).
-  - **Mobile:** `MessagesService.getClubChats()` теперь вызывает `GET /api/messages/clubs` и парсит список `ClubChatModel` вместо пустой заглушки. `ClubMessagesTab` начинает показывать клубы после вступления.
+- **РЎРїРёСЃРѕРє РєР»СѓР±РЅС‹С… С‡Р°С‚РѕРІ (membership-based):**
+  - **Backend:** Р”РѕР±Р°РІР»РµРЅ `GET /api/messages/clubs` вЂ” РІРѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє С‡Р°С‚РѕРІ РєР»СѓР±РѕРІ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РЅР° РѕСЃРЅРѕРІРµ `club_members` (active). Р¤РѕСЂРјР°С‚ РѕС‚РІРµС‚Р° СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓРµС‚ `ClubChatViewDto` (id, clubId, clubName, createdAt/updatedAt Рё С‚.Рґ.).
+  - **Mobile:** `MessagesService.getClubChats()` С‚РµРїРµСЂСЊ РІС‹Р·С‹РІР°РµС‚ `GET /api/messages/clubs` Рё РїР°СЂСЃРёС‚ СЃРїРёСЃРѕРє `ClubChatModel` РІРјРµСЃС‚Рѕ РїСѓСЃС‚РѕР№ Р·Р°РіР»СѓС€РєРё. `ClubMessagesTab` РЅР°С‡РёРЅР°РµС‚ РїРѕРєР°Р·С‹РІР°С‚СЊ РєР»СѓР±С‹ РїРѕСЃР»Рµ РІСЃС‚СѓРїР»РµРЅРёСЏ.
 
-**Файлы:** `backend/src/api/messages.routes.ts`, `backend/src/modules/messages/message.dto.ts`, `backend/src/db/repositories/club_members.repository.ts`, `mobile/lib/shared/api/messages_service.dart`.
+**Р¤Р°Р№Р»С‹:** `backend/src/api/messages.routes.ts`, `backend/src/modules/messages/message.dto.ts`, `backend/src/db/repositories/club_members.repository.ts`, `mobile/lib/shared/api/messages_service.dart`.
 
-- **Удаление чата города:**
+- **РЈРґР°Р»РµРЅРёРµ С‡Р°С‚Р° РіРѕСЂРѕРґР°:**
   - **Backend**
-    - `messages.routes.ts`: удалены эндпоинты GET и POST `/api/messages/global`.
-    - `chatWs.ts`: удалена поддержка каналов `city:{cityId}`; VALID_CHANNEL_RE и canSubscribe() поддерживают только `club:{clubId}`; удалён импорт getUsersRepository.
+    - `messages.routes.ts`: СѓРґР°Р»РµРЅС‹ СЌРЅРґРїРѕРёРЅС‚С‹ GET Рё POST `/api/messages/global`.
+    - `chatWs.ts`: СѓРґР°Р»РµРЅР° РїРѕРґРґРµСЂР¶РєР° РєР°РЅР°Р»РѕРІ `city:{cityId}`; VALID_CHANNEL_RE Рё canSubscribe() РїРѕРґРґРµСЂР¶РёРІР°СЋС‚ С‚РѕР»СЊРєРѕ `club:{clubId}`; СѓРґР°Р»С‘РЅ РёРјРїРѕСЂС‚ getUsersRepository.
   - **Mobile**
-    - Удалён `global_chat_tab.dart`.
-    - Удалён `notifications_tab.dart` (orphaned — не используется после замены вкладок).
-    - Удалён `chat_realtime_service.dart` (orphaned — использовал city-каналы, не нужен без GlobalChatTab; будет переписан для club-каналов при реализации real-time в ClubMessagesTab).
-    - `messages_screen.dart`: вкладки заменены с «Город | Клубы | Уведомления» на «Личные | Клуб | Тренер»; добавлены PersonalChatsTab и CoachTab (заглушки), ClubMessagesTab оставлен.
-    - `messages_service.dart`: удалены getGlobalChatMessages() и sendGlobalMessage().
-    - l10n: добавлены tabPersonal, tabClub, tabCoach, cityLabel, personalChatsEmpty, coachMessagesEmpty; удалены tabCity, tabClubs, tabNotifications, globalChatEmpty. Примечание: ключи noNotifications и notificationsLoadError оставлены — используются в ProfileNotificationsSection.
-    - `profile_screen.dart`: блок «Город» использует cityLabel вместо tabCity.
-  - **Файлы:** backend/src/api/messages.routes.ts, backend/src/ws/chatWs.ts, mobile/lib/features/messages/*.dart, mobile/lib/shared/api/messages_service.dart, mobile/lib/shared/api/chat_realtime_service.dart (удалён), mobile/l10n/*.arb, mobile/lib/features/profile/profile_screen.dart.
+    - РЈРґР°Р»С‘РЅ `global_chat_tab.dart`.
+    - РЈРґР°Р»С‘РЅ `notifications_tab.dart` (orphaned вЂ” РЅРµ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РїРѕСЃР»Рµ Р·Р°РјРµРЅС‹ РІРєР»Р°РґРѕРє).
+    - РЈРґР°Р»С‘РЅ `chat_realtime_service.dart` (orphaned вЂ” РёСЃРїРѕР»СЊР·РѕРІР°Р» city-РєР°РЅР°Р»С‹, РЅРµ РЅСѓР¶РµРЅ Р±РµР· GlobalChatTab; Р±СѓРґРµС‚ РїРµСЂРµРїРёСЃР°РЅ РґР»СЏ club-РєР°РЅР°Р»РѕРІ РїСЂРё СЂРµР°Р»РёР·Р°С†РёРё real-time РІ ClubMessagesTab).
+    - `messages_screen.dart`: РІРєР»Р°РґРєРё Р·Р°РјРµРЅРµРЅС‹ СЃ В«Р“РѕСЂРѕРґ | РљР»СѓР±С‹ | РЈРІРµРґРѕРјР»РµРЅРёСЏВ» РЅР° В«Р›РёС‡РЅС‹Рµ | РљР»СѓР± | РўСЂРµРЅРµСЂВ»; РґРѕР±Р°РІР»РµРЅС‹ PersonalChatsTab Рё CoachTab (Р·Р°РіР»СѓС€РєРё), ClubMessagesTab РѕСЃС‚Р°РІР»РµРЅ.
+    - `messages_service.dart`: СѓРґР°Р»РµРЅС‹ getGlobalChatMessages() Рё sendGlobalMessage().
+    - l10n: РґРѕР±Р°РІР»РµРЅС‹ tabPersonal, tabClub, tabCoach, cityLabel, personalChatsEmpty, coachMessagesEmpty; СѓРґР°Р»РµРЅС‹ tabCity, tabClubs, tabNotifications, globalChatEmpty. РџСЂРёРјРµС‡Р°РЅРёРµ: РєР»СЋС‡Рё noNotifications Рё notificationsLoadError РѕСЃС‚Р°РІР»РµРЅС‹ вЂ” РёСЃРїРѕР»СЊР·СѓСЋС‚СЃСЏ РІ ProfileNotificationsSection.
+    - `profile_screen.dart`: Р±Р»РѕРє В«Р“РѕСЂРѕРґВ» РёСЃРїРѕР»СЊР·СѓРµС‚ cityLabel РІРјРµСЃС‚Рѕ tabCity.
+  - **Р¤Р°Р№Р»С‹:** backend/src/api/messages.routes.ts, backend/src/ws/chatWs.ts, mobile/lib/features/messages/*.dart, mobile/lib/shared/api/messages_service.dart, mobile/lib/shared/api/chat_realtime_service.dart (СѓРґР°Р»С‘РЅ), mobile/l10n/*.arb, mobile/lib/features/profile/profile_screen.dart.
 
 ### 2026-02-02
 
-- **GlobalChatTab: убран fallback 'spb', лишний API-запрос при отсутствии города:** В `_fetchData()` cityId имел fallback `'spb'`, из-за которого messages API вызывался даже когда у пользователя не установлен город (noCitySet=true). Убран fallback; теперь при `cityId == null` API не вызывается, сразу возвращается `noCitySet=true` и показывается подсказка «Укажите город в профиле». Упрощена логика: `noCitySet` определяется единообразно через проверку cityId.
+- **GlobalChatTab: СѓР±СЂР°РЅ fallback 'spb', Р»РёС€РЅРёР№ API-Р·Р°РїСЂРѕСЃ РїСЂРё РѕС‚СЃСѓС‚СЃС‚РІРёРё РіРѕСЂРѕРґР°:** Р’ `_fetchData()` cityId РёРјРµР» fallback `'spb'`, РёР·-Р·Р° РєРѕС‚РѕСЂРѕРіРѕ messages API РІС‹Р·С‹РІР°Р»СЃСЏ РґР°Р¶Рµ РєРѕРіРґР° Сѓ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РЅРµ СѓСЃС‚Р°РЅРѕРІР»РµРЅ РіРѕСЂРѕРґ (noCitySet=true). РЈР±СЂР°РЅ fallback; С‚РµРїРµСЂСЊ РїСЂРё `cityId == null` API РЅРµ РІС‹Р·С‹РІР°РµС‚СЃСЏ, СЃСЂР°Р·Сѓ РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ `noCitySet=true` Рё РїРѕРєР°Р·С‹РІР°РµС‚СЃСЏ РїРѕРґСЃРєР°Р·РєР° В«РЈРєР°Р¶РёС‚Рµ РіРѕСЂРѕРґ РІ РїСЂРѕС„РёР»РµВ». РЈРїСЂРѕС‰РµРЅР° Р»РѕРіРёРєР°: `noCitySet` РѕРїСЂРµРґРµР»СЏРµС‚СЃСЏ РµРґРёРЅРѕРѕР±СЂР°Р·РЅРѕ С‡РµСЂРµР· РїСЂРѕРІРµСЂРєСѓ cityId.
 
-**Файлы:** `mobile/lib/features/messages/tabs/global_chat_tab.dart`.
+**Р¤Р°Р№Р»С‹:** `mobile/lib/features/messages/tabs/global_chat_tab.dart`.
 
-- **GET /api/messages/global — обязательный cityId:** Эндпоинт изменён: город берётся из обязательного query-параметра `cityId`. При отсутствии или пустом `cityId` возвращается 400 с `code: "validation_error"`, `message: "cityId is required"`. Mobile: `getGlobalChatMessages` принимает обязательный параметр `cityId` и передаёт его в query; в GlobalChatTab передаётся `profile?.user.cityId ?? CurrentCityService.currentCityId ?? 'spb'` (дефолт «spb» при первом запуске без выбора города); флаг `noCitySet` выставляется, когда в профиле и CurrentCityService города нет, для отображения подсказки «Укажите город в профиле».
+- **GET /api/messages/global вЂ” РѕР±СЏР·Р°С‚РµР»СЊРЅС‹Р№ cityId:** Р­РЅРґРїРѕРёРЅС‚ РёР·РјРµРЅС‘РЅ: РіРѕСЂРѕРґ Р±РµСЂС‘С‚СЃСЏ РёР· РѕР±СЏР·Р°С‚РµР»СЊРЅРѕРіРѕ query-РїР°СЂР°РјРµС‚СЂР° `cityId`. РџСЂРё РѕС‚СЃСѓС‚СЃС‚РІРёРё РёР»Рё РїСѓСЃС‚РѕРј `cityId` РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ 400 СЃ `code: "validation_error"`, `message: "cityId is required"`. Mobile: `getGlobalChatMessages` РїСЂРёРЅРёРјР°РµС‚ РѕР±СЏР·Р°С‚РµР»СЊРЅС‹Р№ РїР°СЂР°РјРµС‚СЂ `cityId` Рё РїРµСЂРµРґР°С‘С‚ РµРіРѕ РІ query; РІ GlobalChatTab РїРµСЂРµРґР°С‘С‚СЃСЏ `profile?.user.cityId ?? CurrentCityService.currentCityId ?? 'spb'` (РґРµС„РѕР»С‚ В«spbВ» РїСЂРё РїРµСЂРІРѕРј Р·Р°РїСѓСЃРєРµ Р±РµР· РІС‹Р±РѕСЂР° РіРѕСЂРѕРґР°); С„Р»Р°Рі `noCitySet` РІС‹СЃС‚Р°РІР»СЏРµС‚СЃСЏ, РєРѕРіРґР° РІ РїСЂРѕС„РёР»Рµ Рё CurrentCityService РіРѕСЂРѕРґР° РЅРµС‚, РґР»СЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ РїРѕРґСЃРєР°Р·РєРё В«РЈРєР°Р¶РёС‚Рµ РіРѕСЂРѕРґ РІ РїСЂРѕС„РёР»РµВ».
 
-**Файлы:** `backend/src/api/messages.routes.ts`, `mobile/lib/shared/api/messages_service.dart`, `mobile/lib/features/messages/tabs/global_chat_tab.dart`.
+**Р¤Р°Р№Р»С‹:** `backend/src/api/messages.routes.ts`, `mobile/lib/shared/api/messages_service.dart`, `mobile/lib/features/messages/tabs/global_chat_tab.dart`.
 
-- **Чат — real-time сообщения:**
+- **Р§Р°С‚ вЂ” real-time СЃРѕРѕР±С‰РµРЅРёСЏ:**
   - **Backend**
-    - Миграция `002_messages.sql`: таблица `messages` (id, channel_type 'city'|'club', channel_id, user_id FK, text VARCHAR(500), created_at, updated_at), индекс по (channel_type, channel_id, created_at DESC).
-    - Модуль `modules/messages`: entity Message, MessageViewDto и CreateMessageDto, CreateMessageSchema (Zod, text 1–500 символов).
-    - Репозиторий MessagesRepository: create(), findByChannel() с JOIN users для userName.
-    - REST API: GET /api/messages/global (query limit, offset; cityId из пользователя по authUser.uid), POST /api/messages/global (body { text }, валидация; при отсутствии cityId у пользователя — 400 user_city_required); GET/POST /api/messages/clubs/:clubId (доступ — заглушка «разрешено»). Ответы — MessageViewDto (id, text, userId, userName, createdAt, updatedAt в ISO).
-    - WebSocket: пакет `ws`, путь /ws на том же HTTP-сервере (server.ts — http.createServer(app), initChatWs(server)). При подключении: токен из query ?token=..., verifyToken(); подписки по сообщениям { type: 'subscribe', channel: 'city:{cityId}' } или 'club:{clubId}'; broadcast(channelKey, MessageViewDto) после сохранения сообщения в POST-обработчиках; клиентам отправляется { type: 'message', payload: MessageViewDto }.
+    - РњРёРіСЂР°С†РёСЏ `002_messages.sql`: С‚Р°Р±Р»РёС†Р° `messages` (id, channel_type 'city'|'club', channel_id, user_id FK, text VARCHAR(500), created_at, updated_at), РёРЅРґРµРєСЃ РїРѕ (channel_type, channel_id, created_at DESC).
+    - РњРѕРґСѓР»СЊ `modules/messages`: entity Message, MessageViewDto Рё CreateMessageDto, CreateMessageSchema (Zod, text 1вЂ“500 СЃРёРјРІРѕР»РѕРІ).
+    - Р РµРїРѕР·РёС‚РѕСЂРёР№ MessagesRepository: create(), findByChannel() СЃ JOIN users РґР»СЏ userName.
+    - REST API: GET /api/messages/global (query limit, offset; cityId РёР· РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РїРѕ authUser.uid), POST /api/messages/global (body { text }, РІР°Р»РёРґР°С†РёСЏ; РїСЂРё РѕС‚СЃСѓС‚СЃС‚РІРёРё cityId Сѓ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ вЂ” 400 user_city_required); GET/POST /api/messages/clubs/:clubId (РґРѕСЃС‚СѓРї вЂ” Р·Р°РіР»СѓС€РєР° В«СЂР°Р·СЂРµС€РµРЅРѕВ»). РћС‚РІРµС‚С‹ вЂ” MessageViewDto (id, text, userId, userName, createdAt, updatedAt РІ ISO).
+    - WebSocket: РїР°РєРµС‚ `ws`, РїСѓС‚СЊ /ws РЅР° С‚РѕРј Р¶Рµ HTTP-СЃРµСЂРІРµСЂРµ (server.ts вЂ” http.createServer(app), initChatWs(server)). РџСЂРё РїРѕРґРєР»СЋС‡РµРЅРёРё: С‚РѕРєРµРЅ РёР· query ?token=..., verifyToken(); РїРѕРґРїРёСЃРєРё РїРѕ СЃРѕРѕР±С‰РµРЅРёСЏРј { type: 'subscribe', channel: 'city:{cityId}' } РёР»Рё 'club:{clubId}'; broadcast(channelKey, MessageViewDto) РїРѕСЃР»Рµ СЃРѕС…СЂР°РЅРµРЅРёСЏ СЃРѕРѕР±С‰РµРЅРёСЏ РІ POST-РѕР±СЂР°Р±РѕС‚С‡РёРєР°С…; РєР»РёРµРЅС‚Р°Рј РѕС‚РїСЂР°РІР»СЏРµС‚СЃСЏ { type: 'message', payload: MessageViewDto }.
   - **Mobile**
-    - Зависимость web_socket_channel: ^2.4.0.
-    - MessagesService: getGlobalChatMessages(limit, offset) — GET /api/messages/global, разбор списка MessageModel; обработка 400 user_city_required, 401, 5xx. sendGlobalMessage(text) — POST /api/messages/global, разбор 201 → MessageModel; обработка 400 validation_error/user_city_required, 401, 5xx.
-    - ChatRealtimeService: подключение к ws(s) URL (из ApiConfig.getBaseUrl()), токен в query; после connect отправка { type: 'subscribe', channel: 'city:{cityId}' }; стрим новых сообщений (type: 'message', payload → MessageModel); dispose() для закрытия.
-    - GlobalChatTab: загрузка данных через Future (getGlobalChatMessages + getProfile для cityId); при успехе — список в state, при наличии cityId — подписка на real-time (ChatRealtimeService), новые сообщения добавляются в список (дедуп по id); поле ввода и кнопка «Отправить», sendGlobalMessage, при успехе — добавление сообщения в список; обработка ошибок отправки.
+    - Р—Р°РІРёСЃРёРјРѕСЃС‚СЊ web_socket_channel: ^2.4.0.
+    - MessagesService: getGlobalChatMessages(limit, offset) вЂ” GET /api/messages/global, СЂР°Р·Р±РѕСЂ СЃРїРёСЃРєР° MessageModel; РѕР±СЂР°Р±РѕС‚РєР° 400 user_city_required, 401, 5xx. sendGlobalMessage(text) вЂ” POST /api/messages/global, СЂР°Р·Р±РѕСЂ 201 в†’ MessageModel; РѕР±СЂР°Р±РѕС‚РєР° 400 validation_error/user_city_required, 401, 5xx.
+    - ChatRealtimeService: РїРѕРґРєР»СЋС‡РµРЅРёРµ Рє ws(s) URL (РёР· ApiConfig.getBaseUrl()), С‚РѕРєРµРЅ РІ query; РїРѕСЃР»Рµ connect РѕС‚РїСЂР°РІРєР° { type: 'subscribe', channel: 'city:{cityId}' }; СЃС‚СЂРёРј РЅРѕРІС‹С… СЃРѕРѕР±С‰РµРЅРёР№ (type: 'message', payload в†’ MessageModel); dispose() РґР»СЏ Р·Р°РєСЂС‹С‚РёСЏ.
+    - GlobalChatTab: Р·Р°РіСЂСѓР·РєР° РґР°РЅРЅС‹С… С‡РµСЂРµР· Future (getGlobalChatMessages + getProfile РґР»СЏ cityId); РїСЂРё СѓСЃРїРµС…Рµ вЂ” СЃРїРёСЃРѕРє РІ state, РїСЂРё РЅР°Р»РёС‡РёРё cityId вЂ” РїРѕРґРїРёСЃРєР° РЅР° real-time (ChatRealtimeService), РЅРѕРІС‹Рµ СЃРѕРѕР±С‰РµРЅРёСЏ РґРѕР±Р°РІР»СЏСЋС‚СЃСЏ РІ СЃРїРёСЃРѕРє (РґРµРґСѓРї РїРѕ id); РїРѕР»Рµ РІРІРѕРґР° Рё РєРЅРѕРїРєР° В«РћС‚РїСЂР°РІРёС‚СЊВ», sendGlobalMessage, РїСЂРё СѓСЃРїРµС…Рµ вЂ” РґРѕР±Р°РІР»РµРЅРёРµ СЃРѕРѕР±С‰РµРЅРёСЏ РІ СЃРїРёСЃРѕРє; РѕР±СЂР°Р±РѕС‚РєР° РѕС€РёР±РѕРє РѕС‚РїСЂР°РІРєРё.
 
-- **Чат — исправления после code review:**
+- **Р§Р°С‚ вЂ” РёСЃРїСЂР°РІР»РµРЅРёСЏ РїРѕСЃР»Рµ code review:**
   - **Backend**
-    - WebSocket (chatWs.ts): uid из verifyToken сохраняется на соединении (структура WsClient { channels, uid }). Добавлена валидация канала при subscribe: regex `^(city|club):[0-9a-f-]{36}$`, для city-каналов — проверка совпадения cityId пользователя из БД. При отказе клиенту отправляется `{ type: 'error', message: 'Subscribe denied' }`. Добавлена функция `closeChatWs()` — закрытие всех WS-соединений с кодом 1001 и очистка; вызывается в gracefulShutdown() (server.ts) перед закрытием DB pool.
-    - REST API (messages.routes.ts): GET /clubs/:clubId — добавлен вызов getAuthUid(req) для проверки аутентификации. Добавлена функция parsePagination() — парсинг limit/offset из query с защитой от NaN, отрицательных значений, ограничение MAX_LIMIT=100, DEFAULT_LIMIT=50; применена во всех GET-эндпоинтах.
+    - WebSocket (chatWs.ts): uid РёР· verifyToken СЃРѕС…СЂР°РЅСЏРµС‚СЃСЏ РЅР° СЃРѕРµРґРёРЅРµРЅРёРё (СЃС‚СЂСѓРєС‚СѓСЂР° WsClient { channels, uid }). Р”РѕР±Р°РІР»РµРЅР° РІР°Р»РёРґР°С†РёСЏ РєР°РЅР°Р»Р° РїСЂРё subscribe: regex `^(city|club):[0-9a-f-]{36}$`, РґР»СЏ city-РєР°РЅР°Р»РѕРІ вЂ” РїСЂРѕРІРµСЂРєР° СЃРѕРІРїР°РґРµРЅРёСЏ cityId РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ РёР· Р‘Р”. РџСЂРё РѕС‚РєР°Р·Рµ РєР»РёРµРЅС‚Сѓ РѕС‚РїСЂР°РІР»СЏРµС‚СЃСЏ `{ type: 'error', message: 'Subscribe denied' }`. Р”РѕР±Р°РІР»РµРЅР° С„СѓРЅРєС†РёСЏ `closeChatWs()` вЂ” Р·Р°РєСЂС‹С‚РёРµ РІСЃРµС… WS-СЃРѕРµРґРёРЅРµРЅРёР№ СЃ РєРѕРґРѕРј 1001 Рё РѕС‡РёСЃС‚РєР°; РІС‹Р·С‹РІР°РµС‚СЃСЏ РІ gracefulShutdown() (server.ts) РїРµСЂРµРґ Р·Р°РєСЂС‹С‚РёРµРј DB pool.
+    - REST API (messages.routes.ts): GET /clubs/:clubId вЂ” РґРѕР±Р°РІР»РµРЅ РІС‹Р·РѕРІ getAuthUid(req) РґР»СЏ РїСЂРѕРІРµСЂРєРё Р°СѓС‚РµРЅС‚РёС„РёРєР°С†РёРё. Р”РѕР±Р°РІР»РµРЅР° С„СѓРЅРєС†РёСЏ parsePagination() вЂ” РїР°СЂСЃРёРЅРі limit/offset РёР· query СЃ Р·Р°С‰РёС‚РѕР№ РѕС‚ NaN, РѕС‚СЂРёС†Р°С‚РµР»СЊРЅС‹С… Р·РЅР°С‡РµРЅРёР№, РѕРіСЂР°РЅРёС‡РµРЅРёРµ MAX_LIMIT=100, DEFAULT_LIMIT=50; РїСЂРёРјРµРЅРµРЅР° РІРѕ РІСЃРµС… GET-СЌРЅРґРїРѕРёРЅС‚Р°С….
   - **Mobile**
-    - GlobalChatTab (global_chat_tab.dart): начальные сообщения из REST (DESC порядок) переворачиваются через `.reversed` при сохранении в state, чтобы список хранился в ASC порядке (oldest→newest); WS-сообщения корректно добавляются в конец; `reverse: true` ListView c `_messages[length-1-index]` отображает новые внизу.
-    - ChatRealtimeService (chat_realtime_service.dart): `_toWsUrl()` больше не приводит весь URL к lowercase — `toLowerCase()` применяется только для определения схемы (http/https), оригинальный URL сохраняется.
+    - GlobalChatTab (global_chat_tab.dart): РЅР°С‡Р°Р»СЊРЅС‹Рµ СЃРѕРѕР±С‰РµРЅРёСЏ РёР· REST (DESC РїРѕСЂСЏРґРѕРє) РїРµСЂРµРІРѕСЂР°С‡РёРІР°СЋС‚СЃСЏ С‡РµСЂРµР· `.reversed` РїСЂРё СЃРѕС…СЂР°РЅРµРЅРёРё РІ state, С‡С‚РѕР±С‹ СЃРїРёСЃРѕРє С…СЂР°РЅРёР»СЃСЏ РІ ASC РїРѕСЂСЏРґРєРµ (oldestв†’newest); WS-СЃРѕРѕР±С‰РµРЅРёСЏ РєРѕСЂСЂРµРєС‚РЅРѕ РґРѕР±Р°РІР»СЏСЋС‚СЃСЏ РІ РєРѕРЅРµС†; `reverse: true` ListView c `_messages[length-1-index]` РѕС‚РѕР±СЂР°Р¶Р°РµС‚ РЅРѕРІС‹Рµ РІРЅРёР·Сѓ.
+    - ChatRealtimeService (chat_realtime_service.dart): `_toWsUrl()` Р±РѕР»СЊС€Рµ РЅРµ РїСЂРёРІРѕРґРёС‚ РІРµСЃСЊ URL Рє lowercase вЂ” `toLowerCase()` РїСЂРёРјРµРЅСЏРµС‚СЃСЏ С‚РѕР»СЊРєРѕ РґР»СЏ РѕРїСЂРµРґРµР»РµРЅРёСЏ СЃС…РµРјС‹ (http/https), РѕСЂРёРіРёРЅР°Р»СЊРЅС‹Р№ URL СЃРѕС…СЂР°РЅСЏРµС‚СЃСЏ.
 
-- **Чат — fix Unhandled Exception user_city_required (logcat):**
+- **Р§Р°С‚ вЂ” fix Unhandled Exception user_city_required (logcat):**
   - **Mobile**
-    - GlobalChatTab (global_chat_tab.dart): `_fetchData()` теперь загружает профиль первым для получения cityId. Если город не установлен (`cityId == null`) — messages API не вызывается, возвращается пустой список с флагом `noCitySet=true`. В UI при `_noCitySet` показывается дружелюбный экран с иконкой города, текстом «Укажите город в профиле, чтобы участвовать в чате» и кнопкой «Повторить», вместо красного экрана ошибки. Это устраняет `Unhandled Exception: User must have a city set to use global chat` в logcat, которое возникало при открытии чата без установленного города.
+    - GlobalChatTab (global_chat_tab.dart): `_fetchData()` С‚РµРїРµСЂСЊ Р·Р°РіСЂСѓР¶Р°РµС‚ РїСЂРѕС„РёР»СЊ РїРµСЂРІС‹Рј РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ cityId. Р•СЃР»Рё РіРѕСЂРѕРґ РЅРµ СѓСЃС‚Р°РЅРѕРІР»РµРЅ (`cityId == null`) вЂ” messages API РЅРµ РІС‹Р·С‹РІР°РµС‚СЃСЏ, РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ РїСѓСЃС‚РѕР№ СЃРїРёСЃРѕРє СЃ С„Р»Р°РіРѕРј `noCitySet=true`. Р’ UI РїСЂРё `_noCitySet` РїРѕРєР°Р·С‹РІР°РµС‚СЃСЏ РґСЂСѓР¶РµР»СЋР±РЅС‹Р№ СЌРєСЂР°РЅ СЃ РёРєРѕРЅРєРѕР№ РіРѕСЂРѕРґР°, С‚РµРєСЃС‚РѕРј В«РЈРєР°Р¶РёС‚Рµ РіРѕСЂРѕРґ РІ РїСЂРѕС„РёР»Рµ, С‡С‚РѕР±С‹ СѓС‡Р°СЃС‚РІРѕРІР°С‚СЊ РІ С‡Р°С‚РµВ» Рё РєРЅРѕРїРєРѕР№ В«РџРѕРІС‚РѕСЂРёС‚СЊВ», РІРјРµСЃС‚Рѕ РєСЂР°СЃРЅРѕРіРѕ СЌРєСЂР°РЅР° РѕС€РёР±РєРё. Р­С‚Рѕ СѓСЃС‚СЂР°РЅСЏРµС‚ `Unhandled Exception: User must have a city set to use global chat` РІ logcat, РєРѕС‚РѕСЂРѕРµ РІРѕР·РЅРёРєР°Р»Рѕ РїСЂРё РѕС‚РєСЂС‹С‚РёРё С‡Р°С‚Р° Р±РµР· СѓСЃС‚Р°РЅРѕРІР»РµРЅРЅРѕРіРѕ РіРѕСЂРѕРґР°.
 
 ### 2026-01-29
-- **Mobile: Messages tabs FutureBuilder:** вкладки `GlobalChatTab`, `ClubMessagesTab` и `NotificationsTab` переведены на `StatefulWidget` с кэшированием `Future` загрузки данных в `initState`, чтобы избежать повторных HTTP-запросов при каждом `rebuild`; контракт заглушек и отображаемые данные не изменены.
+- **Mobile: Messages tabs FutureBuilder:** РІРєР»Р°РґРєРё `GlobalChatTab`, `ClubMessagesTab` Рё `NotificationsTab` РїРµСЂРµРІРµРґРµРЅС‹ РЅР° `StatefulWidget` СЃ РєСЌС€РёСЂРѕРІР°РЅРёРµРј `Future` Р·Р°РіСЂСѓР·РєРё РґР°РЅРЅС‹С… РІ `initState`, С‡С‚РѕР±С‹ РёР·Р±РµР¶Р°С‚СЊ РїРѕРІС‚РѕСЂРЅС‹С… HTTP-Р·Р°РїСЂРѕСЃРѕРІ РїСЂРё РєР°Р¶РґРѕРј `rebuild`; РєРѕРЅС‚СЂР°РєС‚ Р·Р°РіР»СѓС€РµРє Рё РѕС‚РѕР±СЂР°Р¶Р°РµРјС‹Рµ РґР°РЅРЅС‹Рµ РЅРµ РёР·РјРµРЅРµРЅС‹.
 
 ### 2025-01-27
-- **Табы MVP по 123.md:** заменены «Общий чат | Личные переписки | Сообщения Клуба» на «Город | Клубы | Уведомления».
-- Личные переписки убраны из MVP (удалён `PrivateChatsTab`).
-- Добавлена вкладка «Уведомления» (системные сообщения, read-only, заглушка).
-- Empty state городского чата: «Пока тихо. Напиши первое сообщение и задай ритм городу 🏃‍♂️».
-- `MessagesService` не изменён; заглушки для личных чатов сохранены.
+- **РўР°Р±С‹ MVP РїРѕ 123.md:** Р·Р°РјРµРЅРµРЅС‹ В«РћР±С‰РёР№ С‡Р°С‚ | Р›РёС‡РЅС‹Рµ РїРµСЂРµРїРёСЃРєРё | РЎРѕРѕР±С‰РµРЅРёСЏ РљР»СѓР±Р°В» РЅР° В«Р“РѕСЂРѕРґ | РљР»СѓР±С‹ | РЈРІРµРґРѕРјР»РµРЅРёСЏВ».
+- Р›РёС‡РЅС‹Рµ РїРµСЂРµРїРёСЃРєРё СѓР±СЂР°РЅС‹ РёР· MVP (СѓРґР°Р»С‘РЅ `PrivateChatsTab`).
+- Р”РѕР±Р°РІР»РµРЅР° РІРєР»Р°РґРєР° В«РЈРІРµРґРѕРјР»РµРЅРёСЏВ» (СЃРёСЃС‚РµРјРЅС‹Рµ СЃРѕРѕР±С‰РµРЅРёСЏ, read-only, Р·Р°РіР»СѓС€РєР°).
+- Empty state РіРѕСЂРѕРґСЃРєРѕРіРѕ С‡Р°С‚Р°: В«РџРѕРєР° С‚РёС…Рѕ. РќР°РїРёС€Рё РїРµСЂРІРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ Рё Р·Р°РґР°Р№ СЂРёС‚Рј РіРѕСЂРѕРґСѓ рџЏѓвЂЌв™‚пёЏВ».
+- `MessagesService` РЅРµ РёР·РјРµРЅС‘РЅ; Р·Р°РіР»СѓС€РєРё РґР»СЏ Р»РёС‡РЅС‹С… С‡Р°С‚РѕРІ СЃРѕС…СЂР°РЅРµРЅС‹.
+
+
