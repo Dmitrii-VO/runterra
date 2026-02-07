@@ -100,7 +100,7 @@ export class ClubsRepository extends BaseRepository {
   }
 
   async delete(id: string): Promise<boolean> {
-    const result = await this.execute('DELETE FROM clubs WHERE id = $1', [id]);
+    const result = await this.query('DELETE FROM clubs WHERE id = $1', [id]);
     return (result.rowCount ?? 0) > 0;
   }
 }

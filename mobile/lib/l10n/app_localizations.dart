@@ -1274,6 +1274,12 @@ abstract class AppLocalizations {
   /// **'—'**
   String get runNoData;
 
+  /// No description provided for @runFindMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Find me'**
+  String get runFindMe;
+
   /// No description provided for @distanceMeters.
   ///
   /// In en, this message translates to:

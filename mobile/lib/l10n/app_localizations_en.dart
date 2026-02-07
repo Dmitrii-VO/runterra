@@ -649,6 +649,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get runNoData => '—';
 
   @override
+  String get runFindMe => 'Find me';
+
+  @override
   String distanceMeters(String value) {
     return '$value m';
   }

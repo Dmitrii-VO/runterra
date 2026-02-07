@@ -650,6 +650,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get runNoData => '—';
 
   @override
+  String get runFindMe => 'Найти себя';
+
+  @override
   String distanceMeters(String value) {
     return '$value м';
   }
