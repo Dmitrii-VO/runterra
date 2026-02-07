@@ -1,22 +1,22 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'api_client.dart';
 import 'users_service.dart' show ApiException;
 import '../models/club_model.dart';
 
-/// Сервис для работы с клубами
+/// РЎРµСЂРІРёСЃ РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ РєР»СѓР±Р°РјРё
 /// 
-/// Предоставляет методы для выполнения запросов к API клубов.
-/// Использует ApiClient для выполнения HTTP запросов.
+/// РџСЂРµРґРѕСЃС‚Р°РІР»СЏРµС‚ РјРµС‚РѕРґС‹ РґР»СЏ РІС‹РїРѕР»РЅРµРЅРёСЏ Р·Р°РїСЂРѕСЃРѕРІ Рє API РєР»СѓР±РѕРІ.
+/// РСЃРїРѕР»СЊР·СѓРµС‚ ApiClient РґР»СЏ РІС‹РїРѕР»РЅРµРЅРёСЏ HTTP Р·Р°РїСЂРѕСЃРѕРІ.
 class ClubsService {
   final ApiClient _apiClient;
 
-  /// Создает ClubsService с указанным ApiClient
+  /// РЎРѕР·РґР°РµС‚ ClubsService СЃ СѓРєР°Р·Р°РЅРЅС‹Рј ApiClient
   ClubsService({required ApiClient apiClient}) : _apiClient = apiClient;
 
-  /// Выполняет GET /api/clubs запрос к backend
+  /// Р’С‹РїРѕР»РЅСЏРµС‚ GET /api/clubs Р·Р°РїСЂРѕСЃ Рє backend
   /// 
-  /// Возвращает список клубов (List<ClubModel>).
-  /// Парсит JSON ответ и преобразует его в типизированные модели.
+  /// Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РєР»СѓР±РѕРІ (List<ClubModel>).
+  /// РџР°СЂСЃРёС‚ JSON РѕС‚РІРµС‚ Рё РїСЂРµРѕР±СЂР°Р·СѓРµС‚ РµРіРѕ РІ С‚РёРїРёР·РёСЂРѕРІР°РЅРЅС‹Рµ РјРѕРґРµР»Рё.
   Future<List<ClubModel>> getClubs({required String cityId}) async {
     final uri = Uri(
       path: '/api/clubs',
@@ -26,8 +26,8 @@ class ClubsService {
 
     if (response.statusCode != 200) {
       throw Exception(
-        'Ошибка сервера: ${response.statusCode}\n'
-        'Убедитесь, что backend сервер запущен (npm run dev в папке backend)',
+        'РћС€РёР±РєР° СЃРµСЂРІРµСЂР°: ${response.statusCode}\n'
+        'РЈР±РµРґРёС‚РµСЃСЊ, С‡С‚Рѕ backend СЃРµСЂРІРµСЂ Р·Р°РїСѓС‰РµРЅ (npm run dev РІ РїР°РїРєРµ backend)',
       );
     }
 
@@ -36,12 +36,12 @@ class ClubsService {
       if (response.body.trim().startsWith('<!DOCTYPE') ||
           response.body.trim().startsWith('<html')) {
         throw FormatException(
-          'Получен HTML вместо JSON. Backend сервер не запущен или роутер не зарегистрирован.',
+          'РџРѕР»СѓС‡РµРЅ HTML РІРјРµСЃС‚Рѕ JSON. Backend СЃРµСЂРІРµСЂ РЅРµ Р·Р°РїСѓС‰РµРЅ РёР»Рё СЂРѕСѓС‚РµСЂ РЅРµ Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅ.',
           response.body.substring(0, response.body.length > 200 ? 200 : response.body.length),
         );
       }
       throw FormatException(
-        'Ожидался JSON, но получен $contentType',
+        'РћР¶РёРґР°Р»СЃСЏ JSON, РЅРѕ РїРѕР»СѓС‡РµРЅ $contentType',
         response.body.substring(0, response.body.length > 100 ? 100 : response.body.length),
       );
     }
@@ -52,7 +52,7 @@ class ClubsService {
     } catch (e) {
       if (e is FormatException && response.body.trim().startsWith('<!DOCTYPE')) {
         throw FormatException(
-          'Получен HTML вместо JSON. Backend сервер не запущен или роутер не зарегистрирован.',
+          'РџРѕР»СѓС‡РµРЅ HTML РІРјРµСЃС‚Рѕ JSON. Backend СЃРµСЂРІРµСЂ РЅРµ Р·Р°РїСѓС‰РµРЅ РёР»Рё СЂРѕСѓС‚РµСЂ РЅРµ Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅ.',
           response.body.substring(0, 200),
         );
       }
@@ -60,55 +60,43 @@ class ClubsService {
     }
   }
 
-  /// Выполняет GET /api/clubs/:id запрос к backend
+  /// Р’С‹РїРѕР»РЅСЏРµС‚ GET /api/clubs/:id Р·Р°РїСЂРѕСЃ Рє backend
   /// 
-  /// Возвращает клуб по указанному id (ClubModel).
-  /// Парсит JSON ответ и преобразует его в типизированную модель.
+  /// Р’РѕР·РІСЂР°С‰Р°РµС‚ РєР»СѓР± РїРѕ СѓРєР°Р·Р°РЅРЅРѕРјСѓ id (ClubModel).
+  /// РџР°СЂСЃРёС‚ JSON РѕС‚РІРµС‚ Рё РїСЂРµРѕР±СЂР°Р·СѓРµС‚ РµРіРѕ РІ С‚РёРїРёР·РёСЂРѕРІР°РЅРЅСѓСЋ РјРѕРґРµР»СЊ.
   /// 
-  /// [id] - уникальный идентификатор клуба
+  /// [id] - СѓРЅРёРєР°Р»СЊРЅС‹Р№ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РєР»СѓР±Р°
   Future<ClubModel> getClubById(String id) async {
-    final response = await _apiClient.get('/api/clubs/$id');
+    final response = await _apiClient.get('/api/clubs/${Uri.encodeComponent(id)}');
 
     if (response.statusCode != 200) {
-      throw Exception(
-        'Ошибка сервера: ${response.statusCode}\n'
-        'Убедитесь, что backend сервер запущен (npm run dev в папке backend)',
-      );
+      String errorCode = 'club_fetch_error';
+      String errorMessage = 'Failed to load club (${response.statusCode})';
+      try {
+        final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
+        if (decoded != null) {
+          errorCode = (decoded['code'] as String?) ?? errorCode;
+          errorMessage = (decoded['message'] as String?) ?? errorMessage;
+        }
+      } on FormatException {
+        // Non-JSON response
+      }
+      throw ApiException(errorCode, errorMessage);
     }
 
     final contentType = response.headers['content-type'] ?? '';
     if (!contentType.contains('application/json')) {
-      if (response.body.trim().startsWith('<!DOCTYPE') ||
-          response.body.trim().startsWith('<html')) {
-        throw FormatException(
-          'Получен HTML вместо JSON. Backend сервер не запущен или роутер не зарегистрирован.',
-          response.body.substring(0, response.body.length > 200 ? 200 : response.body.length),
-        );
-      }
-      throw FormatException(
-        'Ожидался JSON, но получен $contentType',
-        response.body.substring(0, response.body.length > 100 ? 100 : response.body.length),
-      );
+      throw ApiException('invalid_response', 'Server returned non-JSON response');
     }
 
-    try {
-      final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
-      return ClubModel.fromJson(jsonData);
-    } catch (e) {
-      if (e is FormatException && response.body.trim().startsWith('<!DOCTYPE')) {
-        throw FormatException(
-          'Получен HTML вместо JSON. Backend сервер не запущен или роутер не зарегистрирован.',
-          response.body.substring(0, 200),
-        );
-      }
-      rethrow;
-    }
+    final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+    return ClubModel.fromJson(jsonData);
   }
 
-  /// Выполняет POST /api/clubs — создание клуба.
+  /// Р’С‹РїРѕР»РЅСЏРµС‚ POST /api/clubs вЂ” СЃРѕР·РґР°РЅРёРµ РєР»СѓР±Р°.
   ///
-  /// Возвращает созданный клуб (ClubModel).
-  /// Бросает [ApiException] при 4xx/5xx или не-JSON ответе.
+  /// Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРѕР·РґР°РЅРЅС‹Р№ РєР»СѓР± (ClubModel).
+  /// Р‘СЂРѕСЃР°РµС‚ [ApiException] РїСЂРё 4xx/5xx РёР»Рё РЅРµ-JSON РѕС‚РІРµС‚Рµ.
   Future<ClubModel> createClub({
     required String name,
     String? description,
@@ -154,8 +142,8 @@ class ClubsService {
     }
   }
 
-  /// Выполняет POST /api/clubs/:id/join — присоединение текущего пользователя к клубу.
-  /// Бросает [ApiException] при 4xx/5xx с code и message из ответа.
+  /// Р’С‹РїРѕР»РЅСЏРµС‚ POST /api/clubs/:id/join вЂ” РїСЂРёСЃРѕРµРґРёРЅРµРЅРёРµ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Рє РєР»СѓР±Сѓ.
+  /// Р‘СЂРѕСЃР°РµС‚ [ApiException] РїСЂРё 4xx/5xx СЃ code Рё message РёР· РѕС‚РІРµС‚Р°.
   Future<void> joinClub(String clubId) async {
     final response = await _apiClient.post('/api/clubs/$clubId/join');
     if (response.statusCode >= 200 && response.statusCode < 300) return;
@@ -173,8 +161,8 @@ class ClubsService {
     throw ApiException(errorCode, errorMessage);
   }
 
-  /// Выполняет POST /api/clubs/:id/leave — выход из клуба.
-  /// Бросает [ApiException] при 4xx/5xx с code и message из ответа.
+  /// Р’С‹РїРѕР»РЅСЏРµС‚ POST /api/clubs/:id/leave вЂ” РІС‹С…РѕРґ РёР· РєР»СѓР±Р°.
+  /// Р‘СЂРѕСЃР°РµС‚ [ApiException] РїСЂРё 4xx/5xx СЃ code Рё message РёР· РѕС‚РІРµС‚Р°.
   Future<void> leaveClub(String clubId) async {
     final response = await _apiClient.post('/api/clubs/$clubId/leave');
     if (response.statusCode >= 200 && response.statusCode < 300) return;

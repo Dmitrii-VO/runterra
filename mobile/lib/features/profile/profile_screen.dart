@@ -48,7 +48,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   /// Создает Future для получения данных профиля
   Future<ProfileModel> _fetchProfile() async {
-    return ServiceLocator.usersService.getProfile();
+    final profile = await ServiceLocator.usersService.getProfile();
+
+    // Keep local currentClubId in sync with backend profile contract:
+    // if backend does not return club object, user is considered not in a club.
+    final currentClubId = ServiceLocator.currentClubService.currentClubId;
+    if (profile.club == null &&
+        currentClubId != null &&
+        currentClubId.isNotEmpty) {
+      await ServiceLocator.currentClubService.setCurrentClubId(null);
+    }
+
+    return profile;
   }
   
   /// Reload profile data
@@ -217,14 +228,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   ProfileClubModel? _resolveClub(ProfileModel profile) {
-    if (profile.club != null) return profile.club;
-    final primaryClubId = profile.user.primaryClubId;
-    if (primaryClubId == null || primaryClubId.isEmpty) return null;
-    return ProfileClubModel(
-      id: primaryClubId,
-      name: 'Club $primaryClubId',
-      role: 'member',
-    );
+    return profile.club;
   }
 }
 

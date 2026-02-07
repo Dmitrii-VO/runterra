@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/api/users_service.dart' show ApiException;
@@ -7,14 +7,14 @@ import '../../shared/models/club_model.dart';
 import '../../shared/ui/details_scaffold.dart';
 import '../../shared/ui/error_display.dart';
 
-/// Экран деталей клуба
+/// Р­РєСЂР°РЅ РґРµС‚Р°Р»РµР№ РєР»СѓР±Р°
 ///
-/// Отображает информацию о клубе, загружая данные через ClubsService.
-/// Использует FutureBuilder для отображения состояний loading/error/success.
+/// РћС‚РѕР±СЂР°Р¶Р°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РєР»СѓР±Рµ, Р·Р°РіСЂСѓР¶Р°СЏ РґР°РЅРЅС‹Рµ С‡РµСЂРµР· ClubsService.
+/// РСЃРїРѕР»СЊР·СѓРµС‚ FutureBuilder РґР»СЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ СЃРѕСЃС‚РѕСЏРЅРёР№ loading/error/success.
 /// 
-/// Принимает clubId через параметр маршрута и загружает данные клуба.
+/// РџСЂРёРЅРёРјР°РµС‚ clubId С‡РµСЂРµР· РїР°СЂР°РјРµС‚СЂ РјР°СЂС€СЂСѓС‚Р° Рё Р·Р°РіСЂСѓР¶Р°РµС‚ РґР°РЅРЅС‹Рµ РєР»СѓР±Р°.
 class ClubDetailsScreen extends StatefulWidget {
-  /// ID клуба (передается через параметр маршрута)
+  /// ID РєР»СѓР±Р° (РїРµСЂРµРґР°РµС‚СЃСЏ С‡РµСЂРµР· РїР°СЂР°РјРµС‚СЂ РјР°СЂС€СЂСѓС‚Р°)
   final String clubId;
 
   const ClubDetailsScreen({
@@ -22,12 +22,12 @@ class ClubDetailsScreen extends StatefulWidget {
     required this.clubId,
   });
 
-  /// Создает Future для получения данных о клубе
+  /// РЎРѕР·РґР°РµС‚ Future РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РґР°РЅРЅС‹С… Рѕ РєР»СѓР±Рµ
   /// 
-  /// TODO: Backend URL вынести в конфигурацию
+  /// TODO: Backend URL РІС‹РЅРµСЃС‚Рё РІ РєРѕРЅС„РёРіСѓСЂР°С†РёСЋ
   /// 
-  /// Примечание: Для Android эмулятора используется 10.0.2.2 вместо localhost.
-  /// Для физического устройства используйте IP адрес хост-машины в локальной сети.
+  /// РџСЂРёРјРµС‡Р°РЅРёРµ: Р”Р»СЏ Android СЌРјСѓР»СЏС‚РѕСЂР° РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ 10.0.2.2 РІРјРµСЃС‚Рѕ localhost.
+  /// Р”Р»СЏ С„РёР·РёС‡РµСЃРєРѕРіРѕ СѓСЃС‚СЂРѕР№СЃС‚РІР° РёСЃРїРѕР»СЊР·СѓР№С‚Рµ IP Р°РґСЂРµСЃ С…РѕСЃС‚-РјР°С€РёРЅС‹ РІ Р»РѕРєР°Р»СЊРЅРѕР№ СЃРµС‚Рё.
   @override
   State<ClubDetailsScreen> createState() => _ClubDetailsScreenState();
 }
@@ -141,22 +141,22 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
       body: FutureBuilder<ClubModel>(
         future: _clubFuture,
         builder: (context, snapshot) {
-          // Состояние загрузки
+          // РЎРѕСЃС‚РѕСЏРЅРёРµ Р·Р°РіСЂСѓР·РєРё
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
               child: CircularProgressIndicator(),
             );
           }
 
-          // Состояние ошибки
+          // РЎРѕСЃС‚РѕСЏРЅРёРµ РѕС€РёР±РєРё
           if (snapshot.hasError) {
             return ErrorDisplay(
-              errorMessage: snapshot.error.toString(),
+              errorMessage: snapshot.error is ApiException ? (snapshot.error as ApiException).message : snapshot.error.toString(),
               onRetry: _retry,
             );
           }
 
-          // Состояние успеха - отображение данных клуба
+          // РЎРѕСЃС‚РѕСЏРЅРёРµ СѓСЃРїРµС…Р° - РѕС‚РѕР±СЂР°Р¶РµРЅРёРµ РґР°РЅРЅС‹С… РєР»СѓР±Р°
           if (snapshot.hasData) {
             final club = snapshot.data!;
             final l10n = AppLocalizations.of(context)!;
@@ -167,13 +167,13 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Название клуба
+                    // РќР°Р·РІР°РЅРёРµ РєР»СѓР±Р°
                     Text(
                       club.name,
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                     const SizedBox(height: 12),
-                    // Город
+                    // Р“РѕСЂРѕРґ
                     Row(
                       children: [
                         Icon(Icons.location_city, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -187,7 +187,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    // Метрики MVP (участники, территории, рейтинг)
+                    // РњРµС‚СЂРёРєРё MVP (СѓС‡Р°СЃС‚РЅРёРєРё, С‚РµСЂСЂРёС‚РѕСЂРёРё, СЂРµР№С‚РёРЅРі)
                     Row(
                       children: [
                         Expanded(
@@ -216,7 +216,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    // Кнопка «Чат клуба» — переход в Сообщения, вкладка Клуб
+                    // РљРЅРѕРїРєР° В«Р§Р°С‚ РєР»СѓР±Р°В» вЂ” РїРµСЂРµС…РѕРґ РІ РЎРѕРѕР±С‰РµРЅРёСЏ, РІРєР»Р°РґРєР° РљР»СѓР±
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
@@ -226,7 +226,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    // Описание клуба (если есть)
+                    // РћРїРёСЃР°РЅРёРµ РєР»СѓР±Р° (РµСЃР»Рё РµСЃС‚СЊ)
                     if (club.description != null && club.description!.isNotEmpty) ...[
                       Text(
                         l10n.detailDescription,
@@ -239,7 +239,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                       ),
                       const SizedBox(height: 24),
                     ],
-                    // Участие в клубе
+                    // РЈС‡Р°СЃС‚РёРµ РІ РєР»СѓР±Рµ
                     if (club.isMember == true)
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -283,7 +283,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
             );
           }
 
-          // Fallback (не должно произойти)
+          // Fallback (РЅРµ РґРѕР»Р¶РЅРѕ РїСЂРѕРёР·РѕР№С‚Рё)
           return Center(
             child: Text(AppLocalizations.of(context)!.noData),
           );
