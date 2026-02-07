@@ -16,7 +16,7 @@ import { ClubRole } from '../modules/clubs';
 import { NotificationType } from '../modules/notifications';
 import { ActivityStatus } from '../modules/activities';
 import { validateBody } from './validateBody';
-import { getUsersRepository, getRunsRepository } from '../db/repositories';
+import { getUsersRepository, getRunsRepository, getClubMembersRepository, getClubsRepository } from '../db/repositories';
 import { findCityById } from '../modules/cities/cities.config';
 import { logger } from '../shared/logger';
 
@@ -91,14 +91,16 @@ router.get('/me/profile', async (req: Request, res: Response) => {
     // Получаем статистику пробежек
     const runStats = await runsRepo.getUserStats(user.id);
 
-    const { getClubMembersRepository } = await import('../db/repositories');
     const clubMembersRepo = getClubMembersRepository();
-    const primaryClubId = await clubMembersRepo.findPrimaryClubIdByUser(user.id);
+    const clubsRepo = getClubsRepository();
+    const rawPrimaryClubId = await clubMembersRepo.findPrimaryClubIdByUser(user.id);
+    const primaryClub = rawPrimaryClubId ? await clubsRepo.findById(rawPrimaryClubId) : null;
+    const primaryClubId = primaryClub?.id;
 
-    const club = primaryClubId
+    const club = primaryClub
       ? {
-          id: primaryClubId,
-          name: `Club ${primaryClubId}`,
+          id: primaryClub.id,
+          name: primaryClub.name,
           role: ClubRole.MEMBER,
         }
       : null;

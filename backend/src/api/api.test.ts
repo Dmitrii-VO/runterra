@@ -306,6 +306,28 @@ describe('API Routes', () => {
     });
   });
 
+  describe('GET /api/users/me/profile club consistency', () => {
+    const { mockClubMembersRepository, mockClubsRepository } = require('../db/repositories');
+
+    beforeEach(() => {
+      mockClubMembersRepository.findPrimaryClubIdByUser.mockReset();
+      mockClubsRepository.findById.mockReset();
+    });
+
+    it('returns club=null when primaryClubId points to missing club', async () => {
+      mockClubMembersRepository.findPrimaryClubIdByUser.mockResolvedValueOnce('new-club-id');
+      mockClubsRepository.findById.mockResolvedValueOnce(null);
+
+      const res = await request(app)
+        .get('/api/users/me/profile')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body.club).toBeNull();
+      expect(res.body.user?.primaryClubId).toBeUndefined();
+    });
+  });
+
   describe('POST /api/events/:id/join', () => {
     const { mockEventsRepository } = require('../db/repositories');
 
