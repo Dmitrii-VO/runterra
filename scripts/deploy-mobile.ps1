@@ -57,7 +57,13 @@ if ($env:FIREBASE_DEBUG) {
 }
 
 do {
-    $confirmUpload = (Read-Host "Proceed with Firebase upload? (y/n)").Trim().ToLowerInvariant()
+    $rawConfirmUpload = Read-Host "Proceed with Firebase upload? (y/n)"
+    if ($null -eq $rawConfirmUpload) {
+        Write-Host "No interactive input available. Proceeding with 'y' in non-interactive mode." -ForegroundColor Yellow
+        $confirmUpload = "y"
+    } else {
+        $confirmUpload = $rawConfirmUpload.Trim().ToLowerInvariant()
+    }
     if ($confirmUpload -notin @("y", "yes", "n", "no")) {
         Write-Host "Please enter 'y' or 'n'." -ForegroundColor Yellow
     }
