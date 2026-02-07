@@ -168,6 +168,28 @@ describe('API Routes', () => {
     });
   });
 
+  describe('Clubs clubId validation', () => {
+    it('GET /api/clubs/:id returns 400 for invalid clubId format', async () => {
+      const res = await request(app)
+        .get('/api/clubs/club:invalid')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('code', 'validation_error');
+      expect(res.body?.details?.fields?.[0]?.field).toBe('clubId');
+    });
+
+    it('POST /api/clubs/:id/join returns 400 for invalid clubId format', async () => {
+      const res = await request(app)
+        .post('/api/clubs/club:invalid/join')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('code', 'validation_error');
+      expect(res.body?.details?.fields?.[0]?.field).toBe('clubId');
+    });
+  });
+
   describe('POST validation', () => {
     it('returns 400 for invalid POST /api/users body', async () => {
       const res = await request(app)

@@ -15,8 +15,25 @@ import { findCityById } from '../modules/cities/cities.config';
 import { validateBody } from './validateBody';
 import { getUsersRepository, getClubMembersRepository, getClubsRepository } from '../db/repositories';
 import { logger } from '../shared/logger';
+import { isValidClubId } from '../shared/clubId';
 
 const router = Router();
+
+function respondInvalidClubId(res: Response): Response {
+  return res.status(400).json({
+    code: 'validation_error',
+    message: 'Path validation failed',
+    details: {
+      fields: [
+        {
+          field: 'clubId',
+          message: 'clubId has invalid format',
+          code: 'club_id_invalid',
+        },
+      ],
+    },
+  });
+}
 
 /**
  * GET /api/clubs
@@ -94,6 +111,9 @@ router.get('/', async (req: Request, res: Response) => {
  */
 router.get('/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
+  if (!isValidClubId(id)) {
+    return respondInvalidClubId(res);
+  }
 
   try {
     const clubsRepo = getClubsRepository();
@@ -252,6 +272,9 @@ router.post('/', validateBody(CreateClubSchema), async (req: Request<{}, ClubVie
  */
 router.post('/:id/join', async (req: Request, res: Response) => {
   const { id: clubId } = req.params;
+  if (!isValidClubId(clubId)) {
+    return respondInvalidClubId(res);
+  }
   const uid = req.authUser?.uid;
   if (!uid) {
     res.status(401).json({
@@ -324,6 +347,9 @@ router.post('/:id/join', async (req: Request, res: Response) => {
  */
 router.post('/:id/leave', async (req: Request, res: Response) => {
   const { id: clubId } = req.params;
+  if (!isValidClubId(clubId)) {
+    return respondInvalidClubId(res);
+  }
   const uid = req.authUser?.uid;
   if (!uid) {
     res.status(401).json({
