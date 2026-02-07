@@ -286,6 +286,18 @@ router.post('/:id/join', async (req: Request, res: Response) => {
   }
 
   try {
+    // Check if club exists
+    const clubsRepo = getClubsRepository();
+    const club = await clubsRepo.findById(clubId);
+    if (!club) {
+      res.status(404).json({
+        code: 'not_found',
+        message: 'Club not found',
+        details: { clubId },
+      });
+      return;
+    }
+
     const usersRepo = getUsersRepository();
     const user = await usersRepo.findByFirebaseUid(uid);
     if (!user) {
@@ -361,6 +373,18 @@ router.post('/:id/leave', async (req: Request, res: Response) => {
   }
 
   try {
+    // Check if club exists
+    const clubsRepo = getClubsRepository();
+    const club = await clubsRepo.findById(clubId);
+    if (!club) {
+      res.status(404).json({
+        code: 'not_found',
+        message: 'Club not found',
+        details: { clubId },
+      });
+      return;
+    }
+
     const usersRepo = getUsersRepository();
     const user = await usersRepo.findByFirebaseUid(uid);
     if (!user) {

@@ -6,6 +6,11 @@ jest.mock('../db/repositories');
 
 const app = createApp();
 
+// Test UUIDs for clubs (after migration 012_clubs_fk, clubId must be UUID)
+const TEST_CLUB_1 = '550e8400-e29b-41d4-a716-446655440001';
+const TEST_CLUB_2 = '550e8400-e29b-41d4-a716-446655440002';
+const TEST_CLUB_NEW = '550e8400-e29b-41d4-a716-446655440003';
+
 /**
  * API smoke tests
  * 
@@ -234,9 +239,9 @@ describe('API Routes', () => {
 
     it('GET /api/clubs/:id returns 200 (stub)', async () => {
       const res = await request(app)
-        .get('/api/clubs/any-id')
+        .get(`/api/clubs/${TEST_CLUB_1}`)
         .set('Authorization', 'Bearer test-token');
-      
+
       expect(res.status).toBe(200);
     });
   });
@@ -289,7 +294,7 @@ describe('API Routes', () => {
     it('sets isMember=false for inactive membership and keeps status', async () => {
       mockClubMembersRepository.findByClubAndUser.mockResolvedValueOnce({
         id: 'cm-1',
-        clubId: 'club-1',
+        clubId: TEST_CLUB_1,
         userId: 'test-user-id',
         status: 'inactive',
         createdAt: new Date(),
@@ -297,7 +302,7 @@ describe('API Routes', () => {
       });
 
       const res = await request(app)
-        .get('/api/clubs/club-1')
+        .get(`/api/clubs/${TEST_CLUB_1}`)
         .set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(200);
@@ -315,7 +320,7 @@ describe('API Routes', () => {
     });
 
     it('returns club=null when primaryClubId points to missing club', async () => {
-      mockClubMembersRepository.findPrimaryClubIdByUser.mockResolvedValueOnce('new-club-id');
+      mockClubMembersRepository.findPrimaryClubIdByUser.mockResolvedValueOnce(TEST_CLUB_NEW);
       mockClubsRepository.findById.mockResolvedValueOnce(null);
 
       const res = await request(app)
@@ -488,17 +493,28 @@ describe('API Routes', () => {
   });
 
   describe('POST /api/clubs/:id/leave', () => {
-    const { mockClubMembersRepository } = require('../db/repositories');
+    const { mockClubMembersRepository, mockClubsRepository } = require('../db/repositories');
 
     beforeEach(() => {
       mockClubMembersRepository.findByClubAndUser.mockReset();
       mockClubMembersRepository.deactivate.mockReset();
+      mockClubsRepository.findById.mockReset();
     });
 
     it('returns 200 when active membership is deactivated', async () => {
+      // Mock club exists
+      mockClubsRepository.findById.mockResolvedValueOnce({
+        id: TEST_CLUB_1,
+        name: 'Test Club',
+        status: 'active',
+        cityId: 'spb',
+        creatorId: 'creator-id',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
       mockClubMembersRepository.findByClubAndUser.mockResolvedValueOnce({
         id: 'cm-1',
-        clubId: 'club-1',
+        clubId: TEST_CLUB_1,
         userId: 'test-user-id',
         status: 'active',
         createdAt: new Date(),
@@ -506,7 +522,7 @@ describe('API Routes', () => {
       });
       mockClubMembersRepository.deactivate.mockResolvedValueOnce({
         id: 'cm-1',
-        clubId: 'club-1',
+        clubId: TEST_CLUB_1,
         userId: 'test-user-id',
         status: 'inactive',
         createdAt: new Date(),
@@ -514,7 +530,7 @@ describe('API Routes', () => {
       });
 
       const res = await request(app)
-        .post('/api/clubs/club-1/leave')
+        .post(`/api/clubs/${TEST_CLUB_1}/leave`)
         .set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(200);
@@ -522,10 +538,20 @@ describe('API Routes', () => {
     });
 
     it('returns 400 when user is not a member', async () => {
+      // Mock club exists
+      mockClubsRepository.findById.mockResolvedValueOnce({
+        id: TEST_CLUB_1,
+        name: 'Test Club',
+        status: 'active',
+        cityId: 'spb',
+        creatorId: 'creator-id',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
       mockClubMembersRepository.findByClubAndUser.mockResolvedValueOnce(null);
 
       const res = await request(app)
-        .post('/api/clubs/club-1/leave')
+        .post(`/api/clubs/${TEST_CLUB_1}/leave`)
         .set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(400);
@@ -533,9 +559,19 @@ describe('API Routes', () => {
     });
 
     it('returns 400 when membership already inactive', async () => {
+      // Mock club exists
+      mockClubsRepository.findById.mockResolvedValueOnce({
+        id: TEST_CLUB_1,
+        name: 'Test Club',
+        status: 'active',
+        cityId: 'spb',
+        creatorId: 'creator-id',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
       mockClubMembersRepository.findByClubAndUser.mockResolvedValueOnce({
         id: 'cm-1',
-        clubId: 'club-1',
+        clubId: TEST_CLUB_1,
         userId: 'test-user-id',
         status: 'inactive',
         createdAt: new Date(),
@@ -543,7 +579,7 @@ describe('API Routes', () => {
       });
 
       const res = await request(app)
-        .post('/api/clubs/club-1/leave')
+        .post(`/api/clubs/${TEST_CLUB_1}/leave`)
         .set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(400);
@@ -612,12 +648,12 @@ describe('API Routes', () => {
 
     it('should return filtered territories when clubId is provided', async () => {
       const res = await request(app)
-        .get('/api/map/data?cityId=spb&clubId=club-1')
+        .get(`/api/map/data?cityId=spb&clubId=${TEST_CLUB_1}`)
         .set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(200);
       expect(res.body.territories).toBeDefined();
-      expect(res.body.territories.every((t: { clubId: string }) => t.clubId === 'club-1')).toBe(true);
+      expect(res.body.territories.every((t: { clubId: string }) => t.clubId === TEST_CLUB_1)).toBe(true);
     });
   });
 
@@ -644,7 +680,7 @@ describe('API Routes', () => {
 
     it('GET /api/territories returns territories only for requested city', async () => {
       const res = await request(app)
-        .get('/api/territories?cityId=spb&clubId=club-1')
+        .get(`/api/territories?cityId=spb&clubId=${TEST_CLUB_1}`)
         .set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(200);

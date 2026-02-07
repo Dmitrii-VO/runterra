@@ -32,8 +32,7 @@ function rowToClub(row: ClubRow): Club {
 export class ClubsRepository extends BaseRepository {
   async findById(id: string): Promise<Club | null> {
     const row = await this.queryOne<ClubRow>(
-      // Cast to text to keep route behavior stable during UUID<->string ID transitions.
-      'SELECT * FROM clubs WHERE id::text = $1',
+      'SELECT * FROM clubs WHERE id = $1',
       [id]
     );
     return row ? rowToClub(row) : null;

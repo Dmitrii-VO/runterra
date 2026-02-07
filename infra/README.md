@@ -147,12 +147,20 @@ GitHub Actions CI (`ci.yml`) запускается на каждый push/PR в
 - [ ] **E) Слой «Пробежки»** — пробежки сегодня/завтра/на дату; заявка на присоединение или создание пробежки (функция присоединения/создания должна быть доступна и без этого слоя)
 
 ### Ошибки (требуют исправления)
+
+#### Общие
 - [ ] Вылет при «Начать пробежку» в Nox — краш на эмуляторе при старте foreground service (GPS). Нужно определить стратегию поддержки/ограничений для Nox и добавить guard-ы/обработку ошибок вокруг старта сервиса.
 - [ ] Firebase App Distribution 403 — тестер не может скачать APK; проверить роли/группы тестировщиков и настройки дистрибуции в Firebase Console.
 - [x] Profile: "type 'Null' is not a subtype of type 'bool'" — исправлено (isMercenary null-safe)
 - [x] Run submit: validation error — исправлено (activityId не отправляется если null, datetime в UTC)
 - [x] Карта не загружается — logcat: "You need to set the API key before using MapKit!" — исправлено (setApiKey в MainActivity до super.onCreate)
 - [x] launch_background — Resources$NotFoundException на эмуляторе (bitmap @mipmap/ic_launcher) — исправлено (только цвет)
+
+#### Клубы (выявлено 2026-02-08)
+- [x] **[КРИТИЧНО]** Отсутствует Foreign Key между `clubs` и `club_members` — исправлено 2026-02-08: создана миграция `012_clubs_fk.sql`, конвертирует `club_members.club_id` из VARCHAR в UUID, удаляет orphaned records, добавляет FK с CASCADE; убран костыль `id::text` из репозитория.
+- [x] **[КРИТИЧНО]** Противоречие slug-based ID vs UUID — исправлено 2026-02-08: валидация `isValidClubId()` изменена на строгий UUID-формат; обновлены комментарии; тесты используют валидные UUID вместо slug-based ID.
+- [x] Нет валидации существования клуба при join/leave — исправлено 2026-02-08: добавлена проверка `clubsRepo.findById()` в `POST /api/clubs/:id/join` и `POST /api/clubs/:id/leave`, возвращается 404 если клуб не найден; обновлены тесты с моками.
+- [x] Ошибка 22P02 при невалидном clubId — исправлено 2026-02-08 коммитом 097ce82: добавлена валидация `isValidClubId()` во все роуты клубов, теперь возвращается 400 с кодом `club_id_invalid` вместо 500.
 
 ### Открытые фичи (по docs/progress.md)
 
