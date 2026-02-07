@@ -45,7 +45,10 @@ export interface Event {
   
   /** Дата и время начала события */
   startDateTime: Date;
-  
+
+  /** Дата и время окончания события (опционально) */
+  endDateTime?: Date;
+
   /** Координаты точки старта */
   startLocation: EventStartLocation;
   

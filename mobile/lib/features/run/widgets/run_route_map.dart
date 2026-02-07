@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../shared/di/service_locator.dart';
 
 /// Карта с маршрутом пробежки в реальном времени.
@@ -107,13 +108,34 @@ class _RunRouteMapState extends State<RunRouteMap> {
     }
   }
 
+  /// Centers the camera on the current position (last GPS point).
+  void centerOnCurrentPosition() {
+    if (_mapController == null || widget.gpsPoints.isEmpty) return;
+    final last = widget.gpsPoints.last;
+    _mapController!.moveCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: Point(latitude: last.latitude, longitude: last.longitude),
+          zoom: _runZoom,
+        ),
+      ),
+      animation: const MapAnimation(
+        type: MapAnimationType.smooth,
+        duration: 0.3,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final points = widget.gpsPoints
         .map((p) => Point(latitude: p.latitude, longitude: p.longitude))
         .toList();
 
     final List<MapObject> mapObjects = [];
+
+    // Draw polyline if we have 2+ points
     if (points.length >= 2) {
       mapObjects.add(
         PolylineMapObject(
@@ -125,9 +147,38 @@ class _RunRouteMapState extends State<RunRouteMap> {
       );
     }
 
-    return YandexMap(
-      onMapCreated: _onMapCreated,
-      mapObjects: mapObjects,
+    // Show current position marker if we have at least 1 GPS point
+    if (points.isNotEmpty) {
+      mapObjects.add(
+        CircleMapObject(
+          mapId: const MapObjectId('current_position'),
+          circle: Circle(center: points.last, radius: 10),
+          strokeColor: Colors.white,
+          strokeWidth: 3,
+          fillColor: Colors.blue,
+        ),
+      );
+    }
+
+    return Stack(
+      children: [
+        YandexMap(
+          onMapCreated: _onMapCreated,
+          mapObjects: mapObjects,
+        ),
+        // "Find me" FAB button
+        if (widget.gpsPoints.isNotEmpty)
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: FloatingActionButton(
+              mini: true,
+              onPressed: centerOnCurrentPosition,
+              tooltip: l10n.runFindMe,
+              child: const Icon(Icons.my_location),
+            ),
+          ),
+      ],
     );
   }
 }

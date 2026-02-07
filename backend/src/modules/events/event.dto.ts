@@ -24,13 +24,16 @@ import type { EventStartLocation } from './event.entity';
 export interface CreateEventDto {
   /** Название события */
   name: string;
-  
+
   /** Тип события */
   type: EventType;
-  
+
   /** Дата и время начала события */
   startDateTime: Date;
-  
+
+  /** Дата и время окончания события (опционально) */
+  endDateTime?: Date;
+
   /** Координаты точки старта */
   startLocation: EventStartLocation;
   
@@ -69,6 +72,7 @@ export const CreateEventSchema = z.object({
   name: z.string(),
   type: z.nativeEnum(EventType),
   startDateTime: z.coerce.date(),
+  endDateTime: z.coerce.date().optional(),
   startLocation: GeoCoordinatesSchema,
   locationName: z.string().optional(),
   organizerId: z.string(),
@@ -95,19 +99,22 @@ export const CreateEventSchema = z.object({
 export interface EventDetailsDto {
   /** Уникальный идентификатор события в системе */
   id: string;
-  
+
   /** Название события */
   name: string;
-  
+
   /** Тип события */
   type: EventType;
-  
+
   /** Статус события */
   status: EventStatus;
-  
+
   /** Дата и время начала события */
   startDateTime: Date;
-  
+
+  /** Дата и время окончания события (опционально) */
+  endDateTime?: Date;
+
   /** Координаты точки старта */
   startLocation: EventStartLocation;
   
@@ -176,19 +183,22 @@ export interface EventDetailsDto {
 export interface EventListItemDto {
   /** Уникальный идентификатор события в системе */
   id: string;
-  
+
   /** Название события */
   name: string;
-  
+
   /** Тип события */
   type: EventType;
-  
+
   /** Статус события */
   status: EventStatus;
-  
+
   /** Дата и время начала события */
   startDateTime: Date;
-  
+
+  /** Дата и время окончания события (опционально) */
+  endDateTime?: Date;
+
   /** Координаты точки старта (для отображения на карте) */
   startLocation: EventStartLocation;
   

@@ -350,6 +350,7 @@
     }
   },
   "runNoData": "—",
+  "runFindMe": "Find me",
   "distanceMeters": "{value} m",
   "@distanceMeters": {
     "placeholders": {

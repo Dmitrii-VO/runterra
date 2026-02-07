@@ -13,19 +13,19 @@ import { Router, Request, Response } from 'express';
 import { ClubStatus, ClubViewDto, CreateClubDto, CreateClubSchema } from '../modules/clubs';
 import { findCityById } from '../modules/cities/cities.config';
 import { validateBody } from './validateBody';
-import { getUsersRepository, getClubMembersRepository } from '../db/repositories';
+import { getUsersRepository, getClubMembersRepository, getClubsRepository } from '../db/repositories';
 import { logger } from '../shared/logger';
 
 const router = Router();
 
 /**
  * GET /api/clubs
- * 
+ *
  * Возвращает список клубов.
- * 
- * TODO: Реализовать пагинацию, фильтрацию, сортировку.
+ *
+ * TODO: Реализовать пагинацию, сортировку.
  */
-router.get('/', (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   const query = req.query as Record<string, string | undefined>;
   const { cityId } = query;
 
@@ -62,31 +62,29 @@ router.get('/', (req: Request, res: Response) => {
     });
   }
 
-  // Static sample clubs for MVP (no clubs table yet).
-  // Align ids with territories config for "owner club" examples.
-  const now = new Date();
-  const clubs: ClubViewDto[] = [
-    {
-      id: 'club-1',
-      name: 'Runterra Крестовский',
-      description: 'Клуб утренних пробежек в Приморском парке Победы и на Крестовском острове.',
-      status: ClubStatus.ACTIVE,
-      cityId,
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: 'club-2',
-      name: 'Runterra Парк 300-летия',
-      description: 'Сообщество любителей набережной и парка 300-летия Санкт-Петербурга.',
-      status: ClubStatus.ACTIVE,
-      cityId,
-      createdAt: now,
-      updatedAt: now,
-    },
-  ];
+  try {
+    const clubsRepo = getClubsRepository();
+    const clubs = await clubsRepo.findByCityId(cityId);
 
-  res.status(200).json(clubs);
+    const clubsDto: ClubViewDto[] = clubs.map(club => ({
+      id: club.id,
+      name: club.name,
+      description: club.description,
+      status: club.status,
+      cityId: club.cityId,
+      createdAt: club.createdAt,
+      updatedAt: club.updatedAt,
+    }));
+
+    res.status(200).json(clubsDto);
+  } catch (error) {
+    logger.error('Error fetching clubs', { cityId, error });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+      details: undefined,
+    });
+  }
 });
 
 /**
@@ -97,71 +95,153 @@ router.get('/', (req: Request, res: Response) => {
 router.get('/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
 
-  const cityId = 'spb';
-  const city = findCityById(cityId);
-  const mockClub: ClubViewDto & {
-    isMember: boolean;
-    membershipStatus?: string;
-    cityName?: string;
-    membersCount?: number;
-    territoriesCount?: number;
-    cityRank?: number;
-  } = {
-    id,
-    name: `Club ${id}`,
-    description: `Description for club ${id}`,
-    status: ClubStatus.ACTIVE,
-    cityId,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    isMember: false,
-    cityName: city?.name,
-    membersCount: 0,
-    territoriesCount: 0,
-    cityRank: 0,
-  };
+  try {
+    const clubsRepo = getClubsRepository();
+    const club = await clubsRepo.findById(id);
 
-  const uid = req.authUser?.uid;
-  if (uid) {
-    try {
-      const usersRepo = getUsersRepository();
-      const user = await usersRepo.findByFirebaseUid(uid);
-      if (user) {
-        const clubMembersRepo = getClubMembersRepository();
-        const membership = await clubMembersRepo.findByClubAndUser(id, user.id);
-        mockClub.isMember = membership?.status === 'active';
-        if (membership) mockClub.membershipStatus = membership.status;
-      }
-    } catch (error) {
-      logger.error('Error fetching club membership', { clubId: id, error });
+    if (!club) {
+      return res.status(404).json({
+        code: 'not_found',
+        message: 'Club not found',
+        details: { clubId: id },
+      });
     }
-  }
 
-  res.status(200).json(mockClub);
+    const city = findCityById(club.cityId);
+    const clubDto: ClubViewDto & {
+      isMember: boolean;
+      membershipStatus?: string;
+      cityName?: string;
+      membersCount?: number;
+      territoriesCount?: number;
+      cityRank?: number;
+    } = {
+      id: club.id,
+      name: club.name,
+      description: club.description,
+      status: club.status,
+      cityId: club.cityId,
+      createdAt: club.createdAt,
+      updatedAt: club.updatedAt,
+      isMember: false,
+      cityName: city?.name,
+      membersCount: 0, // TODO: calculate from club_members
+      territoriesCount: 0, // TODO: calculate from territories
+      cityRank: 0, // TODO: calculate rank
+    };
+
+    const uid = req.authUser?.uid;
+    if (uid) {
+      try {
+        const usersRepo = getUsersRepository();
+        const user = await usersRepo.findByFirebaseUid(uid);
+        if (user) {
+          const clubMembersRepo = getClubMembersRepository();
+          const membership = await clubMembersRepo.findByClubAndUser(id, user.id);
+          clubDto.isMember = membership?.status === 'active';
+          if (membership) clubDto.membershipStatus = membership.status;
+        }
+      } catch (error) {
+        logger.error('Error fetching club membership', { clubId: id, error });
+      }
+    }
+
+    res.status(200).json(clubDto);
+  } catch (error) {
+    logger.error('Error fetching club', { clubId: id, error });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+      details: undefined,
+    });
+  }
 });
 
 /**
  * POST /api/clubs
- * 
+ *
  * Создает новый клуб.
- * 
+ *
  * Техническая валидация: тело запроса проверяется через CreateClubSchema.
  * TODO: Реализовать проверку уникальности названия.
  */
-router.post('/', validateBody(CreateClubSchema), (req: Request<{}, ClubViewDto, CreateClubDto>, res: Response) => {
+router.post('/', validateBody(CreateClubSchema), async (req: Request<{}, ClubViewDto, CreateClubDto>, res: Response) => {
   const dto = req.body;
+  const uid = req.authUser?.uid;
 
-  const mockClub: ClubViewDto = {
-    id: 'new-club-id',
-    name: dto.name,
-    description: dto.description,
-    status: dto.status || ClubStatus.PENDING,
-    cityId: dto.cityId,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
+  if (!uid) {
+    return res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+      details: { reason: 'missing_header' },
+    });
+  }
 
-  res.status(201).json(mockClub);
+  try {
+    // Get current user
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'Authentication required',
+        details: {
+          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+        },
+      });
+    }
+
+    // Validate city exists
+    const city = findCityById(dto.cityId);
+    if (!city) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'Request body validation failed',
+        details: {
+          fields: [
+            {
+              field: 'cityId',
+              message: 'Unknown cityId',
+              code: 'city_not_found',
+            },
+          ],
+        },
+      });
+    }
+
+    // Create club
+    const clubsRepo = getClubsRepository();
+    const club = await clubsRepo.create(
+      dto.name,
+      dto.cityId,
+      user.id,
+      dto.description,
+      dto.status || ClubStatus.PENDING
+    );
+
+    // Auto-add creator as active member
+    const clubMembersRepo = getClubMembersRepository();
+    await clubMembersRepo.create(club.id, user.id, 'active');
+
+    const clubDto: ClubViewDto = {
+      id: club.id,
+      name: club.name,
+      description: club.description,
+      status: club.status,
+      cityId: club.cityId,
+      createdAt: club.createdAt,
+      updatedAt: club.updatedAt,
+    };
+
+    res.status(201).json(clubDto);
+  } catch (error) {
+    logger.error('Error creating club', { dto, error });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+      details: undefined,
+    });
+  }
 });
 
 /**

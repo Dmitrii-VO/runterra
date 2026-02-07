@@ -28,22 +28,25 @@ import { ClubStatus } from './club.status';
 export interface Club {
   /** Уникальный идентификатор клуба в системе */
   id: string;
-  
+
   /** Название клуба */
   name: string;
-  
+
   /** Описание клуба (опционально) */
   description?: string;
-  
+
   /** Идентификатор города, в котором базируется клуб */
   cityId: string;
-  
+
+  /** Идентификатор создателя клуба (user.id) */
+  creatorId: string;
+
   /** Статус клуба */
   status: ClubStatus;
-  
+
   /** Дата создания записи */
   createdAt: Date;
-  
+
   /** Дата последнего обновления */
   updatedAt: Date;
 }

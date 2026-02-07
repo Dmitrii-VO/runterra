@@ -217,6 +217,7 @@
   "runHeartRate": "Пульс",
   "runHeartRateValue": "{bpm} уд/мин",
   "runNoData": "—",
+  "runFindMe": "Найти себя",
   "distanceMeters": "{value} м",
   "distanceKm": "{value} км",
   "loginTitle": "Runterra",

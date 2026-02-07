@@ -15,6 +15,7 @@ interface EventRow {
   type: string;
   status: string;
   start_date_time: Date;
+  end_date_time: Date | null;
   start_longitude: number;
   start_latitude: number;
   location_name: string | null;
@@ -30,13 +31,47 @@ interface EventRow {
   updated_at: Date;
 }
 
+/**
+ * Compute actual event status based on time and participant count.
+ *
+ * Logic:
+ * - If endDateTime has passed, status is COMPLETED
+ * - If participant limit is reached, status is FULL
+ * - Otherwise, use status from DB
+ */
+function computeEventStatus(row: EventRow): EventStatus {
+  const dbStatus = row.status as EventStatus;
+
+  // If event is already cancelled/completed in DB, respect that
+  if (dbStatus === EventStatus.CANCELLED || dbStatus === EventStatus.COMPLETED) {
+    return dbStatus;
+  }
+
+  // Check if event has ended (time-based transition to completed)
+  if (row.end_date_time) {
+    const now = new Date();
+    if (row.end_date_time < now) {
+      return EventStatus.COMPLETED;
+    }
+  }
+
+  // Check if event is full (participant limit reached)
+  if (row.participant_limit !== null && row.participant_count >= row.participant_limit) {
+    return EventStatus.FULL;
+  }
+
+  // Otherwise, use status from DB
+  return dbStatus;
+}
+
 function rowToEvent(row: EventRow): Event {
   return {
     id: row.id,
     name: row.name,
     type: row.type as EventType,
-    status: row.status as EventStatus,
+    status: computeEventStatus(row),
     startDateTime: row.start_date_time,
+    endDateTime: row.end_date_time || undefined,
     startLocation: {
       longitude: row.start_longitude,
       latitude: row.start_latitude,
@@ -195,6 +230,7 @@ export class EventsRepository extends BaseRepository {
     name: string;
     type: EventType;
     startDateTime: Date;
+    endDateTime?: Date;
     startLocation: { longitude: number; latitude: number };
     locationName?: string;
     organizerId: string;
@@ -207,16 +243,17 @@ export class EventsRepository extends BaseRepository {
   }): Promise<Event> {
     const row = await this.queryOne<EventRow>(
       `INSERT INTO events (
-        name, type, status, start_date_time, start_longitude, start_latitude,
+        name, type, status, start_date_time, end_date_time, start_longitude, start_latitude,
         location_name, organizer_id, organizer_type, difficulty_level,
         description, participant_limit, territory_id, city_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING *`,
       [
         data.name,
         data.type,
         EventStatus.OPEN,
         data.startDateTime,
+        data.endDateTime || null,
         data.startLocation.longitude,
         data.startLocation.latitude,
         data.locationName || null,

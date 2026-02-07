@@ -269,9 +269,10 @@ class _RunScreenState extends State<RunScreen> {
   }
 
   /// Pace in min:sec per km. Returns null if distance is too small.
+  /// Wait for at least 50m to calculate meaningful pace.
   String? _formatPace(Duration duration, double distanceMeters) {
     final distanceKm = distanceMeters / 1000;
-    if (distanceKm < 0.01) return null;
+    if (distanceKm < 0.05) return null; // 50m minimum for stable GPS
     final totalSeconds = (duration.inSeconds / distanceKm).round();
     final m = totalSeconds ~/ 60;
     final s = totalSeconds % 60;
@@ -385,10 +386,12 @@ class _RunScreenState extends State<RunScreen> {
   }
 
   Widget _buildRunningContent() {
+    final l10n = AppLocalizations.of(context)!;
     final duration = _session?.duration ?? Duration.zero;
     final distance = _session?.distance ?? 0.0;
     final gpsStatus = _session?.gpsStatus ?? GpsStatus.searching;
     final gpsPoints = _session?.gpsPoints ?? [];
+    final paceStr = _formatPace(duration, distance);
 
     return Column(
       children: [
@@ -432,6 +435,16 @@ class _RunScreenState extends State<RunScreen> {
                 _formatDistance(context, distance),
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       color: Colors.grey,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              // Show current pace if we have enough distance
+              Text(
+                paceStr != null
+                    ? '${l10n.runPace}: ${l10n.runPaceValue(paceStr)}'
+                    : '${l10n.runPace}: ${l10n.runNoData}',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: paceStr != null ? null : Colors.grey,
                     ),
               ),
             ],
