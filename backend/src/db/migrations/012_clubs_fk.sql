@@ -31,14 +31,11 @@ BEGIN
 END $$;
 
 -- Step 2: Convert club_id from VARCHAR to UUID
--- This uses id::text comparison from clubs to handle existing data
+-- Direct cast: assumes all club_id values are valid UUIDs
+-- (orphaned records were cleaned up in Step 1)
 ALTER TABLE club_members
   ALTER COLUMN club_id TYPE UUID
-  USING (
-    SELECT c.id
-    FROM clubs c
-    WHERE c.id::text = club_members.club_id
-  );
+  USING club_id::uuid;
 
 -- Step 3: Add Foreign Key constraint
 ALTER TABLE club_members
