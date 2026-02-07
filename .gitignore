@@ -37,3 +37,6 @@ coverage/
 # Temp files
 123.md
 imageslogs/
+
+# AI workspace
+ai/
