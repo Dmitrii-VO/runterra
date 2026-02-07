@@ -55,6 +55,19 @@ Write-Host "APK size: $([math]::Round((Get-Item $ApkPath).Length / 1MB, 2)) MB. 
 if ($env:FIREBASE_DEBUG) {
     Write-Host "FIREBASE_DEBUG is set - verbose Firebase CLI output enabled." -ForegroundColor Yellow
 }
+
+do {
+    $confirmUpload = (Read-Host "Proceed with Firebase upload? (y/n)").Trim().ToLowerInvariant()
+    if ($confirmUpload -notin @("y", "yes", "n", "no")) {
+        Write-Host "Please enter 'y' or 'n'." -ForegroundColor Yellow
+    }
+} while ($confirmUpload -notin @("y", "yes", "n", "no"))
+
+if ($confirmUpload -in @("n", "no")) {
+    Write-Host "Upload canceled by user." -ForegroundColor Yellow
+    exit 1
+}
+
 firebase appdistribution:distribute $ApkPath `
     --app $appId `
     --release-notes $ReleaseNotes `
