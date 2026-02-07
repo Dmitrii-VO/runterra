@@ -129,7 +129,7 @@ describe('EventsRepository', () => {
 
       const result = await repo.joinEvent('ev-1', 'user-1');
 
-      expect(result.error).toBe('Event is full');
+      expect(result.error).toBe('Cannot join event with status: full');
       expect(result.participant).toBeUndefined();
     });
 
