@@ -236,7 +236,7 @@ router.post('/', validateBody(CreateClubSchema), async (req: Request<{}, ClubVie
       dto.cityId,
       user.id,
       dto.description,
-      dto.status || ClubStatus.PENDING
+      dto.status ?? ClubStatus.ACTIVE
     );
 
     // Auto-add creator as active member

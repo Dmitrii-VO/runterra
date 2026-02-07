@@ -83,10 +83,10 @@ export class ClubMembersRepository extends BaseRepository {
     return rows.map(rowToMembership);
   }
 
-  /** Get primary (first) club id for user (MVP: one club). */
+  /** Get primary (most recent) club id for user (MVP: one club). Newest membership is shown in profile. */
   async findPrimaryClubIdByUser(userId: string): Promise<string | null> {
     const row = await this.queryOne<{ club_id: string }>(
-      'SELECT club_id FROM club_members WHERE user_id = $1 AND status = $2 ORDER BY created_at ASC LIMIT 1',
+      'SELECT club_id FROM club_members WHERE user_id = $1 AND status = $2 ORDER BY created_at DESC LIMIT 1',
       [userId, 'active'],
     );
     return row?.club_id ?? null;

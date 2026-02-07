@@ -93,6 +93,21 @@ npm start
 
 Сервер запускается на `http://localhost:3000` (или порт из переменной окружения `PORT`).
 
+### Запуск на сервере (SSH runterra)
+
+Миграции:
+```bash
+npm run migrate   # или npm run migrate:prod после сборки
+```
+
+Одноразовая правка: активировать клуб «Лупкины» (чтобы он отображался в списке и в профиле):
+```bash
+# Из каталога backend на сервере, с настроенным .env / DATABASE_URL:
+psql "$DATABASE_URL" -f scripts/fix-lupkiny-club.sql
+# Или явно:
+psql -h localhost -U postgres -d runterra -f scripts/fix-lupkiny-club.sql
+```
+
 **Важно:** Сервер слушает на всех интерфейсах (`0.0.0.0`), что позволяет подключаться к нему:
 - С локальной машины: `http://localhost:3000`
 - Из Android эмулятора: `http://10.0.2.2:3000`
