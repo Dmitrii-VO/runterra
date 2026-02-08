@@ -35,7 +35,7 @@
   "headerMercenary": "Меркатель",
   "headerNoClub": "Без клуба",
   "roleMember": "Участник",
-  "roleModerator": "Модератор",
+  "roleTrainer": "Тренер",
   "roleLeader": "Лидер",
   "quickOpenMap": "Открыть карту",
   "quickFindTraining": "Найти тренировку",
@@ -319,5 +319,14 @@
   "runStuckSessionTitle": "Пробежка в процессе",
   "runStuckSessionMessage": "У вас есть незавершённая пробежка. Хотите продолжить её или начать заново?",
   "runStuckSessionResume": "Продолжить",
-  "runStuckSessionCancel": "Отменить и начать заново"
+  "runStuckSessionCancel": "Отменить и начать заново",
+  "editClubTitle": "Редактировать клуб",
+  "editClubName": "Название клуба",
+  "editClubDescription": "Описание",
+  "editClubNameHelperText": "символов",
+  "editClubDescriptionHelperText": "Необязательно, до 500 символов",
+  "editClubNameError": "Название должно быть от 3 до 50 символов",
+  "editClubSave": "Сохранить",
+  "editClubError": "Не удалось обновить клуб",
+  "clubEditButton": "Редактировать клуб"
 }

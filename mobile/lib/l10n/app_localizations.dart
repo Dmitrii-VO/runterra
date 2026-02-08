@@ -308,11 +308,11 @@ abstract class AppLocalizations {
   /// **'Member'**
   String get roleMember;
 
-  /// No description provided for @roleModerator.
+  /// No description provided for @roleTrainer.
   ///
   /// In en, this message translates to:
-  /// **'Moderator'**
-  String get roleModerator;
+  /// **'Trainer'**
+  String get roleTrainer;
 
   /// No description provided for @roleLeader.
   ///

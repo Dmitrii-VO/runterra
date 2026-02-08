@@ -161,8 +161,8 @@ class ClubsService {
     throw ApiException(errorCode, errorMessage);
   }
 
-  /// Р’С‹РїРѕР»РЅСЏРµС‚ POST /api/clubs/:id/leave вЂ” РІС‹С…РѕРґ РёР· РєР»СѓР±Р°.
-  /// Р‘СЂРѕСЃР°РµС‚ [ApiException] РїСЂРё 4xx/5xx СЃ code Рё message РёР· РѕС‚РІРµС‚Р°.
+  /// Р'С‹РїРѕР»РЅСЏРµС‚ POST /api/clubs/:id/leave вЂ" РІС‹С…РѕРґ РёР· РєР»СѓР±Р°.
+  /// Р'СЂРѕСЃР°РµС‚ [ApiException] РїСЂРё 4xx/5xx СЃ code Рё message РёР· РѕС‚РІРµС‚Р°.
   Future<void> leaveClub(String clubId) async {
     final response = await _apiClient.post('/api/clubs/$clubId/leave');
     if (response.statusCode >= 200 && response.statusCode < 300) return;
@@ -178,5 +178,47 @@ class ClubsService {
       // Non-JSON response
     }
     throw ApiException(errorCode, errorMessage);
+  }
+
+  /// Р'С‹РїРѕР»РЅСЏРµС‚ PATCH /api/clubs/:id вЂ" СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ РєР»СѓР±Р°.
+  ///
+  /// Р'РѕР·РІСЂР°С‰Р°РµС‚ РѕР±РЅРѕРІР»РµРЅРЅС‹Р№ РєР»СѓР± (ClubModel).
+  /// Р'СЂРѕСЃР°РµС‚ [ApiException] РїСЂРё 4xx/5xx РёР»Рё РЅРµ-JSON РѕС‚РІРµС‚Рµ.
+  ///
+  /// [clubId] - СѓРЅРёРєР°Р»СЊРЅС‹Р№ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РєР»СѓР±Р°
+  /// [name] - РЅРѕРІРѕРµ РЅР°Р·РІР°РЅРёРµ РєР»СѓР±Р° (РѕРїС†РёРѕРЅР°Р»СЊРЅРѕ)
+  /// [description] - РЅРѕРІРѕРµ РѕРїРёСЃР°РЅРёРµ РєР»СѓР±Р° (РѕРїС†РёРѕРЅР°Р»СЊРЅРѕ)
+  Future<ClubModel> updateClub(
+    String clubId, {
+    String? name,
+    String? description,
+  }) async {
+    final body = <String, dynamic>{};
+    if (name != null) body['name'] = name;
+    if (description != null) body['description'] = description;
+
+    final response = await _apiClient.patch('/api/clubs/$clubId', body: body);
+
+    if (response.statusCode == 200) {
+      final contentType = response.headers['content-type'] ?? '';
+      if (!contentType.contains('application/json')) {
+        throw ApiException('invalid_response', 'Server returned non-JSON response');
+      }
+      final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+      return ClubModel.fromJson(jsonData);
+    } else {
+      String errorCode = 'update_club_error';
+      String errorMessage = 'Failed to update club (${response.statusCode})';
+      try {
+        final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
+        if (decoded != null) {
+          errorCode = (decoded['code'] as String?) ?? errorCode;
+          errorMessage = (decoded['message'] as String?) ?? errorMessage;
+        }
+      } on FormatException {
+        // Non-JSON response
+      }
+      throw ApiException(errorCode, errorMessage);
+    }
   }
 }

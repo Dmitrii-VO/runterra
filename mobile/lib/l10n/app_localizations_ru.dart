@@ -127,7 +127,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get roleMember => 'Участник';
 
   @override
-  String get roleModerator => 'Модератор';
+  String get roleTrainer => 'Тренер';
 
   @override
   String get roleLeader => 'Лидер';

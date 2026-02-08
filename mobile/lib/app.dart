@@ -5,6 +5,7 @@ import 'features/activity/activity_details_screen.dart';
 import 'features/city/city_details_screen.dart';
 import 'features/club/club_details_screen.dart';
 import 'features/club/create_club_screen.dart';
+import 'features/club/edit_club_screen.dart';
 import 'features/login/login_screen.dart';
 import 'features/territory/territory_details_screen.dart';
 import 'features/map/map_screen.dart';
@@ -16,6 +17,7 @@ import 'features/events/create_event_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'features/profile/edit_profile_screen.dart';
 import 'shared/models/profile_model.dart';
+import 'shared/models/club_model.dart';
 import 'shared/auth/auth_service.dart';
 import 'shared/di/service_locator.dart';
 import 'shared/navigation/bottom_nav.dart';
@@ -158,6 +160,14 @@ class RunterraApp extends StatelessWidget {
         builder: (context, state) {
           final clubId = state.pathParameters['id'] ?? '';
           return ClubDetailsScreen(clubId: clubId);
+        },
+      ),
+      // Редактирование клуба (без BottomNav, push from ClubDetailsScreen with extra: ClubModel)
+      GoRoute(
+        path: '/club/:id/edit',
+        builder: (context, state) {
+          final club = state.extra as ClubModel;
+          return EditClubScreen(club: club);
         },
       ),
       // Отдельный маршрут для CityDetailsScreen (без BottomNav)

@@ -2,6 +2,34 @@
 
 ## История изменений
 
+### 2026-02-08 — Редактирование профиля клуба для лидера
+
+**Контекст:** Согласно product_spec.md §5.3, лидер клуба должен иметь возможность редактировать профиль клуба (название, описание).
+
+**Backend:**
+- Добавлен `PATCH /api/clubs/:id` для обновления клуба
+- Проверка роли: только лидер (role='leader') может редактировать
+- Валидация: name (3-50 символов), description (до 500 символов)
+- Создан `UpdateClubDto` и `UpdateClubSchema` в `club.dto.ts`
+- Обновлён `GET /api/clubs/:id`: добавлено поле `userRole` в ответ ('member' | 'trainer' | 'leader' | null)
+
+**Mobile:**
+- Добавлено поле `userRole` в `ClubModel`
+- Создан `EditClubScreen` для редактирования названия и описания
+- На `ClubDetailsScreen` добавлена кнопка "Редактировать клуб" (видна только лидерам)
+- Реализована валидация на клиенте (name 3-50 символов, description до 500)
+- После успешного редактирования данные клуба обновляются автоматически
+
+**Локализация:**
+- EN: editClubTitle, editClubName, editClubDescription, editClubNameHelperText, editClubDescriptionHelperText, editClubNameError, editClubSave, editClubError, clubEditButton
+- RU: соответствующие переводы
+
+**Ограничения MVP:**
+- Редактируются только название и описание
+- Город, зоны активности, расписание, логотип — в будущих версиях
+
+**Файлы:** `backend/src/modules/clubs/club.dto.ts`, `backend/src/api/clubs.routes.ts`, `mobile/lib/shared/models/club_model.dart`, `mobile/lib/shared/api/clubs_service.dart`, `mobile/lib/features/club/edit_club_screen.dart`, `mobile/lib/features/club/club_details_screen.dart`, `mobile/lib/app.dart`, `mobile/l10n/app_en.arb`, `mobile/l10n/app_ru.arb`.
+
 ### 2026-02-06 — Статические клубы, привязанные к реальным беговым территориям СПб
 
 - **Backend:** Эндпоинт `GET /api/clubs` больше не возвращает обезличенный `Test Club`. Для указанного `cityId` теперь отдаётся небольшой статический список клубов, согласованный с конфигом территорий:  

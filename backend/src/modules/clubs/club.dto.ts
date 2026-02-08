@@ -43,8 +43,32 @@ export const CreateClubSchema = z.object({
 });
 
 /**
+ * DTO для обновления клуба
+ *
+ * Используется при редактировании существующего клуба.
+ * Все поля опциональны - обновляются только переданные.
+ */
+export interface UpdateClubDto {
+  /** Название клуба (3-50 символов) */
+  name?: string;
+
+  /** Описание клуба (до 500 символов) */
+  description?: string;
+}
+
+/**
+ * Runtime schema for validating UpdateClubDto payloads.
+ *
+ * Validates name length (3-50 chars) and description length (max 500 chars).
+ */
+export const UpdateClubSchema = z.object({
+  name: z.string().min(3).max(50).optional(),
+  description: z.string().max(500).optional(),
+}).strict();
+
+/**
  * DTO для отображения клуба
- * 
+ *
  * Используется для передачи данных клуба клиенту.
  * Содержит все необходимые поля для отображения клуба
  * в интерфейсе приложения.
@@ -52,22 +76,22 @@ export const CreateClubSchema = z.object({
 export interface ClubViewDto {
   /** Уникальный идентификатор клуба в системе */
   id: string;
-  
+
   /** Название клуба */
   name: string;
-  
+
   /** Описание клуба (опционально) */
   description?: string;
-  
+
   /** Идентификатор города, в котором базируется клуб */
   cityId: string;
-  
+
   /** Статус клуба */
   status: ClubStatus;
-  
+
   /** Дата создания записи */
   createdAt: Date;
-  
+
   /** Дата последнего обновления */
   updatedAt: Date;
 }

@@ -35,6 +35,9 @@ class ClubModel {
   /// Статус членства: pending, active, inactive, suspended (если isMember == true)
   final String? membershipStatus;
 
+  /// Роль пользователя в клубе: 'member', 'trainer', 'leader', null
+  final String? userRole;
+
   /// Количество участников (MVP метрика, placeholder если нет с backend)
   final int? membersCount;
 
@@ -55,6 +58,7 @@ class ClubModel {
     required this.updatedAt,
     this.isMember,
     this.membershipStatus,
+    this.userRole,
     this.membersCount,
     this.territoriesCount,
     this.cityRank,
@@ -76,6 +80,7 @@ class ClubModel {
       updatedAt: DateTime.parse(json['updatedAt'] as String),
       isMember: json['isMember'] as bool?,
       membershipStatus: json['membershipStatus'] as String?,
+      userRole: json['userRole'] as String?,
       membersCount: (json['membersCount'] as num?)?.toInt(),
       territoriesCount: (json['territoriesCount'] as num?)?.toInt(),
       cityRank: (json['cityRank'] as num?)?.toInt(),

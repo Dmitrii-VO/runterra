@@ -128,6 +128,16 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
     }
   }
 
+  /// Navigate to edit club screen and refresh data on success
+  Future<void> _onEditClub(ClubModel club) async {
+    final result = await context.push<bool>('/club/${club.id}/edit', extra: club);
+
+    // If edit was successful, refresh club data
+    if (result == true && mounted) {
+      _retry();
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -238,6 +248,18 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
                       const SizedBox(height: 24),
+                    ],
+                    // РљРЅРѕРїРєР° СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ (С‚РѕР»СЊРєРѕ РґР»СЏ Р»РёРґРµСЂРѕРІ)
+                    if (club.userRole == 'leader') ...[
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: () => _onEditClub(club),
+                          icon: const Icon(Icons.edit),
+                          label: Text(l10n.clubEditButton),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                     ],
                     // РЈС‡Р°СЃС‚РёРµ РІ РєР»СѓР±Рµ
                     if (club.isMember == true)

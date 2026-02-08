@@ -63,7 +63,7 @@
   "headerMercenary": "Mercenary",
   "headerNoClub": "No club",
   "roleMember": "Member",
-  "roleModerator": "Moderator",
+  "roleTrainer": "Trainer",
   "roleLeader": "Leader",
   "quickOpenMap": "Open map",
   "quickFindTraining": "Find workout",
@@ -493,5 +493,14 @@
   "runStuckSessionTitle": "Run in progress",
   "runStuckSessionMessage": "You have an unfinished run. Would you like to continue it or start fresh?",
   "runStuckSessionResume": "Continue run",
-  "runStuckSessionCancel": "Discard and start new"
+  "runStuckSessionCancel": "Discard and start new",
+  "editClubTitle": "Edit Club",
+  "editClubName": "Club Name",
+  "editClubDescription": "Description",
+  "editClubNameHelperText": "characters",
+  "editClubDescriptionHelperText": "Optional, up to 500 characters",
+  "editClubNameError": "Name must be 3-50 characters",
+  "editClubSave": "Save",
+  "editClubError": "Failed to update club",
+  "clubEditButton": "Edit Club"
 }

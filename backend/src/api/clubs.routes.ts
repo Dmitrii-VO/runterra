@@ -10,7 +10,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { ClubStatus, ClubViewDto, CreateClubDto, CreateClubSchema } from '../modules/clubs';
+import { ClubStatus, ClubViewDto, CreateClubDto, CreateClubSchema, UpdateClubDto, UpdateClubSchema } from '../modules/clubs';
 import { findCityById } from '../modules/cities/cities.config';
 import { validateBody } from './validateBody';
 import { getUsersRepository, getClubMembersRepository, getClubsRepository } from '../db/repositories';
@@ -136,6 +136,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     const clubDto: ClubViewDto & {
       isMember: boolean;
       membershipStatus?: string;
+      userRole?: string | null;
       cityName?: string;
       membersCount?: number;
       territoriesCount?: number;
@@ -149,6 +150,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       createdAt: club.createdAt,
       updatedAt: club.updatedAt,
       isMember: false,
+      userRole: null,
       cityName: city?.name,
       membersCount,
       territoriesCount: 0, // TODO: calculate from territories
@@ -163,7 +165,10 @@ router.get('/:id', async (req: Request, res: Response) => {
         if (user) {
           const membership = await clubMembersRepo.findByClubAndUser(id, user.id);
           clubDto.isMember = membership?.status === 'active';
-          if (membership) clubDto.membershipStatus = membership.status;
+          if (membership) {
+            clubDto.membershipStatus = membership.status;
+            clubDto.userRole = membership.role;
+          }
         }
       } catch (error) {
         logger.error('Error fetching club membership', { clubId: id, error });
@@ -431,6 +436,100 @@ router.post('/:id/leave', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error leaving club', { clubId, error });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+      details: undefined,
+    });
+  }
+});
+
+/**
+ * PATCH /api/clubs/:id
+ *
+ * Редактирование клуба (название, описание).
+ * Только лидер клуба может редактировать.
+ */
+router.patch('/:id', validateBody(UpdateClubSchema), async (req: Request<{ id: string }, ClubViewDto, UpdateClubDto>, res: Response) => {
+  const { id: clubId } = req.params;
+  if (!isValidClubId(clubId)) {
+    return respondInvalidClubId(res);
+  }
+
+  const uid = req.authUser?.uid;
+  if (!uid) {
+    return res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+      details: { reason: 'missing_header' },
+    });
+  }
+
+  const dto = req.body;
+
+  try {
+    // Get current user
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'Authentication required',
+        details: {
+          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+        },
+      });
+    }
+
+    // Check if club exists
+    const clubsRepo = getClubsRepository();
+    const club = await clubsRepo.findById(clubId);
+    if (!club) {
+      return res.status(404).json({
+        code: 'not_found',
+        message: 'Club not found',
+        details: { clubId },
+      });
+    }
+
+    // Check if user is a leader
+    const clubMembersRepo = getClubMembersRepository();
+    const membership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
+    if (!membership || membership.role !== 'leader') {
+      return res.status(403).json({
+        code: 'forbidden',
+        message: 'Only club leaders can edit the club',
+        details: { clubId },
+      });
+    }
+
+    // Update club
+    const updatedClub = await clubsRepo.update(clubId, {
+      name: dto.name,
+      description: dto.description,
+    });
+
+    if (!updatedClub) {
+      return res.status(500).json({
+        code: 'internal_error',
+        message: 'Failed to update club',
+        details: undefined,
+      });
+    }
+
+    const clubDto: ClubViewDto = {
+      id: updatedClub.id,
+      name: updatedClub.name,
+      description: updatedClub.description,
+      status: updatedClub.status,
+      cityId: updatedClub.cityId,
+      createdAt: updatedClub.createdAt,
+      updatedAt: updatedClub.updatedAt,
+    };
+
+    res.status(200).json(clubDto);
+  } catch (error) {
+    logger.error('Error updating club', { clubId, dto, error });
     res.status(500).json({
       code: 'internal_error',
       message: 'Internal server error',

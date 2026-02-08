@@ -126,7 +126,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get roleMember => 'Member';
 
   @override
-  String get roleModerator => 'Moderator';
+  String get roleTrainer => 'Trainer';
 
   @override
   String get roleLeader => 'Leader';
