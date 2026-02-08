@@ -10,6 +10,7 @@
 
 import { z } from 'zod';
 import { ClubStatus } from './club.status';
+import { ClubRole } from './club-role';
 
 /**
  * DTO для создания клуба
@@ -36,7 +37,7 @@ export interface CreateClubDto {
  * NOTE: Only technical shape/type validation, no business rules.
  */
 export const CreateClubSchema = z.object({
-  name: z.string(),
+  name: z.string().min(3).max(50),
   description: z.string().optional(),
   cityId: z.string(),
   status: z.nativeEnum(ClubStatus).optional(),
@@ -94,4 +95,35 @@ export interface ClubViewDto {
 
   /** Дата последнего обновления */
   updatedAt: Date;
+}
+
+/**
+ * DTO for "my clubs" endpoint.
+ *
+ * Represents active clubs where current user is a member.
+ */
+export interface MyClubViewDto {
+  /** Club identifier */
+  id: string;
+
+  /** Club name */
+  name: string;
+
+  /** Club description (optional) */
+  description?: string;
+
+  /** City identifier */
+  cityId: string;
+
+  /** City display name (optional, from config) */
+  cityName?: string;
+
+  /** Club status */
+  status: ClubStatus;
+
+  /** Current user role in this club */
+  role: ClubRole;
+
+  /** Date when user joined this club */
+  joinedAt: Date;
 }

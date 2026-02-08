@@ -2,6 +2,7 @@
 import 'api_client.dart';
 import 'users_service.dart' show ApiException;
 import '../models/club_model.dart';
+import '../models/my_club_model.dart';
 
 /// РЎРµСЂРІРёСЃ РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ РєР»СѓР±Р°РјРё
 /// 
@@ -17,6 +18,7 @@ class ClubsService {
   /// 
   /// Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РєР»СѓР±РѕРІ (List<ClubModel>).
   /// РџР°СЂСЃРёС‚ JSON РѕС‚РІРµС‚ Рё РїСЂРµРѕР±СЂР°Р·СѓРµС‚ РµРіРѕ РІ С‚РёРїРёР·РёСЂРѕРІР°РЅРЅС‹Рµ РјРѕРґРµР»Рё.
+  /// GET /api/clubs — list of clubs by city.
   Future<List<ClubModel>> getClubs({required String cityId}) async {
     final uri = Uri(
       path: '/api/clubs',
@@ -25,39 +27,51 @@ class ClubsService {
     final response = await _apiClient.get(uri.toString());
 
     if (response.statusCode != 200) {
-      throw Exception(
-        'РћС€РёР±РєР° СЃРµСЂРІРµСЂР°: ${response.statusCode}\n'
-        'РЈР±РµРґРёС‚РµСЃСЊ, С‡С‚Рѕ backend СЃРµСЂРІРµСЂ Р·Р°РїСѓС‰РµРЅ (npm run dev РІ РїР°РїРєРµ backend)',
-      );
+      String errorCode = 'clubs_fetch_error';
+      String errorMessage = 'Failed to load clubs (${response.statusCode})';
+      try {
+        final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
+        if (decoded != null) {
+          errorCode = (decoded['code'] as String?) ?? errorCode;
+          errorMessage = (decoded['message'] as String?) ?? errorMessage;
+        }
+      } on FormatException {
+        // Non-JSON response
+      }
+      throw ApiException(errorCode, errorMessage);
     }
 
     final contentType = response.headers['content-type'] ?? '';
     if (!contentType.contains('application/json')) {
-      if (response.body.trim().startsWith('<!DOCTYPE') ||
-          response.body.trim().startsWith('<html')) {
-        throw FormatException(
-          'РџРѕР»СѓС‡РµРЅ HTML РІРјРµСЃС‚Рѕ JSON. Backend СЃРµСЂРІРµСЂ РЅРµ Р·Р°РїСѓС‰РµРЅ РёР»Рё СЂРѕСѓС‚РµСЂ РЅРµ Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅ.',
-          response.body.substring(0, response.body.length > 200 ? 200 : response.body.length),
-        );
-      }
-      throw FormatException(
-        'РћР¶РёРґР°Р»СЃСЏ JSON, РЅРѕ РїРѕР»СѓС‡РµРЅ $contentType',
-        response.body.substring(0, response.body.length > 100 ? 100 : response.body.length),
-      );
+      throw ApiException('invalid_response', 'Server returned non-JSON response');
     }
 
-    try {
+    final jsonData = jsonDecode(response.body) as List<dynamic>;
+    return jsonData.map((json) => ClubModel.fromJson(json as Map<String, dynamic>)).toList();
+  }
+
+  /// GET /api/clubs/my — active clubs where current user is a member.
+  Future<List<MyClubModel>> getMyClubs() async {
+    final response = await _apiClient.get('/api/clubs/my');
+    if (response.statusCode >= 200 && response.statusCode < 300) {
       final jsonData = jsonDecode(response.body) as List<dynamic>;
-      return jsonData.map((json) => ClubModel.fromJson(json as Map<String, dynamic>)).toList();
-    } catch (e) {
-      if (e is FormatException && response.body.trim().startsWith('<!DOCTYPE')) {
-        throw FormatException(
-          'РџРѕР»СѓС‡РµРЅ HTML РІРјРµСЃС‚Рѕ JSON. Backend СЃРµСЂРІРµСЂ РЅРµ Р·Р°РїСѓС‰РµРЅ РёР»Рё СЂРѕСѓС‚РµСЂ РЅРµ Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅ.',
-          response.body.substring(0, 200),
-        );
-      }
-      rethrow;
+      return jsonData
+          .map((item) => MyClubModel.fromJson(item as Map<String, dynamic>))
+          .toList();
     }
+
+    String errorCode = 'my_clubs_fetch_error';
+    String errorMessage = 'Failed to load my clubs (${response.statusCode})';
+    try {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
+      if (decoded != null) {
+        errorCode = (decoded['code'] as String?) ?? errorCode;
+        errorMessage = (decoded['message'] as String?) ?? errorMessage;
+      }
+    } on FormatException {
+      // Non-JSON response
+    }
+    throw ApiException(errorCode, errorMessage);
   }
 
   /// Р’С‹РїРѕР»РЅСЏРµС‚ GET /api/clubs/:id Р·Р°РїСЂРѕСЃ Рє backend
@@ -145,7 +159,7 @@ class ClubsService {
   /// Р’С‹РїРѕР»РЅСЏРµС‚ POST /api/clubs/:id/join вЂ” РїСЂРёСЃРѕРµРґРёРЅРµРЅРёРµ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Рє РєР»СѓР±Сѓ.
   /// Р‘СЂРѕСЃР°РµС‚ [ApiException] РїСЂРё 4xx/5xx СЃ code Рё message РёР· РѕС‚РІРµС‚Р°.
   Future<void> joinClub(String clubId) async {
-    final response = await _apiClient.post('/api/clubs/$clubId/join');
+    final response = await _apiClient.post('/api/clubs/${Uri.encodeComponent(clubId)}/join');
     if (response.statusCode >= 200 && response.statusCode < 300) return;
     String errorCode = 'join_club_error';
     String errorMessage = 'Failed to join club (${response.statusCode})';
@@ -164,7 +178,7 @@ class ClubsService {
   /// Р'С‹РїРѕР»РЅСЏРµС‚ POST /api/clubs/:id/leave вЂ" РІС‹С…РѕРґ РёР· РєР»СѓР±Р°.
   /// Р'СЂРѕСЃР°РµС‚ [ApiException] РїСЂРё 4xx/5xx СЃ code Рё message РёР· РѕС‚РІРµС‚Р°.
   Future<void> leaveClub(String clubId) async {
-    final response = await _apiClient.post('/api/clubs/$clubId/leave');
+    final response = await _apiClient.post('/api/clubs/${Uri.encodeComponent(clubId)}/leave');
     if (response.statusCode >= 200 && response.statusCode < 300) return;
     String errorCode = 'leave_club_error';
     String errorMessage = 'Failed to leave club (${response.statusCode})';
@@ -197,7 +211,7 @@ class ClubsService {
     if (name != null) body['name'] = name;
     if (description != null) body['description'] = description;
 
-    final response = await _apiClient.patch('/api/clubs/$clubId', body: body);
+    final response = await _apiClient.patch('/api/clubs/${Uri.encodeComponent(clubId)}', body: body);
 
     if (response.statusCode == 200) {
       final contentType = response.headers['content-type'] ?? '';

@@ -103,6 +103,62 @@ describe('API Routes', () => {
     });
   });
 
+  describe('GET /api/clubs/my', () => {
+    const { mockUsersRepository, mockClubMembersRepository } = require('../db/repositories');
+
+    beforeEach(() => {
+      mockUsersRepository.findByFirebaseUid.mockClear();
+      mockClubMembersRepository.findActiveClubsByUser.mockClear();
+    });
+
+    it('returns active clubs of current user with role and joinedAt', async () => {
+      const joinedAt = new Date('2026-02-08T10:00:00.000Z');
+      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({
+        id: 'user-1',
+        firebaseUid: 'uid-1',
+      });
+      mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([
+        {
+          clubId: TEST_CLUB_1,
+          clubName: 'Runterra Club',
+          clubDescription: 'Morning runs',
+          clubCityId: 'spb',
+          clubStatus: 'active',
+          role: 'leader',
+          joinedAt,
+        },
+      ]);
+
+      const res = await request(app)
+        .get('/api/clubs/my')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body).toHaveLength(1);
+      expect(res.body[0]).toMatchObject({
+        id: TEST_CLUB_1,
+        name: 'Runterra Club',
+        cityId: 'spb',
+        role: 'leader',
+        status: 'active',
+      });
+      expect(typeof res.body[0].cityName).toBe('string');
+      expect(res.body[0].joinedAt).toBe(joinedAt.toISOString());
+    });
+
+    it('returns 401 when user record is not found', async () => {
+      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce(null);
+
+      const res = await request(app)
+        .get('/api/clubs/my')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(401);
+      expect(res.body).toHaveProperty('code', 'unauthorized');
+    });
+  });
+
   describe('GET /api/territories', () => {
     it('returns 200 with array', async () => {
       const res = await request(app)

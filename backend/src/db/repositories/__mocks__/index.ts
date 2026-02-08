@@ -111,6 +111,7 @@ export const mockClubMembersRepository = {
   findPrimaryClubIdByUser: jest.fn().mockResolvedValue(null),
   countActiveMembers: jest.fn().mockResolvedValue(5),
   findActiveByUser: jest.fn().mockResolvedValue([]),
+  findActiveClubsByUser: jest.fn().mockResolvedValue([]),
 };
 
 export const mockClubsRepository = {
@@ -122,12 +123,19 @@ export const mockClubsRepository = {
   delete: jest.fn().mockResolvedValue(true),
 };
 
+export const mockMessagesRepository = {
+  findByChannel: jest.fn().mockResolvedValue([]),
+  create: jest.fn().mockResolvedValue({ id: 'msg-1', channelType: 'club', channelId: 'club-1', userId: 'test-user-id', text: 'hello', createdAt: new Date(), updatedAt: new Date() }),
+  getClubChatsForUser: jest.fn().mockResolvedValue([]),
+};
+
 // Getter functions
 export const getUsersRepository = jest.fn(() => mockUsersRepository);
 export const getEventsRepository = jest.fn(() => mockEventsRepository);
 export const getRunsRepository = jest.fn(() => mockRunsRepository);
 export const getClubMembersRepository = jest.fn(() => mockClubMembersRepository);
 export const getClubsRepository = jest.fn(() => mockClubsRepository);
+export const getMessagesRepository = jest.fn(() => mockMessagesRepository);
 
 // Re-export classes (not used in mocks but needed for type compatibility)
 export class BaseRepository {}
@@ -136,6 +144,8 @@ export class EventsRepository {}
 export class RunsRepository {}
 export class ClubMembersRepository {}
 export class ClubsRepository {}
+export class MessagesRepository {}
 export type EventParticipant = { id: string };
 export type RunValidationResult = { valid: boolean };
 export type ClubMembershipRow = { id: string; clubId: string; userId: string; status: string };
+export type ActiveUserClubMembershipRow = { clubId: string; clubName: string; clubCityId: string; clubStatus: string; role: string; joinedAt: Date };
