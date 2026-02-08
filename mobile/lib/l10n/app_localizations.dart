@@ -1723,6 +1723,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Discard and start new'**
   String get runStuckSessionCancel;
+
+  /// No description provided for @editClubTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Club'**
+  String get editClubTitle;
+
+  /// No description provided for @editClubName.
+  ///
+  /// In en, this message translates to:
+  /// **'Club Name'**
+  String get editClubName;
+
+  /// No description provided for @editClubDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get editClubDescription;
+
+  /// No description provided for @editClubNameHelperText.
+  ///
+  /// In en, this message translates to:
+  /// **'characters'**
+  String get editClubNameHelperText;
+
+  /// No description provided for @editClubDescriptionHelperText.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional, up to 500 characters'**
+  String get editClubDescriptionHelperText;
+
+  /// No description provided for @editClubNameError.
+  ///
+  /// In en, this message translates to:
+  /// **'Name must be 3-50 characters'**
+  String get editClubNameError;
+
+  /// No description provided for @editClubSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get editClubSave;
+
+  /// No description provided for @editClubError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update club'**
+  String get editClubError;
+
+  /// No description provided for @clubEditButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Club'**
+  String get clubEditButton;
 }
 
 class _AppLocalizationsDelegate

@@ -894,4 +894,31 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get runStuckSessionCancel => 'Отменить и начать заново';
+
+  @override
+  String get editClubTitle => 'Редактировать клуб';
+
+  @override
+  String get editClubName => 'Название клуба';
+
+  @override
+  String get editClubDescription => 'Описание';
+
+  @override
+  String get editClubNameHelperText => 'символов';
+
+  @override
+  String get editClubDescriptionHelperText => 'Необязательно, до 500 символов';
+
+  @override
+  String get editClubNameError => 'Название должно быть от 3 до 50 символов';
+
+  @override
+  String get editClubSave => 'Сохранить';
+
+  @override
+  String get editClubError => 'Не удалось обновить клуб';
+
+  @override
+  String get clubEditButton => 'Редактировать клуб';
 }

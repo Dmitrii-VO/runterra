@@ -893,4 +893,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get runStuckSessionCancel => 'Discard and start new';
+
+  @override
+  String get editClubTitle => 'Edit Club';
+
+  @override
+  String get editClubName => 'Club Name';
+
+  @override
+  String get editClubDescription => 'Description';
+
+  @override
+  String get editClubNameHelperText => 'characters';
+
+  @override
+  String get editClubDescriptionHelperText => 'Optional, up to 500 characters';
+
+  @override
+  String get editClubNameError => 'Name must be 3-50 characters';
+
+  @override
+  String get editClubSave => 'Save';
+
+  @override
+  String get editClubError => 'Failed to update club';
+
+  @override
+  String get clubEditButton => 'Edit Club';
 }
