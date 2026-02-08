@@ -128,6 +128,11 @@ router.get('/:id', async (req: Request, res: Response) => {
     }
 
     const city = findCityById(club.cityId);
+
+    // Count active members
+    const clubMembersRepo = getClubMembersRepository();
+    const membersCount = await clubMembersRepo.countActiveMembers(id);
+
     const clubDto: ClubViewDto & {
       isMember: boolean;
       membershipStatus?: string;
@@ -145,7 +150,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       updatedAt: club.updatedAt,
       isMember: false,
       cityName: city?.name,
-      membersCount: 0, // TODO: calculate from club_members
+      membersCount,
       territoriesCount: 0, // TODO: calculate from territories
       cityRank: 0, // TODO: calculate rank
     };
@@ -156,7 +161,6 @@ router.get('/:id', async (req: Request, res: Response) => {
         const usersRepo = getUsersRepository();
         const user = await usersRepo.findByFirebaseUid(uid);
         if (user) {
-          const clubMembersRepo = getClubMembersRepository();
           const membership = await clubMembersRepo.findByClubAndUser(id, user.id);
           clubDto.isMember = membership?.status === 'active';
           if (membership) clubDto.membershipStatus = membership.status;
@@ -239,9 +243,9 @@ router.post('/', validateBody(CreateClubSchema), async (req: Request<{}, ClubVie
       dto.status ?? ClubStatus.ACTIVE
     );
 
-    // Auto-add creator as active member
+    // Auto-add creator as active leader
     const clubMembersRepo = getClubMembersRepository();
-    await clubMembersRepo.create(club.id, user.id, 'active');
+    await clubMembersRepo.create(club.id, user.id, 'active', 'leader');
 
     const clubDto: ClubViewDto = {
       id: club.id,

@@ -9,6 +9,7 @@ interface ClubMemberRow {
   club_id: string;
   user_id: string;
   status: string;
+  role: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -18,6 +19,7 @@ export interface ClubMembershipRow {
   clubId: string;
   userId: string;
   status: 'pending' | 'active' | 'inactive' | 'suspended';
+  role: 'member' | 'trainer' | 'leader';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -28,6 +30,7 @@ function rowToMembership(row: ClubMemberRow): ClubMembershipRow {
     clubId: row.club_id,
     userId: row.user_id,
     status: row.status as ClubMembershipRow['status'],
+    role: row.role as ClubMembershipRow['role'],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -42,12 +45,17 @@ export class ClubMembersRepository extends BaseRepository {
     return row ? rowToMembership(row) : null;
   }
 
-  async create(clubId: string, userId: string, status: 'pending' | 'active' = 'active'): Promise<ClubMembershipRow> {
+  async create(
+    clubId: string,
+    userId: string,
+    status: 'pending' | 'active' = 'active',
+    role: 'member' | 'trainer' | 'leader' = 'member'
+  ): Promise<ClubMembershipRow> {
     const row = await this.queryOne<ClubMemberRow>(
-      `INSERT INTO club_members (club_id, user_id, status)
-       VALUES ($1, $2, $3)
+      `INSERT INTO club_members (club_id, user_id, status, role)
+       VALUES ($1, $2, $3, $4)
        RETURNING *`,
-      [clubId, userId, status],
+      [clubId, userId, status, role],
     );
     if (!row) throw new Error('Insert club_members failed');
     return rowToMembership(row);
@@ -90,6 +98,15 @@ export class ClubMembersRepository extends BaseRepository {
       [userId, 'active'],
     );
     return row?.club_id ?? null;
+  }
+
+  /** Count active members for a club */
+  async countActiveMembers(clubId: string): Promise<number> {
+    const row = await this.queryOne<{ count: string }>(
+      'SELECT COUNT(*) as count FROM club_members WHERE club_id = $1 AND status = $2',
+      [clubId, 'active'],
+    );
+    return parseInt(row?.count ?? '0', 10);
   }
 }
 

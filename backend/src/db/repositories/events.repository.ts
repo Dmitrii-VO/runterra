@@ -152,12 +152,14 @@ export class EventsRepository extends BaseRepository {
     const params: unknown[] = [];
     let paramIndex = 1;
     
-    // Status filter (default: only OPEN and FULL, exclude DRAFT)
+    // Status filter (default: only OPEN and FULL, exclude DRAFT and COMPLETED)
     if (options?.status && options.status.length > 0) {
       conditions.push(`status = ANY($${paramIndex++})`);
       params.push(options.status);
     } else {
+      // Default: show open/full events that haven't ended yet
       conditions.push(`status IN ('open', 'full')`);
+      conditions.push(`(end_date_time IS NULL OR end_date_time > NOW())`);
     }
     
     // Date filter

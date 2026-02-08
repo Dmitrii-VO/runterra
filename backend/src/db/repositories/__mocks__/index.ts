@@ -104,10 +104,12 @@ export const mockRunsRepository = {
 
 export const mockClubMembersRepository = {
   findByClubAndUser: jest.fn().mockResolvedValue(null),
-  create: jest.fn().mockResolvedValue({ id: 'cm-1', clubId: '1', userId: 'test-user-id', status: 'active', createdAt: new Date(), updatedAt: new Date() }),
-  deactivate: jest.fn().mockResolvedValue({ id: 'cm-1', clubId: '1', userId: 'test-user-id', status: 'inactive', createdAt: new Date(), updatedAt: new Date() }),
-  activate: jest.fn().mockResolvedValue({ id: 'cm-1', clubId: '1', userId: 'test-user-id', status: 'active', createdAt: new Date(), updatedAt: new Date() }),
+  create: jest.fn().mockResolvedValue({ id: 'cm-1', clubId: '1', userId: 'test-user-id', status: 'active', role: 'member', createdAt: new Date(), updatedAt: new Date() }),
+  deactivate: jest.fn().mockResolvedValue({ id: 'cm-1', clubId: '1', userId: 'test-user-id', status: 'inactive', role: 'member', createdAt: new Date(), updatedAt: new Date() }),
+  activate: jest.fn().mockResolvedValue({ id: 'cm-1', clubId: '1', userId: 'test-user-id', status: 'active', role: 'member', createdAt: new Date(), updatedAt: new Date() }),
   findPrimaryClubIdByUser: jest.fn().mockResolvedValue(null),
+  countActiveMembers: jest.fn().mockResolvedValue(5),
+  findActiveByUser: jest.fn().mockResolvedValue([]),
 };
 
 export const mockClubsRepository = {

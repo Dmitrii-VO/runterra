@@ -251,3 +251,11 @@ GitHub Actions CI (`ci.yml`) запускается на каждый push/PR в
   - Решение (2026-02-08): Создана миграция 010_clubs.sql с таблицей clubs; реализован ClubsRepository; обновлены POST /api/clubs и GET /api/clubs/:id для работы с БД; при создании клуба создатель автоматически добавляется в club_members со статусом active.
 - [x] События, которые уже прошли, отображаются со статусом «Открыто».
   - Решение (2026-02-08): Добавлена миграция 011_events_end_date_time.sql с полем end_date_time; обновлены Event entity, DTO и EventsRepository; реализована функция computeEventStatus для time-based перехода в COMPLETED если endDateTime прошло.
+
+#### Feedback (2026-02-08)
+
+##### Клубы
+- [x] Создатель клуба — Администратор (исправлено 2026-02-08): добавлено поле role в club_members (миграция 013), создатель получает роль leader; добавлен метод countActiveMembers(); GET /api/clubs/:id возвращает реальное количество участников.
+
+##### События
+- [x] Вкладка «События»: фильтр «Только открытые» показывал прошедшие события (исправлено 2026-02-08): добавлено условие (end_date_time IS NULL OR end_date_time > NOW()) в фильтр EventsRepository.findAll().

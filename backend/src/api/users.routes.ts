@@ -12,7 +12,6 @@
 
 import { Router, Request, Response } from 'express';
 import { User, UserStatus, CreateUserDto, CreateUserSchema, userToViewDto, ProfileDto, UpdateProfileSchema } from '../modules/users';
-import { ClubRole } from '../modules/clubs';
 import { NotificationType } from '../modules/notifications';
 import { ActivityStatus } from '../modules/activities';
 import { validateBody } from './validateBody';
@@ -94,6 +93,9 @@ router.get('/me/profile', async (req: Request, res: Response) => {
     const clubMembersRepo = getClubMembersRepository();
     const clubsRepo = getClubsRepository();
     const rawPrimaryClubId = await clubMembersRepo.findPrimaryClubIdByUser(user.id);
+    const membership = rawPrimaryClubId
+      ? await clubMembersRepo.findByClubAndUser(rawPrimaryClubId, user.id)
+      : null;
     const primaryClub = rawPrimaryClubId ? await clubsRepo.findById(rawPrimaryClubId) : null;
     const primaryClubId = primaryClub?.id;
 
@@ -101,7 +103,7 @@ router.get('/me/profile', async (req: Request, res: Response) => {
       ? {
           id: primaryClub.id,
           name: primaryClub.name,
-          role: ClubRole.MEMBER,
+          role: membership?.role ?? 'member',
         }
       : null;
 
