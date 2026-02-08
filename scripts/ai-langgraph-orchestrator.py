@@ -99,10 +99,21 @@ def run_cmd(
 def codex_exec(prompt: str, model: str = "gpt-5.3-codex") -> ToolResult:
     with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as tmp:
         msg_file = tmp.name
+    dangerous = os.environ.get("AI_AUTO_DANGEROUS_BYPASS", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
     cmd = [
         "codex",
         "exec",
-        "--full-auto",
+    ]
+    if dangerous:
+        cmd.append("--dangerously-bypass-approvals-and-sandbox")
+    else:
+        cmd.append("--full-auto")
+    cmd += [
         "-m",
         model,
         "--output-last-message",
@@ -301,6 +312,26 @@ def resolve_step_tool(step: Step) -> str:
     return infer_tool_for_task(f"{step.get('title', '')} {step.get('objective', '')}")
 
 
+def has_blocker_signal(text: str) -> bool:
+    lower = (text or "").lower()
+    blocker_patterns = [
+        "blocked by policy",
+        "rejected: blocked",
+        "sandbox_mode=read-only",
+        "read-only",
+        "permission denied",
+        "access is denied",
+        "operation not permitted",
+        "langgraph runtime not found",
+        "не удалось",
+        "не смог",
+        "заблокирован",
+        "блокер",
+        "блокеры",
+    ]
+    return any(pattern in lower for pattern in blocker_patterns)
+
+
 def plan_node(state: OrchestratorState) -> dict[str, Any]:
     task = state["task"]
     forced_tool = state["forced_tool"]
@@ -442,6 +473,10 @@ def run_one_step(task: str, step: Step, completed: list[CompletedStep]) -> Compl
             output_text = fallback.output.strip()
         else:
             output_text = f"{output_text}\n\n[fallback_codex_error]\n{fallback.error.strip() or fallback.output.strip()}"
+
+    if status == "ok" and has_blocker_signal(output_text):
+        status = "failed"
+        output_text = f"{output_text}\n\n[orchestrator_note]\nDetected blocker/policy-restriction signals in step output; treating this step as failed."
 
     return CompletedStep(
         id=step["id"],

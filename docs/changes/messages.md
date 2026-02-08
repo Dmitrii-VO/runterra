@@ -1,8 +1,24 @@
-﻿# РР·РјРµРЅРµРЅРёСЏ: Messages
+# Изменения: Messages
 
-## РСЃС‚РѕСЂРёСЏ РёР·РјРµРЅРµРЅРёР№
+## История изменений
 
-### 2026-02-06 вЂ” Mobile: РІРєР»Р°РґРєР° В«РљР»СѓР±В» РєР°Рє С‡Р°С‚ С‚РµРєСѓС‰РµРіРѕ РєР»СѓР±Р° (РёСЃС‚РѕСЂРёСЏ + РІРІРѕРґ)
+### 2026-02-08 — Сообщения: выбор клуба перед чатом (задачи 6–9 infra/README)
+
+- **Задача 6–7. Вкладка «Клуб»: сначала список клубов, затем чат выбранного**
+  - `ClubMessagesTab` переработан: первым шагом загружается список клубов пользователя через `GET /api/messages/clubs` (`MessagesService.getClubChats()`), отображается список карточек (название клуба, превью последнего сообщения при наличии). Авто-открытие чата убрано.
+  - По тапу на карточку открывается чат выбранного клуба (история + composer). Добавлена кнопка «Назад» (иконка arrow_back) в шапке чата — возврат к списку клубов без выхода из вкладки.
+  - Состояния: загрузка списка, ошибка загрузки списка (retry), пустой список (`noClubChats`), список клубов, загрузка чата, ошибка загрузки сообщений (retry), экран чата.
+- **Задача 8. Навигация и deep-link**
+  - Маршрут `/messages` поддерживает query-параметр `clubId`: `/messages?tab=club&clubId=...`. При открытии с `clubId` вкладка «Клуб» открывается сразу с чатом этого клуба (если пользователь в нём состоит).
+  - `MessagesScreen` принимает `initialClubId` и передаёт в `ClubMessagesTab(initialClubId: initialClubId)`.
+  - Кнопка «Чат клуба» на `ClubDetailsScreen` ведёт на `context.go('/messages?tab=club&clubId=${club.id}')` — открывается чат именно этого клуба.
+- **Задача 9. i18n и документация**
+  - Добавлены ключи l10n: `messagesBackToClubs` («К списку клубов» / «Back to clubs»), `messagesSelectClub` («Выберите клуб для переписки» / «Select a club to chat») в `app_ru.arb` и `app_en.arb`.
+  - Обновлены `docs/progress.md` и `docs/changes/messages.md`.
+
+**Файлы:** `mobile/lib/features/messages/tabs/club_messages_tab.dart`, `mobile/lib/features/messages/messages_screen.dart`, `mobile/lib/app.dart`, `mobile/lib/features/club/club_details_screen.dart`, `mobile/l10n/app_ru.arb`, `mobile/l10n/app_en.arb`, `docs/progress.md`, `docs/changes/messages.md`.
+
+### 2026-02-06 — Mobile: вкладка «Клуб» как чат текущего клуба (РёСЃС‚РѕСЂРёСЏ + РІРІРѕРґ)
 
 - **Mobile (`ClubMessagesTab`)**:
   - Р’РєР»Р°РґРєР° `РЎРѕРѕР±С‰РµРЅРёСЏ -> РљР»СѓР±` РїРµСЂРµРІРµРґРµРЅР° СЃ СЂРµР¶РёРјР° СЃРїРёСЃРєР° РєР»СѓР±РѕРІ РЅР° СЂРµР¶РёРј РѕРґРЅРѕРіРѕ РєР»СѓР±РЅРѕРіРѕ С‡Р°С‚Р° РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.

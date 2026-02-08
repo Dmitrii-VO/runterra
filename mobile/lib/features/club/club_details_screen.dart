@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/api/users_service.dart' show ApiException;
@@ -230,7 +230,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
-                        onPressed: () => context.go('/messages?tab=club'),
+                        onPressed: () => context.go('/messages?tab=club&clubId=${club.id}'),
                         icon: const Icon(Icons.chat),
                         label: Text(l10n.clubChatButton),
                       ),

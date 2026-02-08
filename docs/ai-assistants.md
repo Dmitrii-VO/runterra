@@ -79,5 +79,10 @@ powershell -ExecutionPolicy Bypass -File scripts/ai-auto.ps1 --print "Compare 3 
   - architecture/research-heavy tasks -> `claude` + `sonnet|opus`
   - mixed/default tasks -> `codex` (for reliability); use `--tool agent` to force Cursor Agent
 - In `mode=orchestrate`, failures do not auto-fallback to single-agent. Use `mode=single` explicitly if you need one-agent execution.
+- In `mode=orchestrate`, if a step reports policy/sandbox blockers (for example `blocked by policy` or read-only restrictions), that step is marked `failed` and final status becomes `error` (not false `done`).
+- If your local Codex CLI blocks writes due approval/sandbox policy, you can opt into bypass for this session only:
+  - PowerShell: `$env:AI_AUTO_DANGEROUS_BYPASS='1'; npm run ai:auto -- "<task>"`
+  - This maps orchestrator Codex calls to `codex exec --dangerously-bypass-approvals-and-sandbox`.
+  - Use only in trusted local environments.
 - Codex uses your existing `codex login` state.
 - Agent uses your existing `agent login` state.

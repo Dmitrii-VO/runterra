@@ -187,6 +187,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           hasClub: resolvedClub != null,
           isMercenary: profile.user.isMercenary,
         ),
+        Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: ListTile(
+            leading: const Icon(Icons.groups),
+            title: Text(l10n.profileMyClubsButton),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/profile/clubs'),
+          ),
+        ),
         ProfileNotificationsSection(notifications: profile.notifications),
         ProfileSettingsSection(
           locationPermissionGranted: _locationPermissionGranted,

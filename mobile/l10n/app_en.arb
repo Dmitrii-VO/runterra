@@ -36,6 +36,8 @@
   "personalChatsEmpty": "No personal messages yet",
   "coachMessagesEmpty": "No coach messages yet",
   "noClubChats": "No club chats\n\nYou are not in any club yet",
+  "messagesBackToClubs": "Back to clubs",
+  "messagesSelectClub": "Select a club to chat",
   "noNotifications": "No notifications",
   "clubChatsLoadError": "Error loading club chats: {error}",
   "@clubChatsLoadError": {
@@ -70,6 +72,17 @@
   "quickStartRun": "Start run",
   "quickFindClub": "Find club",
   "quickCreateClub": "Create club",
+  "profileMyClubsButton": "Clubs",
+  "profileMyClubsTitle": "My clubs",
+  "profileMyClubsEmpty": "You are not in any clubs yet",
+  "profileMyClubsLoadError": "Could not load clubs: {error}",
+  "@profileMyClubsLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "activityNext": "Next workout",
   "activityLast": "Last activity",
   "activityDefaultName": "Workout",

@@ -2,6 +2,29 @@
 
 ## История изменений
 
+### 2026-02-08 — Мои клубы в профиле (API + mobile)
+
+**Контекст:** По feedback от 2026-02-08 пользователь может состоять в нескольких клубах, но в профиле это не отображалось.
+
+**Что сделано:**
+- **Backend:**
+  - Добавлен endpoint `GET /api/clubs/my` (только для авторизованного пользователя).
+  - Добавлен репозиторный метод `ClubMembersRepository.findActiveClubsByUser(userId)` с join `club_members -> clubs`.
+  - Ответ возвращает все активные клубы пользователя с данными: `id`, `name`, `description?`, `cityId`, `cityName?`, `status`, `role`, `joinedAt`.
+  - Добавлены API-тесты на успешный ответ и 401 при отсутствии пользователя.
+- **Mobile:**
+  - Добавлена модель `MyClubModel` и метод `ClubsService.getMyClubs()`.
+  - Добавлена кнопка `Клубы` на экране профиля (`ProfileScreen`) с переходом на новый экран.
+  - Добавлен экран `MyClubsScreen` (`/profile/clubs`): список клубов пользователя, состояния loading/empty/error+retry, переход в `ClubDetailsScreen`.
+  - Добавлены i18n ключи (ru/en): `profileMyClubsButton`, `profileMyClubsTitle`, `profileMyClubsEmpty`, `profileMyClubsLoadError`.
+  - Добавлен тест модели `MyClubModel`.
+
+**Ограничения текущей итерации:**
+- Экран «Мои клубы» показывает базовую информацию (город + роль), без поиска/сортировки на клиенте.
+- Часть по вкладке «Сообщения → сначала выбор клуба» остается отдельной подзадачей (пункты 6+).
+
+**Файлы:** `backend/src/api/clubs.routes.ts`, `backend/src/db/repositories/club_members.repository.ts`, `backend/src/db/repositories/__mocks__/index.ts`, `backend/src/api/api.test.ts`, `backend/src/modules/clubs/club.dto.ts`, `mobile/lib/shared/models/my_club_model.dart`, `mobile/lib/shared/api/clubs_service.dart`, `mobile/lib/features/profile/profile_screen.dart`, `mobile/lib/features/profile/my_clubs_screen.dart`, `mobile/lib/app.dart`, `mobile/l10n/app_en.arb`, `mobile/l10n/app_ru.arb`, `mobile/lib/l10n/app_localizations.dart`, `mobile/lib/l10n/app_localizations_en.dart`, `mobile/lib/l10n/app_localizations_ru.dart`, `mobile/test/models/my_club_model_test.dart`.
+
 ### 2026-02-08 — Редактирование профиля клуба для лидера
 
 **Контекст:** Согласно product_spec.md §5.3, лидер клуба должен иметь возможность редактировать профиль клуба (название, описание).

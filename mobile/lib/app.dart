@@ -16,6 +16,7 @@ import 'features/events/event_details_screen.dart';
 import 'features/events/create_event_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'features/profile/edit_profile_screen.dart';
+import 'features/profile/my_clubs_screen.dart';
 import 'shared/models/profile_model.dart';
 import 'shared/models/club_model.dart';
 import 'shared/auth/auth_service.dart';
@@ -127,8 +128,12 @@ class RunterraApp extends StatelessWidget {
             path: '/messages',
             builder: (context, state) {
               final tab = state.uri.queryParameters['tab'];
+              final clubId = state.uri.queryParameters['clubId'];
               final initialTabIndex = tab == 'club' ? 1 : (tab == 'coach' ? 2 : 0);
-              return MessagesScreen(initialTabIndex: initialTabIndex);
+              return MessagesScreen(
+                initialTabIndex: initialTabIndex,
+                initialClubId: clubId,
+              );
             },
           ),
           GoRoute(
@@ -148,6 +153,10 @@ class RunterraApp extends StatelessWidget {
           final user = state.extra as ProfileUserData;
           return EditProfileScreen(user: user);
         },
+      ),
+      GoRoute(
+        path: '/profile/clubs',
+        builder: (context, state) => const MyClubsScreen(),
       ),
       // Создание клуба (без BottomNav)
       GoRoute(

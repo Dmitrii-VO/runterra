@@ -11,9 +11,14 @@ import '../../../shared/models/message_model.dart';
 
 /// Club tab in messages screen.
 ///
-/// Shows chat for the current club (MVP): history + composer.
+/// First step: list of user's clubs (from GET /api/messages/clubs).
+/// Second step: chat of selected club (history + composer). Back returns to list.
+/// [initialClubId] — when set (e.g. from route /messages?tab=club&clubId=...), open that club's chat directly.
 class ClubMessagesTab extends StatefulWidget {
-  const ClubMessagesTab({super.key});
+  /// If set, open chat for this club immediately (e.g. deep-link from ClubDetailsScreen).
+  final String? initialClubId;
+
+  const ClubMessagesTab({super.key, this.initialClubId});
 
   @override
   State<ClubMessagesTab> createState() => _ClubMessagesTabState();
@@ -25,17 +30,19 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
+  List<ClubChatModel>? _clubChats;
+  Object? _listLoadError;
+  bool _isListLoading = true;
+
+  String? _clubId;
+  String? _currentUserId;
   bool _isLoading = true;
   bool _isSending = false;
   bool _isLoadingMoreHistory = false;
   bool _hasMoreHistory = false;
   bool _errorOnMessagesLoad = false;
-  bool _profileMetaLoadAttempted = false;
+  Object? _messagesLoadError;
 
-  Object? _loadError;
-  String? _clubId;
-  String? _currentUserId;
-  String? _primaryClubId;
   int _historyOffset = 0;
   Timer? _pollTimer;
   List<MessageModel> _messages = <MessageModel>[];
@@ -43,7 +50,26 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
   @override
   void initState() {
     super.initState();
-    _loadClubChat();
+    _loadClubList();
+  }
+
+  @override
+  void didUpdateWidget(ClubMessagesTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialClubId != oldWidget.initialClubId &&
+        widget.initialClubId != null &&
+        _clubChats != null &&
+        _clubId == null) {
+      _tryOpenInitialClub();
+    }
+  }
+
+  void _tryOpenInitialClub() {
+    final id = widget.initialClubId;
+    if (id == null || _clubChats == null) return;
+    if (_clubChats!.any((c) => c.clubId == id)) {
+      _openClubChat(id);
+    }
   }
 
   @override
@@ -54,89 +80,38 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
     super.dispose();
   }
 
-  Future<void> _ensureProfileMetaLoaded() async {
-    if (_profileMetaLoadAttempted) return;
-    _profileMetaLoadAttempted = true;
+  Future<void> _loadClubList() async {
+    setState(() {
+      _isListLoading = true;
+      _listLoadError = null;
+    });
+
     try {
-      final profile = await ServiceLocator.usersService.getProfile();
-      _currentUserId = profile.user.id;
-      _primaryClubId = profile.user.primaryClubId;
-    } catch (_) {
-      // Keep fallback behavior when profile is temporarily unavailable.
+      final chats = await ServiceLocator.messagesService.getClubChats();
+      if (!mounted) return;
+      setState(() {
+        _clubChats = chats;
+        _isListLoading = false;
+      });
+      _tryOpenInitialClub();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _listLoadError = error;
+        _isListLoading = false;
+      });
     }
   }
 
-  DateTime _clubActivityTime(ClubChatModel chat) =>
-      chat.lastMessageAt ?? chat.updatedAt;
-
-  String _selectMostRelevantClubId(List<ClubChatModel> chats) {
-    if (chats.length == 1) return chats.first.clubId;
-
-    ClubChatModel best = chats.first;
-    for (final chat in chats.skip(1)) {
-      if (_clubActivityTime(chat).isAfter(_clubActivityTime(best))) {
-        best = chat;
-      }
-    }
-    return best.clubId;
-  }
-
-  Future<String?> _resolveClubId() async {
-    await _ensureProfileMetaLoaded();
-
-    final chats = await ServiceLocator.messagesService.getClubChats();
-    if (chats.isEmpty) {
-      if (ServiceLocator.currentClubService.currentClubId != null) {
-        await ServiceLocator.currentClubService.setCurrentClubId(null);
-      }
-      return null;
-    }
-
-    final allowedClubIds = chats.map((chat) => chat.clubId).toSet();
-    final currentClubId = ServiceLocator.currentClubService.currentClubId;
-    if (currentClubId != null && allowedClubIds.contains(currentClubId)) {
-      return currentClubId;
-    }
-
-    if (currentClubId != null && !allowedClubIds.contains(currentClubId)) {
-      await ServiceLocator.currentClubService.setCurrentClubId(null);
-    }
-
-    if (_primaryClubId != null && allowedClubIds.contains(_primaryClubId)) {
-      await ServiceLocator.currentClubService.setCurrentClubId(_primaryClubId);
-      return _primaryClubId;
-    }
-
-    final fallbackClubId = _selectMostRelevantClubId(chats);
-    await ServiceLocator.currentClubService.setCurrentClubId(fallbackClubId);
-    return fallbackClubId;
-  }
-
-  Future<void> _loadClubChat() async {
+  Future<void> _openClubChat(String clubId) async {
     _stopPolling();
     setState(() {
+      _clubId = clubId;
       _isLoading = true;
-      _loadError = null;
       _errorOnMessagesLoad = false;
     });
 
-    bool fetchingMessagesStarted = false;
-
     try {
-      final clubId = await _resolveClubId();
-      if (clubId == null) {
-        if (!mounted) return;
-        setState(() {
-          _clubId = null;
-          _messages = <MessageModel>[];
-          _historyOffset = 0;
-          _hasMoreHistory = false;
-          _isLoading = false;
-        });
-        return;
-      }
-
-      fetchingMessagesStarted = true;
       final loadedMessages =
           await ServiceLocator.messagesService.getClubChatMessages(
         clubId,
@@ -145,9 +120,11 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
       );
       loadedMessages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
-      if (!mounted) return;
+      if (!mounted || _clubId != clubId) return;
+      final profile = await ServiceLocator.usersService.getProfile();
+      if (!mounted || _clubId != clubId) return;
       setState(() {
-        _clubId = clubId;
+        _currentUserId = profile.user.id;
         _messages = loadedMessages;
         _historyOffset = loadedMessages.length;
         _hasMoreHistory = loadedMessages.length == _pageSize;
@@ -156,13 +133,23 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
       _startPolling();
       _scrollToBottomDeferred(animated: false);
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted || _clubId != clubId) return;
       setState(() {
-        _loadError = error;
-        _errorOnMessagesLoad = fetchingMessagesStarted;
+        _errorOnMessagesLoad = true;
+        _messagesLoadError = error;
         _isLoading = false;
       });
     }
+  }
+
+  void _backToClubList() {
+    _stopPolling();
+    setState(() {
+      _clubId = null;
+      _messages = <MessageModel>[];
+      _historyOffset = 0;
+      _hasMoreHistory = false;
+    });
   }
 
   void _startPolling() {
@@ -218,9 +205,7 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
       if (wasNearBottom) {
         _scrollToBottomDeferred(animated: true);
       }
-    } catch (_) {
-      // Ignore polling failures; user can still manually retry by reopening tab.
-    }
+    } catch (_) {}
   }
 
   Future<void> _loadOlderMessages() async {
@@ -232,9 +217,7 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
         hasScroll ? _scrollController.position.maxScrollExtent : 0.0;
     final previousOffset = hasScroll ? _scrollController.position.pixels : 0.0;
 
-    setState(() {
-      _isLoadingMoreHistory = true;
-    });
+    setState(() => _isLoadingMoreHistory = true);
 
     try {
       final olderBatch =
@@ -267,21 +250,14 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
           });
         }
       }
-    } catch (_) {
-      // Ignore history loading failure to keep current messages visible.
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoadingMoreHistory = false;
-        });
-      }
+    } catch (_) {}
+    if (mounted) {
+      setState(() => _isLoadingMoreHistory = false);
     }
   }
 
   String _errorMessage(Object error) {
-    if (error is ApiException) {
-      return error.message;
-    }
+    if (error is ApiException) return error.message;
     return error.toString();
   }
 
@@ -292,9 +268,7 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
 
-    setState(() {
-      _isSending = true;
-    });
+    setState(() => _isSending = true);
 
     try {
       final wasNearBottom = _isNearBottom();
@@ -317,18 +291,14 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
       final l10n = AppLocalizations.of(context)!;
       final errorText = l10n.errorGeneric(_errorMessage(error));
       if (error is ApiException && error.code == 'forbidden') {
-        await _loadClubChat();
+        _openClubChat(clubId);
         if (!mounted) return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(errorText)),
       );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isSending = false;
-        });
-      }
+      if (mounted) setState(() => _isSending = false);
     }
   }
 
@@ -354,12 +324,16 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
     return '$h:$m';
   }
 
-  Widget _buildLoadErrorState(AppLocalizations l10n, ThemeData theme) {
-    final error = _loadError;
-    final message = error == null ? '' : _errorMessage(error);
-    final text = _errorOnMessagesLoad
-        ? l10n.messagesLoadError(message)
-        : l10n.clubChatsLoadError(message);
+  Widget _buildListLoading() {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+
+  Widget _buildListError(AppLocalizations l10n, ThemeData theme) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -369,13 +343,13 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
             const Icon(Icons.error_outline, size: 48, color: Colors.red),
             const SizedBox(height: 16),
             Text(
-              text,
+              l10n.clubChatsLoadError(_listLoadError != null ? _errorMessage(_listLoadError!) : ''),
               style: theme.textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: _loadClubChat,
+              onPressed: _loadClubList,
               icon: const Icon(Icons.refresh),
               label: Text(l10n.retry),
             ),
@@ -385,7 +359,7 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
     );
   }
 
-  Widget _buildNoClubState(AppLocalizations l10n, ThemeData theme) {
+  Widget _buildNoClubs(AppLocalizations l10n, ThemeData theme) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -393,6 +367,66 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
           l10n.noClubChats,
           style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
           textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildClubList(AppLocalizations l10n, ThemeData theme) {
+    final chats = _clubChats!;
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      itemCount: chats.length,
+      itemBuilder: (context, index) {
+        final chat = chats[index];
+        final name = chat.clubName?.trim().isNotEmpty == true
+            ? chat.clubName!
+            : chat.clubId;
+        return Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            leading: const CircleAvatar(
+              child: Icon(Icons.group),
+            ),
+            title: Text(name),
+            subtitle: chat.lastMessageText?.trim().isNotEmpty == true
+                ? Text(
+                    chat.lastMessageText!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  )
+                : null,
+            onTap: () => _openClubChat(chat.clubId),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildChatLoadError(AppLocalizations l10n, ThemeData theme) {
+    final msg = _messagesLoadError != null
+        ? _errorMessage(_messagesLoadError!)
+        : '';
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const SizedBox(height: 16),
+            Text(
+              l10n.messagesLoadError(msg),
+              style: theme.textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () => _clubId != null ? _openClubChat(_clubId!) : null,
+              icon: const Icon(Icons.refresh),
+              label: Text(l10n.retry),
+            ),
+          ],
         ),
       ),
     );
@@ -516,33 +550,84 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
     );
   }
 
+  /// Chat view: back button + club name + messages + composer.
+  Widget _buildChatView(AppLocalizations l10n, ThemeData theme) {
+    final chat = _clubChats?.firstWhere(
+      (c) => c.clubId == _clubId,
+      orElse: () => ClubChatModel(
+        id: '',
+        clubId: _clubId!,
+        clubName: _clubId,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+    );
+    final title = chat?.clubName?.trim().isNotEmpty == true
+        ? (chat?.clubName ?? _clubId!)
+        : _clubId!;
+
+    return Column(
+      children: [
+        Material(
+          elevation: 1,
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: _backToClubList,
+                    tooltip: l10n.messagesBackToClubs,
+                  ),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: theme.textTheme.titleMedium,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Expanded(child: _buildMessagesList()),
+        _buildComposer(l10n),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
-    if (_isLoading) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: CircularProgressIndicator(),
-        ),
-      );
+    if (_clubId != null) {
+      if (_isLoading) {
+        return const Center(
+          child: Padding(
+            padding: EdgeInsets.all(16.0),
+            child: CircularProgressIndicator(),
+          ),
+        );
+      }
+      if (_errorOnMessagesLoad) {
+        return _buildChatLoadError(l10n, theme);
+      }
+      return _buildChatView(l10n, theme);
     }
 
-    if (_loadError != null) {
-      return _buildLoadErrorState(l10n, theme);
+    if (_isListLoading) {
+      return _buildListLoading();
     }
-
-    if (_clubId == null) {
-      return _buildNoClubState(l10n, theme);
+    if (_listLoadError != null) {
+      return _buildListError(l10n, theme);
     }
-
-    return Column(
-      children: [
-        Expanded(child: _buildMessagesList()),
-        _buildComposer(l10n),
-      ],
-    );
+    if (_clubChats == null || _clubChats!.isEmpty) {
+      return _buildNoClubs(l10n, theme);
+    }
+    return _buildClubList(l10n, theme);
   }
 }

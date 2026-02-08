@@ -82,6 +82,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noClubChats => 'No club chats\n\nYou are not in any club yet';
 
   @override
+  String get messagesBackToClubs => 'Back to clubs';
+
+  @override
+  String get messagesSelectClub => 'Select a club to chat';
+
+  @override
   String get noNotifications => 'No notifications';
 
   @override
@@ -145,6 +151,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get quickCreateClub => 'Create club';
+
+  @override
+  String get profileMyClubsButton => 'Clubs';
+
+  @override
+  String get profileMyClubsTitle => 'My clubs';
+
+  @override
+  String get profileMyClubsEmpty => 'You are not in any clubs yet';
+
+  @override
+  String profileMyClubsLoadError(String error) {
+    return 'Could not load clubs: $error';
+  }
 
   @override
   String get activityNext => 'Next workout';

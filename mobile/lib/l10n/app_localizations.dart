@@ -230,6 +230,18 @@ abstract class AppLocalizations {
   /// **'No club chats\n\nYou are not in any club yet'**
   String get noClubChats;
 
+  /// No description provided for @messagesBackToClubs.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to clubs'**
+  String get messagesBackToClubs;
+
+  /// No description provided for @messagesSelectClub.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a club to chat'**
+  String get messagesSelectClub;
+
   /// No description provided for @noNotifications.
   ///
   /// In en, this message translates to:
@@ -349,6 +361,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create club'**
   String get quickCreateClub;
+
+  /// No description provided for @profileMyClubsButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Clubs'**
+  String get profileMyClubsButton;
+
+  /// No description provided for @profileMyClubsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My clubs'**
+  String get profileMyClubsTitle;
+
+  /// No description provided for @profileMyClubsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'You are not in any clubs yet'**
+  String get profileMyClubsEmpty;
+
+  /// No description provided for @profileMyClubsLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load clubs: {error}'**
+  String profileMyClubsLoadError(String error);
 
   /// No description provided for @activityNext.
   ///

@@ -3,6 +3,7 @@
  *
  * Содержит эндпоинты для работы с клубами:
  * - GET /api/clubs - список клубов
+ * - GET /api/clubs/my - список клубов текущего пользователя
  * - GET /api/clubs/:id - клуб по ID (при auth — isMember, membershipStatus)
  * - POST /api/clubs - создание клуба
  * - POST /api/clubs/:id/join - присоединение к клубу
@@ -10,7 +11,15 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { ClubStatus, ClubViewDto, CreateClubDto, CreateClubSchema, UpdateClubDto, UpdateClubSchema } from '../modules/clubs';
+import {
+  ClubStatus,
+  ClubViewDto,
+  CreateClubDto,
+  CreateClubSchema,
+  MyClubViewDto,
+  UpdateClubDto,
+  UpdateClubSchema,
+} from '../modules/clubs';
 import { findCityById } from '../modules/cities/cities.config';
 import { validateBody } from './validateBody';
 import { getUsersRepository, getClubMembersRepository, getClubsRepository } from '../db/repositories';
@@ -96,6 +105,58 @@ router.get('/', async (req: Request, res: Response) => {
     res.status(200).json(clubsDto);
   } catch (error) {
     logger.error('Error fetching clubs', { cityId, error });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+      details: undefined,
+    });
+  }
+});
+
+/**
+ * GET /api/clubs/my
+ *
+ * Returns all active clubs where current user is a member.
+ */
+router.get('/my', async (req: Request, res: Response) => {
+  const uid = req.authUser?.uid;
+  if (!uid) {
+    return res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+      details: { reason: 'missing_header' },
+    });
+  }
+
+  try {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) {
+      return res.status(401).json({
+        code: 'unauthorized',
+        message: 'User not found',
+      });
+    }
+
+    const clubMembersRepo = getClubMembersRepository();
+    const myMemberships = await clubMembersRepo.findActiveClubsByUser(user.id);
+    const myClubs: MyClubViewDto[] = myMemberships.map((membership) => {
+      const city = findCityById(membership.clubCityId);
+      return {
+        id: membership.clubId,
+        name: membership.clubName,
+        description: membership.clubDescription,
+        cityId: membership.clubCityId,
+        cityName: city?.name,
+        status: membership.clubStatus as ClubStatus,
+        role: membership.role as MyClubViewDto['role'],
+        joinedAt: membership.joinedAt,
+      };
+    });
+
+    res.status(200).json(myClubs);
+  } catch (error) {
+    logger.error('Error fetching my clubs', { error });
     res.status(500).json({
       code: 'internal_error',
       message: 'Internal server error',

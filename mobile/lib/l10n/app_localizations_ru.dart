@@ -83,6 +83,12 @@ class AppLocalizationsRu extends AppLocalizations {
       'Нет чатов клубов\n\nВы пока не состоите ни в одном клубе';
 
   @override
+  String get messagesBackToClubs => 'К списку клубов';
+
+  @override
+  String get messagesSelectClub => 'Выберите клуб для переписки';
+
+  @override
   String get noNotifications => 'Нет уведомлений';
 
   @override
@@ -146,6 +152,20 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get quickCreateClub => 'Создать клуб';
+
+  @override
+  String get profileMyClubsButton => 'Клубы';
+
+  @override
+  String get profileMyClubsTitle => 'Мои клубы';
+
+  @override
+  String get profileMyClubsEmpty => 'Вы пока не состоите ни в одном клубе';
+
+  @override
+  String profileMyClubsLoadError(String error) {
+    return 'Не удалось загрузить клубы: $error';
+  }
 
   @override
   String get activityNext => 'Ближайшая тренировка';

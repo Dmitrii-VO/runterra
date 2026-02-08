@@ -22,6 +22,8 @@
   "personalChatsEmpty": "Пока нет личных сообщений",
   "coachMessagesEmpty": "Пока нет сообщений от тренера",
   "noClubChats": "Нет чатов клубов\n\nВы пока не состоите ни в одном клубе",
+  "messagesBackToClubs": "К списку клубов",
+  "messagesSelectClub": "Выберите клуб для переписки",
   "noNotifications": "Нет уведомлений",
   "clubChatsLoadError": "Ошибка загрузки чатов клубов: {error}",
   "notificationsLoadError": "Ошибка загрузки уведомлений: {error}",
@@ -42,6 +44,17 @@
   "quickStartRun": "Начать пробежку",
   "quickFindClub": "Найти клуб",
   "quickCreateClub": "Создать клуб",
+  "profileMyClubsButton": "Клубы",
+  "profileMyClubsTitle": "Мои клубы",
+  "profileMyClubsEmpty": "Вы пока не состоите ни в одном клубе",
+  "profileMyClubsLoadError": "Не удалось загрузить клубы: {error}",
+  "@profileMyClubsLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "activityNext": "Ближайшая тренировка",
   "activityLast": "Последняя активность",
   "activityDefaultName": "Тренировка",

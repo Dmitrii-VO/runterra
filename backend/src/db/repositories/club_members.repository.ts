@@ -14,6 +14,16 @@ interface ClubMemberRow {
   updated_at: Date;
 }
 
+interface ActiveUserClubRow {
+  club_id: string;
+  club_name: string;
+  club_description: string | null;
+  club_city_id: string;
+  club_status: string;
+  membership_role: string;
+  joined_at: Date;
+}
+
 export interface ClubMembershipRow {
   id: string;
   clubId: string;
@@ -22,6 +32,16 @@ export interface ClubMembershipRow {
   role: 'member' | 'trainer' | 'leader';
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface ActiveUserClubMembershipRow {
+  clubId: string;
+  clubName: string;
+  clubDescription?: string;
+  clubCityId: string;
+  clubStatus: string;
+  role: 'member' | 'trainer' | 'leader';
+  joinedAt: Date;
 }
 
 function rowToMembership(row: ClubMemberRow): ClubMembershipRow {
@@ -33,6 +53,20 @@ function rowToMembership(row: ClubMemberRow): ClubMembershipRow {
     role: row.role as ClubMembershipRow['role'],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+function rowToActiveUserClubMembership(
+  row: ActiveUserClubRow,
+): ActiveUserClubMembershipRow {
+  return {
+    clubId: row.club_id,
+    clubName: row.club_name,
+    clubDescription: row.club_description ?? undefined,
+    clubCityId: row.club_city_id,
+    clubStatus: row.club_status,
+    role: row.membership_role as ActiveUserClubMembershipRow['role'],
+    joinedAt: row.joined_at,
   };
 }
 
@@ -89,6 +123,27 @@ export class ClubMembersRepository extends BaseRepository {
       [userId, 'active'],
     );
     return rows.map(rowToMembership);
+  }
+
+  async findActiveClubsByUser(
+    userId: string,
+  ): Promise<ActiveUserClubMembershipRow[]> {
+    const rows = await this.queryMany<ActiveUserClubRow>(
+      `SELECT
+         cm.club_id,
+         c.name AS club_name,
+         c.description AS club_description,
+         c.city_id AS club_city_id,
+         c.status AS club_status,
+         cm.role AS membership_role,
+         cm.created_at AS joined_at
+       FROM club_members cm
+       JOIN clubs c ON c.id = cm.club_id
+       WHERE cm.user_id = $1 AND cm.status = $2
+       ORDER BY cm.created_at DESC`,
+      [userId, 'active'],
+    );
+    return rows.map(rowToActiveUserClubMembership);
   }
 
   /** Get primary (most recent) club id for user (MVP: one club). Newest membership is shown in profile. */
