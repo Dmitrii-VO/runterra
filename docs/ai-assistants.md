@@ -78,5 +78,6 @@ powershell -ExecutionPolicy Bypass -File scripts/ai-auto.ps1 --print "Compare 3 
   - coding-heavy tasks -> `codex` + `gpt-5.3-codex`
   - architecture/research-heavy tasks -> `claude` + `sonnet|opus`
   - mixed/default tasks -> `codex` (for reliability); use `--tool agent` to force Cursor Agent
+- In `mode=orchestrate`, failures do not auto-fallback to single-agent. Use `mode=single` explicitly if you need one-agent execution.
 - Codex uses your existing `codex login` state.
 - Agent uses your existing `agent login` state.

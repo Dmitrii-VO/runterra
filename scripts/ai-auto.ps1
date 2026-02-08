@@ -106,14 +106,12 @@ if ($selectedMode -eq "orchestrate") {
     if ((Test-Path $pythonExe) -and (Test-Path $orchestratorScript)) {
         Write-Host "[ai:auto] mode=orchestrate tool=$selectedTool strategy=$selectedStrategy"
         & $pythonExe $orchestratorScript --tool $selectedTool --strategy $selectedStrategy $prompt
-        if ($LASTEXITCODE -eq 0) {
-            exit 0
+        if ($LASTEXITCODE -ne 0) {
+            throw "LangGraph orchestrator failed (exit code $LASTEXITCODE). Use mode=single only if you explicitly want one-agent execution."
         }
-        Write-Warning "LangGraph orchestrator failed. Falling back to single-agent mode."
+        exit 0
     }
-    else {
-        Write-Warning "LangGraph runtime not found. Falling back to single-agent mode."
-    }
+    throw "LangGraph runtime not found. Expected ai\\.venv\\Scripts\\python.exe and scripts\\ai-langgraph-orchestrator.py"
 }
 
 if ($selectedMode -eq "chat") {

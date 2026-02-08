@@ -226,12 +226,16 @@ def normalize_plan(raw_plan: dict[str, Any], task: str, forced_tool: str, forced
         tool = str(item.get("tool") or "").strip().lower()
         if forced_tool != "auto":
             tool = forced_tool
+        if tool == "auto":
+            tool = infer_tool_for_task(f"{item.get('title', '')} {item.get('objective', '')}")
         if tool not in {"codex", "claude", "agent"}:
             tool = infer_tool_for_task(f"{item.get('title', '')} {item.get('objective', '')}")
 
         execution = str(item.get("execution") or "").strip().lower()
         if forced_strategy != "auto":
             execution = forced_strategy
+        if execution == "auto":
+            execution = "parallel" if not item.get("depends_on") else "sequential"
         if execution not in {"sequential", "parallel"}:
             execution = "sequential"
 
@@ -290,6 +294,13 @@ def execute_tool(tool: str, prompt: str) -> ToolResult:
     return agent_exec(prompt, model=model_for_tool("agent"))
 
 
+def resolve_step_tool(step: Step) -> str:
+    tool = (step.get("tool") or "").strip().lower()
+    if tool in {"codex", "claude", "agent"}:
+        return tool
+    return infer_tool_for_task(f"{step.get('title', '')} {step.get('objective', '')}")
+
+
 def plan_node(state: OrchestratorState) -> dict[str, Any]:
     task = state["task"]
     forced_tool = state["forced_tool"]
@@ -310,8 +321,8 @@ Use this schema exactly:
     {{
       "id": "S1",
       "title": "short title",
-      "tool": "codex|claude|agent",
-      "execution": "sequential|parallel",
+      "tool": "codex|claude|agent|auto",
+      "execution": "sequential|parallel|auto",
       "depends_on": [],
       "objective": "what this step must produce"
     }}
@@ -323,6 +334,7 @@ Rules:
   - codex: code edits, tests, terminal-heavy debugging
   - claude: architecture/research/spec decomposition
   - agent: second-pass validation or alternative implementation checks
+- Prefer execution="auto" unless you have a strong reason to force sequential/parallel.
 - Prefer parallel only for independent steps.
 - Steps must be dependency-safe.
 """.strip()
@@ -361,11 +373,17 @@ def pick_node(state: OrchestratorState) -> dict[str, Any]:
     if not ready:
         return {"status": "error", "active_steps": [], "log": state["log"] + ["[pick] dependency deadlock"]}
 
-    parallel_ready = [s for s in ready if s["execution"] == "parallel"]
-    if len(parallel_ready) >= 2:
-        active = parallel_ready
-    else:
+    forced_strategy = state["forced_strategy"]
+    if forced_strategy == "parallel":
+        active = ready
+    elif forced_strategy == "sequential":
         active = [ready[0]]
+    else:
+        sequential_ready = [s for s in ready if s["execution"] == "sequential"]
+        if sequential_ready:
+            active = [sequential_ready[0]]
+        else:
+            active = ready
 
     ids = ",".join(s["id"] for s in active)
     log_entry = f"[pick] active={ids}"
@@ -408,7 +426,7 @@ Execution requirements:
 
 def run_one_step(task: str, step: Step, completed: list[CompletedStep]) -> CompletedStep:
     prompt = make_step_prompt(task, step, completed)
-    primary_tool = step["tool"]
+    primary_tool = resolve_step_tool(step)
     result = execute_tool(primary_tool, prompt)
 
     used_tool = primary_tool
