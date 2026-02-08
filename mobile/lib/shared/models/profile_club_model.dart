@@ -11,7 +11,7 @@ class ProfileClubModel {
   
   /// Роль пользователя в клубе
   /// 
-  /// Возможные значения: 'member', 'moderator', 'leader'
+  /// Возможные значения: 'member', 'trainer', 'leader'
   final String role;
 
   ProfileClubModel({

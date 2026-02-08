@@ -1,7 +1,7 @@
 -- Migration: 013_club_members_role
 -- Description: Add role column to club_members table
 -- Created: 2026-02-08
--- Reason: Implement club roles (leader, moderator, member) as per product_spec.md §5.3
+-- Reason: Implement club roles (leader, trainer, member) as per product_spec.md §5.3. See 014 for trainer rename.
 
 -- Add role column with default 'member'
 ALTER TABLE club_members

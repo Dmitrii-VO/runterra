@@ -130,8 +130,8 @@ class ProfileHeaderSection extends StatelessWidget {
     switch (role) {
       case 'member':
         return l10n.roleMember;
-      case 'moderator':
-        return l10n.roleModerator;
+      case 'trainer':
+        return l10n.roleTrainer;
       case 'leader':
         return l10n.roleLeader;
       default:

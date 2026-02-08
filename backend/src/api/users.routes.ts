@@ -17,6 +17,7 @@ import { ActivityStatus } from '../modules/activities';
 import { validateBody } from './validateBody';
 import { getUsersRepository, getRunsRepository, getClubMembersRepository, getClubsRepository } from '../db/repositories';
 import { findCityById } from '../modules/cities/cities.config';
+import { ClubRole } from '../modules/clubs';
 import { logger } from '../shared/logger';
 
 const router = Router();
@@ -103,7 +104,7 @@ router.get('/me/profile', async (req: Request, res: Response) => {
       ? {
           id: primaryClub.id,
           name: primaryClub.name,
-          role: membership?.role ?? 'member',
+          role: (membership?.role ?? 'member') as ClubRole,
         }
       : null;
 
