@@ -25,6 +25,7 @@ import { validateBody } from './validateBody';
 import { getEventsRepository, getUsersRepository } from '../db/repositories';
 import { logger } from '../shared/logger';
 import { isPointWithinCityBounds } from '../modules/cities/city.utils';
+import { getOrganizerDisplayName, getOrganizerDisplayNamesBatch } from './helpers/organizer-display';
 
 const router = Router();
 
@@ -76,8 +77,11 @@ router.get('/', async (req: Request, res: Response) => {
       offset: offset ? parseInt(offset, 10) : 0,
     });
     
-    // Map to DTO format
-    const eventsDto: EventListItemDto[] = events.map(event => ({
+    // Resolve organizer display names in batch (two DB queries total)
+    const organizerNames = await getOrganizerDisplayNamesBatch(
+      events.map((e) => ({ organizerId: e.organizerId, organizerType: e.organizerType })),
+    );
+    const eventsDto: EventListItemDto[] = events.map((event) => ({
       id: event.id,
       name: event.name,
       type: event.type,
@@ -87,12 +91,15 @@ router.get('/', async (req: Request, res: Response) => {
       locationName: event.locationName,
       organizerId: event.organizerId,
       organizerType: event.organizerType,
+      organizerDisplayName: organizerNames.get(
+        `${event.organizerType}:${event.organizerId}`,
+      ),
       difficultyLevel: event.difficultyLevel,
       participantCount: event.participantCount,
       territoryId: event.territoryId,
       cityId: event.cityId,
     }));
-    
+
     res.status(200).json(eventsDto);
   } catch (error) {
     logger.error('Error fetching events', { error });
@@ -140,6 +147,8 @@ router.get('/:id', async (req: Request, res: Response) => {
       }
     }
 
+    const organizerDisplayName = await getOrganizerDisplayName(event.organizerId, event.organizerType);
+
     const eventDto: EventDetailsDto = {
       id: event.id,
       name: event.name,
@@ -150,6 +159,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       locationName: event.locationName,
       organizerId: event.organizerId,
       organizerType: event.organizerType,
+      organizerDisplayName,
       difficultyLevel: event.difficultyLevel,
       description: event.description,
       participantLimit: event.participantLimit,
@@ -264,7 +274,9 @@ router.post('/', validateBody(CreateEventSchema), async (req: Request<{}, EventD
       territoryId: dto.territoryId,
       cityId: dto.cityId,
     });
-    
+
+    const organizerDisplayName = await getOrganizerDisplayName(event.organizerId, event.organizerType);
+
     const eventDto: EventDetailsDto = {
       id: event.id,
       name: event.name,
@@ -275,6 +287,7 @@ router.post('/', validateBody(CreateEventSchema), async (req: Request<{}, EventD
       locationName: event.locationName,
       organizerId: event.organizerId,
       organizerType: event.organizerType,
+      organizerDisplayName,
       difficultyLevel: event.difficultyLevel,
       description: event.description,
       participantLimit: event.participantLimit,

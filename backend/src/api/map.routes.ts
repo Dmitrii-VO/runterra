@@ -13,6 +13,7 @@ import { getEventsRepository } from '../db/repositories';
 import { getTerritoriesForCity } from '../modules/territories/territories.config';
 import { findCityById } from '../modules/cities/cities.config';
 import { logger } from '../shared/logger';
+import { getOrganizerDisplayNamesBatch } from './helpers/organizer-display';
 
 const router = Router();
 
@@ -84,8 +85,11 @@ router.get('/data', async (req: Request, res: Response) => {
       limit: 100,
     });
     
-    // Map to DTO
-    const eventsDto: EventListItemDto[] = events.map(event => ({
+    // Resolve organizer display names in batch (two DB queries total)
+    const organizerNames = await getOrganizerDisplayNamesBatch(
+      events.map((e) => ({ organizerId: e.organizerId, organizerType: e.organizerType })),
+    );
+    const eventsDto: EventListItemDto[] = events.map((event) => ({
       id: event.id,
       name: event.name,
       type: event.type,
@@ -95,6 +99,9 @@ router.get('/data', async (req: Request, res: Response) => {
       locationName: event.locationName,
       organizerId: event.organizerId,
       organizerType: event.organizerType,
+      organizerDisplayName: organizerNames.get(
+        `${event.organizerType}:${event.organizerId}`,
+      ),
       difficultyLevel: event.difficultyLevel,
       participantCount: event.participantCount,
       territoryId: event.territoryId,

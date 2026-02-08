@@ -73,6 +73,7 @@ const mockClub = {
 // Mock UsersRepository
 export const mockUsersRepository = {
   findById: jest.fn().mockResolvedValue(mockUser),
+  findByIds: jest.fn().mockResolvedValue([mockUser]),
   findByFirebaseUid: jest.fn().mockResolvedValue(mockUser),
   findAll: jest.fn().mockResolvedValue([mockUser]),
   create: jest.fn().mockResolvedValue(mockUser),
@@ -114,6 +115,7 @@ export const mockClubMembersRepository = {
 
 export const mockClubsRepository = {
   findById: jest.fn().mockResolvedValue(mockClub),
+  findByIds: jest.fn().mockResolvedValue([mockClub]),
   findByCityId: jest.fn().mockResolvedValue([mockClub]),
   create: jest.fn().mockResolvedValue(mockClub),
   update: jest.fn().mockResolvedValue(mockClub),

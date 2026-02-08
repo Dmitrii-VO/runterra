@@ -2,6 +2,53 @@
 
 ## История изменений
 
+### 2026-02-08 — Организатор события: отображаемое имя вместо ID
+
+- **Проблема:** Во вкладке «Событие» в поле «Организатор» выводился сырой идентификатор (много символов), а не имя того, кто создал событие (клуб или тренер).
+- **Backend:**
+  - В `EventDetailsDto` и `EventListItemDto` добавлено опциональное поле `organizerDisplayName?: string`.
+  - Добавлен хелпер `getOrganizerDisplayName(organizerId, organizerType)` в `api/helpers/organizer-display.ts`: для типа `club` — запрос к `ClubsRepository.findById`, для `trainer` — к `UsersRepository.findById`; при ошибке резолва возвращается `undefined`, в лог пишется предупреждение.
+  - В `GET /api/events` при маппинге списка событий для каждого события вызывается `getOrganizerDisplayName`, результат попадает в `organizerDisplayName` в DTO.
+  - В `GET /api/events/:id` перед формированием `EventDetailsDto` вызывается `getOrganizerDisplayName`, значение передаётся в DTO.
+  - В `GET /api/map/data` при формировании списка событий для карты аналогично добавляется `organizerDisplayName` для каждого события.
+- **Mobile:**
+  - В `EventDetailsModel` и `EventListItemModel` добавлено опциональное поле `organizerDisplayName`; парсинг в `fromJson` и сериализация в `toJson` обновлены.
+  - На экране деталей события (`EventDetailsScreen`) в строке «Организатор» выводится `event.organizerDisplayName ?? event.organizerId`.
+  - В карточке события в списке (`events/widgets/event_card.dart`) выводится `organizerDisplayName` при наличии, иначе — `eventOrganizerLabel(organizerId)`.
+  - В карточке события на карте (`map/widgets/event_card.dart`) выводится `organizerDisplayName` при наличии, иначе — `clubLabel`/`trainerLabel` по ID.
+- **Итог:** Пользователь видит читаемое имя организатора (название клуба или имя тренера) вместо технического ID.
+
+### 2026-02-08 — Укрепление: батч-резолв, пустая строка, тесты
+
+- **Backend — батч-резолв имён организаторов (устранение N+1):**
+  - Добавлена функция `getOrganizerDisplayNamesBatch(pairs)` в `api/helpers/organizer-display.ts`: собирает уникальные `organizerId` по типам `club` и `trainer`, выполняет два запроса к БД (`ClubsRepository.findByIds`, `UsersRepository.findByIds`) и возвращает `Map<key, name>`.
+  - В `GET /api/events` и `GET /api/map/data` вместо N вызовов `getOrganizerDisplayName` используется один вызов `getOrganizerDisplayNamesBatch`; формирование DTO стало синхронным маппингом по готовой карте. Для `GET /api/events/:id` по-прежнему используется одиночный `getOrganizerDisplayName`.
+  - В `ClubsRepository` добавлен метод `findByIds(ids: string[])` по аналогии с `UsersRepository.findByIds`.
+- **Mobile — пустая строка как отсутствие имени:**
+  - На экране деталей события и в карточках событий (список, карта) для отображения организатора используется проверка `organizerDisplayName?.trim().isNotEmpty == true`; при пустой или состоящей из пробелов строке показывается fallback (ID или лейбл).
+- **Тесты:**
+  - В `api.test.ts` добавлены проверки: GET /api/events — у первого события в ответе есть `organizerDisplayName`, для мока с клубом ожидается `'Test Club'`; GET /api/events/:id — в ответе есть `organizerDisplayName`, для клуба — `'Test Club'`.
+  - В моках репозиториев добавлены `findByIds` для `mockClubsRepository` и `mockUsersRepository`.
+- **Защита от пустых/невалидных ID:**
+  - В `getOrganizerDisplayName`: при пустом или состоящем только из пробелов `organizerId` возвращается `undefined` без запроса к БД.
+  - В `getOrganizerDisplayNamesBatch`: в списки `clubIds` и `trainerIds` попадают только пары с непустым (после trim) `organizerId`, чтобы не передавать пустые строки в `findByIds` (важно для колонок типа UUID).
+
+#### Риски (organizerDisplayName) — проверка и митигации
+
+| Риск | Вероятность | Влияние | Митигация |
+|------|-------------|---------|-----------|
+| **PostgreSQL: `id = ANY($1)` при невалидном UUID** — колонки `clubs.id` и `users.id` имеют тип UUID; при наличии в событиях legacy-значений `organizer_id` (например `club-1`) запрос может выбросить ошибку приведения типа. | Средняя (если в БД есть старые данные) | Ошибка ловится в try/catch; возвращается пустая карта / undefined; в ответе API поле `organizerDisplayName` отсутствует; на mobile показывается fallback по ID. Падения нет. | Try/catch в `getOrganizerDisplayName` и `getOrganizerDisplayNamesBatch`; фильтрация пустых `organizerId` перед вызовом `findByIds`. |
+| **Удалённый клуб/пользователь** — событие ссылается на удалённого организатора. | Низкая | `findById`/`findByIds` возвращают пустой результат; имя не подставляется; в UI показывается ID. | Ожидаемое поведение; fallback на ID на mobile. |
+| **`user.name` или `club.name` в БД = NULL** — теоретически при изменении схемы. | Низкая | В карту попадает `undefined`; в JSON поле может отсутствовать; mobile обрабатывает null/отсутствие. | Схема: `name` NOT NULL; при появлении nullable — mobile уже использует `?.trim().isNotEmpty`. |
+| **Пустая строка `organizerDisplayName` с backend** — backend мог бы отдать `""`. | Низкая | Mobile проверяет `organizerDisplayName?.trim().isNotEmpty == true`; пустая строка не показывается, используется fallback. | Реализовано на mobile. |
+| **Порядок событий** — батч резолвит по уникальным ID; маппинг DTO идёт по исходному порядку `events`. | Нет | Порядок сохраняется; карта только подставляет имена. | — |
+| **Дубликаты организаторов** — несколько событий с одним и тем же клубом/тренером. | Нет | Уникальные ID собираются в Set; два запроса к БД независимо от числа событий. | Реализовано. |
+| **Один запрос падает в Promise.all (batch)** — падение `findByIds` для клубов или пользователей. | Низкая | Весь batch ловит ошибку; возвращается пустая карта; все события в ответе без `organizerDisplayName`. | Try/catch в `getOrganizerDisplayNamesBatch`; логирование предупреждения. |
+| **Mobile: null/undefined в `fromJson`** — поле `organizerDisplayName` отсутствует или null. | Нет | `json['organizerDisplayName'] as String?` даёт null; проверка `?.trim().isNotEmpty` даёт false; показывается fallback. | Реализовано. |
+| **Контракт API: ключ в ответе** — при `undefined` поле может не сериализоваться в JSON. | Нет | Клиент получает отсутствующее поле как null при парсинге; поведение единообразно. | Ожидаемо. |
+
+**Рекомендуемые проверки после деплоя:** (1) События с организатором-клубом (UUID) — отображается название клуба. (2) События с организатором-тренером — отображается имя пользователя. (3) Событие с несуществующим/удалённым организатором — отображается ID, без падения. (4) Список из 20+ событий — время ответа GET /api/events в норме (два доп. запроса к БД).
+
 ### 2026-02-06 — Доделан флоу событий на mobile (создание, join, check-in, фильтры)
 
 - **Mobile — EventsService:** Методы `getEventById` и `getEventParticipants` теперь обрабатывают HTTP‑ошибки в едином стиле через `ApiException`: при не‑2xx ответах парсятся `code`/`message` из ADR‑ответа backend (или используется fallback‑код) и выбрасывается `ApiException`, как и для `createEvent`/`joinEvent`/`checkInEvent`/`leaveEvent`. Это устраняет "тихие" падения при 404/500 и унифицирует обработку ошибок во всех вызовах Events API на клиенте.

@@ -38,6 +38,16 @@ export class ClubsRepository extends BaseRepository {
     return row ? rowToClub(row) : null;
   }
 
+  async findByIds(ids: string[]): Promise<Club[]> {
+    const uniqueIds = Array.from(new Set(ids));
+    if (uniqueIds.length === 0) return [];
+    const rows = await this.queryMany<ClubRow>(
+      'SELECT * FROM clubs WHERE id = ANY($1)',
+      [uniqueIds]
+    );
+    return rows.map(rowToClub);
+  }
+
   async findByCityId(cityId: string): Promise<Club[]> {
     const rows = await this.queryMany<ClubRow>(
       'SELECT * FROM clubs WHERE city_id = $1 AND status = $2 ORDER BY created_at DESC',

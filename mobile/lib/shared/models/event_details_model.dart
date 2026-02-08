@@ -43,6 +43,9 @@ class EventDetailsModel {
   /// Возможные значения: 'club', 'trainer'
   final String organizerType;
   
+  /// Отображаемое имя организатора (название клуба или имя тренера). Приходит с backend.
+  final String? organizerDisplayName;
+  
   /// Уровень подготовки
   /// 
   /// Возможные значения: 'beginner', 'intermediate', 'advanced'
@@ -99,6 +102,7 @@ class EventDetailsModel {
     this.locationName,
     required this.organizerId,
     required this.organizerType,
+    this.organizerDisplayName,
     this.difficultyLevel,
     this.description,
     this.participantLimit,
@@ -128,6 +132,7 @@ class EventDetailsModel {
       locationName: json['locationName'] as String?,
       organizerId: json['organizerId'] as String,
       organizerType: json['organizerType'] as String,
+      organizerDisplayName: json['organizerDisplayName'] as String?,
       difficultyLevel: json['difficultyLevel'] as String?,
       description: json['description'] as String?,
       participantLimit: json['participantLimit'] != null
@@ -157,6 +162,7 @@ class EventDetailsModel {
       if (locationName != null) 'locationName': locationName,
       'organizerId': organizerId,
       'organizerType': organizerType,
+      if (organizerDisplayName != null) 'organizerDisplayName': organizerDisplayName,
       if (difficultyLevel != null) 'difficultyLevel': difficultyLevel,
       if (description != null) 'description': description,
       if (participantLimit != null) 'participantLimit': participantLimit,

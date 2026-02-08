@@ -119,9 +119,26 @@ describe('API Routes', () => {
       const res = await request(app)
         .get('/api/events?cityId=spb')
         .set('Authorization', 'Bearer test-token');
-      
+
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
+    });
+
+    it('returns events with organizerDisplayName when organizer exists', async () => {
+      const res = await request(app)
+        .get('/api/events?cityId=spb')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBeGreaterThan(0);
+      const first = res.body[0];
+      expect(first).toHaveProperty('organizerId');
+      expect(first).toHaveProperty('organizerType');
+      expect(first).toHaveProperty('organizerDisplayName');
+      // Mock returns club with name 'Test Club' for organizerId 'club-1'
+      if (first.organizerType === 'club' && first.organizerId === 'club-1') {
+        expect(first.organizerDisplayName).toBe('Test Club');
+      }
     });
   });
 
@@ -229,12 +246,17 @@ describe('API Routes', () => {
       expect(res.status).toBe(200);
     });
 
-    it('GET /api/events/:id returns 200 (stub)', async () => {
+    it('GET /api/events/:id returns 200 with organizerDisplayName (stub)', async () => {
       const res = await request(app)
         .get('/api/events/any-id')
         .set('Authorization', 'Bearer test-token');
-      
+
       expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('organizerDisplayName');
+      // Mock event has organizerId 'club-1', mock club name is 'Test Club'
+      if (res.body.organizerType === 'club') {
+        expect(res.body.organizerDisplayName).toBe('Test Club');
+      }
     });
 
     it('GET /api/clubs/:id returns 200 (stub)', async () => {

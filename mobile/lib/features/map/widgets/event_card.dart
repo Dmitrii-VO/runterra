@@ -137,11 +137,17 @@ class EventCard extends StatelessWidget {
             children: [
               const Icon(Icons.person, size: 16, color: Colors.grey),
               const SizedBox(width: 8),
-              Text(
-                event.organizerType == 'club'
-                    ? AppLocalizations.of(context)!.clubLabel(event.organizerId)
-                    : AppLocalizations.of(context)!.trainerLabel(event.organizerId),
-                style: Theme.of(context).textTheme.bodyMedium,
+              Expanded(
+                child: Text(
+                  (event.organizerDisplayName?.trim().isNotEmpty == true)
+                      ? event.organizerDisplayName!.trim()
+                      : (event.organizerType == 'club'
+                          ? AppLocalizations.of(context)!.clubLabel(event.organizerId)
+                          : AppLocalizations.of(context)!.trainerLabel(event.organizerId)),
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),

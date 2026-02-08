@@ -190,7 +190,9 @@ class EventCard extends StatelessWidget {
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      AppLocalizations.of(context)!.eventOrganizerLabel(event.organizerId),
+                      (event.organizerDisplayName?.trim().isNotEmpty == true)
+                          ? event.organizerDisplayName!.trim()
+                          : AppLocalizations.of(context)!.eventOrganizerLabel(event.organizerId),
                       style: Theme.of(context).textTheme.bodySmall,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

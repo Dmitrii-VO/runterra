@@ -127,6 +127,9 @@ export interface EventDetailsDto {
   /** Тип организатора */
   organizerType: 'club' | 'trainer';
   
+  /** Отображаемое имя организатора (название клуба или имя тренера). Заполняется backend при отдаче. */
+  organizerDisplayName?: string;
+  
   /** Уровень подготовки */
   difficultyLevel?: 'beginner' | 'intermediate' | 'advanced';
   
@@ -210,6 +213,9 @@ export interface EventListItemDto {
   
   /** Тип организатора */
   organizerType: 'club' | 'trainer';
+  
+  /** Отображаемое имя организатора (название клуба или имя тренера). Заполняется backend при отдаче. */
+  organizerDisplayName?: string;
   
   /** Уровень подготовки */
   difficultyLevel?: 'beginner' | 'intermediate' | 'advanced';

@@ -302,9 +302,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       context,
                       event.organizerType == 'club' ? Icons.group : Icons.person,
                       AppLocalizations.of(context)!.eventOrganizer,
-                      event.organizerId, // TODO: Получить название клуба/тренера
+                      (event.organizerDisplayName?.trim().isNotEmpty == true)
+                          ? event.organizerDisplayName!.trim()
+                          : event.organizerId,
                       onTap: () {
-                        // TODO: Переход на профиль клуба/тренера
                         if (event.organizerType == 'club') {
                           context.push('/club/${event.organizerId}');
                         }
