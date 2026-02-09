@@ -18,6 +18,10 @@ if ($env:DEPLOY_SKIP_FIREBASE -eq "1") { $SkipFirebase = $true }
 $nonSwitchArgs = $args | Where-Object { $_ -notin @("-SkipFirebase", "-SkipTests") }
 if ($nonSwitchArgs.Count -gt 0) { $ReleaseNotes = ($ReleaseNotes, $nonSwitchArgs) -join " " }
 
+# Fix UTF-8 encoding for git output on Windows
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+
 $ErrorActionPreference = "Stop"
 $ProjectRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $ConfigPath = Join-Path $ProjectRoot "scripts\app-distribution.config.json"
@@ -27,16 +31,21 @@ Set-Location $ProjectRoot
 
 # --- Version from git tags ---
 function Get-VersionFromGit {
+    $prevPref = $ErrorActionPreference
+    $ErrorActionPreference = "SilentlyContinue"
     $latestTag = git describe --tags --match "v*" --abbrev=0 2>$null
-    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($latestTag)) {
+    $describeExitCode = $LASTEXITCODE
+    if ($describeExitCode -ne 0 -or [string]::IsNullOrWhiteSpace($latestTag)) {
         $version = "0.1.0"
         $commitCount = [int](git rev-list --count HEAD 2>$null)
         if ($LASTEXITCODE -ne 0) { $commitCount = 1 }
+        $ErrorActionPreference = $prevPref
         return @{ Version = $version; BuildNumber = $commitCount; Tag = $null }
     }
     $version = $latestTag -replace "^v", ""
     $commitCount = [int](git rev-list --count "$latestTag..HEAD" 2>$null)
     if ($LASTEXITCODE -ne 0) { $commitCount = 0 }
+    $ErrorActionPreference = $prevPref
     return @{ Version = $version; BuildNumber = $commitCount; Tag = $latestTag }
 }
 
@@ -44,11 +53,15 @@ function Get-VersionFromGit {
 function Get-ReleaseNotesFromGit {
     param([string]$SinceTag)
 
+    $prevPref = $ErrorActionPreference
+    $ErrorActionPreference = "SilentlyContinue"
     if ($SinceTag) {
         $commits = git log "$SinceTag..HEAD" --pretty=format:"%s" 2>$null
     } else {
-        $commits = git log --pretty=format:"%s" -20 2>$null
+        # No tag — take only the last 10 commits
+        $commits = git log --pretty=format:"%s" -10 2>$null
     }
+    $ErrorActionPreference = $prevPref
     if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($commits)) {
         return "Release " + (Get-Date -Format "yyyy-MM-dd HH:mm")
     }
@@ -56,10 +69,19 @@ function Get-ReleaseNotesFromGit {
     $lines = $commits -split "`n" | ForEach-Object {
         $line = $_.Trim()
         if ([string]::IsNullOrWhiteSpace($line)) { return $null }
+        # Skip infrastructure/CI/deploy-only commits
+        if ($line -match "^(Merge |Deploy:|Update deploy|ремонт скрипта|langgraph|CI |fix ci)") { return $null }
+        # Skip lines with mojibake (double-encoded UTF-8: abnormally many capital Р/С chars)
+        $mojibakeCount = ($line.ToCharArray() | Where-Object { $_ -eq [char]0x0420 -or $_ -eq [char]0x0421 }).Count
+        if ($mojibakeCount -gt 4) { return $null }
         # Strip conventional commit prefixes: feat(scope):, fix:, chore:, etc.
         $line = $line -replace "^(feat|fix|chore|refactor|docs|style|test|perf|ci|build|revert)(\([^)]*\))?:\s*", ""
-        # Strip technical artifacts: HTTP methods + paths, file paths
+        # Strip technical artifacts: HTTP methods + paths, file paths, class/method names
         $line = $line -replace "\b(GET|POST|PUT|PATCH|DELETE)\s+/[^\s,;]*", ""
+        $line = $line -replace "\b\w+Repository\.\w+", ""
+        $line = $line -replace "\b\w+\.(routes|dto|entity|config)\.\w+", ""
+        $line = $line -replace "Backend:\s*", ""
+        $line = $line -replace "Mobile:\s*", ""
         # Strip leftover commas/semicolons at start/end
         $line = $line -replace "^[\s,;]+", ""
         $line = $line -replace "[\s,;]+$", ""
@@ -81,7 +103,8 @@ $buildName = $versionInfo.Version
 $buildNumber = $versionInfo.BuildNumber
 
 Write-Host "=== Version ===" -ForegroundColor Cyan
-Write-Host "  Tag:          $($versionInfo.Tag ?? '(none, using default 0.1.0)')" -ForegroundColor White
+$tagDisplay = if ($versionInfo.Tag) { $versionInfo.Tag } else { "(none, using default 0.1.0)" }
+Write-Host "  Tag:          $tagDisplay" -ForegroundColor White
 Write-Host "  Version:      $buildName+$buildNumber" -ForegroundColor White
 
 if ([string]::IsNullOrWhiteSpace($ReleaseNotes)) {
