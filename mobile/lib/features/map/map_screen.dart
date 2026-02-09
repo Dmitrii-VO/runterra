@@ -62,6 +62,7 @@ class _MapScreenState extends State<MapScreen> {
   static const double _maxZoom = 19.0;
   bool _isAdjustingCamera = false;
   bool _hasFocusPoint = false;
+  bool _isAnimatingToFocus = false;
   
   // Объекты на карте
   List<CircleMapObject> _territoryCircles = [];
@@ -84,24 +85,40 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  /// Moves camera to focus coordinates if provided
-  void _flyToFocusPoint() {
+  /// Moves camera to focus coordinates if provided.
+  /// Uses _isAnimatingToFocus flag to prevent _handleCameraPositionChanged
+  /// from clamping intermediate animation frames to city bounds (which would
+  /// interrupt the focus animation when starting position is far from target).
+  Future<void> _flyToFocusPoint() async {
     final lat = widget.focusLatitude;
     final lon = widget.focusLongitude;
     if (lat != null && lon != null && _mapController != null) {
       _hasFocusPoint = true;
-      _mapController!.moveCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(
-            target: Point(latitude: lat, longitude: lon),
-            zoom: 15.0,
+      _isAnimatingToFocus = true;
+
+      // Small delay to ensure native map view is fully laid out
+      await Future.delayed(const Duration(milliseconds: 100));
+      if (!mounted || _mapController == null) {
+        _isAnimatingToFocus = false;
+        return;
+      }
+
+      try {
+        await _mapController!.moveCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+              target: Point(latitude: lat, longitude: lon),
+              zoom: 15.0,
+            ),
           ),
-        ),
-        animation: const MapAnimation(
-          type: MapAnimationType.smooth,
-          duration: 1.0,
-        ),
-      );
+          animation: const MapAnimation(
+            type: MapAnimationType.smooth,
+            duration: 1.0,
+          ),
+        );
+      } finally {
+        _isAnimatingToFocus = false;
+      }
     }
   }
 
@@ -470,7 +487,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _handleCameraPositionChanged(CameraPosition position) {
-    if (_isAdjustingCamera || _mapController == null || _currentCity == null) {
+    if (_isAdjustingCamera || _isAnimatingToFocus || _mapController == null || _currentCity == null) {
       return;
     }
 
@@ -569,7 +586,7 @@ class _MapScreenState extends State<MapScreen> {
 
       // If focus coordinates provided, center on them; otherwise use default city center
       if (widget.focusLatitude != null && widget.focusLongitude != null) {
-        _flyToFocusPoint();
+        await _flyToFocusPoint();
       } else {
         await _centerMapOnStartPosition();
       }
