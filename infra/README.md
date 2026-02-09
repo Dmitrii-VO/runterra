@@ -391,6 +391,24 @@ GitHub Actions CI (`ci.yml`) запускается на каждый push/PR в
   - **Backend:** 2 новых endpoint'а + валидация роли в leave.
   - **Зависимости:** Экран участников клуба (уже реализован частично); `GET /api/clubs/:id/members` (уже есть).
 
+#### Feedback (2026-02-09, баги после реализации)
+
+##### Карта: переход с мини-карты события не приближает к нужной точке
+- [x] **При нажатии на точку старта в событии карта переключается, но не приближается** [Сложность: S] ✅ Исправлено: добавлен `didUpdateWidget` + `_flyToFocusPoint()` в MapScreen
+  - **Где:** `mobile/lib/features/events/event_details_screen.dart` — мини-карта события; `mobile/lib/app.dart` — роут `/map`; `mobile/lib/features/map/map_screen.dart` — обработка `focusLatitude`/`focusLongitude`.
+  - **Симптом:** Пользователь нажимает на мини-карту события, экран переключается на вкладку «Карта», но карта не приближается к координатам события — остаётся на дефолтном zoom/позиции.
+  - **Вероятная причина:** `context.go('/map?lat=$lat&lon=$lon')` переключает на вкладку карты через ShellRoute, но MapScreen может не получать новые параметры при переиспользовании виджета (GoRouter ShellRoute кэширует дочерний виджет).
+  - **Что нужно:** Проверить, что `MapScreen` реагирует на изменение query-параметров (например через `didUpdateWidget` или `didChangeDependencies`), а не только в `_onMapCreated`. Если виджет уже создан, нужно повторно вызвать `moveCamera` при получении новых координат.
+
+##### Создание события: организатор показывается как UUID вместо имени
+- [x] **Созданное событие показывает UUID организатора вместо имени** [Сложность: S] ✅ Исправлено: приоритет firstName+lastName над name в organizer-display.ts
+  - **Где:** `mobile/lib/features/events/create_event_screen.dart` — автозаполнение `_organizerIdController`; `backend/src/api/events.routes.ts` — `POST /api/events` и `GET /api/events/:id`; `backend/src/api/events.routes.ts` — resolve `organizerDisplayName`.
+  - **Симптом:** При создании тренировки организатор отображается как `aa9cf865...` (UUID пользователя) вместо имени.
+  - **Вероятная причина:** `organizerType = 'trainer'` + `organizerId = userId` — на backend resolve `organizerDisplayName` работает для `club` (ищет клуб по ID), но для `trainer` может не находить пользователя или возвращать пустое имя (fallback на UUID).
+  - **Что нужно:**
+    - Проверить backend resolve `getOrganizerDisplayName` для `organizerType = 'trainer'`: убедиться, что ищется пользователь по `organizerId` через `usersRepo.findById()` и возвращается `firstName + lastName`.
+    - Проверить, что на mobile при `organizerType = 'trainer'` `organizerId` заполняется корректным user ID из профиля.
+
 ### Клубы MVP — чего не хватает для уверенного релиза
 
 По спеке (product_spec §5.3, 16.5) и текущему состоянию кода. Роли в клубе уже приведены к **Лидер / Тренер / Участник** (миграция 014, ClubRole.TRAINER, профиль возвращает реальную роль).

@@ -74,6 +74,35 @@ class _MapScreenState extends State<MapScreen> {
     _ensureCityAndLoad();
   }
 
+  @override
+  void didUpdateWidget(covariant MapScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.focusLatitude != oldWidget.focusLatitude ||
+        widget.focusLongitude != oldWidget.focusLongitude) {
+      _flyToFocusPoint();
+    }
+  }
+
+  /// Moves camera to focus coordinates if provided
+  void _flyToFocusPoint() {
+    final lat = widget.focusLatitude;
+    final lon = widget.focusLongitude;
+    if (lat != null && lon != null && _mapController != null) {
+      _mapController!.moveCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: Point(latitude: lat, longitude: lon),
+            zoom: 15.0,
+          ),
+        ),
+        animation: const MapAnimation(
+          type: MapAnimationType.smooth,
+          duration: 1.0,
+        ),
+      );
+    }
+  }
+
   /// Creates a programmatic event marker icon (orange circle with calendar icon)
   Future<void> _createEventMarkerIcon() async {
     const size = 64.0;
@@ -534,21 +563,7 @@ class _MapScreenState extends State<MapScreen> {
 
       // If focus coordinates provided, center on them; otherwise use default city center
       if (widget.focusLatitude != null && widget.focusLongitude != null) {
-        await _mapController!.moveCamera(
-          CameraUpdate.newCameraPosition(
-            CameraPosition(
-              target: Point(
-                latitude: widget.focusLatitude!,
-                longitude: widget.focusLongitude!,
-              ),
-              zoom: 15.0,
-            ),
-          ),
-          animation: const MapAnimation(
-            type: MapAnimationType.smooth,
-            duration: 0.5,
-          ),
-        );
+        _flyToFocusPoint();
       } else {
         await _centerMapOnStartPosition();
       }

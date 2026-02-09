@@ -21,7 +21,9 @@ export async function getOrganizerDisplayName(
       return club?.name;
     }
     const user = await getUsersRepository().findById(organizerId);
-    return user?.name;
+    if (!user) return undefined;
+    const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ');
+    return fullName || user.name || undefined;
   } catch (error) {
     logger.warn('Failed to resolve organizer display name', { organizerId, organizerType, error });
     return undefined;
@@ -60,7 +62,8 @@ export async function getOrganizerDisplayNamesBatch(
       result.set(key(club.id, 'club'), club.name);
     }
     for (const user of users) {
-      result.set(key(user.id, 'trainer'), user.name);
+      const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ');
+      result.set(key(user.id, 'trainer'), fullName || user.name || undefined);
     }
   } catch (error) {
     logger.warn('Failed to batch resolve organizer display names', { error });
