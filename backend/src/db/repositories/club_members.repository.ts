@@ -14,6 +14,29 @@ interface ClubMemberRow {
   updated_at: Date;
 }
 
+interface ClubMemberDetailRow {
+  user_id: string;
+  display_name: string;
+  role: string;
+  joined_at: Date;
+}
+
+export interface ClubMemberDetailDto {
+  userId: string;
+  displayName: string;
+  role: 'member' | 'trainer' | 'leader';
+  joinedAt: Date;
+}
+
+function rowToClubMemberDetail(row: ClubMemberDetailRow): ClubMemberDetailDto {
+  return {
+    userId: row.user_id,
+    displayName: row.display_name,
+    role: row.role as ClubMemberDetailDto['role'],
+    joinedAt: row.joined_at,
+  };
+}
+
 interface ActiveUserClubRow {
   club_id: string;
   club_name: string;
@@ -153,6 +176,39 @@ export class ClubMembersRepository extends BaseRepository {
       [userId, 'active'],
     );
     return row?.club_id ?? null;
+  }
+
+  /** Get all active members of a club with user display names */
+  async findMembersByClub(clubId: string): Promise<ClubMemberDetailDto[]> {
+    const rows = await this.queryMany<ClubMemberDetailRow>(
+      `SELECT
+         cm.user_id,
+         COALESCE(NULLIF(TRIM(CONCAT(u.first_name, ' ', u.last_name)), ''), u.name) AS display_name,
+         cm.role,
+         cm.created_at AS joined_at
+       FROM club_members cm
+       JOIN users u ON u.id = cm.user_id
+       WHERE cm.club_id = $1 AND cm.status = 'active'
+       ORDER BY cm.created_at ASC`,
+      [clubId],
+    );
+    return rows.map(rowToClubMemberDetail);
+  }
+
+  /** Update role of a club member */
+  async updateRole(
+    clubId: string,
+    userId: string,
+    role: 'member' | 'trainer' | 'leader',
+  ): Promise<ClubMembershipRow | null> {
+    const row = await this.queryOne<ClubMemberRow>(
+      `UPDATE club_members
+       SET role = $3, updated_at = NOW()
+       WHERE club_id = $1 AND user_id = $2 AND status = 'active'
+       RETURNING *`,
+      [clubId, userId, role],
+    );
+    return row ? rowToMembership(row) : null;
   }
 
   /** Count active members for a club */

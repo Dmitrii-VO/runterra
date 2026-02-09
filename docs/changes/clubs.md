@@ -2,6 +2,24 @@
 
 ## История изменений
 
+### 2026-02-09 — Список участников клуба + управление ролями
+
+**Контекст:** На экране клуба не было списка участников и возможности управлять ролями.
+
+**Что сделано:**
+- **Backend:**
+  - Новый метод `findMembersByClub(clubId)` в `ClubMembersRepository` — JOIN club_members + users, возвращает userId, displayName, role, joinedAt.
+  - Новый метод `updateRole(clubId, userId, role)` в `ClubMembersRepository`.
+  - Новый endpoint `GET /api/clubs/:id/members` — доступен всем авторизованным.
+  - Новый endpoint `PATCH /api/clubs/:id/members/:userId/role` — только для leader, body: `{ role: "member" | "trainer" | "leader" }`.
+  - Zod-валидация `UpdateMemberRoleSchema`.
+- **Mobile:**
+  - Новая модель `ClubMemberModel` (`shared/models/club_member_model.dart`).
+  - Методы `getClubMembers()` и `updateMemberRole()` в `ClubsService`.
+  - Секция «Участники» на `ClubDetailsScreen` с аватарами, именами и ролями.
+  - Для лидера — bottom sheet смены роли по тапу на участника.
+  - Новые l10n ключи: `clubMembersTitle`, `clubMembersEmpty`, `clubMembersLoadError`, `clubMemberRoleChange`, `clubMemberRoleChangeSuccess`, `clubMemberRoleChangeError`.
+
 ### 2026-02-08 — Мои клубы в профиле (API + mobile)
 
 **Контекст:** По feedback от 2026-02-08 пользователь может состоять в нескольких клубах, но в профиле это не отображалось.

@@ -6,7 +6,6 @@ import '../../shared/api/users_service.dart';
 import '../../shared/auth/auth_service.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/profile_model.dart';
-import '../../shared/models/profile_club_model.dart';
 import '../../shared/ui/profile/header_section.dart';
 import '../../shared/ui/profile/stats_section.dart';
 import '../../shared/ui/profile/activity_section.dart';
@@ -168,10 +167,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     final profile = snapshot.data!;
-    final resolvedClub = _resolveClub(profile);
     return ListView(
       children: [
-        ProfileHeaderSection(user: profile.user, club: resolvedClub),
+        ProfileHeaderSection(user: profile.user),
         ProfilePersonalInfoSection(user: profile.user),
         ProfileStatsSection(stats: profile.stats),
         _CitySection(
@@ -184,7 +182,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           lastActivity: profile.lastActivity,
         ),
         ProfileQuickActionsSection(
-          hasClub: resolvedClub != null,
+          hasClub: profile.club != null,
           isMercenary: profile.user.isMercenary,
         ),
         Card(
@@ -236,9 +234,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  ProfileClubModel? _resolveClub(ProfileModel profile) {
-    return profile.club;
-  }
 }
 
 /// Блок «Город» в личном кабинете: отображает текущий город, по нажатию — выбор города.

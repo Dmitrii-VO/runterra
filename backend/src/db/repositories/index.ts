@@ -12,5 +12,6 @@ export {
   getClubMembersRepository,
   ClubMembershipRow,
   ActiveUserClubMembershipRow,
+  ClubMemberDetailDto,
 } from './club_members.repository';
 export { ClubsRepository, getClubsRepository } from './clubs.repository';

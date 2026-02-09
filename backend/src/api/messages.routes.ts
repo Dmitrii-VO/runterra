@@ -58,18 +58,18 @@ router.get('/clubs', async (req: Request, res: Response) => {
     }
 
     const clubMembersRepo = getClubMembersRepository();
-    const memberships = await clubMembersRepo.findActiveByUser(user.id);
+    const memberships = await clubMembersRepo.findActiveClubsByUser(user.id);
     const chats: ClubChatViewDto[] = memberships.map((membership) => ({
-      id: membership.id,
+      id: membership.clubId,
       clubId: membership.clubId,
-      clubName: `Club ${membership.clubId}`,
-      clubDescription: undefined,
+      clubName: membership.clubName,
+      clubDescription: membership.clubDescription,
       clubLogo: undefined,
       lastMessageAt: undefined,
       lastMessageText: undefined,
       lastMessageUserId: undefined,
-      createdAt: membership.createdAt.toISOString(),
-      updatedAt: membership.updatedAt.toISOString(),
+      createdAt: membership.joinedAt.toISOString(),
+      updatedAt: membership.joinedAt.toISOString(),
     }));
 
     res.status(200).json(chats);

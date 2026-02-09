@@ -11,6 +11,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import { z } from 'zod';
 import {
   ClubStatus,
   ClubViewDto,
@@ -497,6 +498,140 @@ router.post('/:id/leave', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error leaving club', { clubId, error });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+      details: undefined,
+    });
+  }
+});
+
+/**
+ * GET /api/clubs/:id/members
+ *
+ * Returns list of active members for a club. Available to all authenticated users.
+ */
+router.get('/:id/members', async (req: Request, res: Response) => {
+  const { id: clubId } = req.params;
+  if (!isValidClubId(clubId)) {
+    return respondInvalidClubId(res);
+  }
+
+  try {
+    const clubsRepo = getClubsRepository();
+    const club = await clubsRepo.findById(clubId);
+    if (!club) {
+      return res.status(404).json({
+        code: 'not_found',
+        message: 'Club not found',
+        details: { clubId },
+      });
+    }
+
+    const clubMembersRepo = getClubMembersRepository();
+    const members = await clubMembersRepo.findMembersByClub(clubId);
+
+    res.status(200).json(members);
+  } catch (error) {
+    logger.error('Error fetching club members', { clubId, error });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+      details: undefined,
+    });
+  }
+});
+
+const UpdateMemberRoleSchema = z.object({
+  role: z.enum(['member', 'trainer', 'leader']),
+});
+
+/**
+ * PATCH /api/clubs/:id/members/:userId/role
+ *
+ * Update role of a club member. Only leaders can change roles.
+ */
+router.patch('/:id/members/:userId/role', validateBody(UpdateMemberRoleSchema), async (req: Request, res: Response) => {
+  const { id: clubId, userId: targetUserId } = req.params;
+  if (!isValidClubId(clubId)) {
+    return respondInvalidClubId(res);
+  }
+
+  const uid = req.authUser?.uid;
+  if (!uid) {
+    return res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+      details: { reason: 'missing_header' },
+    });
+  }
+
+  const { role } = req.body as { role: 'member' | 'trainer' | 'leader' };
+
+  try {
+    // Get current user
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'Authentication required',
+        details: {
+          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+        },
+      });
+    }
+
+    // Check if club exists
+    const clubsRepo = getClubsRepository();
+    const club = await clubsRepo.findById(clubId);
+    if (!club) {
+      return res.status(404).json({
+        code: 'not_found',
+        message: 'Club not found',
+        details: { clubId },
+      });
+    }
+
+    // Check if requester is a leader
+    const clubMembersRepo = getClubMembersRepository();
+    const requesterMembership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
+    if (!requesterMembership || requesterMembership.role !== 'leader') {
+      return res.status(403).json({
+        code: 'forbidden',
+        message: 'Only club leaders can change member roles',
+        details: { clubId },
+      });
+    }
+
+    // Check if target user is a member
+    const targetMembership = await clubMembersRepo.findByClubAndUser(clubId, targetUserId);
+    if (!targetMembership || targetMembership.status !== 'active') {
+      return res.status(404).json({
+        code: 'not_found',
+        message: 'Member not found in this club',
+        details: { clubId, userId: targetUserId },
+      });
+    }
+
+    // Update role
+    const updated = await clubMembersRepo.updateRole(clubId, targetUserId, role);
+    if (!updated) {
+      return res.status(500).json({
+        code: 'internal_error',
+        message: 'Failed to update role',
+        details: undefined,
+      });
+    }
+
+    res.status(200).json({
+      userId: updated.userId,
+      clubId: updated.clubId,
+      role: updated.role,
+      status: updated.status,
+    });
+  } catch (error) {
+    logger.error('Error updating member role', { clubId, targetUserId, role, error });
     res.status(500).json({
       code: 'internal_error',
       message: 'Internal server error',

@@ -2,6 +2,7 @@
 import 'api_client.dart';
 import 'users_service.dart' show ApiException;
 import '../models/club_model.dart';
+import '../models/club_member_model.dart';
 import '../models/my_club_model.dart';
 
 /// РЎРµСЂРІРёСЃ РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ РєР»СѓР±Р°РјРё
@@ -107,7 +108,51 @@ class ClubsService {
     return ClubModel.fromJson(jsonData);
   }
 
-  /// Р’С‹РїРѕР»РЅСЏРµС‚ POST /api/clubs вЂ” СЃРѕР·РґР°РЅРёРµ РєР»СѓР±Р°.
+  /// GET /api/clubs/:id/members — list of active members.
+  Future<List<ClubMemberModel>> getClubMembers(String clubId) async {
+    final response = await _apiClient.get('/api/clubs/${Uri.encodeComponent(clubId)}/members');
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body) as List<dynamic>;
+      return jsonData
+          .map((item) => ClubMemberModel.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+    String errorCode = 'members_fetch_error';
+    String errorMessage = 'Failed to load members (${response.statusCode})';
+    try {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
+      if (decoded != null) {
+        errorCode = (decoded['code'] as String?) ?? errorCode;
+        errorMessage = (decoded['message'] as String?) ?? errorMessage;
+      }
+    } on FormatException {
+      // Non-JSON response
+    }
+    throw ApiException(errorCode, errorMessage);
+  }
+
+  /// PATCH /api/clubs/:id/members/:userId/role — update member role (leader only).
+  Future<void> updateMemberRole(String clubId, String userId, String role) async {
+    final response = await _apiClient.patch(
+      '/api/clubs/${Uri.encodeComponent(clubId)}/members/${Uri.encodeComponent(userId)}/role',
+      body: {'role': role},
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    String errorCode = 'update_role_error';
+    String errorMessage = 'Failed to update role (${response.statusCode})';
+    try {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
+      if (decoded != null) {
+        errorCode = (decoded['code'] as String?) ?? errorCode;
+        errorMessage = (decoded['message'] as String?) ?? errorMessage;
+      }
+    } on FormatException {
+      // Non-JSON response
+    }
+    throw ApiException(errorCode, errorMessage);
+  }
+
+  /// Р'С‹РїРѕР»РЅСЏРµС‚ POST /api/clubs вЂ" СЃРѕР·РґР°РЅРёРµ РєР»СѓР±Р°.
   ///
   /// Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРѕР·РґР°РЅРЅС‹Р№ РєР»СѓР± (ClubModel).
   /// Р‘СЂРѕСЃР°РµС‚ [ApiException] РїСЂРё 4xx/5xx РёР»Рё РЅРµ-JSON РѕС‚РІРµС‚Рµ.

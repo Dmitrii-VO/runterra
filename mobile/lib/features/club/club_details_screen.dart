@@ -4,6 +4,7 @@ import '../../l10n/app_localizations.dart';
 import '../../shared/api/users_service.dart' show ApiException;
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/club_model.dart';
+import '../../shared/models/club_member_model.dart';
 import '../../shared/ui/details_scaffold.dart';
 import '../../shared/ui/error_display.dart';
 
@@ -35,6 +36,9 @@ class ClubDetailsScreen extends StatefulWidget {
 class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
   /// Future for club details.
   late Future<ClubModel> _clubFuture;
+  /// Members list
+  List<ClubMemberModel>? _members;
+  bool _membersLoading = false;
   /// True while join request is in progress.
   bool _isJoining = false;
   /// True while leave request is in progress.
@@ -50,6 +54,81 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
     setState(() {
       _clubFuture = _fetchClub();
     });
+    _loadMembers();
+  }
+
+  /// Load members list
+  Future<void> _loadMembers() async {
+    setState(() => _membersLoading = true);
+    try {
+      final members = await ServiceLocator.clubsService.getClubMembers(widget.clubId);
+      if (mounted) setState(() => _members = members);
+    } catch (_) {
+      // Silently fail — members section will show error state
+    } finally {
+      if (mounted) setState(() => _membersLoading = false);
+    }
+  }
+
+  /// Show role change dialog (leader only)
+  Future<void> _showRoleChangeDialog(ClubMemberModel member) async {
+    final l10n = AppLocalizations.of(context)!;
+    final roles = ['member', 'trainer', 'leader'];
+    final roleLabels = {
+      'member': l10n.roleMember,
+      'trainer': l10n.roleTrainer,
+      'leader': l10n.roleLeader,
+    };
+
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  l10n.clubMemberRoleChange,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              ...roles.map((role) => ListTile(
+                    title: Text(roleLabels[role] ?? role),
+                    trailing: role == member.role
+                        ? const Icon(Icons.check, color: Colors.green)
+                        : null,
+                    onTap: () => Navigator.pop(context, role),
+                  )),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (selected == null || selected == member.role || !mounted) return;
+
+    try {
+      await ServiceLocator.clubsService.updateMemberRole(
+        widget.clubId,
+        member.userId,
+        selected,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.clubMemberRoleChangeSuccess)),
+        );
+        _loadMembers();
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.clubMemberRoleChangeError(e.message))),
+        );
+      }
+    }
   }
 
   Widget _buildMetricChip(BuildContext context, String label, String value) {
@@ -142,6 +221,18 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
   void initState() {
     super.initState();
     _clubFuture = _fetchClub();
+    _loadMembers();
+  }
+
+  String _roleLabel(AppLocalizations l10n, String role) {
+    switch (role) {
+      case 'leader':
+        return l10n.roleLeader;
+      case 'trainer':
+        return l10n.roleTrainer;
+      default:
+        return l10n.roleMember;
+    }
   }
 
   @override
@@ -249,7 +340,39 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                       ),
                       const SizedBox(height: 24),
                     ],
-                    // РљРЅРѕРїРєР° СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёСЏ (С‚РѕР»СЊРєРѕ РґР»СЏ Р»РёРґРµСЂРѕРІ)
+                    // Members section
+                    Text(
+                      l10n.clubMembersTitle,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    if (_membersLoading && _members == null)
+                      const Center(child: CircularProgressIndicator())
+                    else if (_members != null && _members!.isNotEmpty)
+                      ..._members!.map((member) => ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: CircleAvatar(
+                              child: Text(
+                                member.displayName.isNotEmpty
+                                    ? member.displayName[0].toUpperCase()
+                                    : '?',
+                              ),
+                            ),
+                            title: Text(member.displayName),
+                            subtitle: Text(_roleLabel(l10n, member.role)),
+                            onTap: club.userRole == 'leader'
+                                ? () => _showRoleChangeDialog(member)
+                                : null,
+                          ))
+                    else
+                      Text(
+                        l10n.clubMembersEmpty,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.grey,
+                            ),
+                      ),
+                    const SizedBox(height: 24),
+                    // Edit button (leader only)
                     if (club.userRole == 'leader') ...[
                       SizedBox(
                         width: double.infinity,

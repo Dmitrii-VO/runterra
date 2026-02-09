@@ -114,7 +114,15 @@ class RunterraApp extends StatelessWidget {
             path: '/map',
             builder: (context, state) {
               final showClubs = state.uri.queryParameters['showClubs'] == 'true';
-              return MapScreen(showClubs: showClubs);
+              final latStr = state.uri.queryParameters['lat'];
+              final lonStr = state.uri.queryParameters['lon'];
+              final focusLat = latStr != null ? double.tryParse(latStr) : null;
+              final focusLon = lonStr != null ? double.tryParse(lonStr) : null;
+              return MapScreen(
+                showClubs: showClubs,
+                focusLatitude: focusLat,
+                focusLongitude: focusLon,
+              );
             },
           ),
           GoRoute(

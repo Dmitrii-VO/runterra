@@ -24,9 +24,18 @@ import '../../shared/models/club_model.dart';
 /// - Кнопка "Моё местоположение"
 /// - При [showClubs] true: после загрузки показывается bottom sheet со списком клубов города
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key, this.showClubs = false});
+  const MapScreen({
+    super.key,
+    this.showClubs = false,
+    this.focusLatitude,
+    this.focusLongitude,
+  });
 
   final bool showClubs;
+
+  /// If provided, map will center on these coordinates on load.
+  final double? focusLatitude;
+  final double? focusLongitude;
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -356,8 +365,28 @@ class _MapScreenState extends State<MapScreen> {
       setState(() {
         _isMapReady = true;
       });
-      // Всегда центрируем по городу/СПб при открытии, чтобы не показывать вид с экватора
-      await _centerMapOnStartPosition();
+
+      // If focus coordinates provided, center on them; otherwise use default city center
+      if (widget.focusLatitude != null && widget.focusLongitude != null) {
+        await _mapController!.moveCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+              target: Point(
+                latitude: widget.focusLatitude!,
+                longitude: widget.focusLongitude!,
+              ),
+              zoom: 15.0,
+            ),
+          ),
+          animation: const MapAnimation(
+            type: MapAnimationType.smooth,
+            duration: 0.5,
+          ),
+        );
+      } else {
+        await _centerMapOnStartPosition();
+      }
+
       if (_mapData != null) {
         _updateMapObjects();
       }

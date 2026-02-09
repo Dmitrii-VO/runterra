@@ -2,6 +2,11 @@
 
 ## История изменений
 
+### 2026-02-09 — Упрощение шапки профиля + сворачиваемые личные данные
+
+- **Шапка профиля:** Из `ProfileHeaderSection` убраны блоки клуба/роли/меркателя. Теперь отображаются только аватар, ФИО и город. Удалён параметр `club` из виджета; убраны неиспользуемые импорты (`ProfileClubModel`, `AppLocalizations`, `GoRouter`). В `ProfileScreen` удалён метод `_resolveClub`.
+- **Личные данные:** `ProfilePersonalInfoSection` преобразован из `StatelessWidget` в `StatefulWidget`. По умолчанию секция свёрнута (`_isExpanded = false`). Заголовок «Личные данные» с иконкой chevron кликабелен — по тапу разворачивает/сворачивает поля.
+
 ### 2026-02-05
 
 - **Tests:** Added repository tests for birthDate date-only mapping and gender normalization.

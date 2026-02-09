@@ -515,5 +515,19 @@
   "editClubNameError": "Name must be 3-50 characters",
   "editClubSave": "Save",
   "editClubError": "Failed to update club",
-  "clubEditButton": "Edit Club"
+  "clubEditButton": "Edit Club",
+  "clubMembersTitle": "Members",
+  "clubMembersEmpty": "No members yet",
+  "clubMembersLoadError": "Could not load members",
+  "clubMemberRoleChange": "Change role",
+  "clubMemberRoleChangeSuccess": "Role updated",
+  "clubMemberRoleChangeError": "Could not update role: {message}",
+  "@clubMemberRoleChangeError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "eventOpenOnMap": "Open on map"
 }

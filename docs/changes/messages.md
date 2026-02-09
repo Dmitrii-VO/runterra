@@ -2,6 +2,11 @@
 
 ## История изменений
 
+### 2026-02-09 — Исправление названий клубов в списке чатов
+
+- **Проблема:** В `GET /api/messages/clubs` использовался `findActiveByUser()`, возвращавший `ClubMembershipRow` без названия клуба. В ответ подставлялся placeholder `Club <UUID>`.
+- **Решение:** Заменён на `findActiveClubsByUser()`, возвращающий `ActiveUserClubMembershipRow` с полями `clubName`, `clubDescription`. Поля `createdAt`/`updatedAt` заменены на `membership.joinedAt`, `id` использует `clubId`.
+
 ### 2026-02-08 — Сообщения: выбор клуба перед чатом (задачи 6–9 infra/README)
 
 - **Задача 6–7. Вкладка «Клуб»: сначала список клубов, затем чат выбранного**

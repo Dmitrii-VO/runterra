@@ -941,4 +941,27 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get clubEditButton => 'Редактировать клуб';
+
+  @override
+  String get clubMembersTitle => 'Участники';
+
+  @override
+  String get clubMembersEmpty => 'Пока нет участников';
+
+  @override
+  String get clubMembersLoadError => 'Не удалось загрузить участников';
+
+  @override
+  String get clubMemberRoleChange => 'Изменить роль';
+
+  @override
+  String get clubMemberRoleChangeSuccess => 'Роль обновлена';
+
+  @override
+  String clubMemberRoleChangeError(String message) {
+    return 'Не удалось обновить роль: $message';
+  }
+
+  @override
+  String get eventOpenOnMap => 'Открыть на карте';
 }

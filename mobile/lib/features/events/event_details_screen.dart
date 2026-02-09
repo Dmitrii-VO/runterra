@@ -7,6 +7,7 @@ import '../../shared/di/service_locator.dart';
 import '../../shared/models/event_details_model.dart';
 import '../../shared/ui/details_scaffold.dart';
 import '../../shared/ui/error_display.dart';
+import 'widgets/event_mini_map.dart';
 import 'widgets/participants_list.dart';
 
 /// Экран деталей события
@@ -334,35 +335,15 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     
                     const SizedBox(height: 24),
                     
-                    // Точка старта на карте (placeholder)
+                    // Start point on map
                     Text(
                       AppLocalizations.of(context)!.eventStartPoint,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
-                    Container(
-                      height: 200,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.map, size: 48, color: Colors.grey),
-                            const SizedBox(height: 8),
-                            Text(
-                              AppLocalizations.of(context)!.eventMapTodo,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                            Text(
-                              '${event.startLocation.latitude}, ${event.startLocation.longitude}',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ],
-                        ),
-                      ),
+                    EventMiniMap(
+                      latitude: event.startLocation.latitude,
+                      longitude: event.startLocation.longitude,
                     ),
                     
                     const SizedBox(height: 24),

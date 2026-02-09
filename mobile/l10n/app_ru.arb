@@ -341,5 +341,19 @@
   "editClubNameError": "Название должно быть от 3 до 50 символов",
   "editClubSave": "Сохранить",
   "editClubError": "Не удалось обновить клуб",
-  "clubEditButton": "Редактировать клуб"
+  "clubEditButton": "Редактировать клуб",
+  "clubMembersTitle": "Участники",
+  "clubMembersEmpty": "Пока нет участников",
+  "clubMembersLoadError": "Не удалось загрузить участников",
+  "clubMemberRoleChange": "Изменить роль",
+  "clubMemberRoleChangeSuccess": "Роль обновлена",
+  "clubMemberRoleChangeError": "Не удалось обновить роль: {message}",
+  "@clubMemberRoleChangeError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "eventOpenOnMap": "Открыть на карте"
 }

@@ -940,4 +940,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clubEditButton => 'Edit Club';
+
+  @override
+  String get clubMembersTitle => 'Members';
+
+  @override
+  String get clubMembersEmpty => 'No members yet';
+
+  @override
+  String get clubMembersLoadError => 'Could not load members';
+
+  @override
+  String get clubMemberRoleChange => 'Change role';
+
+  @override
+  String get clubMemberRoleChangeSuccess => 'Role updated';
+
+  @override
+  String clubMemberRoleChangeError(String message) {
+    return 'Could not update role: $message';
+  }
+
+  @override
+  String get eventOpenOnMap => 'Open on map';
 }

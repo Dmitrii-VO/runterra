@@ -1813,6 +1813,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit Club'**
   String get clubEditButton;
+
+  /// No description provided for @clubMembersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Members'**
+  String get clubMembersTitle;
+
+  /// No description provided for @clubMembersEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No members yet'**
+  String get clubMembersEmpty;
+
+  /// No description provided for @clubMembersLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load members'**
+  String get clubMembersLoadError;
+
+  /// No description provided for @clubMemberRoleChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change role'**
+  String get clubMemberRoleChange;
+
+  /// No description provided for @clubMemberRoleChangeSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Role updated'**
+  String get clubMemberRoleChangeSuccess;
+
+  /// No description provided for @clubMemberRoleChangeError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update role: {message}'**
+  String clubMemberRoleChangeError(String message);
+
+  /// No description provided for @eventOpenOnMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Open on map'**
+  String get eventOpenOnMap;
 }
 
 class _AppLocalizationsDelegate

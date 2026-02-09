@@ -1,25 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import '../../../l10n/app_localizations.dart';
 import '../../models/profile_model.dart';
-import '../../models/profile_club_model.dart';
 
-/// Секция заголовка профиля
-/// 
-/// Отображает основную информацию о пользователе:
-/// - Имя / ник
-/// - Фото профиля (опционально)
-/// - Статус (участник клуба / меркатель)
-/// - Название клуба (если состоит)
-/// - Роль в клубе (если в клубе)
+/// Profile header section
+///
+/// Displays user identity: avatar, full name, city.
 class ProfileHeaderSection extends StatelessWidget {
   final ProfileUserData user;
-  final ProfileClubModel? club;
 
   const ProfileHeaderSection({
     super.key,
     required this.user,
-    this.club,
   });
 
   @override
@@ -31,7 +21,7 @@ class ProfileHeaderSection extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            // Фото профиля
+            // Avatar
             CircleAvatar(
               radius: 40,
               backgroundImage: user.avatarUrl != null
@@ -45,68 +35,17 @@ class ProfileHeaderSection extends StatelessWidget {
                   : null,
             ),
             const SizedBox(width: 16),
-            // Информация о пользователе
+            // User info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Имя
+                  // Name
                   Text(
                     displayName,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
-                  const SizedBox(height: 4),
-                  // Статус и клуб. Явная логика: club != null | isMercenary | иначе "Без клуба"
-                  if (club != null) ...[
-                    InkWell(
-                      onTap: () => context.push('/club/${club!.id}'),
-                      borderRadius: BorderRadius.circular(4),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 2),
-                        child: Text(
-                          club!.name,
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                decoration: TextDecoration.underline,
-                              ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _getRoleText(context, club!.role),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
-                    ),
-                  ] else if (user.isMercenary) ...[
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.orange[100],
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        AppLocalizations.of(context)!.headerMercenary,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.orange[900],
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                    ),
-                  ] else ...[
-                    // club == null && !isMercenary — явный edge-case
-                    Text(
-                      AppLocalizations.of(context)!.headerNoClub,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
-                    ),
-                  ],
-                  // Город
+                  // City
                   if (user.cityName != null) ...[
                     const SizedBox(height: 4),
                     Text(
@@ -123,20 +62,6 @@ class ProfileHeaderSection extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _getRoleText(BuildContext context, String role) {
-    final l10n = AppLocalizations.of(context)!;
-    switch (role) {
-      case 'member':
-        return l10n.roleMember;
-      case 'trainer':
-        return l10n.roleTrainer;
-      case 'leader':
-        return l10n.roleLeader;
-      default:
-        return role;
-    }
   }
 
   String _getDisplayName() {
