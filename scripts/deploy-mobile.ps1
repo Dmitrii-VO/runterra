@@ -2,6 +2,9 @@
 # Usage: .\scripts\deploy-mobile.ps1 [release-notes]
 #        .\scripts\deploy-mobile.ps1 -SkipTests
 #        .\scripts\deploy-mobile.ps1 "Fix login" -SkipTests
+#
+# Version is auto-computed from the latest v* git tag + commit count since it.
+# Release notes are auto-generated from git commits since the last tag.
 
 param(
     [string]$ReleaseNotes = "",
@@ -22,6 +25,98 @@ $ApkPath = Join-Path $ProjectRoot "mobile\build\app\outputs\flutter-apk\app-debu
 
 Set-Location $ProjectRoot
 
+# --- Version from git tags ---
+function Get-VersionFromGit {
+    $latestTag = git describe --tags --match "v*" --abbrev=0 2>$null
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($latestTag)) {
+        $version = "0.1.0"
+        $commitCount = [int](git rev-list --count HEAD 2>$null)
+        if ($LASTEXITCODE -ne 0) { $commitCount = 1 }
+        return @{ Version = $version; BuildNumber = $commitCount; Tag = $null }
+    }
+    $version = $latestTag -replace "^v", ""
+    $commitCount = [int](git rev-list --count "$latestTag..HEAD" 2>$null)
+    if ($LASTEXITCODE -ne 0) { $commitCount = 0 }
+    return @{ Version = $version; BuildNumber = $commitCount; Tag = $latestTag }
+}
+
+# --- Clean release notes from git log ---
+function Get-ReleaseNotesFromGit {
+    param([string]$SinceTag)
+
+    if ($SinceTag) {
+        $commits = git log "$SinceTag..HEAD" --pretty=format:"%s" 2>$null
+    } else {
+        $commits = git log --pretty=format:"%s" -20 2>$null
+    }
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($commits)) {
+        return "Release " + (Get-Date -Format "yyyy-MM-dd HH:mm")
+    }
+
+    $lines = $commits -split "`n" | ForEach-Object {
+        $line = $_.Trim()
+        if ([string]::IsNullOrWhiteSpace($line)) { return $null }
+        # Strip conventional commit prefixes: feat(scope):, fix:, chore:, etc.
+        $line = $line -replace "^(feat|fix|chore|refactor|docs|style|test|perf|ci|build|revert)(\([^)]*\))?:\s*", ""
+        # Strip technical artifacts: HTTP methods + paths, file paths
+        $line = $line -replace "\b(GET|POST|PUT|PATCH|DELETE)\s+/[^\s,;]*", ""
+        # Strip leftover commas/semicolons at start/end
+        $line = $line -replace "^[\s,;]+", ""
+        $line = $line -replace "[\s,;]+$", ""
+        if ([string]::IsNullOrWhiteSpace($line)) { return $null }
+        # Capitalize first letter
+        $line = $line.Substring(0,1).ToUpper() + $line.Substring(1)
+        return "- $line"
+    } | Where-Object { $_ -ne $null }
+
+    if ($lines.Count -eq 0) {
+        return "Release " + (Get-Date -Format "yyyy-MM-dd HH:mm")
+    }
+    return $lines -join "`n"
+}
+
+# --- Compute version & release notes ---
+$versionInfo = Get-VersionFromGit
+$buildName = $versionInfo.Version
+$buildNumber = $versionInfo.BuildNumber
+
+Write-Host "=== Version ===" -ForegroundColor Cyan
+Write-Host "  Tag:          $($versionInfo.Tag ?? '(none, using default 0.1.0)')" -ForegroundColor White
+Write-Host "  Version:      $buildName+$buildNumber" -ForegroundColor White
+
+if ([string]::IsNullOrWhiteSpace($ReleaseNotes)) {
+    $ReleaseNotes = Get-ReleaseNotesFromGit -SinceTag $versionInfo.Tag
+    Write-Host "`n=== Release notes (auto-generated) ===" -ForegroundColor Cyan
+    Write-Host $ReleaseNotes -ForegroundColor White
+    Write-Host ""
+
+    $editChoice = Read-Host "Accept release notes? (y = accept, e = edit, c = cancel)"
+    if ($null -eq $editChoice) { $editChoice = "y" }
+    $editChoice = $editChoice.Trim().ToLowerInvariant()
+
+    if ($editChoice -eq "c") {
+        Write-Host "Deploy canceled." -ForegroundColor Yellow
+        exit 0
+    }
+    if ($editChoice -eq "e") {
+        Write-Host "Enter release notes (end with empty line):" -ForegroundColor Yellow
+        $customLines = @()
+        while ($true) {
+            $inputLine = Read-Host
+            if ([string]::IsNullOrWhiteSpace($inputLine)) { break }
+            $customLines += $inputLine
+        }
+        if ($customLines.Count -gt 0) {
+            $ReleaseNotes = $customLines -join "`n"
+        }
+        Write-Host "Updated release notes:" -ForegroundColor Cyan
+        Write-Host $ReleaseNotes -ForegroundColor White
+    }
+} else {
+    Write-Host "`n=== Release notes (manual) ===" -ForegroundColor Cyan
+    Write-Host $ReleaseNotes -ForegroundColor White
+}
+
 # 1. Read config (only needed when uploading to Firebase)
 if (-not $SkipFirebase) {
     if (-not (Test-Path $ConfigPath)) {
@@ -33,11 +128,7 @@ if (-not $SkipFirebase) {
     $testers = $config.testers -join ","
 }
 
-if ([string]::IsNullOrWhiteSpace($ReleaseNotes)) {
-    $ReleaseNotes = "Release " + (Get-Date -Format "yyyy-MM-dd HH:mm")
-}
-
-Write-Host "=== 1. Tests ===" -ForegroundColor Cyan
+Write-Host "`n=== 1. Tests ===" -ForegroundColor Cyan
 if (-not $SkipTests) {
     Set-Location (Join-Path $ProjectRoot "mobile")
     flutter test
@@ -47,9 +138,9 @@ if (-not $SkipTests) {
     Write-Host "Skipped (--SkipTests)" -ForegroundColor Yellow
 }
 
-Write-Host "`n=== 2. Build APK ===" -ForegroundColor Cyan
+Write-Host "`n=== 2. Build APK ($buildName+$buildNumber) ===" -ForegroundColor Cyan
 Set-Location (Join-Path $ProjectRoot "mobile")
-flutter build apk --debug
+flutter build apk --debug --build-name=$buildName --build-number=$buildNumber
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 Set-Location $ProjectRoot
 
@@ -95,5 +186,5 @@ if ($SkipFirebase) {
 
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-    Write-Host "`nDone. Testers will receive an email: $testers" -ForegroundColor Green
+    Write-Host "`nDone ($buildName+$buildNumber). Testers will receive an email: $testers" -ForegroundColor Green
 }
