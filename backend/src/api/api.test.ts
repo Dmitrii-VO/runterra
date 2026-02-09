@@ -191,8 +191,8 @@ describe('API Routes', () => {
       expect(first).toHaveProperty('organizerId');
       expect(first).toHaveProperty('organizerType');
       expect(first).toHaveProperty('organizerDisplayName');
-      // Mock returns club with name 'Test Club' for organizerId 'club-1'
-      if (first.organizerType === 'club' && first.organizerId === 'club-1') {
+      // Mock returns club with name 'Test Club' for organizerId 'a0000000-0000-4000-8000-000000000001'
+      if (first.organizerType === 'club' && first.organizerId === 'a0000000-0000-4000-8000-000000000001') {
         expect(first.organizerDisplayName).toBe('Test Club');
       }
     });
@@ -309,7 +309,7 @@ describe('API Routes', () => {
 
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('organizerDisplayName');
-      // Mock event has organizerId 'club-1', mock club name is 'Test Club'
+      // Mock event has organizerId 'a0000000-0000-4000-8000-000000000001', mock club name is 'Test Club'
       if (res.body.organizerType === 'club') {
         expect(res.body.organizerDisplayName).toBe('Test Club');
       }

@@ -33,15 +33,22 @@
   Что сделано: (1) в `RunService` добавлен метод `clearCompletedSession()` для очистки завершённых сессий; (2) `startRun()` автоматически очищает завершённые (completed) сессии перед стартом — выбрасывает исключение только для running-сессий; (3) в `RunScreen.initState()` при возврате на вкладку восстанавливается UI для running и completed сессий; (4) `_backToIdle()` теперь вызывает `clearCompletedSession()`; (5) при исключении «Run already started» показывается диалог с выбором «Продолжить» или «Отменить и начать заново»; (6) добавлены i18n ключи `runStuckSessionTitle`, `runStuckSessionMessage`, `runStuckSessionResume`, `runStuckSessionCancel` (EN/RU).
   Дата: 2026-02-04.
 
+- **Batch resolve organizer display names — `string_to_uuid` (warn)**
+  Сигнатура: `"Failed to batch resolve organizer display names"`, `string_to_uuid`, код `22P02`, `routine: "string_to_uuid"`.
+  Контекст: в таблице `events` есть исторические записи с невалидными `organizer_id` (`'1'`, `'demo-club-1'`). `getOrganizerDisplayNamesBatch` передавал их в `findByIds` → PostgreSQL не мог привести к UUID.
+  Что сделано: в `backend/src/api/helpers/organizer-display.ts` добавлена UUID-валидация (regex) перед передачей ID в `findByIds` — невалидные ID пропускаются без запроса к БД. Тестовые моки обновлены с `'club-1'` на валидный UUID.
+  Дата: 2026-02-09.
+
+- **Клубы — невалидный `clubId` в GET `/api/clubs/:id` (500)**
+  Сигнатура: `"Error fetching club"`, `string_to_uuid`, `code` `22P02`, `clubId: "new-club-id"`, `parameter $1`.
+  Что сделано: исправлено в рамках «Исправление архитектурных недостатков клубов» (2026-02-08) — добавлена валидация `isValidClubId()` (строгий UUID) на все эндпоинты `/api/clubs/:id*`. Невалидный ID возвращает 400 вместо 500. В логах за 08-09.02 ошибка не воспроизводится.
+  Дата: 2026-02-08.
+
 ---
 
 ## Известные открытые (не из логов backend)
 
 - **Вылет при «Начать пробежку» в Nox** — краш на эмуляторе при старте foreground service (GPS). Решение не вводили: оставлен фоновый режим и в debug по запросу. Не бэкенд, не логи runterra.
-- **Клубы — невалидный `clubId` в GET `/api/clubs/:id` (500)**  
-  Сигнатура: `"Error fetching club"`, `string_to_uuid`, `code` `22P02`, `clubId: "new-club-id"`, `parameter $1`.  
-  Контекст: в логах runterra за `2026-02-07` повторяется `GET /new-club-id` со статусом 500.  
-  Статус: открыто, правка не внесена.
 
 ---
 

@@ -32,7 +32,7 @@ const mockEvent = {
   startDateTime: new Date(),
   startLocation: { longitude: 30.3351, latitude: 59.9343 },
   locationName: 'Test Park',
-  organizerId: 'club-1',
+  organizerId: 'a0000000-0000-4000-8000-000000000001',
   organizerType: 'club' as const,
   difficultyLevel: 'intermediate' as const,
   description: 'Test description',
@@ -60,7 +60,7 @@ const mockRunStats = {
 };
 
 const mockClub = {
-  id: 'club-1',
+  id: 'a0000000-0000-4000-8000-000000000001',
   name: 'Test Club',
   description: 'Test club description',
   status: 'active',
@@ -125,7 +125,7 @@ export const mockClubsRepository = {
 
 export const mockMessagesRepository = {
   findByChannel: jest.fn().mockResolvedValue([]),
-  create: jest.fn().mockResolvedValue({ id: 'msg-1', channelType: 'club', channelId: 'club-1', userId: 'test-user-id', text: 'hello', createdAt: new Date(), updatedAt: new Date() }),
+  create: jest.fn().mockResolvedValue({ id: 'msg-1', channelType: 'club', channelId: 'a0000000-0000-4000-8000-000000000001', userId: 'test-user-id', text: 'hello', createdAt: new Date(), updatedAt: new Date() }),
   getClubChatsForUser: jest.fn().mockResolvedValue([]),
 };
 
