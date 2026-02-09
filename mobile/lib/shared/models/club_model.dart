@@ -47,6 +47,12 @@ class ClubModel {
   /// Рейтинг в городе (MVP метрика)
   final int? cityRank;
 
+  /// ID создателя клуба
+  final String? creatorId;
+
+  /// Отображаемое имя создателя клуба
+  final String? creatorName;
+
   ClubModel({
     required this.id,
     required this.name,
@@ -62,6 +68,8 @@ class ClubModel {
     this.membersCount,
     this.territoriesCount,
     this.cityRank,
+    this.creatorId,
+    this.creatorName,
   });
 
   /// Создает ClubModel из JSON
@@ -84,6 +92,8 @@ class ClubModel {
       membersCount: (json['membersCount'] as num?)?.toInt(),
       territoriesCount: (json['territoriesCount'] as num?)?.toInt(),
       cityRank: (json['cityRank'] as num?)?.toInt(),
+      creatorId: json['creatorId'] as String?,
+      creatorName: json['creatorName'] as String?,
     );
   }
 

@@ -964,4 +964,67 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get eventOpenOnMap => 'Открыть на карте';
+
+  @override
+  String get eventCreateSelectCity => 'Выберите город';
+
+  @override
+  String get clubFounder => 'Основатель';
+
+  @override
+  String get clubsListTitle => 'Клубы города';
+
+  @override
+  String get clubsListEmpty => 'Клубов пока нет';
+
+  @override
+  String get clubsListAllClubs => 'Все клубы города';
+
+  @override
+  String get clubEventsTitle => 'Ближайшие события';
+
+  @override
+  String get clubEventsEmpty => 'Нет предстоящих событий';
+
+  @override
+  String get clubEventsError => 'Не удалось загрузить';
+
+  @override
+  String get clubEventsViewAll => 'Все события клуба';
+
+  @override
+  String get eventCreatePickLocation => 'Выбрать на карте';
+
+  @override
+  String get eventCreateLocationSelected => 'Точка выбрана';
+
+  @override
+  String get eventCreateLocationRequired => 'Выберите точку старта';
+
+  @override
+  String get locationPickerTitle => 'Выбор точки';
+
+  @override
+  String get locationPickerConfirm => 'Подтвердить';
+
+  @override
+  String get leaderCannotLeave => 'Сначала передайте лидерство';
+
+  @override
+  String get transferLeadership => 'Передать лидерство';
+
+  @override
+  String get disbandClub => 'Распустить клуб';
+
+  @override
+  String get disbandConfirm => 'Вы уверены? Это действие нельзя отменить.';
+
+  @override
+  String get selectNewLeader => 'Выберите нового лидера';
+
+  @override
+  String get transferSuccess => 'Лидерство передано';
+
+  @override
+  String get disbandSuccess => 'Клуб распущен';
 }

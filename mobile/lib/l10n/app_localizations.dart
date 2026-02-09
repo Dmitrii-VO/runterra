@@ -1855,6 +1855,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open on map'**
   String get eventOpenOnMap;
+
+  /// No description provided for @eventCreateSelectCity.
+  ///
+  /// In en, this message translates to:
+  /// **'Select city'**
+  String get eventCreateSelectCity;
+
+  /// No description provided for @clubFounder.
+  ///
+  /// In en, this message translates to:
+  /// **'Founder'**
+  String get clubFounder;
+
+  /// No description provided for @clubsListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'City clubs'**
+  String get clubsListTitle;
+
+  /// No description provided for @clubsListEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No clubs yet'**
+  String get clubsListEmpty;
+
+  /// No description provided for @clubsListAllClubs.
+  ///
+  /// In en, this message translates to:
+  /// **'All city clubs'**
+  String get clubsListAllClubs;
+
+  /// No description provided for @clubEventsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming events'**
+  String get clubEventsTitle;
+
+  /// No description provided for @clubEventsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No upcoming events'**
+  String get clubEventsEmpty;
+
+  /// No description provided for @clubEventsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load'**
+  String get clubEventsError;
+
+  /// No description provided for @clubEventsViewAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All club events'**
+  String get clubEventsViewAll;
+
+  /// No description provided for @eventCreatePickLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick on map'**
+  String get eventCreatePickLocation;
+
+  /// No description provided for @eventCreateLocationSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Location selected'**
+  String get eventCreateLocationSelected;
+
+  /// No description provided for @eventCreateLocationRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a start point'**
+  String get eventCreateLocationRequired;
+
+  /// No description provided for @locationPickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick location'**
+  String get locationPickerTitle;
+
+  /// No description provided for @locationPickerConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get locationPickerConfirm;
+
+  /// No description provided for @leaderCannotLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer leadership first'**
+  String get leaderCannotLeave;
+
+  /// No description provided for @transferLeadership.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer leadership'**
+  String get transferLeadership;
+
+  /// No description provided for @disbandClub.
+  ///
+  /// In en, this message translates to:
+  /// **'Disband club'**
+  String get disbandClub;
+
+  /// No description provided for @disbandConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure? This cannot be undone.'**
+  String get disbandConfirm;
+
+  /// No description provided for @selectNewLeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Select new leader'**
+  String get selectNewLeader;
+
+  /// No description provided for @transferSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Leadership transferred'**
+  String get transferSuccess;
+
+  /// No description provided for @disbandSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Club disbanded'**
+  String get disbandSuccess;
 }
 
 class _AppLocalizationsDelegate

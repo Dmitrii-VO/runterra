@@ -4,6 +4,9 @@ import 'l10n/app_localizations.dart';
 import 'features/activity/activity_details_screen.dart';
 import 'features/city/city_details_screen.dart';
 import 'features/club/club_details_screen.dart';
+import 'features/club/clubs_list_screen.dart';
+import 'features/map/location_picker_screen.dart';
+import 'features/club/transfer_leadership_screen.dart';
 import 'features/club/create_club_screen.dart';
 import 'features/club/edit_club_screen.dart';
 import 'features/login/login_screen.dart';
@@ -166,6 +169,13 @@ class RunterraApp extends StatelessWidget {
         path: '/profile/clubs',
         builder: (context, state) => const MyClubsScreen(),
       ),
+      GoRoute(
+        path: '/clubs',
+        builder: (context, state) {
+          final cityId = state.uri.queryParameters['cityId'] ?? '';
+          return ClubsListScreen(cityId: cityId);
+        },
+      ),
       // Создание клуба (без BottomNav)
       GoRoute(
         path: '/club/create',
@@ -177,6 +187,14 @@ class RunterraApp extends StatelessWidget {
         builder: (context, state) {
           final clubId = state.pathParameters['id'] ?? '';
           return ClubDetailsScreen(clubId: clubId);
+        },
+      ),
+      // Transfer leadership (push from ClubDetailsScreen)
+      GoRoute(
+        path: '/club/:id/transfer-leadership',
+        builder: (context, state) {
+          final clubId = state.pathParameters['id'] ?? '';
+          return TransferLeadershipScreen(clubId: clubId);
         },
       ),
       // Редактирование клуба (без BottomNav, push from ClubDetailsScreen with extra: ClubModel)
@@ -209,6 +227,15 @@ class RunterraApp extends StatelessWidget {
         builder: (context, state) {
           final activityId = state.pathParameters['id'] ?? '';
           return ActivityDetailsScreen(activityId: activityId);
+        },
+      ),
+      // Location picker for event creation
+      GoRoute(
+        path: '/map/pick',
+        builder: (context, state) {
+          final lat = double.tryParse(state.uri.queryParameters['lat'] ?? '') ?? 59.93;
+          final lon = double.tryParse(state.uri.queryParameters['lon'] ?? '') ?? 30.33;
+          return LocationPickerScreen(initialLatitude: lat, initialLongitude: lon);
         },
       ),
       // Отдельный маршрут для CreateEventScreen (без BottomNav)

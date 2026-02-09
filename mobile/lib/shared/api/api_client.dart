@@ -163,6 +163,33 @@ class ApiClient {
     return response;
   }
 
+  Future<http.Response> delete(
+    String endpoint, {
+    Map<String, String>? headers,
+  }) async {
+    final uri = Uri.parse('$baseUrl$endpoint');
+    final requestHeaders = {
+      ..._authHeaders,
+      if (headers != null) ...headers,
+    };
+    final response = await _client
+        .delete(
+          uri,
+          headers: requestHeaders,
+        )
+        .timeout(
+          _timeout,
+          onTimeout: () {
+            throw TimeoutException(
+              'Запрос к $uri превысил таймаут (${_timeout.inSeconds} секунд). '
+              'Проверьте, что backend сервер запущен и доступен.',
+              _timeout,
+            );
+          },
+        );
+    return response;
+  }
+
   /// Закрывает [http.Client], если он был создан этим экземпляром.
   /// Для синглтона (полученного через [getInstance]) сбрасывает статический экземпляр,
   /// чтобы следующий [getInstance] создал новый. Вызывать в production не обязательно;

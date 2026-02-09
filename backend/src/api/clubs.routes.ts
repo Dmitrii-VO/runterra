@@ -195,6 +195,13 @@ router.get('/:id', async (req: Request, res: Response) => {
     const clubMembersRepo = getClubMembersRepository();
     const membersCount = await clubMembersRepo.countActiveMembers(id);
 
+    // Resolve creator name
+    const usersRepo = getUsersRepository();
+    const creator = await usersRepo.findById(club.creatorId);
+    const creatorName = creator
+      ? `${creator.firstName ?? ''} ${creator.lastName ?? ''}`.trim() || null
+      : null;
+
     const clubDto: ClubViewDto & {
       isMember: boolean;
       membershipStatus?: string;
@@ -203,6 +210,8 @@ router.get('/:id', async (req: Request, res: Response) => {
       membersCount?: number;
       territoriesCount?: number;
       cityRank?: number;
+      creatorId?: string;
+      creatorName?: string | null;
     } = {
       id: club.id,
       name: club.name,
@@ -217,6 +226,8 @@ router.get('/:id', async (req: Request, res: Response) => {
       membersCount,
       territoriesCount: 0, // TODO: calculate from territories
       cityRank: 0, // TODO: calculate rank
+      creatorId: club.creatorId,
+      creatorName,
     };
 
     const uid = req.authUser?.uid;
@@ -488,6 +499,20 @@ router.post('/:id/leave', async (req: Request, res: Response) => {
       return;
     }
 
+    // Check if user is leader
+    if (existing.role === 'leader') {
+      const memberCount = await clubMembersRepo.countActiveMembers(clubId);
+      if (memberCount > 1) {
+        res.status(400).json({
+          code: 'leader_cannot_leave',
+          message: 'Transfer leadership before leaving the club',
+          details: { activeMembersCount: memberCount },
+        });
+        return;
+      }
+      // Leader is alone — allow leave (club becomes empty)
+    }
+
     const membership = await clubMembersRepo.deactivate(clubId, user.id);
     res.status(200).json({
       id: membership?.id ?? existing.id,
@@ -726,6 +751,81 @@ router.patch('/:id', validateBody(UpdateClubSchema), async (req: Request<{ id: s
     res.status(200).json(clubDto);
   } catch (error) {
     logger.error('Error updating club', { clubId, dto, error });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+      details: undefined,
+    });
+  }
+});
+
+/**
+ * DELETE /api/clubs/:id
+ *
+ * Disband (delete) a club. Only the club leader can disband.
+ * Deactivates all memberships and sets club status to 'disbanded'.
+ */
+router.delete('/:id', async (req: Request, res: Response) => {
+  const { id: clubId } = req.params;
+  if (!isValidClubId(clubId)) {
+    return respondInvalidClubId(res);
+  }
+
+  const uid = req.authUser?.uid;
+  if (!uid) {
+    return res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+      details: { reason: 'missing_header' },
+    });
+  }
+
+  try {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'Authentication required',
+        details: {
+          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+        },
+      });
+    }
+
+    const clubsRepo = getClubsRepository();
+    const club = await clubsRepo.findById(clubId);
+    if (!club) {
+      return res.status(404).json({
+        code: 'not_found',
+        message: 'Club not found',
+        details: { clubId },
+      });
+    }
+
+    // Verify leader role
+    const clubMembersRepo = getClubMembersRepository();
+    const membership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
+    if (!membership || membership.role !== 'leader') {
+      return res.status(403).json({
+        code: 'forbidden',
+        message: 'Only club leaders can disband the club',
+        details: { clubId },
+      });
+    }
+
+    // Deactivate all memberships
+    await clubMembersRepo.deactivateAllMembers(clubId);
+
+    // Set club status to disbanded
+    await clubsRepo.update(clubId, { status: ClubStatus.DISBANDED });
+
+    res.status(200).json({
+      code: 'club_disbanded',
+      message: 'Club disbanded',
+    });
+  } catch (error) {
+    logger.error('Error disbanding club', { clubId, error });
     res.status(500).json({
       code: 'internal_error',
       message: 'Internal server error',

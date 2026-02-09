@@ -239,6 +239,24 @@ class ClubsService {
     throw ApiException(errorCode, errorMessage);
   }
 
+  /// DELETE /api/clubs/:id — disband club (leader only).
+  Future<void> disbandClub(String clubId) async {
+    final response = await _apiClient.delete('/api/clubs/${Uri.encodeComponent(clubId)}');
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    String errorCode = 'disband_club_error';
+    String errorMessage = 'Failed to disband club (${response.statusCode})';
+    try {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
+      if (decoded != null) {
+        errorCode = (decoded['code'] as String?) ?? errorCode;
+        errorMessage = (decoded['message'] as String?) ?? errorMessage;
+      }
+    } on FormatException {
+      // Non-JSON response
+    }
+    throw ApiException(errorCode, errorMessage);
+  }
+
   /// Р'С‹РїРѕР»РЅСЏРµС‚ PATCH /api/clubs/:id вЂ" СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ РєР»СѓР±Р°.
   ///
   /// Р'РѕР·РІСЂР°С‰Р°РµС‚ РѕР±РЅРѕРІР»РµРЅРЅС‹Р№ РєР»СѓР± (ClubModel).

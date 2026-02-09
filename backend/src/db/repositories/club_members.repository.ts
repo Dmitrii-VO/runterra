@@ -211,6 +211,14 @@ export class ClubMembersRepository extends BaseRepository {
     return row ? rowToMembership(row) : null;
   }
 
+  /** Deactivate all members of a club (used when disbanding) */
+  async deactivateAllMembers(clubId: string): Promise<void> {
+    await this.query(
+      `UPDATE club_members SET status = 'inactive', updated_at = NOW() WHERE club_id = $1 AND status = 'active'`,
+      [clubId],
+    );
+  }
+
   /** Count active members for a club */
   async countActiveMembers(clubId: string): Promise<number> {
     const row = await this.queryOne<{ count: string }>(

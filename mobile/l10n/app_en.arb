@@ -529,5 +529,26 @@
       }
     }
   },
-  "eventOpenOnMap": "Open on map"
+  "eventOpenOnMap": "Open on map",
+  "eventCreateSelectCity": "Select city",
+  "clubFounder": "Founder",
+  "clubsListTitle": "City clubs",
+  "clubsListEmpty": "No clubs yet",
+  "clubsListAllClubs": "All city clubs",
+  "clubEventsTitle": "Upcoming events",
+  "clubEventsEmpty": "No upcoming events",
+  "clubEventsError": "Failed to load",
+  "clubEventsViewAll": "All club events",
+  "eventCreatePickLocation": "Pick on map",
+  "eventCreateLocationSelected": "Location selected",
+  "eventCreateLocationRequired": "Select a start point",
+  "locationPickerTitle": "Pick location",
+  "locationPickerConfirm": "Confirm",
+  "leaderCannotLeave": "Transfer leadership first",
+  "transferLeadership": "Transfer leadership",
+  "disbandClub": "Disband club",
+  "disbandConfirm": "Are you sure? This cannot be undone.",
+  "selectNewLeader": "Select new leader",
+  "transferSuccess": "Leadership transferred",
+  "disbandSuccess": "Club disbanded"
 }

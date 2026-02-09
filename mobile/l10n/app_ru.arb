@@ -355,5 +355,26 @@
       }
     }
   },
-  "eventOpenOnMap": "Открыть на карте"
+  "eventOpenOnMap": "Открыть на карте",
+  "eventCreateSelectCity": "Выберите город",
+  "clubFounder": "Основатель",
+  "clubsListTitle": "Клубы города",
+  "clubsListEmpty": "Клубов пока нет",
+  "clubsListAllClubs": "Все клубы города",
+  "clubEventsTitle": "Ближайшие события",
+  "clubEventsEmpty": "Нет предстоящих событий",
+  "clubEventsError": "Не удалось загрузить",
+  "clubEventsViewAll": "Все события клуба",
+  "eventCreatePickLocation": "Выбрать на карте",
+  "eventCreateLocationSelected": "Точка выбрана",
+  "eventCreateLocationRequired": "Выберите точку старта",
+  "locationPickerTitle": "Выбор точки",
+  "locationPickerConfirm": "Подтвердить",
+  "leaderCannotLeave": "Сначала передайте лидерство",
+  "transferLeadership": "Передать лидерство",
+  "disbandClub": "Распустить клуб",
+  "disbandConfirm": "Вы уверены? Это действие нельзя отменить.",
+  "selectNewLeader": "Выберите нового лидера",
+  "transferSuccess": "Лидерство передано",
+  "disbandSuccess": "Клуб распущен"
 }

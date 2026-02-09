@@ -5,8 +5,10 @@ import '../../shared/api/users_service.dart' show ApiException;
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/club_model.dart';
 import '../../shared/models/club_member_model.dart';
+import '../../shared/models/event_list_item_model.dart';
 import '../../shared/ui/details_scaffold.dart';
 import '../../shared/ui/error_display.dart';
+import '../events/widgets/event_card.dart';
 
 /// Р­РєСЂР°РЅ РґРµС‚Р°Р»РµР№ РєР»СѓР±Р°
 ///
@@ -43,6 +45,8 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
   bool _isJoining = false;
   /// True while leave request is in progress.
   bool _isLeaving = false;
+  /// Club events
+  Future<List<EventListItemModel>>? _eventsFuture;
 
   /// Creates Future for loading club data.
   Future<ClubModel> _fetchClub() async {
@@ -53,8 +57,20 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
   void _retry() {
     setState(() {
       _clubFuture = _fetchClub();
+      _eventsFuture = null;
     });
     _loadMembers();
+  }
+
+  /// Load events for the club
+  void _loadEvents(String? cityId) {
+    if (cityId == null || cityId.isEmpty) return;
+    setState(() {
+      _eventsFuture = ServiceLocator.eventsService.getEvents(
+        cityId: cityId,
+        clubId: widget.clubId,
+      );
+    });
   }
 
   /// Load members list
@@ -169,6 +185,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
       await ServiceLocator.clubsService.joinClub(widget.clubId);
       if (!mounted) return;
       await ServiceLocator.currentClubService.setCurrentClubId(widget.clubId);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.clubJoinSuccess)),
       );
@@ -185,18 +202,114 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
 
   Future<void> _onLeaveClub() async {
     if (_isLeaving) return;
-    setState(() => _isLeaving = true);
     final l10n = AppLocalizations.of(context)!;
+
+    // Check if current user is leader via cached club data
+    ClubModel? club;
+    try {
+      club = await _clubFuture;
+    } catch (_) {}
+
+    if (!mounted) return;
+    if (club?.userRole == 'leader') {
+      final membersCount = club?.membersCount ?? 1;
+      if (membersCount > 1) {
+        // Leader with other members — offer transfer or disband
+        final action = await showDialog<String>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(l10n.leaderCannotLeave),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, 'transfer'),
+                child: Text(l10n.transferLeadership),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, 'disband'),
+                child: Text(l10n.disbandClub, style: const TextStyle(color: Colors.red)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(l10n.cancel),
+              ),
+            ],
+          ),
+        );
+        if (!mounted) return;
+        if (action == null) return;
+        if (action == 'transfer') {
+          context.push('/club/${widget.clubId}/transfer-leadership');
+          return;
+        }
+        if (action == 'disband') {
+          await _disbandClub();
+          return;
+        }
+        return;
+      } else {
+        // Leader is alone — confirm disband
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(l10n.disbandClub),
+            content: Text(l10n.disbandConfirm),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(l10n.cancel),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(l10n.disbandClub, style: const TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+        );
+        if (!mounted) return;
+        if (confirm == true) {
+          await _disbandClub();
+        }
+        return;
+      }
+    }
+
+    // Non-leader: regular leave
+    setState(() => _isLeaving = true);
     try {
       await ServiceLocator.clubsService.leaveClub(widget.clubId);
       if (!mounted) return;
       if (ServiceLocator.currentClubService.currentClubId == widget.clubId) {
         await ServiceLocator.currentClubService.setCurrentClubId(null);
       }
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.clubLeaveSuccess)),
       );
       _retry();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.clubLeaveError(e.message))),
+      );
+    } finally {
+      if (mounted) setState(() => _isLeaving = false);
+    }
+  }
+
+  Future<void> _disbandClub() async {
+    setState(() => _isLeaving = true);
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      await ServiceLocator.clubsService.disbandClub(widget.clubId);
+      if (!mounted) return;
+      if (ServiceLocator.currentClubService.currentClubId == widget.clubId) {
+        await ServiceLocator.currentClubService.setCurrentClubId(null);
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.disbandSuccess)),
+      );
+      context.go('/');
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -340,6 +453,16 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                       ),
                       const SizedBox(height: 24),
                     ],
+                    // Founder
+                    if (club.creatorName != null && club.creatorName!.isNotEmpty) ...[
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.star),
+                        title: Text(club.creatorName!),
+                        subtitle: Text(l10n.clubFounder),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                     // Members section
                     Text(
                       l10n.clubMembersTitle,
@@ -371,6 +494,83 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                               color: Colors.grey,
                             ),
                       ),
+                    const SizedBox(height: 24),
+                    // Club events section
+                    Builder(
+                      builder: (context) {
+                        // Lazy-load events on first build
+                        if (_eventsFuture == null && club.cityId != null) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            _loadEvents(club.cityId);
+                          });
+                        }
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.clubEventsTitle,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            if (_eventsFuture != null)
+                              FutureBuilder<List<EventListItemModel>>(
+                                future: _eventsFuture,
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState == ConnectionState.waiting) {
+                                    return const Center(child: Padding(
+                                      padding: EdgeInsets.all(16),
+                                      child: CircularProgressIndicator(),
+                                    ));
+                                  }
+                                  if (snapshot.hasError) {
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      child: Row(
+                                        children: [
+                                          Text(
+                                            l10n.clubEventsError,
+                                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          TextButton(
+                                            onPressed: () => _loadEvents(club.cityId),
+                                            child: Text(l10n.retry),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }
+                                  final events = snapshot.data ?? [];
+                                  if (events.isEmpty) {
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      child: Text(
+                                        l10n.clubEventsEmpty,
+                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                                      ),
+                                    );
+                                  }
+                                  final displayEvents = events.take(3).toList();
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      ...displayEvents.map((event) => EventCard(event: event)),
+                                      if (events.length > 3)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 8),
+                                          child: TextButton(
+                                            onPressed: () => context.push('/events?clubId=${widget.clubId}'),
+                                            child: Text(l10n.clubEventsViewAll),
+                                          ),
+                                        ),
+                                    ],
+                                  );
+                                },
+                              ),
+                          ],
+                        );
+                      },
+                    ),
                     const SizedBox(height: 24),
                     // Edit button (leader only)
                     if (club.userRole == 'leader') ...[

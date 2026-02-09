@@ -963,4 +963,67 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get eventOpenOnMap => 'Open on map';
+
+  @override
+  String get eventCreateSelectCity => 'Select city';
+
+  @override
+  String get clubFounder => 'Founder';
+
+  @override
+  String get clubsListTitle => 'City clubs';
+
+  @override
+  String get clubsListEmpty => 'No clubs yet';
+
+  @override
+  String get clubsListAllClubs => 'All city clubs';
+
+  @override
+  String get clubEventsTitle => 'Upcoming events';
+
+  @override
+  String get clubEventsEmpty => 'No upcoming events';
+
+  @override
+  String get clubEventsError => 'Failed to load';
+
+  @override
+  String get clubEventsViewAll => 'All club events';
+
+  @override
+  String get eventCreatePickLocation => 'Pick on map';
+
+  @override
+  String get eventCreateLocationSelected => 'Location selected';
+
+  @override
+  String get eventCreateLocationRequired => 'Select a start point';
+
+  @override
+  String get locationPickerTitle => 'Pick location';
+
+  @override
+  String get locationPickerConfirm => 'Confirm';
+
+  @override
+  String get leaderCannotLeave => 'Transfer leadership first';
+
+  @override
+  String get transferLeadership => 'Transfer leadership';
+
+  @override
+  String get disbandClub => 'Disband club';
+
+  @override
+  String get disbandConfirm => 'Are you sure? This cannot be undone.';
+
+  @override
+  String get selectNewLeader => 'Select new leader';
+
+  @override
+  String get transferSuccess => 'Leadership transferred';
+
+  @override
+  String get disbandSuccess => 'Club disbanded';
 }

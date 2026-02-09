@@ -1,67 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
 import '../../l10n/app_localizations.dart';
 import '../../shared/api/users_service.dart' show ApiException;
 import '../../shared/di/service_locator.dart';
-import '../../shared/models/my_club_model.dart';
+import '../../shared/models/club_model.dart';
 
-class MyClubsScreen extends StatefulWidget {
-  const MyClubsScreen({super.key});
+/// Screen showing all clubs for a given city.
+class ClubsListScreen extends StatefulWidget {
+  final String cityId;
+
+  const ClubsListScreen({super.key, required this.cityId});
 
   @override
-  State<MyClubsScreen> createState() => _MyClubsScreenState();
+  State<ClubsListScreen> createState() => _ClubsListScreenState();
 }
 
-class _MyClubsScreenState extends State<MyClubsScreen> {
-  late Future<List<MyClubModel>> _myClubsFuture;
+class _ClubsListScreenState extends State<ClubsListScreen> {
+  late Future<List<ClubModel>> _clubsFuture;
 
   @override
   void initState() {
     super.initState();
-    _myClubsFuture = _loadMyClubs();
-  }
-
-  Future<List<MyClubModel>> _loadMyClubs() {
-    return ServiceLocator.clubsService.getMyClubs();
+    _clubsFuture = ServiceLocator.clubsService.getClubs(cityId: widget.cityId);
   }
 
   void _retry() {
     setState(() {
-      _myClubsFuture = _loadMyClubs();
+      _clubsFuture = ServiceLocator.clubsService.getClubs(cityId: widget.cityId);
     });
-  }
-
-  String _roleLabel(AppLocalizations l10n, String role) {
-    switch (role) {
-      case 'leader':
-        return l10n.roleLeader;
-      case 'trainer':
-        return l10n.roleTrainer;
-      default:
-        return l10n.roleMember;
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    final cityId = ServiceLocator.currentCityService.currentCityId;
-
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.profileMyClubsTitle),
-        actions: [
-          if (cityId != null && cityId.isNotEmpty)
-            TextButton(
-              onPressed: () => context.push('/clubs?cityId=$cityId'),
-              child: Text(l10n.clubsListAllClubs),
-            ),
-        ],
+        title: Text(l10n.clubsListTitle),
       ),
-      body: FutureBuilder<List<MyClubModel>>(
-        future: _myClubsFuture,
+      body: FutureBuilder<List<ClubModel>>(
+        future: _clubsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -70,8 +48,8 @@ class _MyClubsScreenState extends State<MyClubsScreen> {
           if (snapshot.hasError) {
             final err = snapshot.error;
             final message = err is ApiException
-                ? l10n.profileMyClubsLoadError(err.message)
-                : l10n.errorGeneric(err.toString());
+                ? err.message
+                : err.toString();
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -80,10 +58,7 @@ class _MyClubsScreenState extends State<MyClubsScreen> {
                   children: [
                     const Icon(Icons.error_outline, size: 48, color: Colors.red),
                     const SizedBox(height: 16),
-                    Text(
-                      message,
-                      textAlign: TextAlign.center,
-                    ),
+                    Text(message, textAlign: TextAlign.center),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
                       onPressed: _retry,
@@ -96,13 +71,13 @@ class _MyClubsScreenState extends State<MyClubsScreen> {
             );
           }
 
-          final clubs = snapshot.data ?? const <MyClubModel>[];
+          final clubs = snapshot.data ?? [];
           if (clubs.isEmpty) {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
-                  l10n.profileMyClubsEmpty,
+                  l10n.clubsListEmpty,
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -114,15 +89,16 @@ class _MyClubsScreenState extends State<MyClubsScreen> {
             separatorBuilder: (_, __) => const Divider(height: 1),
             itemBuilder: (context, index) {
               final club = clubs[index];
-              final city = club.cityName?.isNotEmpty == true
-                  ? club.cityName!
-                  : club.cityId;
-              final subtitle =
-                  '${city.isNotEmpty ? city : l10n.profileNotSpecified} • ${_roleLabel(l10n, club.role)}';
               return ListTile(
                 leading: const Icon(Icons.groups),
                 title: Text(club.name),
-                subtitle: Text(subtitle),
+                subtitle: club.description != null && club.description!.isNotEmpty
+                    ? Text(
+                        club.description!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      )
+                    : null,
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => context.push('/club/${club.id}'),
               );

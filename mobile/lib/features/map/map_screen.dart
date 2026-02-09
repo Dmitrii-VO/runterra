@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
@@ -13,6 +14,8 @@ import '../../shared/models/city_model.dart';
 import '../city/city_picker_dialog.dart';
 import 'widgets/territory_bottom_sheet.dart';
 import '../../shared/models/club_model.dart';
+import '../../shared/models/event_list_item_model.dart';
+import 'package:intl/intl.dart';
 
 /// Экран карты (MVP)
 /// 
@@ -61,11 +64,69 @@ class _MapScreenState extends State<MapScreen> {
   
   // Объекты на карте
   List<CircleMapObject> _territoryCircles = [];
+  List<PlacemarkMapObject> _eventMarkers = [];
+  BitmapDescriptor? _eventMarkerIcon;
 
   @override
   void initState() {
     super.initState();
+    _createEventMarkerIcon();
     _ensureCityAndLoad();
+  }
+
+  /// Creates a programmatic event marker icon (orange circle with calendar icon)
+  Future<void> _createEventMarkerIcon() async {
+    const size = 64.0;
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder, const Rect.fromLTWH(0, 0, size, size));
+
+    // Orange circle background
+    final paint = Paint()..color = Colors.deepOrange;
+    canvas.drawCircle(const Offset(size / 2, size / 2), size / 2, paint);
+
+    // White border
+    final borderPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3;
+    canvas.drawCircle(const Offset(size / 2, size / 2), size / 2 - 1.5, borderPaint);
+
+    // White inner icon (simple calendar-like shape)
+    final iconPaint = Paint()..color = Colors.white;
+    // Draw a small rectangle (event icon body)
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        const Rect.fromLTWH(18, 22, 28, 24),
+        const Radius.circular(3),
+      ),
+      iconPaint,
+    );
+    // Draw top bars of calendar
+    final barPaint = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(const Offset(26, 18), const Offset(26, 26), barPaint);
+    canvas.drawLine(const Offset(38, 18), const Offset(38, 26), barPaint);
+
+    // Orange dots inside calendar
+    final dotPaint = Paint()..color = Colors.deepOrange;
+    canvas.drawCircle(const Offset(26, 36), 2.5, dotPaint);
+    canvas.drawCircle(const Offset(32, 36), 2.5, dotPaint);
+    canvas.drawCircle(const Offset(38, 36), 2.5, dotPaint);
+
+    final picture = recorder.endRecording();
+    final image = await picture.toImage(size.toInt(), size.toInt());
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    if (byteData != null && mounted) {
+      setState(() {
+        _eventMarkerIcon = BitmapDescriptor.fromBytes(byteData.buffer.asUint8List());
+      });
+      // Re-update markers if data already loaded
+      if (_mapData != null && _isMapReady) {
+        _updateEventMarkers();
+      }
+    }
   }
 
   /// Загружает данные карты в фоне (не блокирует показ карты)
@@ -226,6 +287,7 @@ class _MapScreenState extends State<MapScreen> {
     
     try {
       _updateTerritoryCircles();
+      _updateEventMarkers();
     } catch (e) {
       debugPrint('Error updating map objects: $e');
       DevRemoteLogger.logError(
@@ -266,6 +328,110 @@ class _MapScreenState extends State<MapScreen> {
     setState(() {
       _territoryCircles = circles;
     });
+  }
+
+  /// Updates event markers on the map
+  void _updateEventMarkers() {
+    if (_mapData == null || _eventMarkerIcon == null) return;
+
+    final markers = <PlacemarkMapObject>[];
+    for (final event in _mapData!.events) {
+      markers.add(PlacemarkMapObject(
+        mapId: MapObjectId('event_${event.id}'),
+        point: Point(
+          latitude: event.startLocation.latitude,
+          longitude: event.startLocation.longitude,
+        ),
+        icon: PlacemarkIcon.single(PlacemarkIconStyle(
+          image: _eventMarkerIcon!,
+          scale: 0.8,
+        )),
+        onTap: (_, __) => _showEventBottomSheet(event),
+      ));
+    }
+
+    setState(() {
+      _eventMarkers = markers;
+    });
+  }
+
+  /// Shows a bottom sheet with event details
+  void _showEventBottomSheet(EventListItemModel event) {
+    final l10n = AppLocalizations.of(context)!;
+    final dateFormat = DateFormat('d.M.y H:mm');
+
+    String getEventTypeText(String type) {
+      switch (type) {
+        case 'training':
+          return l10n.eventTypeTraining;
+        case 'group_run':
+          return l10n.eventTypeGroupRun;
+        case 'club_event':
+          return l10n.eventTypeClubEvent;
+        case 'open_event':
+          return l10n.eventTypeOpenEvent;
+        default:
+          return type;
+      }
+    }
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  event.name,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.event, size: 16, color: Colors.blue),
+                    const SizedBox(width: 4),
+                    Text(getEventTypeText(event.type)),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(Icons.access_time, size: 16, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text(dateFormat.format(event.startDateTime)),
+                  ],
+                ),
+                if (event.locationName != null) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Expanded(child: Text(event.locationName!)),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      this.context.push('/event/${event.id}');
+                    },
+                    child: Text(l10n.territoryMore),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _handleCameraPositionChanged(CameraPosition position) {
@@ -620,7 +786,7 @@ class _MapScreenState extends State<MapScreen> {
                 onCameraPositionChanged: (position, reason, finished) {
                   _handleCameraPositionChanged(position);
                 },
-                mapObjects: _territoryCircles,
+                mapObjects: [..._territoryCircles, ..._eventMarkers],
               );
             },
           ),

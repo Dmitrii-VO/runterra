@@ -3,6 +3,16 @@
 ## Обзор
 Документ отслеживает выполнение задач и прогресс разработки проекта Runterra.
 
+- **Feedback 2026-02-09 — 8 задач UX (события, карта, клубы):** Реализованы 8 задач из feedback (infra/README.md Feedback 2026-02-09):
+  1. **Город: spb → «Санкт-Петербург»:** В create_event_screen убран fallback на cityId, вместо него — l10n ключ `eventCreateSelectCity`.
+  2. **Основатель клуба:** Backend GET /api/clubs/:id теперь возвращает `creatorId` и `creatorName` (resolve через usersRepo). Mobile: ClubModel расширена полями creatorId/creatorName, на ClubDetailsScreen добавлен ListTile с иконкой звезды и именем основателя.
+  3. **Список клубов по городу:** Создан ClubsListScreen (новый файл), добавлен GoRouter route `/clubs?cityId=`. На MyClubsScreen добавлена кнопка «Все клубы города».
+  4. **organizerId/organizerType — автоопределение:** В CreateEventScreen убран TextFormField для organizerId. Автозаполнение: если есть текущий клуб → organizerId=clubId, type=club; иначе → из профиля, type=trainer. Dropdown organizerType виден только если пользователь в клубе.
+  5. **Маркеры событий на карте:** В MapScreen добавлены программные маркеры событий (dart:ui Canvas). По тапу — bottom sheet с деталями и кнопкой «Подробнее» → /event/:id.
+  6. **События клуба на экране деталей:** На ClubDetailsScreen добавлена секция «Ближайшие события» с EventCard (до 3 шт.) и кнопкой «Все события клуба».
+  7. **Выбор точки старта на карте:** Создан LocationPickerScreen (новый файл) — полноэкранная Yandex карта с пином по центру. Интегрирован в CreateEventScreen: кнопка «Выбрать на карте» вместо ручного ввода lat/lon.
+  8. **Выход лидера из клуба:** Backend: валидация leader в POST /api/clubs/:id/leave (блокировка если >1 участник); новый DELETE /api/clubs/:id (роспуск). Mobile: диалоги для лидера (передать/распустить/отмена), новый TransferLeadershipScreen, метод disbandClub в ClubsService, метод delete в ApiClient.
+  Backend: 80 тестов пройдено. Mobile: flutter analyze — 3 info (все pre-existing deprecated_member_use), flutter test — 19 тестов пройдено. i18n: 21 новый ключ в оба ARB файла. Подробности — docs/changes/feedback-2026-02-09.md.
 - **Feedback UX (2026-02-09):** Реализованы 6 пунктов из feedback (2026-02-08, UX и данные):
   1. **Клубы в сообщениях:** исправлен GET /api/messages/clubs — теперь используется `findActiveClubsByUser` вместо `findActiveByUser`, возвращаются реальные названия и описания клубов.
   2. **Список участников клуба:** добавлены GET /api/clubs/:id/members (список с userId, displayName, role, joinedAt) и PATCH /api/clubs/:id/members/:userId/role (смена роли, только leader). На mobile: секция «Участники» на ClubDetailsScreen с ролями; лидер может менять роли через bottom sheet.

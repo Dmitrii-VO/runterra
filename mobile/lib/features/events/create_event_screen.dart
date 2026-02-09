@@ -18,8 +18,6 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final _descriptionController = TextEditingController();
   final _locationNameController = TextEditingController();
   final _organizerIdController = TextEditingController();
-  final _latitudeController = TextEditingController();
-  final _longitudeController = TextEditingController();
   final _participantLimitController = TextEditingController();
 
   String _eventType = 'training';
@@ -29,6 +27,11 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   bool _saving = false;
   String? _cityId;
   String? _cityName;
+  bool _hasClub = false;
+
+  // Location picker state (replaces lat/lon controllers)
+  double? _selectedLat;
+  double? _selectedLon;
 
   @override
   void initState() {
@@ -42,8 +45,6 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     _descriptionController.dispose();
     _locationNameController.dispose();
     _organizerIdController.dispose();
-    _latitudeController.dispose();
-    _longitudeController.dispose();
     _participantLimitController.dispose();
     super.dispose();
   }
@@ -54,25 +55,37 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       _cityId = currentCityId;
     });
 
+    // Auto-fill organizer
     final clubId = ServiceLocator.currentClubService.currentClubId;
     if (clubId != null && clubId.isNotEmpty) {
       _organizerIdController.text = clubId;
       _organizerType = 'club';
+      setState(() => _hasClub = true);
+    } else {
+      // No club — use user profile as trainer
+      _organizerType = 'trainer';
+      try {
+        final profile = await ServiceLocator.usersService.getProfile();
+        _organizerIdController.text = profile.user.id;
+      } catch (e) {
+        debugPrint('Error loading profile for organizer: $e');
+      }
     }
 
     CityModel? city;
     try {
       city = await ServiceLocator.currentCityService.getCurrentCity();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Error loading city defaults: $e');
       city = null;
     }
 
     if (city != null) {
       setState(() {
         _cityName = city!.name;
+        _selectedLat = city.center.latitude;
+        _selectedLon = city.center.longitude;
       });
-      _latitudeController.text = city.center.latitude.toStringAsFixed(6);
-      _longitudeController.text = city.center.longitude.toStringAsFixed(6);
     }
   }
 
@@ -106,6 +119,18 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     );
   }
 
+  Future<void> _pickLocation() async {
+    final result = await context.push<Map<String, double>>(
+      '/map/pick?lat=${_selectedLat ?? 59.93}&lon=${_selectedLon ?? 30.33}',
+    );
+    if (result != null && mounted) {
+      setState(() {
+        _selectedLat = result['lat'];
+        _selectedLon = result['lon'];
+      });
+    }
+  }
+
   Future<void> _save() async {
     if (_saving) return;
     final l10n = AppLocalizations.of(context)!;
@@ -116,11 +141,15 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       );
       return;
     }
+    if (_selectedLat == null || _selectedLon == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.eventCreateLocationRequired)),
+      );
+      return;
+    }
 
     setState(() => _saving = true);
     try {
-      final latitude = double.parse(_latitudeController.text.trim());
-      final longitude = double.parse(_longitudeController.text.trim());
       final participantLimitText = _participantLimitController.text.trim();
       final participantLimit = participantLimitText.isEmpty
           ? null
@@ -140,8 +169,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         type: _eventType,
         startDateTime: _composeDateTime(),
         startLocation: EventStartLocation(
-          longitude: longitude,
-          latitude: latitude,
+          longitude: _selectedLon!,
+          latitude: _selectedLat!,
         ),
         locationName: _locationNameController.text.trim().isEmpty
             ? null
@@ -181,7 +210,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         '${_selectedTime.minute.toString().padLeft(2, '0')}';
     final cityDisplay = (_cityName != null && _cityName!.isNotEmpty)
         ? _cityName!
-        : (_cityId ?? l10n.profileNotSpecified);
+        : l10n.eventCreateSelectCity;
 
     return Scaffold(
       appBar: AppBar(
@@ -255,34 +284,38 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 child: Text(cityDisplay),
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _organizerIdController,
-                decoration: InputDecoration(
-                  labelText: l10n.eventCreateOrganizerId,
-                  border: const OutlineInputBorder(),
+              // Organizer type: only show if user has a club (to choose between club/personal event)
+              if (_hasClub) ...[
+                DropdownButtonFormField<String>(
+                  value: _organizerType,
+                  decoration: InputDecoration(
+                    labelText: l10n.eventCreateOrganizerType,
+                    border: const OutlineInputBorder(),
+                  ),
+                  items: [
+                    DropdownMenuItem(value: 'club', child: Text(l10n.eventCreateOrganizerClub)),
+                    DropdownMenuItem(value: 'trainer', child: Text(l10n.eventCreateOrganizerTrainer)),
+                  ],
+                  onChanged: _saving
+                      ? null
+                      : (value) async {
+                          setState(() => _organizerType = value ?? _organizerType);
+                          // Update organizerId based on selection
+                          if (value == 'club') {
+                            final clubId = ServiceLocator.currentClubService.currentClubId;
+                            if (clubId != null && clubId.isNotEmpty) {
+                              _organizerIdController.text = clubId;
+                            }
+                          } else {
+                            try {
+                              final profile = await ServiceLocator.usersService.getProfile();
+                              _organizerIdController.text = profile.user.id;
+                            } catch (_) {}
+                          }
+                        },
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return l10n.eventCreateOrganizerRequired;
-                  }
-                  return null;
-                },
-                enabled: !_saving,
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _organizerType,
-                decoration: InputDecoration(
-                  labelText: l10n.eventCreateOrganizerType,
-                  border: const OutlineInputBorder(),
-                ),
-                items: [
-                  DropdownMenuItem(value: 'club', child: Text(l10n.eventCreateOrganizerClub)),
-                  DropdownMenuItem(value: 'trainer', child: Text(l10n.eventCreateOrganizerTrainer)),
-                ],
-                onChanged: _saving ? null : (value) => setState(() => _organizerType = value ?? _organizerType),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
+              ],
               TextFormField(
                 controller: _locationNameController,
                 decoration: InputDecoration(
@@ -292,45 +325,24 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 enabled: !_saving,
               ),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _latitudeController,
-                      decoration: InputDecoration(
-                        labelText: l10n.eventCreateLatitude,
-                        border: const OutlineInputBorder(),
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) return l10n.eventCreateCoordinatesRequired;
-                        return double.tryParse(value.trim()) == null
-                            ? l10n.eventCreateCoordinatesInvalid
-                            : null;
-                      },
-                      enabled: !_saving,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _longitudeController,
-                      decoration: InputDecoration(
-                        labelText: l10n.eventCreateLongitude,
-                        border: const OutlineInputBorder(),
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) return l10n.eventCreateCoordinatesRequired;
-                        return double.tryParse(value.trim()) == null
-                            ? l10n.eventCreateCoordinatesInvalid
-                            : null;
-                      },
-                      enabled: !_saving,
-                    ),
-                  ),
-                ],
+              // Location picker button (replaces lat/lon text fields)
+              OutlinedButton.icon(
+                icon: const Icon(Icons.map),
+                label: Text(
+                  _selectedLat != null
+                      ? l10n.eventCreateLocationSelected
+                      : l10n.eventCreatePickLocation,
+                ),
+                onPressed: _saving ? null : _pickLocation,
               ),
+              if (_selectedLat != null && _selectedLon != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  '${_selectedLat!.toStringAsFixed(5)}, ${_selectedLon!.toStringAsFixed(5)}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                  textAlign: TextAlign.center,
+                ),
+              ],
               const SizedBox(height: 16),
               TextFormField(
                 controller: _participantLimitController,
