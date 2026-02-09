@@ -61,6 +61,7 @@ class _MapScreenState extends State<MapScreen> {
   static const double _minZoom = 9.0;
   static const double _maxZoom = 19.0;
   bool _isAdjustingCamera = false;
+  bool _hasFocusPoint = false;
   
   // Объекты на карте
   List<CircleMapObject> _territoryCircles = [];
@@ -88,6 +89,7 @@ class _MapScreenState extends State<MapScreen> {
     final lat = widget.focusLatitude;
     final lon = widget.focusLongitude;
     if (lat != null && lon != null && _mapController != null) {
+      _hasFocusPoint = true;
       _mapController!.moveCamera(
         CameraUpdate.newCameraPosition(
           CameraPosition(
@@ -248,7 +250,9 @@ class _MapScreenState extends State<MapScreen> {
         });
         if (_isMapReady) {
           _updateMapObjects();
-          await _centerMapOnStartPosition();
+          if (!_hasFocusPoint) {
+            await _centerMapOnStartPosition();
+          }
         }
       }
     } on ApiException catch (e) {
@@ -265,7 +269,9 @@ class _MapScreenState extends State<MapScreen> {
             });
             if (_isMapReady) {
               _updateMapObjects();
-              await _centerMapOnStartPosition();
+              if (!_hasFocusPoint) {
+                await _centerMapOnStartPosition();
+              }
             }
           }
           return;
