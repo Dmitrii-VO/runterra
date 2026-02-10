@@ -376,5 +376,17 @@
   "disbandConfirm": "Вы уверены? Это действие нельзя отменить.",
   "selectNewLeader": "Выберите нового лидера",
   "transferSuccess": "Лидерство передано",
-  "disbandSuccess": "Клуб распущен"
+  "disbandSuccess": "Клуб распущен",
+  "runHistoryTitle": "Журнал тренировок",
+  "runHistoryEmpty": "Пробежек пока нет",
+  "runHistoryEmptyHint": "Начните первую пробежку, и она появится здесь",
+  "runHistoryToday": "Сегодня",
+  "runHistoryYesterday": "Вчера",
+  "runStatsTitle": "Статистика",
+  "runStatsTotalRuns": "Пробежки",
+  "runStatsTotalDistance": "Общая дистанция",
+  "runStatsAvgPace": "Ср. темп",
+  "runDetailTitle": "Детали пробежки",
+  "runDetailLoadError": "Не удалось загрузить данные пробежки",
+  "runGpsPoints": "GPS точки"
 }

@@ -550,5 +550,17 @@
   "disbandConfirm": "Are you sure? This cannot be undone.",
   "selectNewLeader": "Select new leader",
   "transferSuccess": "Leadership transferred",
-  "disbandSuccess": "Club disbanded"
+  "disbandSuccess": "Club disbanded",
+  "runHistoryTitle": "Training Journal",
+  "runHistoryEmpty": "No runs yet",
+  "runHistoryEmptyHint": "Start your first run to see it here",
+  "runHistoryToday": "Today",
+  "runHistoryYesterday": "Yesterday",
+  "runStatsTitle": "Statistics",
+  "runStatsTotalRuns": "Runs",
+  "runStatsTotalDistance": "Total distance",
+  "runStatsAvgPace": "Avg pace",
+  "runDetailTitle": "Run details",
+  "runDetailLoadError": "Could not load run details",
+  "runGpsPoints": "GPS points"
 }

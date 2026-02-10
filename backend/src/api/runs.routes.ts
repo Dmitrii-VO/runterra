@@ -11,7 +11,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { RunStatus, RunViewDto, CreateRunDto, CreateRunSchema } from '../modules/runs';
+import { RunStatus, RunViewDto, CreateRunDto, CreateRunSchema, RunHistoryItemDto, RunDetailDto, UserRunStatsDto } from '../modules/runs';
 import { validateBody } from './validateBody';
 import { getRunsRepository, getUsersRepository } from '../db/repositories';
 import { logger } from '../shared/logger';
@@ -23,6 +23,149 @@ const UUID_V4_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{
 function isValidUUID(value: string): boolean {
   return UUID_V4_REGEX.test(value);
 }
+
+/**
+ * Helper to resolve internal user ID from Firebase auth.
+ * Returns user or sends error response.
+ */
+async function resolveUser(req: Request, res: Response) {
+  const uid = req.authUser?.uid;
+  if (!uid) {
+    res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+    });
+    return null;
+  }
+  const usersRepo = getUsersRepository();
+  const user = await usersRepo.findByFirebaseUid(uid);
+  if (!user) {
+    res.status(401).json({
+      code: 'unauthorized',
+      message: 'User not found',
+    });
+    return null;
+  }
+  return user;
+}
+
+/**
+ * GET /api/runs
+ * List completed runs for the authenticated user, paginated.
+ */
+router.get('/', async (req: Request, res: Response) => {
+  try {
+    const user = await resolveUser(req, res);
+    if (!user) return;
+
+    const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 20, 1), 100);
+    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+
+    const repo = getRunsRepository();
+    const runs = await repo.findByUserId(user.id, limit, offset);
+
+    const items: RunHistoryItemDto[] = runs
+      .filter(r => r.status === RunStatus.COMPLETED)
+      .map(r => ({
+        id: r.id,
+        startedAt: r.startedAt,
+        duration: r.duration,
+        distance: r.distance,
+        paceSecondsPerKm: r.distance > 0
+          ? Math.round((r.duration / r.distance) * 1000)
+          : 0,
+      }));
+
+    res.json(items);
+  } catch (error) {
+    logger.error('Error listing runs', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/runs/stats
+ * User running statistics (completed runs only).
+ * IMPORTANT: Must be registered BEFORE /:id to avoid Express matching "stats" as an id.
+ */
+router.get('/stats', async (req: Request, res: Response) => {
+  try {
+    const user = await resolveUser(req, res);
+    if (!user) return;
+
+    const repo = getRunsRepository();
+    const stats = await repo.getUserStats(user.id);
+
+    const dto: UserRunStatsDto = {
+      totalRuns: stats.totalRuns,
+      totalDistance: stats.totalDistance,
+      totalDuration: stats.totalDuration,
+      averagePace: stats.averagePace,
+    };
+
+    res.json(dto);
+  } catch (error) {
+    logger.error('Error getting run stats', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/runs/:id
+ * Run details with GPS track. Only the run owner can access.
+ */
+router.get('/:id', async (req: Request, res: Response) => {
+  try {
+    const user = await resolveUser(req, res);
+    if (!user) return;
+
+    const runId = req.params.id;
+    if (!isValidUUID(runId)) {
+      res.status(400).json({
+        code: 'validation_error',
+        message: 'Invalid run id format',
+      });
+      return;
+    }
+
+    const repo = getRunsRepository();
+    const run = await repo.findById(runId);
+    if (!run) {
+      res.status(404).json({ code: 'not_found', message: 'Run not found' });
+      return;
+    }
+
+    if (run.userId !== user.id) {
+      res.status(403).json({ code: 'forbidden', message: 'Access denied' });
+      return;
+    }
+
+    const gpsPoints = await repo.getGpsPoints(runId);
+
+    const dto: RunDetailDto = {
+      id: run.id,
+      userId: run.userId,
+      activityId: run.activityId,
+      startedAt: run.startedAt,
+      endedAt: run.endedAt,
+      duration: run.duration,
+      distance: run.distance,
+      status: run.status,
+      createdAt: run.createdAt,
+      updatedAt: run.updatedAt,
+      gpsPoints: gpsPoints.map(p => ({
+        latitude: p.latitude,
+        longitude: p.longitude,
+        timestamp: p.timestamp,
+      })),
+    };
+
+    res.json(dto);
+  } catch (error) {
+    logger.error('Error getting run detail', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
 
 /**
  * POST /api/runs

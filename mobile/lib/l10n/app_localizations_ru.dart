@@ -1027,4 +1027,41 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get disbandSuccess => 'Клуб распущен';
+
+  @override
+  String get runHistoryTitle => 'Журнал тренировок';
+
+  @override
+  String get runHistoryEmpty => 'Пробежек пока нет';
+
+  @override
+  String get runHistoryEmptyHint =>
+      'Начните первую пробежку, и она появится здесь';
+
+  @override
+  String get runHistoryToday => 'Сегодня';
+
+  @override
+  String get runHistoryYesterday => 'Вчера';
+
+  @override
+  String get runStatsTitle => 'Статистика';
+
+  @override
+  String get runStatsTotalRuns => 'Пробежки';
+
+  @override
+  String get runStatsTotalDistance => 'Общая дистанция';
+
+  @override
+  String get runStatsAvgPace => 'Ср. темп';
+
+  @override
+  String get runDetailTitle => 'Детали пробежки';
+
+  @override
+  String get runDetailLoadError => 'Не удалось загрузить данные пробежки';
+
+  @override
+  String get runGpsPoints => 'GPS точки';
 }

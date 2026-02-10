@@ -13,6 +13,7 @@ import 'features/login/login_screen.dart';
 import 'features/territory/territory_details_screen.dart';
 import 'features/map/map_screen.dart';
 import 'features/run/run_screen.dart';
+import 'features/run/run_detail_screen.dart';
 import 'features/messages/messages_screen.dart';
 import 'features/events/events_screen.dart';
 import 'features/events/event_details_screen.dart';
@@ -174,6 +175,14 @@ class RunterraApp extends StatelessWidget {
         builder: (context, state) {
           final cityId = state.uri.queryParameters['cityId'] ?? '';
           return ClubsListScreen(cityId: cityId);
+        },
+      ),
+      // Run detail (без BottomNav)
+      GoRoute(
+        path: '/run/detail/:id',
+        builder: (context, state) {
+          final runId = state.pathParameters['id'] ?? '';
+          return RunDetailScreen(runId: runId);
         },
       ),
       // Создание клуба (без BottomNav)

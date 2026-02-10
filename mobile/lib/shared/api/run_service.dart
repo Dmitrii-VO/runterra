@@ -4,6 +4,8 @@ import 'package:geolocator/geolocator.dart';
 import '../config/api_config.dart';
 import '../location/location_service.dart';
 import '../models/run_model.dart';
+import '../models/run_history_item.dart';
+import '../models/run_stats.dart';
 import '../models/run_session.dart';
 import 'api_client.dart';
 import 'users_service.dart' show ApiException;
@@ -296,6 +298,34 @@ class RunService {
       _locationService.dispose();
       _locationService = LocationService();
     }
+  }
+
+  /// Fetch paginated run history (completed runs only).
+  Future<List<RunHistoryItem>> getRunHistory({int limit = 20, int offset = 0}) async {
+    final response = await _apiClient.get('/api/runs?limit=$limit&offset=$offset');
+    if (response.statusCode != 200) {
+      throw ApiException('fetch_error', 'Failed to load run history (${response.statusCode})');
+    }
+    final list = jsonDecode(response.body) as List<dynamic>;
+    return list.map((e) => RunHistoryItem.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  /// Fetch user running statistics.
+  Future<RunStats> getRunStats() async {
+    final response = await _apiClient.get('/api/runs/stats');
+    if (response.statusCode != 200) {
+      throw ApiException('fetch_error', 'Failed to load run stats (${response.statusCode})');
+    }
+    return RunStats.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  }
+
+  /// Fetch a single run with GPS track.
+  Future<RunDetailModel> getRunDetail(String runId) async {
+    final response = await _apiClient.get('/api/runs/$runId');
+    if (response.statusCode != 200) {
+      throw ApiException('fetch_error', 'Failed to load run detail (${response.statusCode})');
+    }
+    return RunDetailModel.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
   /// Освобождает ресурсы собственного LocationService (если был создан внутри).

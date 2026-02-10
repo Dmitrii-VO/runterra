@@ -1,4 +1,6 @@
 // ignore_for_file: prefer_const_constructors
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
@@ -9,6 +11,7 @@ import '../../../shared/di/service_locator.dart';
 ///
 /// Отображает полилинию из [gpsPoints]; при появлении новых точек
 /// камера следует за последней позицией (follow runner).
+/// Текущая позиция показана стрелкой направления движения (heading).
 class RunRouteMap extends StatefulWidget {
   final List<Position> gpsPoints;
 
@@ -21,15 +24,64 @@ class RunRouteMap extends StatefulWidget {
 class _RunRouteMapState extends State<RunRouteMap> {
   YandexMapController? _mapController;
   Point? _initialCenter;
+  Uint8List? _arrowIcon;
   static const double _defaultZoom = 14.0;
   static const double _runZoom = 16.0;
   static const double _defaultLon = 30.3351;
   static const double _defaultLat = 59.9343;
+  static const int _arrowSize = 80;
 
   @override
   void initState() {
     super.initState();
     _loadInitialCenter();
+    _generateArrowIcon();
+  }
+
+  /// Draw a navigation arrow icon (blue arrow with white border).
+  Future<void> _generateArrowIcon() async {
+    final size = _arrowSize.toDouble();
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, size, size));
+
+    final center = Offset(size / 2, size / 2);
+    final radius = size / 2 - 4;
+
+    // White circle background with shadow
+    final shadowPaint = Paint()
+      ..color = Colors.black.withAlpha(40)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+    canvas.drawCircle(center + const Offset(0, 2), radius, shadowPaint);
+
+    final bgPaint = Paint()..color = Colors.white;
+    canvas.drawCircle(center, radius, bgPaint);
+
+    // Blue navigation arrow pointing UP (north)
+    final arrowPaint = Paint()
+      ..color = Colors.blue
+      ..style = PaintingStyle.fill;
+
+    final path = Path();
+    // Arrow tip at top
+    path.moveTo(size / 2, size * 0.18);
+    // Right wing
+    path.lineTo(size * 0.72, size * 0.72);
+    // Inner notch
+    path.lineTo(size / 2, size * 0.58);
+    // Left wing
+    path.lineTo(size * 0.28, size * 0.72);
+    path.close();
+
+    canvas.drawPath(path, arrowPaint);
+
+    final picture = recorder.endRecording();
+    final image = await picture.toImage(size.toInt(), size.toInt());
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    if (byteData != null && mounted) {
+      setState(() {
+        _arrowIcon = byteData.buffer.asUint8List();
+      });
+    }
   }
 
   Future<void> _loadInitialCenter() async {
@@ -147,17 +199,38 @@ class _RunRouteMapState extends State<RunRouteMap> {
       );
     }
 
-    // Show current position marker if we have at least 1 GPS point
+    // Current position: directional arrow (or fallback blue dot)
     if (points.isNotEmpty) {
-      mapObjects.add(
-        CircleMapObject(
-          mapId: const MapObjectId('current_position'),
-          circle: Circle(center: points.last, radius: 10),
-          strokeColor: Colors.white,
-          strokeWidth: 3,
-          fillColor: Colors.blue,
-        ),
-      );
+      final lastPosition = widget.gpsPoints.last;
+      final heading = lastPosition.heading; // 0-360, 0 = north
+
+      if (_arrowIcon != null && heading >= 0) {
+        mapObjects.add(
+          PlacemarkMapObject(
+            mapId: const MapObjectId('current_position'),
+            point: points.last,
+            direction: heading,
+            icon: PlacemarkIcon.single(
+              PlacemarkIconStyle(
+                image: BitmapDescriptor.fromBytes(_arrowIcon!),
+                scale: 0.5,
+                rotationType: RotationType.rotate,
+              ),
+            ),
+          ),
+        );
+      } else {
+        // Fallback: blue dot when no heading data
+        mapObjects.add(
+          CircleMapObject(
+            mapId: const MapObjectId('current_position'),
+            circle: Circle(center: points.last, radius: 10),
+            strokeColor: Colors.white,
+            strokeWidth: 3,
+            fillColor: Colors.blue,
+          ),
+        );
+      }
     }
 
     return Stack(

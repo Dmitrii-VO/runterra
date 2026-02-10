@@ -1981,6 +1981,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Club disbanded'**
   String get disbandSuccess;
+
+  /// No description provided for @runHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Training Journal'**
+  String get runHistoryTitle;
+
+  /// No description provided for @runHistoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No runs yet'**
+  String get runHistoryEmpty;
+
+  /// No description provided for @runHistoryEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Start your first run to see it here'**
+  String get runHistoryEmptyHint;
+
+  /// No description provided for @runHistoryToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get runHistoryToday;
+
+  /// No description provided for @runHistoryYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get runHistoryYesterday;
+
+  /// No description provided for @runStatsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics'**
+  String get runStatsTitle;
+
+  /// No description provided for @runStatsTotalRuns.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs'**
+  String get runStatsTotalRuns;
+
+  /// No description provided for @runStatsTotalDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Total distance'**
+  String get runStatsTotalDistance;
+
+  /// No description provided for @runStatsAvgPace.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg pace'**
+  String get runStatsAvgPace;
+
+  /// No description provided for @runDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Run details'**
+  String get runDetailTitle;
+
+  /// No description provided for @runDetailLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load run details'**
+  String get runDetailLoadError;
+
+  /// No description provided for @runGpsPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'GPS points'**
+  String get runGpsPoints;
 }
 
 class _AppLocalizationsDelegate

@@ -1026,4 +1026,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get disbandSuccess => 'Club disbanded';
+
+  @override
+  String get runHistoryTitle => 'Training Journal';
+
+  @override
+  String get runHistoryEmpty => 'No runs yet';
+
+  @override
+  String get runHistoryEmptyHint => 'Start your first run to see it here';
+
+  @override
+  String get runHistoryToday => 'Today';
+
+  @override
+  String get runHistoryYesterday => 'Yesterday';
+
+  @override
+  String get runStatsTitle => 'Statistics';
+
+  @override
+  String get runStatsTotalRuns => 'Runs';
+
+  @override
+  String get runStatsTotalDistance => 'Total distance';
+
+  @override
+  String get runStatsAvgPace => 'Avg pace';
+
+  @override
+  String get runDetailTitle => 'Run details';
+
+  @override
+  String get runDetailLoadError => 'Could not load run details';
+
+  @override
+  String get runGpsPoints => 'GPS points';
 }

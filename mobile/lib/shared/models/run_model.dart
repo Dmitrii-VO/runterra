@@ -52,6 +52,70 @@ class RunModel {
   }
 }
 
+/// GPS point from backend run detail.
+class GpsPointModel {
+  final double latitude;
+  final double longitude;
+  final DateTime? timestamp;
+
+  GpsPointModel({
+    required this.latitude,
+    required this.longitude,
+    this.timestamp,
+  });
+
+  factory GpsPointModel.fromJson(Map<String, dynamic> json) {
+    return GpsPointModel(
+      latitude: (json['latitude'] as num).toDouble(),
+      longitude: (json['longitude'] as num).toDouble(),
+      timestamp: json['timestamp'] != null
+          ? DateTime.parse(json['timestamp'] as String)
+          : null,
+    );
+  }
+}
+
+/// Extended run model with GPS track for detail view.
+/// Matches backend RunDetailDto.
+class RunDetailModel extends RunModel {
+  final List<GpsPointModel> gpsPoints;
+
+  RunDetailModel({
+    required super.id,
+    required super.userId,
+    super.activityId,
+    required super.startedAt,
+    required super.endedAt,
+    required super.duration,
+    required super.distance,
+    required super.status,
+    required super.createdAt,
+    required super.updatedAt,
+    required this.gpsPoints,
+  });
+
+  factory RunDetailModel.fromJson(Map<String, dynamic> json) {
+    final base = RunModel.fromJson(json);
+    final pointsList = (json['gpsPoints'] as List<dynamic>?)
+            ?.map((p) => GpsPointModel.fromJson(p as Map<String, dynamic>))
+            .toList() ??
+        [];
+    return RunDetailModel(
+      id: base.id,
+      userId: base.userId,
+      activityId: base.activityId,
+      startedAt: base.startedAt,
+      endedAt: base.endedAt,
+      duration: base.duration,
+      distance: base.distance,
+      status: base.status,
+      createdAt: base.createdAt,
+      updatedAt: base.updatedAt,
+      gpsPoints: pointsList,
+    );
+  }
+}
+
 /// Run status from backend (RunStatus).
 /// Matches backend: 'completed' | 'invalid'.
 enum RunModelStatus {

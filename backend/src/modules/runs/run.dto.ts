@@ -69,31 +69,57 @@ export const CreateRunSchema = z.object({
 export interface RunViewDto {
   /** Уникальный идентификатор пробежки в системе */
   id: string;
-  
+
   /** Идентификатор пользователя, выполнившего пробежку */
   userId: string;
-  
+
   /** Идентификатор тренировки, к которой привязана пробежка (опционально) */
   activityId?: string;
-  
+
   /** Время начала пробежки */
   startedAt: Date;
-  
+
   /** Время окончания пробежки */
   endedAt: Date;
-  
+
   /** Длительность пробежки в секундах */
   duration: number;
-  
+
   /** Пройденное расстояние в метрах */
   distance: number;
-  
+
   /** Статус пробежки */
   status: RunStatus;
-  
+
   /** Дата создания записи */
   createdAt: Date;
-  
+
   /** Дата последнего обновления */
   updatedAt: Date;
+}
+
+/** Compact run item for history list */
+export interface RunHistoryItemDto {
+  id: string;
+  startedAt: Date;
+  duration: number;
+  distance: number;
+  paceSecondsPerKm: number;
+}
+
+/** Run details with GPS track */
+export interface RunDetailDto extends RunViewDto {
+  gpsPoints: Array<{
+    latitude: number;
+    longitude: number;
+    timestamp?: Date;
+  }>;
+}
+
+/** User running statistics */
+export interface UserRunStatsDto {
+  totalRuns: number;
+  totalDistance: number;
+  totalDuration: number;
+  averagePace: number;
 }
