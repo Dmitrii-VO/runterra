@@ -63,6 +63,17 @@ class RunService {
     // Start GPS tracking (background so run continues when app is in background)
     await _locationService.startTracking(distanceFilter: 5, background: true);
 
+    // Seed the route with the current GPS position so the cursor appears immediately,
+    // without waiting for the next distanceFilter-triggered stream update.
+    GpsStatus initialGpsStatus = GpsStatus.searching;
+    try {
+      final initialPosition = await _locationService.getCurrentPosition();
+      _gpsPoints.add(initialPosition);
+      initialGpsStatus = GpsStatus.recording;
+    } catch (_) {
+      // Keep run alive: stream updates can still arrive shortly after tracking starts.
+    }
+
     // Listen to position updates
     _positionSubscription = _locationService.positionStream.listen(
       (position) {
@@ -110,7 +121,7 @@ class RunService {
       activityId: activityId,
       startedAt: _startTime!,
       status: RunSessionStatus.running,
-      gpsStatus: GpsStatus.searching,
+      gpsStatus: initialGpsStatus,
       gpsPoints: List.from(_gpsPoints), // Copy list to maintain immutability
     );
 

@@ -30,6 +30,8 @@ class _RunRouteMapState extends State<RunRouteMap> {
   static const double _defaultLon = 30.3351;
   static const double _defaultLat = 59.9343;
   static const int _arrowSize = 80;
+  static const MapObjectId _currentPositionArrowId = MapObjectId('current_position_arrow');
+  static const MapObjectId _currentPositionDotId = MapObjectId('current_position_dot');
 
   @override
   void initState() {
@@ -203,11 +205,12 @@ class _RunRouteMapState extends State<RunRouteMap> {
     if (points.isNotEmpty) {
       final lastPosition = widget.gpsPoints.last;
       final heading = lastPosition.heading; // 0-360, 0 = north
+      final hasValidHeading = heading.isFinite && heading >= 0 && heading <= 360;
 
-      if (_arrowIcon != null && heading >= 0) {
+      if (_arrowIcon != null && hasValidHeading) {
         mapObjects.add(
           PlacemarkMapObject(
-            mapId: const MapObjectId('current_position'),
+            mapId: _currentPositionArrowId,
             point: points.last,
             direction: heading,
             icon: PlacemarkIcon.single(
@@ -223,8 +226,8 @@ class _RunRouteMapState extends State<RunRouteMap> {
         // Fallback: blue dot when no heading data
         mapObjects.add(
           CircleMapObject(
-            mapId: const MapObjectId('current_position'),
-            circle: Circle(center: points.last, radius: 10),
+            mapId: _currentPositionDotId,
+            circle: Circle(center: points.last, radius: 16),
             strokeColor: Colors.white,
             strokeWidth: 3,
             fillColor: Colors.blue,
