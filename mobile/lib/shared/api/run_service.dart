@@ -107,6 +107,8 @@ class RunService {
             distance: newDistance,
             gpsStatus: _currentSession!.gpsStatus,
             gpsPoints: List.from(_gpsPoints),
+            accumulatedDuration: _currentSession!.accumulatedDuration,
+            lastResumedAt: _currentSession!.lastResumedAt,
           );
         }
       },
@@ -123,9 +125,102 @@ class RunService {
       status: RunSessionStatus.running,
       gpsStatus: initialGpsStatus,
       gpsPoints: List.from(_gpsPoints), // Copy list to maintain immutability
+      lastResumedAt: _startTime!,
     );
 
     return _currentSession!;
+  }
+
+  /// Pause the current run: stop GPS, freeze accumulated duration.
+  void pauseRun() {
+    if (_currentSession == null ||
+        _currentSession!.status != RunSessionStatus.running) {
+      throw Exception('No running session to pause');
+    }
+
+    _locationService.stopTracking();
+    _positionSubscription?.cancel();
+    _positionSubscription = null;
+
+    final now = DateTime.now();
+    final lastResumed = _currentSession!.lastResumedAt ?? _currentSession!.startedAt;
+    final activeSinceResume = now.difference(lastResumed);
+    final totalAccumulated = _currentSession!.accumulatedDuration + activeSinceResume;
+
+    _currentSession = RunSession(
+      id: _currentSession!.id,
+      activityId: _currentSession!.activityId,
+      startedAt: _currentSession!.startedAt,
+      status: RunSessionStatus.paused,
+      duration: totalAccumulated,
+      distance: _currentSession!.distance,
+      gpsStatus: _currentSession!.gpsStatus,
+      gpsPoints: List.from(_currentSession!.gpsPoints),
+      accumulatedDuration: totalAccumulated,
+      lastResumedAt: null,
+    );
+  }
+
+  /// Resume a paused run: restart GPS tracking.
+  Future<void> resumeRun() async {
+    if (_currentSession == null ||
+        _currentSession!.status != RunSessionStatus.paused) {
+      throw Exception('No paused session to resume');
+    }
+
+    await _locationService.startTracking(distanceFilter: 5, background: true);
+
+    _positionSubscription = _locationService.positionStream.listen(
+      (position) {
+        _gpsPoints.add(position);
+
+        double newDistance = _currentSession?.distance ?? 0.0;
+        if (_gpsPoints.length > 1) {
+          final lastIndex = _gpsPoints.length - 1;
+          final prev = _gpsPoints[lastIndex - 1];
+          final curr = _gpsPoints[lastIndex];
+          final increment = Geolocator.distanceBetween(
+            prev.latitude,
+            prev.longitude,
+            curr.latitude,
+            curr.longitude,
+          );
+          newDistance += increment;
+        }
+
+        if (_currentSession != null) {
+          _currentSession = RunSession(
+            id: _currentSession!.id,
+            activityId: _currentSession!.activityId,
+            startedAt: _currentSession!.startedAt,
+            status: _currentSession!.status,
+            duration: _currentSession!.duration,
+            distance: newDistance,
+            gpsStatus: _currentSession!.gpsStatus,
+            gpsPoints: List.from(_gpsPoints),
+            accumulatedDuration: _currentSession!.accumulatedDuration,
+            lastResumedAt: _currentSession!.lastResumedAt,
+          );
+        }
+      },
+      onError: (error) {
+        // Handle GPS errors
+      },
+    );
+
+    final now = DateTime.now();
+    _currentSession = RunSession(
+      id: _currentSession!.id,
+      activityId: _currentSession!.activityId,
+      startedAt: _currentSession!.startedAt,
+      status: RunSessionStatus.running,
+      duration: _currentSession!.accumulatedDuration,
+      distance: _currentSession!.distance,
+      gpsStatus: GpsStatus.recording,
+      gpsPoints: List.from(_currentSession!.gpsPoints),
+      accumulatedDuration: _currentSession!.accumulatedDuration,
+      lastResumedAt: now,
+    );
   }
 
   /// Обновляет статус GPS в текущей сессии
@@ -141,7 +236,9 @@ class RunService {
         duration: _currentSession!.duration,
         distance: _currentSession!.distance,
         gpsStatus: status,
-        gpsPoints: List.from(_currentSession!.gpsPoints), // Copy list to maintain immutability
+        gpsPoints: List.from(_currentSession!.gpsPoints),
+        accumulatedDuration: _currentSession!.accumulatedDuration,
+        lastResumedAt: _currentSession!.lastResumedAt,
       );
     }
   }
@@ -162,7 +259,9 @@ class RunService {
         duration: duration ?? _currentSession!.duration,
         distance: distance ?? _currentSession!.distance,
         gpsStatus: _currentSession!.gpsStatus,
-        gpsPoints: List.from(_currentSession!.gpsPoints), // Copy list to maintain immutability
+        gpsPoints: List.from(_currentSession!.gpsPoints),
+        accumulatedDuration: _currentSession!.accumulatedDuration,
+        lastResumedAt: _currentSession!.lastResumedAt,
       );
     }
   }
@@ -197,8 +296,17 @@ class RunService {
     _positionSubscription?.cancel();
     _positionSubscription = null;
 
-    final endTime = DateTime.now();
-    final duration = endTime.difference(_startTime!);
+    // Calculate final active duration
+    final Duration finalDuration;
+    if (_currentSession!.status == RunSessionStatus.paused) {
+      // Already paused — accumulated duration is the total active time
+      finalDuration = _currentSession!.accumulatedDuration;
+    } else {
+      // Still running — add time since last resume
+      final now = DateTime.now();
+      final lastResumed = _currentSession!.lastResumedAt ?? _currentSession!.startedAt;
+      finalDuration = _currentSession!.accumulatedDuration + now.difference(lastResumed);
+    }
 
     // Update session with final data
     _currentSession = RunSession(
@@ -206,11 +314,12 @@ class RunService {
       activityId: _currentSession!.activityId,
       startedAt: _currentSession!.startedAt,
       status: RunSessionStatus.completed,
-      duration: duration,
+      duration: finalDuration,
       // Distance already accumulated during tracking from _gpsPoints stream.
       distance: _currentSession!.distance,
       gpsStatus: _currentSession!.gpsStatus,
       gpsPoints: List.from(_gpsPoints),
+      accumulatedDuration: finalDuration,
     );
 
     return _currentSession!;

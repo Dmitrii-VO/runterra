@@ -7,6 +7,7 @@ import '../../../shared/api/users_service.dart' show ApiException;
 import '../../../shared/auth/auth_service.dart';
 import '../../../shared/di/service_locator.dart';
 import '../../../shared/models/club_chat_model.dart';
+import '../../../shared/models/club_channel_model.dart';
 import '../../../shared/models/message_model.dart';
 
 /// Club tab in messages screen.
@@ -29,12 +30,16 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
 
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final FocusNode _focusNode = FocusNode();
 
   List<ClubChatModel>? _clubChats;
   Object? _listLoadError;
   bool _isListLoading = true;
 
   String? _clubId;
+  String? _channelId;
+  List<ClubChannelModel>? _channels;
+  bool _isChannelsLoading = false;
   String? _currentUserId;
   bool _isLoading = true;
   bool _isSending = false;
@@ -77,6 +82,7 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
     _pollTimer?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -107,17 +113,71 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
     _stopPolling();
     setState(() {
       _clubId = clubId;
+      _channelId = null;
+      _channels = null;
+      _isChannelsLoading = true;
+      _isLoading = false;
+      _errorOnMessagesLoad = false;
+    });
+
+    try {
+      final channels = await ServiceLocator.messagesService.getClubChannels(clubId);
+      if (!mounted || _clubId != clubId) return;
+
+      if (channels.length == 1) {
+        // Single channel — go directly to chat
+        setState(() {
+          _channels = channels;
+          _isChannelsLoading = false;
+        });
+        _openChannel(clubId, channels.first.id);
+      } else {
+        setState(() {
+          _channels = channels;
+          _isChannelsLoading = false;
+        });
+      }
+    } catch (error) {
+      if (!mounted || _clubId != clubId) return;
+      // Fallback to legacy (no channels) — load chat directly
+      setState(() {
+        _channels = null;
+        _isChannelsLoading = false;
+      });
+      _openChannelChat(clubId, null);
+    }
+  }
+
+  Future<void> _openChannel(String clubId, String channelId) async {
+    setState(() {
+      _channelId = channelId;
+    });
+    _openChannelChat(clubId, channelId);
+  }
+
+  Future<void> _openChannelChat(String clubId, String? channelId) async {
+    _stopPolling();
+    setState(() {
       _isLoading = true;
       _errorOnMessagesLoad = false;
     });
 
     try {
-      final loadedMessages =
-          await ServiceLocator.messagesService.getClubChatMessages(
-        clubId,
-        limit: _pageSize,
-        offset: 0,
-      );
+      final List<MessageModel> loadedMessages;
+      if (channelId != null) {
+        loadedMessages = await ServiceLocator.messagesService.getChannelMessages(
+          clubId,
+          channelId,
+          limit: _pageSize,
+          offset: 0,
+        );
+      } else {
+        loadedMessages = await ServiceLocator.messagesService.getClubChatMessages(
+          clubId,
+          limit: _pageSize,
+          offset: 0,
+        );
+      }
       loadedMessages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
       if (!mounted || _clubId != clubId) return;
@@ -146,6 +206,18 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
     _stopPolling();
     setState(() {
       _clubId = null;
+      _channelId = null;
+      _channels = null;
+      _messages = <MessageModel>[];
+      _historyOffset = 0;
+      _hasMoreHistory = false;
+    });
+  }
+
+  void _backToChannelList() {
+    _stopPolling();
+    setState(() {
+      _channelId = null;
       _messages = <MessageModel>[];
       _historyOffset = 0;
       _hasMoreHistory = false;
@@ -177,11 +249,21 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
 
     try {
       final wasNearBottom = _isNearBottom();
-      final latest = await ServiceLocator.messagesService.getClubChatMessages(
-        clubId,
-        limit: _pageSize,
-        offset: 0,
-      );
+      final List<MessageModel> latest;
+      if (_channelId != null) {
+        latest = await ServiceLocator.messagesService.getChannelMessages(
+          clubId,
+          _channelId!,
+          limit: _pageSize,
+          offset: 0,
+        );
+      } else {
+        latest = await ServiceLocator.messagesService.getClubChatMessages(
+          clubId,
+          limit: _pageSize,
+          offset: 0,
+        );
+      }
       latest.sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
       if (!mounted || _clubId != clubId) return;
@@ -220,12 +302,21 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
     setState(() => _isLoadingMoreHistory = true);
 
     try {
-      final olderBatch =
-          await ServiceLocator.messagesService.getClubChatMessages(
-        clubId,
-        limit: _pageSize,
-        offset: _historyOffset,
-      );
+      final List<MessageModel> olderBatch;
+      if (_channelId != null) {
+        olderBatch = await ServiceLocator.messagesService.getChannelMessages(
+          clubId,
+          _channelId!,
+          limit: _pageSize,
+          offset: _historyOffset,
+        );
+      } else {
+        olderBatch = await ServiceLocator.messagesService.getClubChatMessages(
+          clubId,
+          limit: _pageSize,
+          offset: _historyOffset,
+        );
+      }
       olderBatch.sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
       if (!mounted || _clubId != clubId) return;
@@ -272,11 +363,16 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
 
     try {
       final wasNearBottom = _isNearBottom();
-      final sent =
-          await ServiceLocator.messagesService.sendClubMessage(clubId, text);
+      final MessageModel sent;
+      if (_channelId != null) {
+        sent = await ServiceLocator.messagesService.sendChannelMessage(clubId, _channelId!, text);
+      } else {
+        sent = await ServiceLocator.messagesService.sendClubMessage(clubId, text);
+      }
       if (!mounted) return;
 
       _messageController.clear();
+      _focusNode.requestFocus();
       if (_messages.any((message) => message.id == sent.id)) return;
 
       setState(() {
@@ -488,6 +584,7 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
             Expanded(
               child: TextField(
                 controller: _messageController,
+                focusNode: _focusNode,
                 enabled: !_isSending,
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => _sendMessage(),
@@ -550,6 +647,72 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
     );
   }
 
+  Widget _buildChannelList(AppLocalizations l10n, ThemeData theme) {
+    final channels = _channels!;
+    final chat = _clubChats?.firstWhere(
+      (c) => c.clubId == _clubId,
+      orElse: () => ClubChatModel(
+        id: '',
+        clubId: _clubId!,
+        clubName: _clubId,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+    );
+    final clubName = chat?.clubName?.trim().isNotEmpty == true
+        ? (chat?.clubName ?? _clubId!)
+        : _clubId!;
+
+    return Column(
+      children: [
+        Material(
+          elevation: 1,
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: _backToClubList,
+                    tooltip: l10n.messagesBackToClubs,
+                  ),
+                  Expanded(
+                    child: Text(
+                      clubName,
+                      style: theme.textTheme.titleMedium,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            itemCount: channels.length,
+            itemBuilder: (context, index) {
+              final channel = channels[index];
+              return Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  leading: Icon(
+                    channel.isDefault ? Icons.tag : Icons.chat_bubble_outline,
+                  ),
+                  title: Text(channel.name),
+                  onTap: () => _openChannel(_clubId!, channel.id),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
   /// Chat view: back button + club name + messages + composer.
   Widget _buildChatView(AppLocalizations l10n, ThemeData theme) {
     final chat = _clubChats?.firstWhere(
@@ -578,7 +741,9 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back),
-                    onPressed: _backToClubList,
+                    onPressed: (_channels != null && _channels!.length > 1)
+                        ? _backToChannelList
+                        : _backToClubList,
                     tooltip: l10n.messagesBackToClubs,
                   ),
                   Expanded(
@@ -605,6 +770,20 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
     final theme = Theme.of(context);
 
     if (_clubId != null) {
+      // Loading channels
+      if (_isChannelsLoading) {
+        return const Center(
+          child: Padding(
+            padding: EdgeInsets.all(16.0),
+            child: CircularProgressIndicator(),
+          ),
+        );
+      }
+      // Show channel list if multiple channels and no channel selected yet
+      if (_channels != null && _channels!.length > 1 && _channelId == null) {
+        return _buildChannelList(l10n, theme);
+      }
+      // Loading chat messages
       if (_isLoading) {
         return const Center(
           child: Padding(

@@ -22,7 +22,7 @@ class RunTrackingScreen extends StatefulWidget {
   State<RunTrackingScreen> createState() => _RunTrackingScreenState();
 }
 
-enum _TrackingState { idle, running, completed }
+enum _TrackingState { idle, running, paused, completed }
 
 class _RunTrackingScreenState extends State<RunTrackingScreen> {
   _TrackingState _state = _TrackingState.idle;
@@ -41,6 +41,11 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
       if (session == null) return;
       if (session.status == RunSessionStatus.running) {
         _restoreRunningState();
+      } else if (session.status == RunSessionStatus.paused) {
+        setState(() {
+          _session = session;
+          _state = _TrackingState.paused;
+        });
       } else if (session.status == RunSessionStatus.completed) {
         setState(() {
           _session = session;
@@ -66,10 +71,16 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
       _state = _TrackingState.running;
     });
 
+    _startTimerAndGps();
+  }
+
+  void _startTimerAndGps() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_session != null && _state == _TrackingState.running && mounted) {
-        final duration = DateTime.now().difference(_session!.startedAt);
-        _runService.updateSessionMetrics(duration: duration);
+        final lastResumed = _session!.lastResumedAt ?? _session!.startedAt;
+        final activeSinceResume = DateTime.now().difference(lastResumed);
+        final totalDuration = _session!.accumulatedDuration + activeSinceResume;
+        _runService.updateSessionMetrics(duration: totalDuration);
         setState(() {
           _session = _runService.currentSession;
         });
@@ -101,32 +112,7 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
         _state = _TrackingState.running;
       });
 
-      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        if (_session != null && _state == _TrackingState.running) {
-          final duration = DateTime.now().difference(_session!.startedAt);
-          _runService.updateSessionMetrics(duration: duration);
-          setState(() {
-            _session = _runService.currentSession;
-          });
-        }
-      });
-
-      _gpsSubscription = _runService.gpsPositionStream.listen(
-        (position) {
-          if (_session?.gpsStatus == GpsStatus.searching) {
-            _runService.updateGpsStatus(GpsStatus.recording);
-          }
-          setState(() {
-            _session = _runService.currentSession;
-          });
-        },
-        onError: (error) {
-          _runService.updateGpsStatus(GpsStatus.error);
-          setState(() {
-            _session = _runService.currentSession;
-          });
-        },
-      );
+      _startTimerAndGps();
     } catch (e) {
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
@@ -151,6 +137,64 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
             content: Text(errorMessage),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
+  void _pauseRun() {
+    _timer?.cancel();
+    _gpsSubscription?.cancel();
+    _runService.pauseRun();
+    setState(() {
+      _session = _runService.currentSession;
+      _state = _TrackingState.paused;
+    });
+  }
+
+  Future<void> _resumeRun() async {
+    try {
+      await _runService.resumeRun();
+      setState(() {
+        _session = _runService.currentSession;
+        _state = _TrackingState.running;
+      });
+
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (_session != null && _state == _TrackingState.running) {
+          final lastResumed = _session!.lastResumedAt ?? _session!.startedAt;
+          final activeSinceResume = DateTime.now().difference(lastResumed);
+          final totalDuration = _session!.accumulatedDuration + activeSinceResume;
+          _runService.updateSessionMetrics(duration: totalDuration);
+          setState(() {
+            _session = _runService.currentSession;
+          });
+        }
+      });
+
+      _gpsSubscription = _runService.gpsPositionStream.listen(
+        (position) {
+          if (_session?.gpsStatus == GpsStatus.searching) {
+            _runService.updateGpsStatus(GpsStatus.recording);
+          }
+          setState(() {
+            _session = _runService.currentSession;
+          });
+        },
+        onError: (error) {
+          _runService.updateGpsStatus(GpsStatus.error);
+          setState(() {
+            _session = _runService.currentSession;
+          });
+        },
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: Colors.red,
           ),
         );
       }
@@ -217,7 +261,15 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
-              _restoreRunningState();
+              final session = _runService.currentSession;
+              if (session?.status == RunSessionStatus.paused) {
+                setState(() {
+                  _session = session;
+                  _state = _TrackingState.paused;
+                });
+              } else {
+                _restoreRunningState();
+              }
             },
             child: Text(l10n.runStuckSessionResume),
           ),
@@ -332,6 +384,7 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
       body: switch (_state) {
         _TrackingState.idle => _buildIdleContent(),
         _TrackingState.running => _buildRunningContent(),
+        _TrackingState.paused => _buildRunningContent(),
         _TrackingState.completed => _buildCompletedContent(),
       },
     );
@@ -402,9 +455,11 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
                 width: 12,
                 height: 12,
                 decoration: BoxDecoration(
-                  color: gpsStatus == GpsStatus.recording
-                      ? Colors.green
-                      : Colors.orange,
+                  color: _state == _TrackingState.paused
+                      ? Colors.amber
+                      : gpsStatus == GpsStatus.recording
+                          ? Colors.green
+                          : Colors.orange,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -433,21 +488,48 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.all(24),
-          child: FilledButton.icon(
-            onPressed: _isSubmitting ? null : _finishRun,
-            icon: _isSubmitting
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.stop),
-            label: Text(_isSubmitting ? AppLocalizations.of(context)!.runFinishing : AppLocalizations.of(context)!.runFinish),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              minimumSize: const Size.fromHeight(48),
-            ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: _isSubmitting
+                      ? null
+                      : (_state == _TrackingState.paused ? _resumeRun : _pauseRun),
+                  icon: Icon(
+                    _state == _TrackingState.paused
+                        ? Icons.play_arrow
+                        : Icons.pause,
+                  ),
+                  label: Text(
+                    _state == _TrackingState.paused
+                        ? l10n.runResume
+                        : l10n.runPause,
+                  ),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: _isSubmitting ? null : _finishRun,
+                  icon: _isSubmitting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.stop),
+                  label: Text(_isSubmitting ? l10n.runFinishing : l10n.runFinish),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                    minimumSize: const Size.fromHeight(48),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],

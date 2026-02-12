@@ -239,6 +239,69 @@ class ClubsService {
     throw ApiException(errorCode, errorMessage);
   }
 
+  /// GET /api/clubs/:id/membership-requests — pending requests (leader/trainer).
+  Future<List<ClubMemberModel>> getMembershipRequests(String clubId) async {
+    final response = await _apiClient.get('/api/clubs/${Uri.encodeComponent(clubId)}/membership-requests');
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body) as List<dynamic>;
+      return jsonData
+          .map((item) => ClubMemberModel.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+    String errorCode = 'requests_fetch_error';
+    String errorMessage = 'Failed to load requests (${response.statusCode})';
+    try {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
+      if (decoded != null) {
+        errorCode = (decoded['code'] as String?) ?? errorCode;
+        errorMessage = (decoded['message'] as String?) ?? errorMessage;
+      }
+    } on FormatException {
+      // Non-JSON response
+    }
+    throw ApiException(errorCode, errorMessage);
+  }
+
+  /// POST /api/clubs/:id/membership-requests/:userId/approve
+  Future<void> approveMembership(String clubId, String userId) async {
+    final response = await _apiClient.post(
+      '/api/clubs/${Uri.encodeComponent(clubId)}/membership-requests/${Uri.encodeComponent(userId)}/approve',
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    String errorCode = 'approve_error';
+    String errorMessage = 'Failed to approve (${response.statusCode})';
+    try {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
+      if (decoded != null) {
+        errorCode = (decoded['code'] as String?) ?? errorCode;
+        errorMessage = (decoded['message'] as String?) ?? errorMessage;
+      }
+    } on FormatException {
+      // Non-JSON response
+    }
+    throw ApiException(errorCode, errorMessage);
+  }
+
+  /// POST /api/clubs/:id/membership-requests/:userId/reject
+  Future<void> rejectMembership(String clubId, String userId) async {
+    final response = await _apiClient.post(
+      '/api/clubs/${Uri.encodeComponent(clubId)}/membership-requests/${Uri.encodeComponent(userId)}/reject',
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    String errorCode = 'reject_error';
+    String errorMessage = 'Failed to reject (${response.statusCode})';
+    try {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
+      if (decoded != null) {
+        errorCode = (decoded['code'] as String?) ?? errorCode;
+        errorMessage = (decoded['message'] as String?) ?? errorMessage;
+      }
+    } on FormatException {
+      // Non-JSON response
+    }
+    throw ApiException(errorCode, errorMessage);
+  }
+
   /// DELETE /api/clubs/:id — disband club (leader only).
   Future<void> disbandClub(String clubId) async {
     final response = await _apiClient.delete('/api/clubs/${Uri.encodeComponent(clubId)}');

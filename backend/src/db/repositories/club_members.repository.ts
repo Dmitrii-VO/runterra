@@ -118,6 +118,18 @@ export class ClubMembersRepository extends BaseRepository {
     return rowToMembership(row);
   }
 
+  /** Set membership status to an arbitrary value */
+  async setStatus(clubId: string, userId: string, status: 'pending' | 'active' | 'inactive' | 'suspended'): Promise<ClubMembershipRow | null> {
+    const row = await this.queryOne<ClubMemberRow>(
+      `UPDATE club_members
+       SET status = $3, updated_at = NOW()
+       WHERE club_id = $1 AND user_id = $2
+       RETURNING *`,
+      [clubId, userId, status],
+    );
+    return row ? rowToMembership(row) : null;
+  }
+
   async deactivate(clubId: string, userId: string): Promise<ClubMembershipRow | null> {
     const row = await this.queryOne<ClubMemberRow>(
       `UPDATE club_members
@@ -217,6 +229,45 @@ export class ClubMembersRepository extends BaseRepository {
       `UPDATE club_members SET status = 'inactive', updated_at = NOW() WHERE club_id = $1 AND status = 'active'`,
       [clubId],
     );
+  }
+
+  /** Find all pending membership requests for a club */
+  async findPendingByClub(clubId: string): Promise<ClubMemberDetailDto[]> {
+    const rows = await this.queryMany<ClubMemberDetailRow>(
+      `SELECT
+         cm.user_id,
+         COALESCE(NULLIF(TRIM(CONCAT(u.first_name, ' ', u.last_name)), ''), u.name) AS display_name,
+         cm.role,
+         cm.created_at AS joined_at
+       FROM club_members cm
+       JOIN users u ON u.id = cm.user_id
+       WHERE cm.club_id = $1 AND cm.status = 'pending'
+       ORDER BY cm.created_at ASC`,
+      [clubId],
+    );
+    return rows.map(rowToClubMemberDetail);
+  }
+
+  /** Approve a pending membership request (pending → active) */
+  async approveMembership(clubId: string, userId: string): Promise<ClubMembershipRow | null> {
+    const row = await this.queryOne<ClubMemberRow>(
+      `UPDATE club_members
+       SET status = 'active', updated_at = NOW()
+       WHERE club_id = $1 AND user_id = $2 AND status = 'pending'
+       RETURNING *`,
+      [clubId, userId],
+    );
+    return row ? rowToMembership(row) : null;
+  }
+
+  /** Reject a pending membership request (delete the record) */
+  async rejectMembership(clubId: string, userId: string): Promise<boolean> {
+    const result = await this.query(
+      `DELETE FROM club_members
+       WHERE club_id = $1 AND user_id = $2 AND status = 'pending'`,
+      [clubId, userId],
+    );
+    return (result?.rowCount ?? 0) > 0;
   }
 
   /** Count active members for a club */

@@ -17,6 +17,10 @@ class RunSession {
   final double distance; // in meters
   final GpsStatus gpsStatus;
   final List<Position> gpsPoints; // GPS coordinates collected during run
+  /// Accumulated active duration before the last pause
+  final Duration accumulatedDuration;
+  /// Timestamp of last resume (used to calculate active time since last resume)
+  final DateTime? lastResumedAt;
 
   RunSession({
     required this.id,
@@ -27,14 +31,18 @@ class RunSession {
     double? distance,
     GpsStatus? gpsStatus,
     List<Position>? gpsPoints,
+    Duration? accumulatedDuration,
+    this.lastResumedAt,
   })  : duration = duration ?? Duration.zero,
         distance = distance ?? 0.0,
         gpsStatus = gpsStatus ?? GpsStatus.searching,
-        gpsPoints = gpsPoints ?? [];
+        gpsPoints = gpsPoints ?? [],
+        accumulatedDuration = accumulatedDuration ?? Duration.zero;
 }
 
 enum RunSessionStatus {
   running,
+  paused,
   completed,
 }
 

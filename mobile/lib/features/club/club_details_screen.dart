@@ -47,6 +47,9 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
   bool _isLeaving = false;
   /// Club events
   Future<List<EventListItemModel>>? _eventsFuture;
+  /// Pending membership requests
+  List<ClubMemberModel>? _pendingRequests;
+  bool _pendingLoading = false;
 
   /// Creates Future for loading club data.
   Future<ClubModel> _fetchClub() async {
@@ -184,10 +187,8 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
     try {
       await ServiceLocator.clubsService.joinClub(widget.clubId);
       if (!mounted) return;
-      await ServiceLocator.currentClubService.setCurrentClubId(widget.clubId);
-      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.clubJoinSuccess)),
+        SnackBar(content: Text(l10n.clubRequestPending)),
       );
       _retry();
     } on ApiException catch (e) {
@@ -318,6 +319,109 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
     } finally {
       if (mounted) setState(() => _isLeaving = false);
     }
+  }
+
+  /// Load pending membership requests
+  Future<void> _loadPendingRequests() async {
+    setState(() => _pendingLoading = true);
+    try {
+      final requests = await ServiceLocator.clubsService.getMembershipRequests(widget.clubId);
+      if (mounted) setState(() => _pendingRequests = requests);
+    } catch (_) {
+      // Silently fail — section will show empty state
+    } finally {
+      if (mounted) setState(() => _pendingLoading = false);
+    }
+  }
+
+  Future<void> _approveRequest(String userId) async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      await ServiceLocator.clubsService.approveMembership(widget.clubId, userId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.clubRequestApprove)),
+      );
+      _loadPendingRequests();
+      _loadMembers();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    }
+  }
+
+  Future<void> _rejectRequest(String userId) async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      await ServiceLocator.clubsService.rejectMembership(widget.clubId, userId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.clubRequestReject)),
+      );
+      _loadPendingRequests();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
+    }
+  }
+
+  Widget _buildMembershipRequestsSection(AppLocalizations l10n) {
+    // Lazy-load on first build
+    if (_pendingRequests == null && !_pendingLoading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadPendingRequests();
+      });
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.clubMembershipRequests,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        if (_pendingLoading && _pendingRequests == null)
+          const Center(child: CircularProgressIndicator())
+        else if (_pendingRequests != null && _pendingRequests!.isNotEmpty)
+          ..._pendingRequests!.map((request) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: CircleAvatar(
+                  child: Text(
+                    request.displayName.isNotEmpty
+                        ? request.displayName[0].toUpperCase()
+                        : '?',
+                  ),
+                ),
+                title: Text(request.displayName),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.check, color: Colors.green),
+                      onPressed: () => _approveRequest(request.userId),
+                      tooltip: l10n.clubRequestApprove,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.red),
+                      onPressed: () => _rejectRequest(request.userId),
+                      tooltip: l10n.clubRequestReject,
+                    ),
+                  ],
+                ),
+              ))
+        else
+          Text(
+            '-',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey,
+                ),
+          ),
+      ],
+    );
   }
 
   /// Navigate to edit club screen and refresh data on success
@@ -584,14 +688,14 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                       ),
                       const SizedBox(height: 16),
                     ],
-                    // РЈС‡Р°СЃС‚РёРµ РІ РєР»СѓР±Рµ
+                    // Membership section
                     if (club.isMember == true)
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           OutlinedButton(
                             onPressed: null,
-                            child: Text(AppLocalizations.of(context)!.clubYouAreMember),
+                            child: Text(l10n.clubYouAreMember),
                           ),
                           const SizedBox(height: 8),
                           OutlinedButton.icon(
@@ -603,9 +707,17 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                                     child: CircularProgressIndicator(strokeWidth: 2),
                                   )
                                 : const Icon(Icons.exit_to_app),
-                            label: Text(AppLocalizations.of(context)!.clubLeave),
+                            label: Text(l10n.clubLeave),
                           ),
                         ],
+                      )
+                    else if (club.membershipStatus == 'pending')
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: null,
+                          child: Text(l10n.clubRequestPending),
+                        ),
                       )
                     else
                       SizedBox(
@@ -619,9 +731,14 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 )
                               : const Icon(Icons.person_add),
-                          label: Text(AppLocalizations.of(context)!.clubJoin),
+                          label: Text(l10n.clubRequestJoin),
                         ),
                       ),
+                    // Membership requests section (leader/trainer only)
+                    if (club.userRole == 'leader' || club.userRole == 'trainer') ...[
+                      const SizedBox(height: 24),
+                      _buildMembershipRequestsSection(l10n),
+                    ],
                   ],
                 ),
               ),

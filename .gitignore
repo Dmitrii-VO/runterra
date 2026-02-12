@@ -40,3 +40,9 @@ imageslogs/
 
 # AI workspace
 ai/
+
+# PowerShell cache (can appear in restricted/non-profile environments)
+Microsoft/
+
+# Codex helper file (local only)
+.gitconfig.codex

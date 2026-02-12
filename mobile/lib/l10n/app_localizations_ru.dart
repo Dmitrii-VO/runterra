@@ -569,7 +569,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get runTitle => 'Пробежка';
 
   @override
-  String get runStart => 'Начать пробежку';
+  String get runStart => 'Старт';
+
+  @override
+  String get runPause => 'Пауза';
+
+  @override
+  String get runResume => 'Продолжить';
 
   @override
   String get runFinish => 'Завершить';
@@ -710,6 +716,21 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get clubDetailsTitle => 'Клуб';
+
+  @override
+  String get clubRequestJoin => 'Подать заявку';
+
+  @override
+  String get clubRequestPending => 'Заявка отправлена';
+
+  @override
+  String get clubRequestApprove => 'Одобрено';
+
+  @override
+  String get clubRequestReject => 'Отклонено';
+
+  @override
+  String get clubMembershipRequests => 'Заявки на вступление';
 
   @override
   String get clubJoin => 'Присоединиться';

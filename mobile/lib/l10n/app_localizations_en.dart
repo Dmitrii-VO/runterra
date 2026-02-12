@@ -568,7 +568,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get runTitle => 'Run';
 
   @override
-  String get runStart => 'Start run';
+  String get runStart => 'Start';
+
+  @override
+  String get runPause => 'Pause';
+
+  @override
+  String get runResume => 'Resume';
 
   @override
   String get runFinish => 'Finish';
@@ -709,6 +715,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clubDetailsTitle => 'Club';
+
+  @override
+  String get clubRequestJoin => 'Apply to join';
+
+  @override
+  String get clubRequestPending => 'Request pending';
+
+  @override
+  String get clubRequestApprove => 'Approved';
+
+  @override
+  String get clubRequestReject => 'Rejected';
+
+  @override
+  String get clubMembershipRequests => 'Membership requests';
 
   @override
   String get clubJoin => 'Join';

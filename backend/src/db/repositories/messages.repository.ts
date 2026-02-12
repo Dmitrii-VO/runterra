@@ -58,7 +58,17 @@ export class MessagesRepository extends BaseRepository {
     channelId: string;
     userId: string;
     text: string;
+    clubChannelId?: string;
   }): Promise<Message> {
+    if (data.clubChannelId) {
+      const row = await this.queryOne<MessageRow>(
+        `INSERT INTO messages (channel_type, channel_id, user_id, text, club_channel_id)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING *`,
+        [data.channelType, data.channelId, data.userId, data.text, data.clubChannelId]
+      );
+      return rowToMessage(row!);
+    }
     const row = await this.queryOne<MessageRow>(
       `INSERT INTO messages (channel_type, channel_id, user_id, text)
        VALUES ($1, $2, $3, $4)
@@ -82,6 +92,24 @@ export class MessagesRepository extends BaseRepository {
        ORDER BY m.created_at DESC
        LIMIT $3 OFFSET $4`,
       [channelType, channelId, limit, offset]
+    );
+    return rows.map(rowToMessageViewDto);
+  }
+
+  /** Find messages for a specific club sub-channel */
+  async findByClubChannel(
+    clubChannelId: string,
+    limit: number,
+    offset: number
+  ): Promise<MessageViewDto[]> {
+    const rows = await this.queryMany<MessageWithUserNameRow>(
+      `SELECT m.id, m.channel_type, m.channel_id, m.user_id, m.text, m.created_at, m.updated_at, u.name AS user_name
+       FROM messages m
+       JOIN users u ON u.id = m.user_id
+       WHERE m.club_channel_id = $1
+       ORDER BY m.created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [clubChannelId, limit, offset]
     );
     return rows.map(rowToMessageViewDto);
   }

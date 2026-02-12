@@ -54,7 +54,9 @@ async function canSubscribe(uid: string, channelKey: string): Promise<boolean> {
     return false;
   }
 
-  const clubId = channelKey.slice('club:'.length);
+  // Support both "club:{clubId}" and "club:{clubId}:{channelId}"
+  const parts = channelKey.slice('club:'.length).split(':');
+  const clubId = parts[0];
   if (!isValidClubId(clubId)) {
     return false;
   }

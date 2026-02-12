@@ -7,7 +7,7 @@ import { Router, Request, Response } from 'express';
 import { CreateMessageSchema } from '../modules/messages';
 import type { MessageViewDto, ClubChatViewDto } from '../modules/messages/message.dto';
 import { validateBody } from './validateBody';
-import { getMessagesRepository, getUsersRepository, getClubMembersRepository } from '../db/repositories';
+import { getMessagesRepository, getUsersRepository, getClubMembersRepository, getClubChannelsRepository } from '../db/repositories';
 import { broadcast } from '../ws/chatWs';
 import { logger } from '../shared/logger';
 import { isValidClubId } from '../shared/clubId';
@@ -131,9 +131,17 @@ router.get('/clubs/:clubId', async (req: Request, res: Response) => {
     }
 
     const { limit, offset } = parsePagination(req.query as { limit?: string; offset?: string });
+    const channelId = (req.query as Record<string, string | undefined>).channelId;
+
     const messagesRepo = getMessagesRepository();
-    const list = await messagesRepo.findByChannel('club', clubId, limit, offset);
-    res.status(200).json(list);
+    // If channelId provided, scope messages to that sub-channel
+    if (channelId) {
+      const list = await messagesRepo.findByClubChannel(channelId, limit, offset);
+      res.status(200).json(list);
+    } else {
+      const list = await messagesRepo.findByChannel('club', clubId, limit, offset);
+      res.status(200).json(list);
+    }
   } catch (error) {
     logger.error('Error fetching club messages', { error: error, clubId });
     res.status(500).json({
@@ -195,13 +203,14 @@ router.post(
         return;
       }
 
-      const { text } = req.body as { text: string };
+      const { text, channelId: bodyChannelId } = req.body as { text: string; channelId?: string };
       const messagesRepo = getMessagesRepository();
       const message = await messagesRepo.create({
         channelType: 'club',
         channelId: clubId,
         userId: user.id,
         text,
+        clubChannelId: bodyChannelId,
       });
 
       const dto: MessageViewDto = {
@@ -213,7 +222,9 @@ router.post(
         updatedAt: message.updatedAt.toISOString(),
       };
 
-      broadcast(`club:${clubId}`, dto);
+      // Broadcast to channel-specific or club-level WS topic
+      const wsTopic = bodyChannelId ? `club:${clubId}:${bodyChannelId}` : `club:${clubId}`;
+      broadcast(wsTopic, dto);
       res.status(201).json(dto);
     } catch (error) {
       logger.error('Error sending club message', { error: error, clubId });

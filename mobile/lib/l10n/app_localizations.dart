@@ -1145,8 +1145,20 @@ abstract class AppLocalizations {
   /// No description provided for @runStart.
   ///
   /// In en, this message translates to:
-  /// **'Start run'**
+  /// **'Start'**
   String get runStart;
+
+  /// No description provided for @runPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get runPause;
+
+  /// No description provided for @runResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get runResume;
 
   /// No description provided for @runFinish.
   ///
@@ -1381,6 +1393,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Club'**
   String get clubDetailsTitle;
+
+  /// No description provided for @clubRequestJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply to join'**
+  String get clubRequestJoin;
+
+  /// No description provided for @clubRequestPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Request pending'**
+  String get clubRequestPending;
+
+  /// No description provided for @clubRequestApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved'**
+  String get clubRequestApprove;
+
+  /// No description provided for @clubRequestReject.
+  ///
+  /// In en, this message translates to:
+  /// **'Rejected'**
+  String get clubRequestReject;
+
+  /// No description provided for @clubMembershipRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Membership requests'**
+  String get clubMembershipRequests;
 
   /// No description provided for @clubJoin.
   ///

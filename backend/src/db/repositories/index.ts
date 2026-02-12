@@ -15,3 +15,4 @@ export {
   ClubMemberDetailDto,
 } from './club_members.repository';
 export { ClubsRepository, getClubsRepository } from './clubs.repository';
+export { ClubChannelsRepository, getClubChannelsRepository, ClubChannelDto } from './club_channels.repository';

@@ -418,28 +418,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     
                     const SizedBox(height: 24),
                     
-                    // Check-in секция: доступна участникам события
-                    if (isParticipant) ...[
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.icon(
-                          onPressed: _isCheckingIn ? null : _onCheckIn,
-                          icon: _isCheckingIn
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Icon(Icons.flag),
-                          label: Text(
-                            Localizations.localeOf(context).languageCode == 'ru'
-                                ? 'Отметиться'
-                                : 'Check in',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+                    // Check-in: hidden from UI, will be triggered automatically via Run flow in the future
                     
                     // Список участников
                     ParticipantsList(

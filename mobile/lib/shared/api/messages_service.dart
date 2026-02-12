@@ -4,6 +4,7 @@ import 'users_service.dart' show ApiException;
 import '../models/message_model.dart';
 import '../models/chat_model.dart';
 import '../models/club_chat_model.dart';
+import '../models/club_channel_model.dart';
 
 /// Сервис для работы с сообщениями
 /// 
@@ -87,6 +88,50 @@ class MessagesService {
       return MessageModel.fromJson(jsonData);
     }
     _throwApiException(response, 'send_club_message_error');
+  }
+
+  /// GET /api/clubs/:id/channels — list channels for a club.
+  Future<List<ClubChannelModel>> getClubChannels(String clubId) async {
+    final response = await _apiClient.get('/api/clubs/${Uri.encodeComponent(clubId)}/channels');
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final jsonData = jsonDecode(response.body) as List<dynamic>;
+      return jsonData
+          .map((json) => ClubChannelModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+    }
+    _throwApiException(response, 'get_channels_error');
+  }
+
+  /// GET /api/messages/clubs/:clubId?channelId=... — messages for a specific channel.
+  Future<List<MessageModel>> getChannelMessages(
+    String clubId,
+    String channelId, {
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    final response = await _apiClient.get(
+      '/api/messages/clubs/$clubId?channelId=$channelId&limit=$limit&offset=$offset',
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final jsonData = jsonDecode(response.body) as List<dynamic>;
+      return jsonData
+          .map((json) => MessageModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+    }
+    _throwApiException(response, 'get_channel_messages_error');
+  }
+
+  /// POST /api/messages/clubs/:clubId with channelId — send message to channel.
+  Future<MessageModel> sendChannelMessage(String clubId, String channelId, String text) async {
+    final response = await _apiClient.post(
+      '/api/messages/clubs/$clubId',
+      body: {'text': text, 'channelId': channelId},
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+      return MessageModel.fromJson(jsonData);
+    }
+    _throwApiException(response, 'send_channel_message_error');
   }
 
   Never _throwApiException(dynamic response, String fallbackCode) {

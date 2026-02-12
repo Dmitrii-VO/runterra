@@ -23,7 +23,7 @@ import {
 } from '../modules/clubs';
 import { findCityById } from '../modules/cities/cities.config';
 import { validateBody } from './validateBody';
-import { getUsersRepository, getClubMembersRepository, getClubsRepository } from '../db/repositories';
+import { getUsersRepository, getClubMembersRepository, getClubsRepository, getClubChannelsRepository } from '../db/repositories';
 import { logger } from '../shared/logger';
 import { isValidClubId } from '../shared/clubId';
 
@@ -325,6 +325,10 @@ router.post('/', validateBody(CreateClubSchema), async (req: Request<{}, ClubVie
     const clubMembersRepo = getClubMembersRepository();
     await clubMembersRepo.create(club.id, user.id, 'active', 'leader');
 
+    // Create default channel for the club
+    const clubChannelsRepo = getClubChannelsRepository();
+    await clubChannelsRepo.createDefaultForClub(club.id);
+
     const clubDto: ClubViewDto = {
       id: club.id,
       name: club.name,
@@ -396,26 +400,35 @@ router.post('/:id/join', async (req: Request, res: Response) => {
     const clubMembersRepo = getClubMembersRepository();
     const existing = await clubMembersRepo.findByClubAndUser(clubId, user.id);
     if (existing) {
-      if (existing.status !== 'active') {
-        const membership = await clubMembersRepo.activate(clubId, user.id);
-        res.status(201).json({
-          id: membership?.id ?? existing.id,
-          clubId: existing.clubId,
-          userId: existing.userId,
-          status: membership?.status ?? 'active',
-          createdAt: existing.createdAt,
+      if (existing.status === 'active') {
+        res.status(400).json({
+          code: 'already_member',
+          message: 'Already a member of this club',
+          details: { clubId },
         });
         return;
       }
-      res.status(400).json({
-        code: 'already_member',
-        message: 'Already a member of this club',
-        details: { clubId },
+      if (existing.status === 'pending') {
+        res.status(400).json({
+          code: 'already_pending',
+          message: 'Membership request already pending',
+          details: { clubId },
+        });
+        return;
+      }
+      // inactive/suspended → set to pending for re-application
+      const membership = await clubMembersRepo.setStatus(clubId, user.id, 'pending');
+      res.status(201).json({
+        id: membership?.id ?? existing.id,
+        clubId: existing.clubId,
+        userId: existing.userId,
+        status: 'pending',
+        createdAt: existing.createdAt,
       });
       return;
     }
 
-    const membership = await clubMembersRepo.create(clubId, user.id, 'active');
+    const membership = await clubMembersRepo.create(clubId, user.id, 'pending');
     res.status(201).json({
       id: membership.id,
       clubId: membership.clubId,
@@ -826,6 +839,334 @@ router.delete('/:id', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error disbanding club', { clubId, error });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+      details: undefined,
+    });
+  }
+});
+
+/**
+ * GET /api/clubs/:id/channels
+ *
+ * List channels for a club. Available to active members.
+ */
+router.get('/:id/channels', async (req: Request, res: Response) => {
+  const { id: clubId } = req.params;
+  if (!isValidClubId(clubId)) {
+    return respondInvalidClubId(res);
+  }
+
+  const uid = req.authUser?.uid;
+  if (!uid) {
+    return res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+      details: { reason: 'missing_header' },
+    });
+  }
+
+  try {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'Authentication required',
+        details: {
+          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+        },
+      });
+    }
+
+    const clubMembersRepo = getClubMembersRepository();
+    const membership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
+    if (!membership || membership.status !== 'active') {
+      return res.status(403).json({
+        code: 'forbidden',
+        message: 'Only active members can view channels',
+        details: { clubId },
+      });
+    }
+
+    const clubChannelsRepo = getClubChannelsRepository();
+    const channels = await clubChannelsRepo.findByClub(clubId);
+
+    res.status(200).json(channels.map(ch => ({
+      id: ch.id,
+      clubId: ch.clubId,
+      type: ch.type,
+      name: ch.name,
+      isDefault: ch.isDefault,
+      createdAt: ch.createdAt,
+    })));
+  } catch (error) {
+    logger.error('Error fetching club channels', { clubId, error });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+      details: undefined,
+    });
+  }
+});
+
+/**
+ * POST /api/clubs/:id/channels
+ *
+ * Create a new channel in a club. Only leader/trainer can create.
+ */
+router.post('/:id/channels', async (req: Request, res: Response) => {
+  const { id: clubId } = req.params;
+  if (!isValidClubId(clubId)) {
+    return respondInvalidClubId(res);
+  }
+
+  const uid = req.authUser?.uid;
+  if (!uid) {
+    return res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+      details: { reason: 'missing_header' },
+    });
+  }
+
+  const { name, type } = req.body as { name?: string; type?: string };
+  if (!name || typeof name !== 'string' || name.trim().length === 0) {
+    return res.status(400).json({
+      code: 'validation_error',
+      message: 'Channel name is required',
+      details: {
+        fields: [{ field: 'name', message: 'Name is required', code: 'required' }],
+      },
+    });
+  }
+
+  try {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'Authentication required',
+        details: {
+          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+        },
+      });
+    }
+
+    const clubMembersRepo = getClubMembersRepository();
+    const membership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
+    if (!membership || !['leader', 'trainer'].includes(membership.role)) {
+      return res.status(403).json({
+        code: 'forbidden',
+        message: 'Only leaders and trainers can create channels',
+        details: { clubId },
+      });
+    }
+
+    const clubChannelsRepo = getClubChannelsRepository();
+    const channel = await clubChannelsRepo.create(clubId, name.trim(), type || 'general');
+
+    res.status(201).json({
+      id: channel.id,
+      clubId: channel.clubId,
+      type: channel.type,
+      name: channel.name,
+      isDefault: channel.isDefault,
+      createdAt: channel.createdAt,
+    });
+  } catch (error) {
+    logger.error('Error creating club channel', { clubId, error });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+      details: undefined,
+    });
+  }
+});
+
+/**
+ * GET /api/clubs/:id/membership-requests
+ *
+ * List pending membership requests. Only leader/trainer can view.
+ */
+router.get('/:id/membership-requests', async (req: Request, res: Response) => {
+  const { id: clubId } = req.params;
+  if (!isValidClubId(clubId)) {
+    return respondInvalidClubId(res);
+  }
+
+  const uid = req.authUser?.uid;
+  if (!uid) {
+    return res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+      details: { reason: 'missing_header' },
+    });
+  }
+
+  try {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'Authentication required',
+        details: {
+          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+        },
+      });
+    }
+
+    const clubMembersRepo = getClubMembersRepository();
+    const requesterMembership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
+    if (!requesterMembership || !['leader', 'trainer'].includes(requesterMembership.role)) {
+      return res.status(403).json({
+        code: 'forbidden',
+        message: 'Only leaders and trainers can view membership requests',
+        details: { clubId },
+      });
+    }
+
+    const pending = await clubMembersRepo.findPendingByClub(clubId);
+    res.status(200).json(pending);
+  } catch (error) {
+    logger.error('Error fetching membership requests', { clubId, error });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+      details: undefined,
+    });
+  }
+});
+
+/**
+ * POST /api/clubs/:id/membership-requests/:userId/approve
+ *
+ * Approve a pending membership request. Only leader/trainer can approve.
+ */
+router.post('/:id/membership-requests/:userId/approve', async (req: Request, res: Response) => {
+  const { id: clubId, userId: targetUserId } = req.params;
+  if (!isValidClubId(clubId)) {
+    return respondInvalidClubId(res);
+  }
+
+  const uid = req.authUser?.uid;
+  if (!uid) {
+    return res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+      details: { reason: 'missing_header' },
+    });
+  }
+
+  try {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'Authentication required',
+        details: {
+          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+        },
+      });
+    }
+
+    const clubMembersRepo = getClubMembersRepository();
+    const requesterMembership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
+    if (!requesterMembership || !['leader', 'trainer'].includes(requesterMembership.role)) {
+      return res.status(403).json({
+        code: 'forbidden',
+        message: 'Only leaders and trainers can approve membership requests',
+        details: { clubId },
+      });
+    }
+
+    const approved = await clubMembersRepo.approveMembership(clubId, targetUserId);
+    if (!approved) {
+      return res.status(404).json({
+        code: 'not_found',
+        message: 'No pending request found for this user',
+        details: { clubId, userId: targetUserId },
+      });
+    }
+
+    res.status(200).json({
+      userId: approved.userId,
+      clubId: approved.clubId,
+      status: approved.status,
+      role: approved.role,
+    });
+  } catch (error) {
+    logger.error('Error approving membership', { clubId, targetUserId, error });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+      details: undefined,
+    });
+  }
+});
+
+/**
+ * POST /api/clubs/:id/membership-requests/:userId/reject
+ *
+ * Reject a pending membership request. Only leader/trainer can reject.
+ */
+router.post('/:id/membership-requests/:userId/reject', async (req: Request, res: Response) => {
+  const { id: clubId, userId: targetUserId } = req.params;
+  if (!isValidClubId(clubId)) {
+    return respondInvalidClubId(res);
+  }
+
+  const uid = req.authUser?.uid;
+  if (!uid) {
+    return res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+      details: { reason: 'missing_header' },
+    });
+  }
+
+  try {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'Authentication required',
+        details: {
+          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+        },
+      });
+    }
+
+    const clubMembersRepo = getClubMembersRepository();
+    const requesterMembership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
+    if (!requesterMembership || !['leader', 'trainer'].includes(requesterMembership.role)) {
+      return res.status(403).json({
+        code: 'forbidden',
+        message: 'Only leaders and trainers can reject membership requests',
+        details: { clubId },
+      });
+    }
+
+    const rejected = await clubMembersRepo.rejectMembership(clubId, targetUserId);
+    if (!rejected) {
+      return res.status(404).json({
+        code: 'not_found',
+        message: 'No pending request found for this user',
+        details: { clubId, userId: targetUserId },
+      });
+    }
+
+    res.status(200).json({
+      code: 'request_rejected',
+      message: 'Membership request rejected',
+    });
+  } catch (error) {
+    logger.error('Error rejecting membership', { clubId, targetUserId, error });
     res.status(500).json({
       code: 'internal_error',
       message: 'Internal server error',
