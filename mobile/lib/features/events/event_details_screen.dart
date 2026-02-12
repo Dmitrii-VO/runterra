@@ -45,8 +45,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   bool _isJoining = false;
   /// True while leave request is in progress.
   bool _isLeaving = false;
-  /// True while check-in request is in progress.
-  bool _isCheckingIn = false;
 
   /// Creates Future for loading event data.
   Future<EventDetailsModel> _fetchEvent() async {
@@ -101,39 +99,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       );
     } finally {
       if (mounted) setState(() => _isLeaving = false);
-    }
-  }
-
-  /// Check-in to event using current GPS position; shows SnackBar on success/error.
-  Future<void> _onCheckIn() async {
-    if (_isCheckingIn) return;
-    setState(() => _isCheckingIn = true);
-    final l10n = AppLocalizations.of(context)!;
-    try {
-      final locationService = ServiceLocator.locationService;
-      final position = await locationService.getCurrentPosition();
-      await ServiceLocator.eventsService.checkInEvent(
-        widget.eventId,
-        longitude: position.longitude,
-        latitude: position.latitude,
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.eventCheckInSuccess)),
-      );
-      _retry();
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.eventCheckInError(e.message))),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.eventCheckInError(e.toString()))),
-      );
-    } finally {
-      if (mounted) setState(() => _isCheckingIn = false);
     }
   }
 

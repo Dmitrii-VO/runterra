@@ -58,10 +58,12 @@ class _RunDetailMapState extends State<RunDetailMap> {
     final lonPad = (maxLon - minLon) * 0.15;
 
     _mapController!.moveCamera(
-      CameraUpdate.newBounds(
-        BoundingBox(
-          southWest: Point(latitude: minLat - latPad, longitude: minLon - lonPad),
-          northEast: Point(latitude: maxLat + latPad, longitude: maxLon + lonPad),
+      CameraUpdate.newGeometry(
+        Geometry.fromBoundingBox(
+          BoundingBox(
+            southWest: Point(latitude: minLat - latPad, longitude: minLon - lonPad),
+            northEast: Point(latitude: maxLat + latPad, longitude: maxLon + lonPad),
+          ),
         ),
       ),
     );
