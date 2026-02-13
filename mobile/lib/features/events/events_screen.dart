@@ -6,15 +6,7 @@ import '../../shared/models/event_list_item_model.dart';
 import 'widgets/event_card.dart';
 import '../../main.dart' show DevRemoteLogger;
 
-/// Экран списка событий
-/// 
-/// Отображает список всех актуальных беговых активностей:
-/// - тренировок
-/// - совместных пробежек
-/// - клубных и открытых событий
-/// 
-/// ВАЖНО: На текущей стадии (skeleton) фильтры только визуально,
-/// без реальной логики фильтрации.
+/// Экран списка событий.
 class EventsScreen extends StatefulWidget {
   const EventsScreen({super.key});
 
@@ -24,8 +16,8 @@ class EventsScreen extends StatefulWidget {
 
 class _EventsScreenState extends State<EventsScreen> {
   late Future<List<EventListItemModel>> _eventsFuture;
-  
-  // Состояние фильтров — проксируется в EventsService.getEvents и далее на backend.
+
+  // Filter state — proxied to EventsService.getEvents and then backend (where supported).
   String? _selectedDateFilter;
   String? _selectedClubId;
   String? _selectedDifficultyLevel;
@@ -38,15 +30,14 @@ class _EventsScreenState extends State<EventsScreen> {
     _eventsFuture = _fetchEvents();
   }
 
-  /// Создает Future для получения списка событий
   Future<List<EventListItemModel>> _fetchEvents() async {
     final eventsService = ServiceLocator.eventsService;
     final cityId = ServiceLocator.currentCityService.currentCityId;
     if (cityId == null || cityId.isEmpty) {
       throw Exception('Current city is not selected');
     }
-    // TODO: Передать реальные фильтры когда они будут обрабатываться на backend
-    return eventsService.getEvents(
+
+    final events = await eventsService.getEvents(
       cityId: cityId,
       dateFilter: _selectedDateFilter,
       clubId: _selectedClubId,
@@ -54,9 +45,16 @@ class _EventsScreenState extends State<EventsScreen> {
       eventType: _selectedEventType,
       onlyOpen: _onlyOpen,
     );
+
+    // Client-side safety net: even if backend still marks past events as `open`,
+    // exclude them from "Only open" list.
+    if (!_onlyOpen) return events;
+    final now = DateTime.now();
+    return events
+        .where((e) => e.status == 'open' && !e.startDateTime.isBefore(now))
+        .toList();
   }
 
-  /// Обновляет список событий. Возвращает Future, чтобы RefreshIndicator дожидался завершения загрузки.
   Future<void> _refreshEvents() async {
     final future = _fetchEvents();
     setState(() {
@@ -73,37 +71,33 @@ class _EventsScreenState extends State<EventsScreen> {
       ),
       body: Column(
         children: [
-          // Панель фильтров
           _buildFiltersPanel(),
-          
-          // Список событий
           Expanded(
             child: FutureBuilder<List<EventListItemModel>>(
               future: _eventsFuture,
               builder: (context, snapshot) {
-                // Состояние загрузки
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
+                  return const Center(child: CircularProgressIndicator());
                 }
 
-                // Состояние ошибки
                 if (snapshot.hasError) {
-                  // Отправляем техническую информацию на backend (dev-only)
                   DevRemoteLogger.logError(
                     'Error loading events list',
                     error: snapshot.error ?? 'unknown',
                     stackTrace: snapshot.stackTrace,
                   );
-                  
+
                   return Center(
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                          const Icon(
+                            Icons.error_outline,
+                            size: 48,
+                            color: Colors.red,
+                          ),
                           const SizedBox(height: 16),
                           Text(
                             AppLocalizations.of(context)!.eventsLoadError,
@@ -126,7 +120,6 @@ class _EventsScreenState extends State<EventsScreen> {
                   );
                 }
 
-                // Состояние пустого списка
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return Center(
                     child: Padding(
@@ -182,7 +175,6 @@ class _EventsScreenState extends State<EventsScreen> {
     );
   }
 
-  /// Строит панель фильтров
   Widget _buildFiltersPanel() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -201,12 +193,20 @@ class _EventsScreenState extends State<EventsScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Row(
           children: [
-            // Фильтр по дате
-            _buildDateFilterChip(AppLocalizations.of(context)!.filterToday, 'today'),
+            _buildDateFilterChip(
+              AppLocalizations.of(context)!.filterToday,
+              'today',
+            ),
             const SizedBox(width: 8),
-            _buildDateFilterChip(AppLocalizations.of(context)!.filterTomorrow, 'tomorrow'),
+            _buildDateFilterChip(
+              AppLocalizations.of(context)!.filterTomorrow,
+              'tomorrow',
+            ),
             const SizedBox(width: 8),
-            _buildDateFilterChip(AppLocalizations.of(context)!.filter7days, 'next7days'),
+            _buildDateFilterChip(
+              AppLocalizations.of(context)!.filter7days,
+              'next7days',
+            ),
             const SizedBox(width: 16),
             FilterChip(
               label: Text(AppLocalizations.of(context)!.filterOnlyOpen),
@@ -219,11 +219,12 @@ class _EventsScreenState extends State<EventsScreen> {
               },
             ),
             const SizedBox(width: 16),
-            // Фильтр «Мой клуб» — подставляет clubId из CurrentClubService
             FilterChip(
               label: Text(AppLocalizations.of(context)!.filtersMyClub),
-              selected: ServiceLocator.currentClubService.currentClubId != null &&
-                  _selectedClubId == ServiceLocator.currentClubService.currentClubId,
+              selected:
+                  ServiceLocator.currentClubService.currentClubId != null &&
+                      _selectedClubId ==
+                          ServiceLocator.currentClubService.currentClubId,
               onSelected: (selected) {
                 setState(() {
                   _selectedClubId = selected
@@ -234,15 +235,12 @@ class _EventsScreenState extends State<EventsScreen> {
               },
             ),
             const SizedBox(width: 16),
-            // TODO: Фильтр по уровню подготовки (выпадающий список)
-            // TODO: Фильтр по типу события (выпадающий список)
           ],
         ),
       ),
     );
   }
 
-  /// Строит Chip для фильтра по дате
   Widget _buildDateFilterChip(String label, String value) {
     return FilterChip(
       label: Text(label),
@@ -256,3 +254,4 @@ class _EventsScreenState extends State<EventsScreen> {
     );
   }
 }
+

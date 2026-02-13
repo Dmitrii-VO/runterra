@@ -89,7 +89,7 @@ class _RunHistoryScreenState extends State<RunHistoryScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: widget.onStartRun,
         icon: const Icon(Icons.play_arrow),
-        label: Text(l10n.runStart),
+        label: Text(l10n.quickStartRun),
       ),
       body: RefreshIndicator(
         onRefresh: _refresh,
@@ -319,3 +319,4 @@ class _RunHistoryScreenState extends State<RunHistoryScreen> {
     );
   }
 }
+

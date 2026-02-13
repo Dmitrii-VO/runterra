@@ -4,13 +4,8 @@ import 'package:intl/intl.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../shared/models/event_list_item_model.dart';
 
-/// Виджет карточки события
-/// 
-/// Отображает основную информацию о событии в списке.
-/// Только отображение данных, без интерактивности (кроме перехода на детальный экран).
-/// 
+/// Event card widget for events list.
 class EventCard extends StatelessWidget {
-  /// Модель события для отображения (упрощённая версия для списка)
   final EventListItemModel event;
 
   const EventCard({
@@ -34,7 +29,17 @@ class EventCard extends StatelessWidget {
     }
   }
 
-  /// Получает цвет статуса события
+  String _effectiveStatus(EventListItemModel event) {
+    // Backend may still return `open` for past events; for UX we treat past
+    // non-cancelled events as completed.
+    final now = DateTime.now();
+    if (!event.startDateTime.isBefore(now)) return event.status;
+    if (event.status == 'cancelled' || event.status == 'completed') {
+      return event.status;
+    }
+    return 'completed';
+  }
+
   Color _getStatusColor(String status) {
     switch (status) {
       case 'open':
@@ -87,11 +92,13 @@ class EventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final status = _effectiveStatus(event);
+    final statusColor = _getStatusColor(status);
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: InkWell(
         onTap: () {
-          // Переход на детальный экран события
           context.push('/event/${event.id}');
         },
         child: Padding(
@@ -99,7 +106,6 @@ class EventCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Заголовок с названием и статусом
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -112,20 +118,21 @@ class EventCard extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Color.fromRGBO(
-                        (_getStatusColor(event.status).r * 255.0).round().clamp(0, 255),
-                        (_getStatusColor(event.status).g * 255.0).round().clamp(0, 255),
-                        (_getStatusColor(event.status).b * 255.0).round().clamp(0, 255),
+                        (statusColor.r * 255.0).round().clamp(0, 255),
+                        (statusColor.g * 255.0).round().clamp(0, 255),
+                        (statusColor.b * 255.0).round().clamp(0, 255),
                         0.2,
                       ),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      _getStatusText(context, event.status),
+                      _getStatusText(context, status),
                       style: TextStyle(
-                        color: _getStatusColor(event.status),
+                        color: statusColor,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -134,8 +141,6 @@ class EventCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              
-              // Тип события
               Row(
                 children: [
                   const Icon(Icons.event, size: 16, color: Colors.blue),
@@ -147,11 +152,10 @@ class EventCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 4),
-              
-              // Дата и время
               Row(
                 children: [
-                  const Icon(Icons.access_time, size: 16, color: Colors.grey),
+                  const Icon(Icons.access_time,
+                      size: 16, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
                     _formatDateTime(event.startDateTime),
@@ -160,12 +164,11 @@ class EventCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 4),
-              
-              // Локация
               if (event.locationName != null)
                 Row(
                   children: [
-                    const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                    const Icon(Icons.location_on,
+                        size: 16, color: Colors.grey),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
@@ -178,8 +181,6 @@ class EventCard extends StatelessWidget {
                   ],
                 ),
               if (event.locationName != null) const SizedBox(height: 4),
-              
-              // Организатор
               Row(
                 children: [
                   Icon(
@@ -192,7 +193,8 @@ class EventCard extends StatelessWidget {
                     child: Text(
                       (event.organizerDisplayName?.trim().isNotEmpty == true)
                           ? event.organizerDisplayName!.trim()
-                          : AppLocalizations.of(context)!.eventOrganizerLabel(event.organizerId),
+                          : AppLocalizations.of(context)!
+                              .eventOrganizerLabel(event.organizerId),
                       style: Theme.of(context).textTheme.bodySmall,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -201,12 +203,11 @@ class EventCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 4),
-              
-              // Уровень подготовки
               if (event.difficultyLevel != null)
                 Row(
                   children: [
-                    const Icon(Icons.trending_up, size: 16, color: Colors.grey),
+                    const Icon(Icons.trending_up,
+                        size: 16, color: Colors.grey),
                     const SizedBox(width: 4),
                     Text(
                       _getDifficultyText(context, event.difficultyLevel)!,
@@ -215,15 +216,12 @@ class EventCard extends StatelessWidget {
                   ],
                 ),
               if (event.difficultyLevel != null) const SizedBox(height: 8),
-              
-              // Нижняя строка: участники и территория
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Количество участников
                   Row(
                     children: [
-                      const Text('👥', style: TextStyle(fontSize: 16)),
+                      const Icon(Icons.people, size: 16, color: Colors.grey),
                       const SizedBox(width: 4),
                       Text(
                         '${event.participantCount}',
@@ -231,12 +229,10 @@ class EventCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  
-                  // Привязка к территории
                   if (event.territoryId != null)
                     Row(
                       children: [
-                        const Text('🗺', style: TextStyle(fontSize: 16)),
+                        const Icon(Icons.map, size: 16, color: Colors.grey),
                         const SizedBox(width: 4),
                         Text(
                           AppLocalizations.of(context)!.eventTerritoryLabel,
@@ -253,3 +249,4 @@ class EventCard extends StatelessWidget {
     );
   }
 }
+

@@ -10,19 +10,7 @@ import '../../shared/ui/error_display.dart';
 import 'widgets/event_mini_map.dart';
 import 'widgets/participants_list.dart';
 
-/// Экран деталей события
-///
-/// Отображает полную информацию о событии:
-/// - основная информация
-/// - описание
-/// - точка старта на карте (placeholder)
-/// - организатор
-/// - участие (кнопки - TODO)
-/// - список участников
-/// - check-in секция (TODO)
-/// 
 class EventDetailsScreen extends StatefulWidget {
-  /// ID события (передается через параметр маршрута)
   final String eventId;
 
   const EventDetailsScreen({
@@ -30,35 +18,25 @@ class EventDetailsScreen extends StatefulWidget {
     required this.eventId,
   });
 
-  /// Создает Future для получения данных о событии
-  /// 
-  /// Загружает данные по eventId через EventsService.
-  /// Это обеспечивает loose coupling между списком и детальным экраном.
   @override
   State<EventDetailsScreen> createState() => _EventDetailsScreenState();
 }
 
 class _EventDetailsScreenState extends State<EventDetailsScreen> {
-  /// Future for event details.
   late Future<EventDetailsModel> _eventFuture;
-  /// True while join/check-in request is in progress.
   bool _isJoining = false;
-  /// True while leave request is in progress.
   bool _isLeaving = false;
 
-  /// Creates Future for loading event data.
   Future<EventDetailsModel> _fetchEvent() async {
     return ServiceLocator.eventsService.getEventById(widget.eventId);
   }
 
-  /// Reload data
   void _retry() {
     setState(() {
       _eventFuture = _fetchEvent();
     });
   }
 
-  /// Join event and refresh on success; show SnackBar on error.
   Future<void> _onJoinEvent() async {
     if (_isJoining) return;
     setState(() => _isJoining = true);
@@ -80,7 +58,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     }
   }
 
-  /// Leave event and refresh on success; show SnackBar on error.
   Future<void> _onLeaveEvent() async {
     if (_isLeaving) return;
     setState(() => _isLeaving = true);
@@ -121,6 +98,30 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         return l10n.eventTypeOpenEvent;
       default:
         return type;
+    }
+  }
+
+  String _effectiveStatus(EventDetailsModel event) {
+    final now = DateTime.now();
+    if (!event.startDateTime.isBefore(now)) return event.status;
+    if (event.status == 'cancelled' || event.status == 'completed') {
+      return event.status;
+    }
+    return 'completed';
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'open':
+        return Colors.green;
+      case 'full':
+        return Colors.orange;
+      case 'cancelled':
+        return Colors.red;
+      case 'completed':
+        return Colors.grey;
+      default:
+        return Colors.grey;
     }
   }
 
@@ -166,14 +167,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       body: FutureBuilder<EventDetailsModel>(
         future: _eventFuture,
         builder: (context, snapshot) {
-          // Состояние загрузки
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
-          // Состояние ошибки
           if (snapshot.hasError) {
             return ErrorDisplay(
               errorMessage: snapshot.error.toString(),
@@ -181,231 +178,228 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             );
           }
 
-          // Состояние успеха - отображение данных события
-          if (snapshot.hasData) {
-            final event = snapshot.data!;
-            final isParticipant = event.isParticipant == true ||
-                event.participantStatus == 'registered' ||
-                event.participantStatus == 'checked_in';
-            return SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Название события
-                    Text(
-                      event.name,
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    
-                    // Статус
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: event.status == 'open'
-                            ? const Color.fromRGBO(76, 175, 80, 0.2) // Colors.green
-                            : event.status == 'cancelled'
-                                ? const Color.fromRGBO(244, 67, 54, 0.2) // Colors.red
-                                : const Color.fromRGBO(158, 158, 158, 0.2), // Colors.grey
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        _getStatusText(context, event.status),
-                        style: TextStyle(
-                          color: event.status == 'open'
-                              ? Colors.green
-                              : event.status == 'cancelled'
-                                  ? Colors.red
-                                  : Colors.grey,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    // Описание
-                    if (event.description != null) ...[
-                      Text(
-                        AppLocalizations.of(context)!.eventDescription,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        event.description!,
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                    
-                    // Основная информация
-                    Text(
-                      AppLocalizations.of(context)!.eventInfo,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    _buildInfoRow(
-                      context,
-                      Icons.event,
-                      AppLocalizations.of(context)!.eventType,
-                      _getEventTypeText(context, event.type),
-                    ),
-                    _buildInfoRow(
-                      context,
-                      Icons.access_time,
-                      AppLocalizations.of(context)!.eventDateTime,
-                      _formatDateTime(event.startDateTime),
-                    ),
-                    if (event.locationName != null)
-                      _buildInfoRow(
-                        context,
-                        Icons.location_on,
-                        AppLocalizations.of(context)!.eventLocation,
-                        event.locationName!,
-                      ),
-                    _buildInfoRow(
-                      context,
-                      event.organizerType == 'club' ? Icons.group : Icons.person,
-                      AppLocalizations.of(context)!.eventOrganizer,
-                      (event.organizerDisplayName?.trim().isNotEmpty == true)
-                          ? event.organizerDisplayName!.trim()
-                          : event.organizerId,
-                      onTap: () {
-                        if (event.organizerType == 'club') {
-                          context.push('/club/${event.organizerId}');
-                        }
-                      },
-                    ),
-                    
-                    // Уровень подготовки
-                    if (event.difficultyLevel != null)
-                      _buildInfoRow(
-                        context,
-                        Icons.trending_up,
-                        AppLocalizations.of(context)!.eventDifficulty,
-                        _getDifficultyText(context, event.difficultyLevel)!,
-                      ),
-                    if (event.territoryId != null)
-                      _buildInfoRow(
-                        context,
-                        Icons.map,
-                        AppLocalizations.of(context)!.eventTerritory,
-                        AppLocalizations.of(context)!.eventTerritoryLinked,
-                        onTap: () {
-                          // TODO: Переход на детальный экран территории
-                          context.push('/territory/${event.territoryId}');
-                        },
-                      ),
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Start point on map
-                    Text(
-                      AppLocalizations.of(context)!.eventStartPoint,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    EventMiniMap(
-                      latitude: event.startLocation.latitude,
-                      longitude: event.startLocation.longitude,
-                    ),
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Участие
-                    Text(
-                      AppLocalizations.of(context)!.eventParticipation,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    if (isParticipant) ...[
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: null,
-                          child: Text(AppLocalizations.of(context)!.eventYouParticipate),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: _isLeaving ? null : _onLeaveEvent,
-                          icon: _isLeaving
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Icon(Icons.close),
-                          label: Text(AppLocalizations.of(context)!.eventLeave),
-                        ),
-                      ),
-                    ] else if (event.status == 'open') ...[
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: _isJoining ? null : _onJoinEvent,
-                          icon: _isJoining
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Icon(Icons.person_add),
-                          label: Text(
-                            _isJoining
-                                ? AppLocalizations.of(context)!.eventJoinInProgress
-                                : AppLocalizations.of(context)!.eventJoin,
-                          ),
-                        ),
-                      ),
-                    ] else if (event.status == 'full') ...[
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton(
-                          onPressed: null,
-                          child: Text(AppLocalizations.of(context)!.eventNoPlaces),
-                        ),
-                      ),
-                    ] else if (event.status == 'cancelled') ...[
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton(
-                          onPressed: null,
-                          child: Text(AppLocalizations.of(context)!.eventCancelled),
-                        ),
-                      ),
-                    ],
-                    
-                    // TODO: Кнопка "Вы записаны" если пользователь уже записан
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Check-in: hidden from UI, will be triggered automatically via Run flow in the future
-                    
-                    // Список участников
-                    ParticipantsList(
-                      eventId: widget.eventId,
-                      participantCount: event.participantCount,
-                    ),
-                  ],
-                ),
-              ),
+          if (!snapshot.hasData) {
+            return Center(
+              child: Text(AppLocalizations.of(context)!.noData),
             );
           }
 
-          // Fallback
-          return Center(
-            child: Text(AppLocalizations.of(context)!.noData),
+          final event = snapshot.data!;
+          final effectiveStatus = _effectiveStatus(event);
+          final isParticipant = event.isParticipant == true ||
+              event.participantStatus == 'registered' ||
+              event.participantStatus == 'checked_in';
+
+          final statusColor = _getStatusColor(effectiveStatus);
+
+          return SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event.name,
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: 8),
+
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Color.fromRGBO(
+                        (statusColor.r * 255.0).round().clamp(0, 255),
+                        (statusColor.g * 255.0).round().clamp(0, 255),
+                        (statusColor.b * 255.0).round().clamp(0, 255),
+                        0.2,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      _getStatusText(context, effectiveStatus),
+                      style: TextStyle(
+                        color: statusColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  if (event.description != null) ...[
+                    Text(
+                      AppLocalizations.of(context)!.eventDescription,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      event.description!,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  Text(
+                    AppLocalizations.of(context)!.eventInfo,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  _buildInfoRow(
+                    context,
+                    Icons.event,
+                    AppLocalizations.of(context)!.eventType,
+                    _getEventTypeText(context, event.type),
+                  ),
+                  _buildInfoRow(
+                    context,
+                    Icons.access_time,
+                    AppLocalizations.of(context)!.eventDateTime,
+                    _formatDateTime(event.startDateTime),
+                  ),
+                  if (event.locationName != null)
+                    _buildInfoRow(
+                      context,
+                      Icons.location_on,
+                      AppLocalizations.of(context)!.eventLocation,
+                      event.locationName!,
+                    ),
+                  _buildInfoRow(
+                    context,
+                    event.organizerType == 'club' ? Icons.group : Icons.person,
+                    AppLocalizations.of(context)!.eventOrganizer,
+                    (event.organizerDisplayName?.trim().isNotEmpty == true)
+                        ? event.organizerDisplayName!.trim()
+                        : event.organizerId,
+                    onTap: () {
+                      if (event.organizerType == 'club') {
+                        context.push('/club/${event.organizerId}');
+                      }
+                    },
+                  ),
+                  if (event.difficultyLevel != null)
+                    _buildInfoRow(
+                      context,
+                      Icons.trending_up,
+                      AppLocalizations.of(context)!.eventDifficulty,
+                      _getDifficultyText(context, event.difficultyLevel)!,
+                    ),
+                  if (event.territoryId != null)
+                    _buildInfoRow(
+                      context,
+                      Icons.map,
+                      AppLocalizations.of(context)!.eventTerritory,
+                      AppLocalizations.of(context)!.eventTerritoryLinked,
+                      onTap: () {
+                        context.push('/territory/${event.territoryId}');
+                      },
+                    ),
+
+                  const SizedBox(height: 24),
+
+                  Text(
+                    AppLocalizations.of(context)!.eventStartPoint,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  EventMiniMap(
+                    latitude: event.startLocation.latitude,
+                    longitude: event.startLocation.longitude,
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  Text(
+                    AppLocalizations.of(context)!.eventParticipation,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  if (isParticipant) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: null,
+                        child:
+                            Text(AppLocalizations.of(context)!.eventYouParticipate),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _isLeaving ? null : _onLeaveEvent,
+                        icon: _isLeaving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.close),
+                        label: Text(AppLocalizations.of(context)!.eventLeave),
+                      ),
+                    ),
+                  ] else if (effectiveStatus == 'open') ...[
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _isJoining ? null : _onJoinEvent,
+                        icon: _isJoining
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.person_add),
+                        label: Text(
+                          _isJoining
+                              ? AppLocalizations.of(context)!.eventJoinInProgress
+                              : AppLocalizations.of(context)!.eventJoin,
+                        ),
+                      ),
+                    ),
+                  ] else if (effectiveStatus == 'full') ...[
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: null,
+                        child: Text(AppLocalizations.of(context)!.eventNoPlaces),
+                      ),
+                    ),
+                  ] else if (effectiveStatus == 'cancelled') ...[
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: null,
+                        child: Text(AppLocalizations.of(context)!.eventCancelled),
+                      ),
+                    ),
+                  ] else if (effectiveStatus == 'completed') ...[
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: null,
+                        child:
+                            Text(AppLocalizations.of(context)!.eventStatusCompleted),
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 24),
+
+                  ParticipantsList(
+                    eventId: widget.eventId,
+                    participantCount: event.participantCount,
+                  ),
+                ],
+              ),
+            ),
           );
         },
       ),
     );
   }
 
-  /// Строит строку информации
   Widget _buildInfoRow(
     BuildContext context,
     IconData icon,
@@ -432,7 +426,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 value,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: onTap != null ? Colors.blue : null,
-                      decoration: onTap != null ? TextDecoration.underline : null,
+                      decoration:
+                          onTap != null ? TextDecoration.underline : null,
                     ),
               ),
             ),

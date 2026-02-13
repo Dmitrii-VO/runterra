@@ -35,29 +35,12 @@ class AuthRefreshNotifier extends ChangeNotifier {
 
 final authRefreshNotifier = AuthRefreshNotifier();
 
-/// Main application widget for Runterra
-/// Uses GoRouter for navigation
+/// Main application widget for Runterra.
+///
+/// Uses GoRouter for navigation.
 class RunterraApp extends StatelessWidget {
   const RunterraApp({super.key});
 
-  /// Настройка маршрутов GoRouter
-  /// 
-  /// Маршруты через BottomNav:
-  /// - /map - MapScreen (index 0)
-  /// - /run - RunScreen (index 1); /run?activityId=... — задел под привязку к тренировке
-  /// - /messages - MessagesScreen (index 2)
-  /// - /events - EventsScreen (index 3)
-  /// - / - ProfileScreen (index 4)
-  ///
-  /// ProfileScreen = точка входа после логина, центр личного кабинета.
-  /// initialLocation: '/' — открываем профиль. Всегда доступен из TabBar.
-  ///
-  /// Отдельные маршруты (без BottomNav):
-  /// - /club/:id - ClubDetailsScreen (отдельный экран с параметром clubId)
-  /// - /city/:id - CityDetailsScreen (отдельный экран с параметром cityId)
-  /// - /territory/:id - TerritoryDetailsScreen (отдельный экран с параметром territoryId)
-  /// - /activity/:id - ActivityDetailsScreen (отдельный экран с параметром activityId)
-  /// - /event/:id - EventDetailsScreen (отдельный экран с параметром eventId)
   static final GoRouter _router = GoRouter(
     initialLocation: '/', // Profile — entry point
     refreshListenable: authRefreshNotifier,
@@ -65,100 +48,107 @@ class RunterraApp extends StatelessWidget {
       final isAuthenticated = AuthService.instance.isAuthenticated;
       final isLoginRoute = state.matchedLocation == '/login';
 
-      // Если не авторизован и не на странице логина — редирект на логин
       if (!isAuthenticated && !isLoginRoute) {
         return '/login';
       }
 
-      // Если авторизован и на странице логина — редирект на главную
       if (isAuthenticated && isLoginRoute) {
-        // Обновляем токен в ApiClient после успешного входа
+        // Refresh token in ApiClient after successful login.
         await ServiceLocator.refreshAuthToken();
         return '/';
       }
 
-      // Если авторизован — убедимся что токен актуален
       if (isAuthenticated && !isLoginRoute) {
         await ServiceLocator.refreshAuthToken();
       }
 
-      return null; // Без редиректа
+      return null;
     },
     routes: [
-      // Экран логина (без BottomNav)
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
       ),
-      // ShellRoute для BottomNav (Map, Run, Messages, Events, Profile)
-      ShellRoute(
-        builder: (context, state, child) {
-          // Определяем текущий индекс на основе маршрута
-          int currentIndex = 0;
-          final path = state.uri.path;
-          if (path == '/map') {
-            currentIndex = 0; // Map
-          } else if (path == '/run') {
-            currentIndex = 1; // Run
-          } else if (path == '/messages') {
-            currentIndex = 2; // Messages
-          } else if (path == '/events') {
-            currentIndex = 3; // Events
-          } else if (path == '/') {
-            currentIndex = 4; // Profile
-          }
-          
-          return BottomNav(
-            currentIndex: currentIndex,
-            child: child,
-          );
+
+      // Bottom tabs (Map, Run, Messages, Events, Profile).
+      //
+      // StatefulShellRoute keeps each tab alive, so switching tabs does not
+      // dispose and reset state (e.g. currently opened chat in Messages tab).
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return BottomNav(navigationShell: navigationShell);
         },
-        routes: [
-          GoRoute(
-            path: '/map',
-            builder: (context, state) {
-              final showClubs = state.uri.queryParameters['showClubs'] == 'true';
-              final latStr = state.uri.queryParameters['lat'];
-              final lonStr = state.uri.queryParameters['lon'];
-              final focusLat = latStr != null ? double.tryParse(latStr) : null;
-              final focusLon = lonStr != null ? double.tryParse(lonStr) : null;
-              return MapScreen(
-                showClubs: showClubs,
-                focusLatitude: focusLat,
-                focusLongitude: focusLon,
-              );
-            },
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/map',
+                builder: (context, state) {
+                  final showClubs =
+                      state.uri.queryParameters['showClubs'] == 'true';
+                  final latStr = state.uri.queryParameters['lat'];
+                  final lonStr = state.uri.queryParameters['lon'];
+                  final focusLat =
+                      latStr != null ? double.tryParse(latStr) : null;
+                  final focusLon =
+                      lonStr != null ? double.tryParse(lonStr) : null;
+                  return MapScreen(
+                    showClubs: showClubs,
+                    focusLatitude: focusLat,
+                    focusLongitude: focusLon,
+                  );
+                },
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/run',
-            builder: (context, state) {
-              final activityId = state.uri.queryParameters['activityId'];
-              return RunScreen(activityId: activityId);
-            },
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/run',
+                builder: (context, state) {
+                  final activityId = state.uri.queryParameters['activityId'];
+                  return RunScreen(activityId: activityId);
+                },
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/messages',
-            builder: (context, state) {
-              final tab = state.uri.queryParameters['tab'];
-              final clubId = state.uri.queryParameters['clubId'];
-              final initialTabIndex = tab == 'club' ? 1 : (tab == 'coach' ? 2 : 0);
-              return MessagesScreen(
-                initialTabIndex: initialTabIndex,
-                initialClubId: clubId,
-              );
-            },
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/messages',
+                builder: (context, state) {
+                  final tab = state.uri.queryParameters['tab'];
+                  final clubId = state.uri.queryParameters['clubId'];
+                  final initialTabIndex =
+                      tab == 'club' ? 1 : (tab == 'coach' ? 2 : 0);
+                  return MessagesScreen(
+                    initialTabIndex: initialTabIndex,
+                    initialClubId: clubId,
+                  );
+                },
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/events',
-            builder: (context, state) => const EventsScreen(),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/events',
+                builder: (context, state) => const EventsScreen(),
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/',
-            builder: (context, state) => const ProfileScreen(),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/',
+                builder: (context, state) => const ProfileScreen(),
+              ),
+            ],
           ),
         ],
       ),
-      // Edit profile (push from ProfileScreen with extra: ProfileUserData)
+
+      // Routes without BottomNav.
       GoRoute(
         path: '/profile/edit',
         builder: (context, state) {
@@ -177,7 +167,6 @@ class RunterraApp extends StatelessWidget {
           return ClubsListScreen(cityId: cityId);
         },
       ),
-      // Run detail (без BottomNav)
       GoRoute(
         path: '/run/detail/:id',
         builder: (context, state) {
@@ -185,12 +174,10 @@ class RunterraApp extends StatelessWidget {
           return RunDetailScreen(runId: runId);
         },
       ),
-      // Создание клуба (без BottomNav)
       GoRoute(
         path: '/club/create',
         builder: (context, state) => const CreateClubScreen(),
       ),
-      // Отдельный маршрут для ClubDetailsScreen (без BottomNav)
       GoRoute(
         path: '/club/:id',
         builder: (context, state) {
@@ -198,7 +185,6 @@ class RunterraApp extends StatelessWidget {
           return ClubDetailsScreen(clubId: clubId);
         },
       ),
-      // Transfer leadership (push from ClubDetailsScreen)
       GoRoute(
         path: '/club/:id/transfer-leadership',
         builder: (context, state) {
@@ -206,7 +192,6 @@ class RunterraApp extends StatelessWidget {
           return TransferLeadershipScreen(clubId: clubId);
         },
       ),
-      // Редактирование клуба (без BottomNav, push from ClubDetailsScreen with extra: ClubModel)
       GoRoute(
         path: '/club/:id/edit',
         builder: (context, state) {
@@ -214,7 +199,6 @@ class RunterraApp extends StatelessWidget {
           return EditClubScreen(club: club);
         },
       ),
-      // Отдельный маршрут для CityDetailsScreen (без BottomNav)
       GoRoute(
         path: '/city/:id',
         builder: (context, state) {
@@ -222,7 +206,6 @@ class RunterraApp extends StatelessWidget {
           return CityDetailsScreen(cityId: cityId);
         },
       ),
-      // Отдельный маршрут для TerritoryDetailsScreen (без BottomNav)
       GoRoute(
         path: '/territory/:id',
         builder: (context, state) {
@@ -230,7 +213,6 @@ class RunterraApp extends StatelessWidget {
           return TerritoryDetailsScreen(territoryId: territoryId);
         },
       ),
-      // Отдельный маршрут для ActivityDetailsScreen (без BottomNav)
       GoRoute(
         path: '/activity/:id',
         builder: (context, state) {
@@ -238,21 +220,23 @@ class RunterraApp extends StatelessWidget {
           return ActivityDetailsScreen(activityId: activityId);
         },
       ),
-      // Location picker for event creation
       GoRoute(
         path: '/map/pick',
         builder: (context, state) {
-          final lat = double.tryParse(state.uri.queryParameters['lat'] ?? '') ?? 59.93;
-          final lon = double.tryParse(state.uri.queryParameters['lon'] ?? '') ?? 30.33;
-          return LocationPickerScreen(initialLatitude: lat, initialLongitude: lon);
+          final lat =
+              double.tryParse(state.uri.queryParameters['lat'] ?? '') ?? 59.93;
+          final lon =
+              double.tryParse(state.uri.queryParameters['lon'] ?? '') ?? 30.33;
+          return LocationPickerScreen(
+            initialLatitude: lat,
+            initialLongitude: lon,
+          );
         },
       ),
-      // Отдельный маршрут для CreateEventScreen (без BottomNav)
       GoRoute(
         path: '/event/create',
         builder: (context, state) => const CreateEventScreen(),
       ),
-      // Отдельный маршрут для EventDetailsScreen (без BottomNav)
       GoRoute(
         path: '/event/:id',
         builder: (context, state) {
@@ -284,3 +268,4 @@ class RunterraApp extends StatelessWidget {
     );
   }
 }
+

@@ -2,40 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 
-/// Bottom navigation widget for switching between main screens
-/// Integrated with GoRouter for navigation
+/// Bottom navigation widget for switching between main screens.
+///
+/// Uses StatefulShellRoute branches, so each tab preserves its own navigation
+/// stack and widget state.
 class BottomNav extends StatelessWidget {
-  final int currentIndex;
-  final Widget child;
+  final StatefulNavigationShell navigationShell;
 
   const BottomNav({
     super.key,
-    required this.currentIndex,
-    required this.child,
+    required this.navigationShell,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: child,
+      body: navigationShell,
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentIndex,
+        currentIndex: navigationShell.currentIndex,
         type: BottomNavigationBarType.fixed,
         showSelectedLabels: true,
         showUnselectedLabels: true,
         onTap: (index) {
-          // Навигация через GoRouter
-          if (index == 0) {
-            context.go('/map');
-          } else if (index == 1) {
-            context.go('/run');
-          } else if (index == 2) {
-            context.go('/messages');
-          } else if (index == 3) {
-            context.go('/events');
-          } else if (index == 4) {
-            context.go('/');
-          }
+          // Preserve state per tab (each branch has its own Navigator).
+          // If user taps the current tab again, return to the branch root.
+          navigationShell.goBranch(
+            index,
+            initialLocation: index == navigationShell.currentIndex,
+          );
         },
         items: [
           BottomNavigationBarItem(
@@ -63,3 +57,4 @@ class BottomNav extends StatelessWidget {
     );
   }
 }
+
