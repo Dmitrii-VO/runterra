@@ -160,6 +160,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
+              // ignore: deprecated_member_use
               value: _gender,
               decoration: InputDecoration(
                 labelText: l10n.editProfileGender,
