@@ -9,7 +9,7 @@
  */
 
 import { z } from 'zod';
-import { GeoCoordinatesSchema } from '../../shared/types/coordinates';
+import { GeoCoordinatesSchema, type GeoCoordinates } from '../../shared/types/coordinates';
 import { TerritoryStatus } from './territory.status';
 import type { TerritoryCoordinates } from './territory.entity';
 
@@ -53,7 +53,8 @@ export const CreateTerritorySchema = z.object({
  * Содержит все необходимые поля для отображения территории на карте
  * и в интерфейсе приложения.
  * 
- * ВАЖНО: Не содержит геометрию границ, только координаты центра.
+ * geometry — опциональный массив точек полигона границ.
+ * Если задан, клиент рисует PolygonMapObject; иначе — CircleMapObject (fallback).
  */
 export interface TerritoryViewDto {
   /** Уникальный идентификатор территории в системе */
@@ -67,6 +68,9 @@ export interface TerritoryViewDto {
   
   /** Координаты центра территории на карте */
   coordinates: TerritoryCoordinates;
+  
+  /** Опциональная геометрия границ — массив точек полигона (latitude, longitude) */
+  geometry?: GeoCoordinates[];
   
   /** Идентификатор города, к которому относится территория */
   cityId: string;

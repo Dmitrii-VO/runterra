@@ -5,8 +5,8 @@ import 'territory_model.dart';
 /// Используется для парсинга JSON ответов от API /api/map/data.
 /// Содержит только структуру данных без бизнес-логики.
 /// 
-/// ВАЖНО: На текущей стадии (skeleton) не содержит геометрию границ,
-/// только координаты центра для отображения placeholder-полигонов.
+/// [geometry] — опциональный массив точек полигона границ.
+/// Если задан, рисуется PolygonMapObject; иначе — CircleMapObject (fallback).
 class TerritoryMapModel {
   /// Уникальный идентификатор территории
   final String id;
@@ -21,6 +21,9 @@ class TerritoryMapModel {
   
   /// Координаты центра территории
   final TerritoryCoordinates coordinates;
+  
+  /// Опциональная геометрия границ — массив точек полигона
+  final List<TerritoryCoordinates>? geometry;
   
   /// Идентификатор города
   final String cityId;
@@ -43,6 +46,7 @@ class TerritoryMapModel {
     required this.status,
     required this.coordinates,
     required this.cityId,
+    this.geometry,
     this.capturedByUserId,
     this.clubId,
     required this.createdAt,
@@ -53,6 +57,11 @@ class TerritoryMapModel {
   /// 
   /// Парсит JSON объект, полученный от backend API.
   factory TerritoryMapModel.fromJson(Map<String, dynamic> json) {
+    final geometryJson = json['geometry'] as List<dynamic>?;
+    final geometry = geometryJson?.map((e) {
+      return TerritoryCoordinates.fromJson(e as Map<String, dynamic>);
+    }).toList();
+
     return TerritoryMapModel(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -61,6 +70,7 @@ class TerritoryMapModel {
         json['coordinates'] as Map<String, dynamic>,
       ),
       cityId: json['cityId'] as String,
+      geometry: geometry,
       capturedByUserId: json['capturedByUserId'] as String?,
       clubId: json['clubId'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
@@ -76,6 +86,7 @@ class TerritoryMapModel {
       'status': status,
       'coordinates': coordinates.toJson(),
       'cityId': cityId,
+      if (geometry != null) 'geometry': geometry!.map((e) => e.toJson()).toList(),
       if (capturedByUserId != null) 'capturedByUserId': capturedByUserId,
       if (clubId != null) 'clubId': clubId,
       'createdAt': createdAt.toIso8601String(),

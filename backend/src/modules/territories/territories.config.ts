@@ -1,5 +1,41 @@
 import { TerritoryViewDto } from './territory.dto';
 import { TerritoryStatus } from './territory.status';
+import type { GeoCoordinates } from '../../shared/types/coordinates';
+
+/** 
+ * Conversion constants for coordinates to meters approximation.
+ * 1 degree latitude is approximately 111.132 km.
+ * 1 degree longitude at equator is approximately 111.320 km.
+ */
+const METERS_PER_DEGREE_LAT = 111132;
+const METERS_PER_DEGREE_LON_EQUATOR = 111320;
+
+/**
+ * Generates square polygon geometry from center coordinates.
+ * Used for MVP zone visualization — squares instead of overlapping circles.
+ * 
+ * Uses equirectangular projection approximation with cos(lat) correction
+ * for longitude. This is sufficient for city-scale zones (<10km).
+ */
+function generateSquareGeometry(
+  lat: number,
+  lon: number,
+  sizeInMeters: number,
+): GeoCoordinates[] {
+  const halfSizeMeters = sizeInMeters / 2;
+  const latOffset = halfSizeMeters / METERS_PER_DEGREE_LAT;
+  
+  // Correction for longitude depends on latitude: 1 deg lon = 111320 * cos(lat) meters
+  const latRad = (lat * Math.PI) / 180;
+  const lonOffset = halfSizeMeters / (METERS_PER_DEGREE_LON_EQUATOR * Math.cos(latRad));
+
+  return [
+    { longitude: lon - lonOffset, latitude: lat - latOffset },
+    { longitude: lon + lonOffset, latitude: lat - latOffset },
+    { longitude: lon + lonOffset, latitude: lat + latOffset },
+    { longitude: lon - lonOffset, latitude: lat + latOffset },
+  ];
+}
 
 /**
  * Static territories configuration for Saint Petersburg (spb).
@@ -10,6 +46,9 @@ import { TerritoryStatus } from './territory.status';
  */
 
 type StaticTerritoryConfig = Omit<TerritoryViewDto, 'createdAt' | 'updatedAt'>;
+
+/** Square size in meters for MVP zone visualization */
+const TERRITORY_SQUARE_SIZE_M = 1000;
 
 const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
   {
@@ -55,8 +94,15 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
 
 function materialize(config: StaticTerritoryConfig): TerritoryViewDto {
   const now = new Date();
+  const { coordinates } = config;
+  const geometry = generateSquareGeometry(
+    coordinates.latitude,
+    coordinates.longitude,
+    TERRITORY_SQUARE_SIZE_M,
+  );
   return {
     ...config,
+    geometry,
     createdAt: now,
     updatedAt: now,
   };

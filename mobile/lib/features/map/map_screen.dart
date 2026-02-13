@@ -64,8 +64,8 @@ class _MapScreenState extends State<MapScreen> {
   bool _hasFocusPoint = false;
   bool _isAnimatingToFocus = false;
   
-  // Объекты на карте
-  List<CircleMapObject> _territoryCircles = [];
+  // Объекты на карте (территории — полигоны или круги; события — маркеры)
+  List<MapObject> _territoryMapObjects = [];
   List<PlacemarkMapObject> _eventMarkers = [];
   BitmapDescriptor? _eventMarkerIcon;
 
@@ -336,9 +336,9 @@ class _MapScreenState extends State<MapScreen> {
   /// Обновляет объекты на карте (территории и события)
   void _updateMapObjects() {
     if (_mapController == null || _mapData == null) return;
-    
+
     try {
-      _updateTerritoryCircles();
+      _updateTerritoryMapObjects();
       _updateEventMarkers();
     } catch (e) {
       debugPrint('Error updating map objects: $e');
@@ -349,36 +349,62 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
   
-  /// Обновляет круги территорий
-  void _updateTerritoryCircles() {
+  /// Обновляет объекты территорий (полигоны при наличии geometry, иначе круги)
+  void _updateTerritoryMapObjects() {
     if (_mapData == null) return;
-    
-    final circles = _mapData!.territories.asMap().entries.map((entry) {
-      final index = entry.key;
-      final territory = entry.value;
+
+    final objects = <MapObject>[];
+    for (var i = 0; i < _mapData!.territories.length; i++) {
+      final territory = _mapData!.territories[i];
       final color = _getTerritoryColor(territory.status);
       final strokeColor = _getTerritoryStrokeColor(territory.status);
-      
-      return CircleMapObject(
-        mapId: MapObjectId('territory_$index'),
-        circle: Circle(
-          center: Point(
-            latitude: territory.coordinates.latitude,
-            longitude: territory.coordinates.longitude,
+      void onTerritoryTap(_, __) => _showTerritoryBottomSheet(territory);
+
+      if (territory.geometry != null && territory.geometry!.length >= 3) {
+        // Polygon: geometry points + close ring if needed
+        final points = territory.geometry!
+            .map((c) => Point(latitude: c.latitude, longitude: c.longitude))
+            .toList();
+        
+        // Only add first point as last if it's not already there
+        if (points.isNotEmpty && 
+            (points.first.latitude != points.last.latitude || 
+             points.first.longitude != points.last.longitude)) {
+          points.add(points.first);
+        }
+
+        objects.add(PolygonMapObject(
+          mapId: MapObjectId('territory_$i'),
+          polygon: Polygon(
+            outerRing: LinearRing(points: points),
+            innerRings: const [],
           ),
-          radius: _territoryRadiusMeters,
-        ),
-        fillColor: color,
-        strokeColor: strokeColor,
-        strokeWidth: 2.0,
-        onTap: (mapObject, point) {
-          _showTerritoryBottomSheet(territory);
-        },
-      );
-    }).toList();
-    
+          fillColor: color,
+          strokeColor: strokeColor,
+          strokeWidth: 1.5,
+          onTap: onTerritoryTap,
+        ));
+      } else {
+        // Fallback: circle by center
+        objects.add(CircleMapObject(
+          mapId: MapObjectId('territory_$i'),
+          circle: Circle(
+            center: Point(
+              latitude: territory.coordinates.latitude,
+              longitude: territory.coordinates.longitude,
+            ),
+            radius: _territoryRadiusMeters,
+          ),
+          fillColor: color,
+          strokeColor: strokeColor,
+          strokeWidth: 2.0,
+          onTap: onTerritoryTap,
+        ));
+      }
+    }
+
     setState(() {
-      _territoryCircles = circles;
+      _territoryMapObjects = objects;
     });
   }
 
@@ -824,7 +850,7 @@ class _MapScreenState extends State<MapScreen> {
                 onCameraPositionChanged: (position, reason, finished) {
                   _handleCameraPositionChanged(position);
                 },
-                mapObjects: [..._territoryCircles, ..._eventMarkers],
+                mapObjects: [..._territoryMapObjects, ..._eventMarkers],
               );
             },
           ),

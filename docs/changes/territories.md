@@ -2,6 +2,12 @@
 
 ## История изменений
 
+### 2026-02-13 — Геометрия полигонов (geometry)
+
+- **Backend:** TerritoryViewDto.geometry (опционально) — массив точек полигона. territories.config.ts: generateSquareGeometry генерирует квадрат 1000×1000 м вокруг центра. materialize() добавляет geometry к каждой территории.
+- **Mobile:** TerritoryMapModel.geometry, MapScreen рисует PolygonMapObject при наличии geometry, иначе CircleMapObject.
+- **Подробности:** [2026-02-13-territory-zones-polygons.md](2026-02-13-territory-zones-polygons.md)
+
 ### 2026-02-06 — Реальные популярные беговые локации СПб вместо generic-моков
 
 - **Backend (territories):** Эндпоинт `GET /api/territories` больше не возвращает абстрактную `Test Territory` с координатами вне контекста города. Добавлен конфиг `modules/territories/territories.config.ts` с тремя реальными популярными локациями для бега в Санкт‑Петербурге (`cityId: "spb"`):  

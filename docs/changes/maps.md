@@ -2,6 +2,13 @@
 
 ## История изменений
 
+### 2026-02-13 — Территории: полигоны вместо кругов
+
+- **Контекст:** docs/tasks/gemini-map-zones-analysis-report.md — круги создают наложения и пустые зоны на границах.
+- **Backend:** TerritoryViewDto.geometry (опционально), generateSquareGeometry в territories.config.ts — квадраты 1000×1000 м вокруг центра. GET /api/map/data возвращает территории с geometry.
+- **Mobile:** TerritoryMapModel.geometry, MapScreen — PolygonMapObject при geometry.length >= 3, иначе CircleMapObject (fallback).
+- **Подробности:** [2026-02-13-territory-zones-polygons.md](2026-02-13-territory-zones-polygons.md)
+
 ### 2026-02-06 — Реальные территории на карте (три популярных беговых парка СПб)
 
 - **Backend:** `GET /api/map/data` больше не использует встроенный массив mock‑территорий (`territory-1/2/3` с условными названиями). Вместо этого он подтягивает территории через `getTerritoriesForCity(cityId, clubId?)` из нового конфига `modules/territories/territories.config.ts`, где описаны три реальные популярные беговые локации Санкт‑Петербурга: «Приморский парк Победы (Крестовский остров)», «ЦПКиО им. Кирова (Елагин остров)» и «Парк 300-летия Санкт-Петербурга`. Фильтры `onlyActive` и `clubId` применяются поверх этих данных.
