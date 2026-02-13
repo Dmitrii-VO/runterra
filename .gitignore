@@ -48,3 +48,6 @@ Microsoft/
 
 # Codex helper file (local only)
 .gitconfig.codex
+
+# Local Flutter/Dart cache (avoid polluting git status when PUB_CACHE is overridden)
+.pub-cache/
