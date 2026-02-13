@@ -340,6 +340,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get filterOnlyOpen => 'Open only';
 
   @override
+  String get filterParticipantOnly => 'Participating';
+
+  @override
   String get eventTypeTraining => 'Workout';
 
   @override
@@ -452,6 +455,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String eventCheckInError(String message) {
     return 'Could not check in: $message';
   }
+
+  @override
+  String get eventSwipeToRunTitle => 'Swipe to start run';
+
+  @override
+  String get eventSwipeToRunHint => 'Swipe left to check in and start your run';
+
+  @override
+  String get eventSwipeToRunSuccess => 'Check-in successful! Run started.';
+
+  @override
+  String eventSwipeToRunError(String error) {
+    return 'Error: $error';
+  }
+
+  @override
+  String get eventSwipeToRunAlreadyCheckedIn => 'You have already checked in';
+
+  @override
+  String get eventSwipeToRunTooEarly =>
+      'Check-in opens 30 minutes before the event';
+
+  @override
+  String get eventSwipeToRunTooLate => 'Check-in window has closed';
+
+  @override
+  String get eventSwipeToRunTooFar =>
+      'Move closer to the start point (within 500 m)';
+
+  @override
+  String get eventSwipeToRunLocationError => 'Could not get your location';
+
+  @override
+  String get eventSwipeToRunCheckingLocation => 'Checking location...';
 
   @override
   String get eventNoPlaces => 'No spots left';

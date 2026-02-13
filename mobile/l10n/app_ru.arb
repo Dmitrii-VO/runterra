@@ -112,6 +112,7 @@
   "filterTomorrow": "Завтра",
   "filter7days": "7 дней",
   "filterOnlyOpen": "Только открытые",
+  "filterParticipantOnly": "Участвую",
   "eventTypeTraining": "Тренировка",
   "eventTypeGroupRun": "Совместный бег",
   "eventTypeClubEvent": "Клубное событие",
@@ -148,6 +149,16 @@
   "eventLeaveError": "Не удалось отменить участие: {message}",
   "eventCheckInSuccess": "Отметка о прибытии принята",
   "eventCheckInError": "Не удалось отметиться: {message}",
+  "eventSwipeToRunTitle": "Свайп — начать пробежку",
+  "eventSwipeToRunHint": "Свайпните влево, чтобы отметиться и начать пробежку",
+  "eventSwipeToRunSuccess": "Отметка принята! Пробежка начата.",
+  "eventSwipeToRunError": "Ошибка: {error}",
+  "eventSwipeToRunAlreadyCheckedIn": "Вы уже отметились",
+  "eventSwipeToRunTooEarly": "Check-in открывается за 30 минут до события",
+  "eventSwipeToRunTooLate": "Окно check-in закрыто",
+  "eventSwipeToRunTooFar": "Подойдите ближе к точке старта (в пределах 500 м)",
+  "eventSwipeToRunLocationError": "Не удалось определить местоположение",
+  "eventSwipeToRunCheckingLocation": "Проверяем местоположение...",
   "eventNoPlaces": "Нет свободных мест",
   "eventCancelled": "Событие отменено",
   "eventOrganizerLabel": "Организатор: {id}",
@@ -168,6 +179,13 @@
   "@eventCheckInError": {
     "placeholders": {
       "message": {
+        "type": "String"
+      }
+    }
+  },
+  "@eventSwipeToRunError": {
+    "placeholders": {
+      "error": {
         "type": "String"
       }
     }

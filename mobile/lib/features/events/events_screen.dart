@@ -23,6 +23,7 @@ class _EventsScreenState extends State<EventsScreen> {
   String? _selectedDifficultyLevel;
   String? _selectedEventType;
   bool _onlyOpen = true;
+  bool _participantOnly = false;
 
   @override
   void initState() {
@@ -44,6 +45,7 @@ class _EventsScreenState extends State<EventsScreen> {
       difficultyLevel: _selectedDifficultyLevel,
       eventType: _selectedEventType,
       onlyOpen: _onlyOpen,
+      participantOnly: _participantOnly,
     );
 
     // Client-side safety net: even if backend still marks past events as `open`,
@@ -230,6 +232,17 @@ class _EventsScreenState extends State<EventsScreen> {
                   _selectedClubId = selected
                       ? ServiceLocator.currentClubService.currentClubId
                       : null;
+                  _eventsFuture = _fetchEvents();
+                });
+              },
+            ),
+            const SizedBox(width: 16),
+            FilterChip(
+              label: Text(AppLocalizations.of(context)!.filterParticipantOnly),
+              selected: _participantOnly,
+              onSelected: (selected) {
+                setState(() {
+                  _participantOnly = selected;
                   _eventsFuture = _fetchEvents();
                 });
               },

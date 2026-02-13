@@ -47,8 +47,8 @@ const router = Router();
  */
 router.get('/', async (req: Request, res: Response) => {
   const query = req.query as Record<string, string | undefined>;
-  const { cityId, dateFilter, clubId, difficultyLevel, eventType, limit, offset } = query;
-  
+  const { cityId, dateFilter, clubId, difficultyLevel, eventType, participantOnly, limit, offset } = query;
+
   if (!cityId) {
     return res.status(400).json({
       code: 'validation_error',
@@ -66,6 +66,29 @@ router.get('/', async (req: Request, res: Response) => {
   }
 
   try {
+    // participantOnly requires auth to resolve userId
+    let participantUserId: string | undefined;
+    if (participantOnly === 'true' || participantOnly === '1') {
+      const uid = req.authUser?.uid;
+      if (!uid) {
+        return res.status(401).json({
+          code: 'unauthorized',
+          message: 'Authorization required for participantOnly filter',
+          details: { reason: 'missing_header' },
+        });
+      }
+      const usersRepo = getUsersRepository();
+      const user = await usersRepo.findByFirebaseUid(uid);
+      if (!user) {
+        return res.status(400).json({
+          code: 'validation_error',
+          message: 'User not found for this token',
+          details: { fields: [{ field: 'userId', message: 'User not found', code: 'invalid_user' }] },
+        });
+      }
+      participantUserId = user.id;
+    }
+
     const repo = getEventsRepository();
     const events = await repo.findAll({
       cityId,
@@ -73,6 +96,8 @@ router.get('/', async (req: Request, res: Response) => {
       clubId,
       difficultyLevel,
       eventType: eventType as EventType | undefined,
+      participantOnly: participantOnly === 'true' || participantOnly === '1',
+      participantUserId,
       limit: limit ? parseInt(limit, 10) : 50,
       offset: offset ? parseInt(offset, 10) : 0,
     });
@@ -457,14 +482,17 @@ router.post('/:id/check-in', async (req: Request, res: Response) => {
   const { id } = req.params;
   const { longitude, latitude } = req.body as { longitude?: number; latitude?: number };
 
-  if (typeof longitude !== 'number' || typeof latitude !== 'number') {
+  const isFiniteNumber = (v: unknown): v is number =>
+    typeof v === 'number' && Number.isFinite(v);
+
+  if (!isFiniteNumber(longitude) || !isFiniteNumber(latitude)) {
     res.status(400).json({
       code: 'validation_error',
       message: 'Request body validation failed',
       details: {
         fields: [
           {
-            field: longitude === undefined ? 'longitude' : 'latitude',
+            field: !isFiniteNumber(longitude) ? 'longitude' : 'latitude',
             message: 'Missing or invalid coordinates. Required: { longitude: number, latitude: number }',
             code: 'invalid_type',
           },

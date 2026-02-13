@@ -215,8 +215,8 @@ describe('EventsRepository', () => {
       expect(result.participant).toBeUndefined();
     });
 
-    it('should return error when check-in is before window (15 min before start)', async () => {
-      const now = new Date(eventStart.getTime() - 20 * 60 * 1000);
+    it('should return error when check-in is before window (30 min before start)', async () => {
+      const now = new Date(eventStart.getTime() - 40 * 60 * 1000);
       jest.useFakeTimers().setSystemTime(now);
       mockQuery.mockResolvedValueOnce({
         rows: [eventRowForCheckIn()],
@@ -232,8 +232,8 @@ describe('EventsRepository', () => {
       jest.useRealTimers();
     });
 
-    it('should return error when check-in is after window (30 min after start)', async () => {
-      const now = new Date(eventStart.getTime() + 35 * 60 * 1000);
+    it('should return error when check-in is after window (1 hour after start)', async () => {
+      const now = new Date(eventStart.getTime() + 65 * 60 * 1000);
       jest.useFakeTimers().setSystemTime(now);
       mockQuery.mockResolvedValueOnce({
         rows: [eventRowForCheckIn()],

@@ -140,6 +140,7 @@
   "filterTomorrow": "Tomorrow",
   "filter7days": "7 days",
   "filterOnlyOpen": "Open only",
+  "filterParticipantOnly": "Participating",
   "eventTypeTraining": "Workout",
   "eventTypeGroupRun": "Group run",
   "eventTypeClubEvent": "Club event",
@@ -176,6 +177,16 @@
   "eventLeaveError": "Could not cancel: {message}",
   "eventCheckInSuccess": "Check-in successful",
   "eventCheckInError": "Could not check in: {message}",
+  "eventSwipeToRunTitle": "Swipe to start run",
+  "eventSwipeToRunHint": "Swipe left to check in and start your run",
+  "eventSwipeToRunSuccess": "Check-in successful! Run started.",
+  "eventSwipeToRunError": "Error: {error}",
+  "eventSwipeToRunAlreadyCheckedIn": "You have already checked in",
+  "eventSwipeToRunTooEarly": "Check-in opens 30 minutes before the event",
+  "eventSwipeToRunTooLate": "Check-in window has closed",
+  "eventSwipeToRunTooFar": "Move closer to the start point (within 500 m)",
+  "eventSwipeToRunLocationError": "Could not get your location",
+  "eventSwipeToRunCheckingLocation": "Checking location...",
   "eventNoPlaces": "No spots left",
   "eventCancelled": "Event cancelled",
   "eventOrganizerLabel": "Organizer: {id}",
@@ -210,6 +221,13 @@
   "@eventCheckInError": {
     "placeholders": {
       "message": {
+        "type": "String"
+      }
+    }
+  },
+  "@eventSwipeToRunError": {
+    "placeholders": {
+      "error": {
         "type": "String"
       }
     }

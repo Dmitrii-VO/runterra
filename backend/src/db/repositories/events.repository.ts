@@ -144,6 +144,8 @@ export class EventsRepository extends BaseRepository {
     difficultyLevel?: string;
     eventType?: EventType;
     organizerId?: string;
+    participantOnly?: boolean;
+    participantUserId?: string;
     limit?: number;
     offset?: number;
   }): Promise<Event[]> {
@@ -218,7 +220,21 @@ export class EventsRepository extends BaseRepository {
       conditions.push(`organizer_id = $${paramIndex++}`);
       params.push(options.organizerId);
     }
-    
+
+    // Participant filter: only events where user is registered
+    if (options?.participantOnly) {
+      if (!options.participantUserId) {
+        // Defensive: never "silently ignore" participantOnly, because it can leak
+        // non-participating events if a caller forgets to pass userId.
+        return [];
+      }
+      conditions.push(`id IN (
+        SELECT event_id FROM event_participants
+        WHERE user_id = $${paramIndex++} AND status IN ('registered', 'checked_in')
+      )`);
+      params.push(options.participantUserId);
+    }
+
     let sql = 'SELECT * FROM events';
     if (conditions.length > 0) {
       sql += ` WHERE ${conditions.join(' AND ')}`;
@@ -379,14 +395,14 @@ export class EventsRepository extends BaseRepository {
       return { error: 'Event not found' };
     }
     
-    // Check time window (15 minutes before to 30 minutes after start)
+    // Check time window (30 minutes before to 1 hour after start) — Z8 decisions 2026-02-13
     const now = new Date();
     const eventStart = new Date(event.startDateTime);
-    const windowStart = new Date(eventStart.getTime() - 15 * 60 * 1000); // 15 min before
-    const windowEnd = new Date(eventStart.getTime() + 30 * 60 * 1000);   // 30 min after
+    const windowStart = new Date(eventStart.getTime() - 30 * 60 * 1000); // 30 min before
+    const windowEnd = new Date(eventStart.getTime() + 60 * 60 * 1000);   // 1 hour after
     
     if (now < windowStart) {
-      return { error: 'Check-in is not yet available. Opens 15 minutes before event start.' };
+      return { error: 'Check-in is not yet available. Opens 30 minutes before event start.' };
     }
     if (now > windowEnd) {
       return { error: 'Check-in window has closed.' };

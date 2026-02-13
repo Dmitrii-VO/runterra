@@ -341,6 +341,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get filterOnlyOpen => 'Только открытые';
 
   @override
+  String get filterParticipantOnly => 'Участвую';
+
+  @override
   String get eventTypeTraining => 'Тренировка';
 
   @override
@@ -453,6 +456,42 @@ class AppLocalizationsRu extends AppLocalizations {
   String eventCheckInError(String message) {
     return 'Не удалось отметиться: $message';
   }
+
+  @override
+  String get eventSwipeToRunTitle => 'Свайп — начать пробежку';
+
+  @override
+  String get eventSwipeToRunHint =>
+      'Свайпните влево, чтобы отметиться и начать пробежку';
+
+  @override
+  String get eventSwipeToRunSuccess => 'Отметка принята! Пробежка начата.';
+
+  @override
+  String eventSwipeToRunError(String error) {
+    return 'Ошибка: $error';
+  }
+
+  @override
+  String get eventSwipeToRunAlreadyCheckedIn => 'Вы уже отметились';
+
+  @override
+  String get eventSwipeToRunTooEarly =>
+      'Check-in открывается за 30 минут до события';
+
+  @override
+  String get eventSwipeToRunTooLate => 'Окно check-in закрыто';
+
+  @override
+  String get eventSwipeToRunTooFar =>
+      'Подойдите ближе к точке старта (в пределах 500 м)';
+
+  @override
+  String get eventSwipeToRunLocationError =>
+      'Не удалось определить местоположение';
+
+  @override
+  String get eventSwipeToRunCheckingLocation => 'Проверяем местоположение...';
 
   @override
   String get eventNoPlaces => 'Нет свободных мест';

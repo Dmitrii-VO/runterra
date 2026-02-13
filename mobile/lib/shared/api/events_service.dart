@@ -29,6 +29,7 @@ class EventsService {
     String? difficultyLevel,
     String? eventType,
     bool? onlyOpen,
+    bool? participantOnly,
   }) async {
     // Build query parameters
     final queryParams = <String, String>{'cityId': cityId};
@@ -37,22 +38,40 @@ class EventsService {
     if (difficultyLevel != null) queryParams['difficultyLevel'] = difficultyLevel;
     if (eventType != null) queryParams['eventType'] = eventType;
     if (onlyOpen == true) queryParams['onlyOpen'] = 'true';
+    if (participantOnly == true) queryParams['participantOnly'] = 'true';
     
     final endpoint = queryParams.isEmpty 
         ? '/api/events'
         : '/api/events?${Uri(queryParameters: queryParams).query}';
     final response = await _apiClient.get(endpoint);
-    
-    // Проверяем, что ответ - JSON, а не HTML
-    if (response.statusCode != 200) {
-      throw Exception(
-        'Ошибка сервера: ${response.statusCode}\n'
-        'Убедитесь, что backend сервер запущен (npm run dev в папке backend)',
+
+    final body = response.body.trim();
+    final contentType = response.headers['content-type'] ?? '';
+
+    // Non-2xx: prefer ADR-0002 envelope (code/message) when available.
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      if (contentType.contains('application/json')) {
+        _throwApiException(response, 'get_events_error');
+      }
+      if (body.toLowerCase().startsWith('<!doctype') ||
+          body.toLowerCase().startsWith('<html')) {
+        throw FormatException(
+          'Получен HTML вместо JSON. Backend сервер не запущен или роутер не зарегистрирован.\n\n'
+          'Убедитесь, что:\n'
+          '1. Backend сервер запущен: cd backend && npm run dev\n'
+          '2. Сервер слушает на порту 3000\n'
+          '3. Роутер /api/events подключен в backend/src/api/index.ts\n'
+          '4. Для Android эмулятора используется адрес http://10.0.2.2:3000',
+          body.substring(0, body.length > 200 ? 200 : body.length),
+        );
+      }
+      throw ApiException(
+        'HTTP ${response.statusCode}',
+        'Ошибка сервера: ${response.statusCode}',
       );
     }
-    
+
     // Проверяем Content-Type
-    final contentType = response.headers['content-type'] ?? '';
     if (!contentType.contains('application/json')) {
       // Если получен HTML, значит backend не запущен или роутер не работает
       if (response.body.trim().startsWith('<!DOCTYPE') || 

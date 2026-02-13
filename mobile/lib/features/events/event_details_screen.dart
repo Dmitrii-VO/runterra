@@ -9,6 +9,7 @@ import '../../shared/ui/details_scaffold.dart';
 import '../../shared/ui/error_display.dart';
 import 'widgets/event_mini_map.dart';
 import 'widgets/participants_list.dart';
+import 'widgets/swipe_to_run_card.dart';
 
 class EventDetailsScreen extends StatefulWidget {
   final String eventId;
@@ -323,6 +324,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                         child:
                             Text(AppLocalizations.of(context)!.eventYouParticipate),
                       ),
+                    ),
+                    const SizedBox(height: 8),
+                    SwipeToRunCard(
+                      event: event,
+                      onRefresh: _retry,
                     ),
                     const SizedBox(height: 8),
                     SizedBox(

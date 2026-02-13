@@ -728,6 +728,12 @@ abstract class AppLocalizations {
   /// **'Open only'**
   String get filterOnlyOpen;
 
+  /// No description provided for @filterParticipantOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Participating'**
+  String get filterParticipantOnly;
+
   /// No description provided for @eventTypeTraining.
   ///
   /// In en, this message translates to:
@@ -943,6 +949,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not check in: {message}'**
   String eventCheckInError(String message);
+
+  /// No description provided for @eventSwipeToRunTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe to start run'**
+  String get eventSwipeToRunTitle;
+
+  /// No description provided for @eventSwipeToRunHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe left to check in and start your run'**
+  String get eventSwipeToRunHint;
+
+  /// No description provided for @eventSwipeToRunSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in successful! Run started.'**
+  String get eventSwipeToRunSuccess;
+
+  /// No description provided for @eventSwipeToRunError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {error}'**
+  String eventSwipeToRunError(String error);
+
+  /// No description provided for @eventSwipeToRunAlreadyCheckedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'You have already checked in'**
+  String get eventSwipeToRunAlreadyCheckedIn;
+
+  /// No description provided for @eventSwipeToRunTooEarly.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in opens 30 minutes before the event'**
+  String get eventSwipeToRunTooEarly;
+
+  /// No description provided for @eventSwipeToRunTooLate.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in window has closed'**
+  String get eventSwipeToRunTooLate;
+
+  /// No description provided for @eventSwipeToRunTooFar.
+  ///
+  /// In en, this message translates to:
+  /// **'Move closer to the start point (within 500 m)'**
+  String get eventSwipeToRunTooFar;
+
+  /// No description provided for @eventSwipeToRunLocationError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not get your location'**
+  String get eventSwipeToRunLocationError;
+
+  /// No description provided for @eventSwipeToRunCheckingLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking location...'**
+  String get eventSwipeToRunCheckingLocation;
 
   /// No description provided for @eventNoPlaces.
   ///
