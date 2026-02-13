@@ -14,11 +14,8 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # Load repo-local .env files before reading $env:* toggles or invoking gh.
 . "$ScriptDir\\load-env.ps1" -ProjectRoot $ProjectRoot
 
-# Keep gh config in-repo to avoid depending on C:\Users\...\GitHub CLI\config.yml in restricted environments.
-if (-not $env:GH_CONFIG_DIR) {
-    $env:GH_CONFIG_DIR = Join-Path $ProjectRoot ".gh"
-}
-New-Item -ItemType Directory -Force -Path $env:GH_CONFIG_DIR | Out-Null
+# Use system gh config by default. Set GH_CONFIG_DIR for restricted environments (CI, sandbox).
+# When unset, gh uses default location where user ran "gh auth login".
 
 if ($args -contains "-SkipCI") { $SkipCI = $true }
 if ($args -contains "-SkipGitCheck") { $SkipGitCheck = $true }
