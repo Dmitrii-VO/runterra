@@ -8,6 +8,8 @@
 # Env
 .env
 .env.*
+!.env*.example
+.gh/
 
 # Node
 node_modules/

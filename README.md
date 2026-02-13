@@ -1,5 +1,18 @@
 # Runterra
 
+## Local Secrets / Tokens (Repo-Local)
+
+If you run deploy scripts from the project root and want to avoid relying on user-profile configs under `C:\Users\...`,
+put local-only variables into `.env.local` (not committed).
+
+- Template: `.env.local.example`
+- Common variables:
+  - `FIREBASE_TOKEN` for Firebase App Distribution (from `firebase login:ci`)
+  - `GH_TOKEN` or `GITHUB_TOKEN` for `gh` CI checks (optional)
+  - `DEPLOY_SKIP_CI=1` and/or `DEPLOY_SKIP_FIREBASE=1` (optional toggles)
+
+Deploy scripts auto-load `.env.local` via `scripts/load-env.ps1`.
+
 Платформа для локальных беговых сообществ.
 
 Текущая стадия проекта — **подготовка основы (skeleton)**.

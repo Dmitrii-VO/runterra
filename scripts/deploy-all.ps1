@@ -11,6 +11,13 @@ param(
     [switch]$SkipGitCheck
 )
 
+$ErrorActionPreference = "Stop"
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ProjectRoot = Split-Path -Parent $ScriptDir
+
+# Load repo-local .env files before reading $env:* toggles.
+. "$ScriptDir\\load-env.ps1" -ProjectRoot $ProjectRoot
+
 # When invoked as "powershell -File script.ps1 -SkipCI", args may not bind; also support env vars (npm on Windows)
 if ($args -contains "-SkipCI") { $SkipCI = $true }
 if ($args -contains "-SkipFirebase") { $SkipFirebase = $true }
@@ -18,9 +25,6 @@ if ($args -contains "-SkipGitCheck") { $SkipGitCheck = $true }
 if ($args -contains "-SkipTests") { $SkipTests = $true }
 if ($env:DEPLOY_SKIP_CI -eq "1") { $SkipCI = $true; $SkipGitCheck = $true }
 if ($env:DEPLOY_SKIP_FIREBASE -eq "1") { $SkipFirebase = $true }
-
-$ErrorActionPreference = "Stop"
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 Write-Host "========================================" -ForegroundColor Magenta
 Write-Host "        DEPLOY ALL: Backend + Mobile   " -ForegroundColor Magenta

@@ -11,6 +11,13 @@ param(
     [switch]$SkipTests,
     [switch]$SkipFirebase
 )
+
+# Load repo-local .env files early (before reading $env:DEPLOY_* toggles).
+$ErrorActionPreference = "Stop"
+$ProjectRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+. "$ScriptDir\\load-env.ps1" -ProjectRoot $ProjectRoot
+
 # When invoked as "powershell -File script.ps1 -SkipFirebase", args may not bind; also support env (npm on Windows)
 if ($args -contains "-SkipFirebase") { $SkipFirebase = $true }
 if ($args -contains "-SkipTests") { $SkipTests = $true }
@@ -22,8 +29,6 @@ if ($nonSwitchArgs.Count -gt 0) { $ReleaseNotes = ($ReleaseNotes, $nonSwitchArgs
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
-$ErrorActionPreference = "Stop"
-$ProjectRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $ConfigPath = Join-Path $ProjectRoot "scripts\app-distribution.config.json"
 $ApkPath = Join-Path $ProjectRoot "mobile\build\app\outputs\flutter-apk\app-debug.apk"
 

@@ -6,12 +6,24 @@ param(
     [switch]$SkipCI,
     [switch]$SkipGitCheck
 )
+
+$ErrorActionPreference = "Stop"
+$ProjectRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+
+# Load repo-local .env files before reading $env:* toggles or invoking gh.
+. "$ScriptDir\\load-env.ps1" -ProjectRoot $ProjectRoot
+
+# Keep gh config in-repo to avoid depending on C:\Users\...\GitHub CLI\config.yml in restricted environments.
+if (-not $env:GH_CONFIG_DIR) {
+    $env:GH_CONFIG_DIR = Join-Path $ProjectRoot ".gh"
+}
+New-Item -ItemType Directory -Force -Path $env:GH_CONFIG_DIR | Out-Null
+
 if ($args -contains "-SkipCI") { $SkipCI = $true }
 if ($args -contains "-SkipGitCheck") { $SkipGitCheck = $true }
 if ($env:DEPLOY_SKIP_CI -eq "1") { $SkipCI = $true; $SkipGitCheck = $true }
 
-$ErrorActionPreference = "Stop"
-$ProjectRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $SSHHost = "runterra"
 $RemoteScript = "~/runterra/backend/update.sh"
 
