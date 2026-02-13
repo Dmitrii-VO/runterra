@@ -13,6 +13,7 @@ export interface MessageViewDto {
 
 export interface CreateMessageDto {
   text: string;
+  channelId?: string;
 }
 
 export interface ClubChatViewDto {

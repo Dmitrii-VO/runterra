@@ -39,6 +39,10 @@ function getAuthUidOrRespondUnauthorized(req: Request, res: Response): string | 
   return uid;
 }
 
+function isValidUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
 /**
  * GET /api/messages/clubs
  * Returns list of club chats for current user (membership-based).
@@ -136,7 +140,37 @@ router.get('/clubs/:clubId', async (req: Request, res: Response) => {
     const messagesRepo = getMessagesRepository();
     // If channelId provided, scope messages to that sub-channel
     if (channelId) {
-      const list = await messagesRepo.findByClubChannel(channelId, limit, offset);
+      if (!isValidUuid(channelId)) {
+        res.status(400).json({
+          code: 'validation_error',
+          message: 'Query validation failed',
+          details: {
+            fields: [
+              {
+                field: 'channelId',
+                message: 'channelId has invalid format',
+                code: 'invalid_format',
+              },
+            ],
+          },
+        });
+        return;
+      }
+
+      const clubChannelsRepo = getClubChannelsRepository();
+      const channel = await clubChannelsRepo.findById(channelId);
+      if (!channel || channel.clubId !== clubId) {
+        res.status(404).json({
+          code: 'not_found',
+          message: 'Channel not found',
+          details: { clubId, channelId },
+        });
+        return;
+      }
+
+      // Compatibility: default general channel includes legacy messages without club_channel_id.
+      const includeLegacy = channel.isDefault && channel.type === 'general';
+      const list = await messagesRepo.findByClubChannel(clubId, channelId, includeLegacy, limit, offset);
       res.status(200).json(list);
     } else {
       const list = await messagesRepo.findByChannel('club', clubId, limit, offset);
@@ -204,6 +238,28 @@ router.post(
       }
 
       const { text, channelId: bodyChannelId } = req.body as { text: string; channelId?: string };
+
+      if (bodyChannelId) {
+        const clubChannelsRepo = getClubChannelsRepository();
+        const channel = await clubChannelsRepo.findById(bodyChannelId);
+        if (!channel || channel.clubId !== clubId) {
+          res.status(400).json({
+            code: 'validation_error',
+            message: 'Body validation failed',
+            details: {
+              fields: [
+                {
+                  field: 'channelId',
+                  message: 'channelId is not a channel of this club',
+                  code: 'invalid_value',
+                },
+              ],
+            },
+          });
+          return;
+        }
+      }
+
       const messagesRepo = getMessagesRepository();
       const message = await messagesRepo.create({
         channelType: 'club',

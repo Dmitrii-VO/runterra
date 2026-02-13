@@ -96,9 +96,17 @@ export class MessagesRepository extends BaseRepository {
     return rows.map(rowToMessageViewDto);
   }
 
-  /** Find messages for a specific club sub-channel */
+  /**
+   * Find messages for a specific club sub-channel.
+   *
+   * If [includeLegacy] is true, legacy messages (club_channel_id IS NULL) for the
+   * same club will be included. This is used for the default "general" channel
+   * until all historical rows are backfilled.
+   */
   async findByClubChannel(
+    clubId: string,
     clubChannelId: string,
+    includeLegacy: boolean,
     limit: number,
     offset: number
   ): Promise<MessageViewDto[]> {
@@ -106,10 +114,15 @@ export class MessagesRepository extends BaseRepository {
       `SELECT m.id, m.channel_type, m.channel_id, m.user_id, m.text, m.created_at, m.updated_at, u.name AS user_name
        FROM messages m
        JOIN users u ON u.id = m.user_id
-       WHERE m.club_channel_id = $1
+       WHERE m.channel_type = 'club'
+         AND m.channel_id = $1
+         AND (
+           m.club_channel_id = $2
+           OR ($3 AND m.club_channel_id IS NULL)
+         )
        ORDER BY m.created_at DESC
-       LIMIT $2 OFFSET $3`,
-      [clubChannelId, limit, offset]
+       LIMIT $4 OFFSET $5`,
+      [clubId, clubChannelId, includeLegacy, limit, offset]
     );
     return rows.map(rowToMessageViewDto);
   }
