@@ -43,6 +43,14 @@ function isValidUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
 
+async function getOrCreateDefaultChannelId(clubId: string): Promise<string> {
+  const clubChannelsRepo = getClubChannelsRepository();
+  const existing = await clubChannelsRepo.findDefaultByClub(clubId);
+  if (existing) return existing.id;
+  const created = await clubChannelsRepo.createDefaultForClub(clubId);
+  return created.id;
+}
+
 /**
  * GET /api/messages/clubs
  * Returns list of club chats for current user (membership-based).
@@ -138,7 +146,8 @@ router.get('/clubs/:clubId', async (req: Request, res: Response) => {
     const channelId = (req.query as Record<string, string | undefined>).channelId;
 
     const messagesRepo = getMessagesRepository();
-    // If channelId provided, scope messages to that sub-channel
+
+    let resolvedChannelId: string;
     if (channelId) {
       if (!isValidUuid(channelId)) {
         res.status(400).json({
@@ -167,15 +176,14 @@ router.get('/clubs/:clubId', async (req: Request, res: Response) => {
         });
         return;
       }
-
-      // Compatibility: default general channel includes legacy messages without club_channel_id.
-      const includeLegacy = channel.isDefault && channel.type === 'general';
-      const list = await messagesRepo.findByClubChannel(clubId, channelId, includeLegacy, limit, offset);
-      res.status(200).json(list);
+      resolvedChannelId = channelId;
     } else {
-      const list = await messagesRepo.findByChannel('club', clubId, limit, offset);
-      res.status(200).json(list);
+      // Backward compatible: if client doesn't send channelId, use the default club channel.
+      resolvedChannelId = await getOrCreateDefaultChannelId(clubId);
     }
+
+    const list = await messagesRepo.findByClubChannel(clubId, resolvedChannelId, limit, offset);
+    res.status(200).json(list);
   } catch (error) {
     logger.error('Error fetching club messages', { error: error, clubId });
     res.status(500).json({
@@ -239,6 +247,7 @@ router.post(
 
       const { text, channelId: bodyChannelId } = req.body as { text: string; channelId?: string };
 
+      let resolvedChannelId: string;
       if (bodyChannelId) {
         const clubChannelsRepo = getClubChannelsRepository();
         const channel = await clubChannelsRepo.findById(bodyChannelId);
@@ -258,6 +267,10 @@ router.post(
           });
           return;
         }
+        resolvedChannelId = bodyChannelId;
+      } else {
+        // Backward compatible: if client doesn't send channelId, use the default club channel.
+        resolvedChannelId = await getOrCreateDefaultChannelId(clubId);
       }
 
       const messagesRepo = getMessagesRepository();
@@ -266,7 +279,7 @@ router.post(
         channelId: clubId,
         userId: user.id,
         text,
-        clubChannelId: bodyChannelId,
+        clubChannelId: resolvedChannelId,
       });
 
       const dto: MessageViewDto = {
@@ -279,8 +292,10 @@ router.post(
       };
 
       // Broadcast to channel-specific or club-level WS topic
-      const wsTopic = bodyChannelId ? `club:${clubId}:${bodyChannelId}` : `club:${clubId}`;
-      broadcast(wsTopic, dto);
+      const channelTopic = `club:${clubId}:${resolvedChannelId}`;
+      broadcast(channelTopic, dto);
+      // Compatibility: some clients may still be subscribed to club-level topic.
+      broadcast(`club:${clubId}`, dto);
       res.status(201).json(dto);
     } catch (error) {
       logger.error('Error sending club message', { error: error, clubId });

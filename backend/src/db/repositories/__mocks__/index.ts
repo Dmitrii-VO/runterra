@@ -125,8 +125,31 @@ export const mockClubsRepository = {
 
 export const mockMessagesRepository = {
   findByChannel: jest.fn().mockResolvedValue([]),
+  findByClubChannel: jest.fn().mockResolvedValue([]),
   create: jest.fn().mockResolvedValue({ id: 'msg-1', channelType: 'club', channelId: 'a0000000-0000-4000-8000-000000000001', userId: 'test-user-id', text: 'hello', createdAt: new Date(), updatedAt: new Date() }),
   getClubChatsForUser: jest.fn().mockResolvedValue([]),
+};
+
+export const mockClubChannelsRepository = {
+  findByClub: jest.fn().mockResolvedValue([]),
+  findById: jest.fn().mockResolvedValue(null),
+  findDefaultByClub: jest.fn().mockResolvedValue(null),
+  create: jest.fn().mockResolvedValue({
+    id: 'test-channel-id',
+    clubId: 'a0000000-0000-4000-8000-000000000001',
+    type: 'general',
+    name: 'General',
+    isDefault: true,
+    createdAt: new Date(),
+  }),
+  createDefaultForClub: jest.fn().mockResolvedValue({
+    id: 'test-channel-id',
+    clubId: 'a0000000-0000-4000-8000-000000000001',
+    type: 'general',
+    name: 'General',
+    isDefault: true,
+    createdAt: new Date(),
+  }),
 };
 
 // Getter functions
@@ -136,6 +159,7 @@ export const getRunsRepository = jest.fn(() => mockRunsRepository);
 export const getClubMembersRepository = jest.fn(() => mockClubMembersRepository);
 export const getClubsRepository = jest.fn(() => mockClubsRepository);
 export const getMessagesRepository = jest.fn(() => mockMessagesRepository);
+export const getClubChannelsRepository = jest.fn(() => mockClubChannelsRepository);
 
 // Re-export classes (not used in mocks but needed for type compatibility)
 export class BaseRepository {}
@@ -145,6 +169,7 @@ export class RunsRepository {}
 export class ClubMembersRepository {}
 export class ClubsRepository {}
 export class MessagesRepository {}
+export class ClubChannelsRepository {}
 export type EventParticipant = { id: string };
 export type RunValidationResult = { valid: boolean };
 export type ClubMembershipRow = { id: string; clubId: string; userId: string; status: string };

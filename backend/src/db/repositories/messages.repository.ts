@@ -60,20 +60,16 @@ export class MessagesRepository extends BaseRepository {
     text: string;
     clubChannelId?: string;
   }): Promise<Message> {
-    if (data.clubChannelId) {
-      const row = await this.queryOne<MessageRow>(
-        `INSERT INTO messages (channel_type, channel_id, user_id, text, club_channel_id)
-         VALUES ($1, $2, $3, $4, $5)
-         RETURNING *`,
-        [data.channelType, data.channelId, data.userId, data.text, data.clubChannelId]
-      );
-      return rowToMessage(row!);
+    // For club chats, club_channel_id must always be provided (enforced by DB check constraint after migration 016).
+    if (data.channelType === 'club' && !data.clubChannelId) {
+      throw new Error('clubChannelId is required for club messages');
     }
+
     const row = await this.queryOne<MessageRow>(
-      `INSERT INTO messages (channel_type, channel_id, user_id, text)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO messages (channel_type, channel_id, user_id, text, club_channel_id)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [data.channelType, data.channelId, data.userId, data.text]
+      [data.channelType, data.channelId, data.userId, data.text, data.clubChannelId ?? null]
     );
     return rowToMessage(row!);
   }
@@ -96,17 +92,9 @@ export class MessagesRepository extends BaseRepository {
     return rows.map(rowToMessageViewDto);
   }
 
-  /**
-   * Find messages for a specific club sub-channel.
-   *
-   * If [includeLegacy] is true, legacy messages (club_channel_id IS NULL) for the
-   * same club will be included. This is used for the default "general" channel
-   * until all historical rows are backfilled.
-   */
   async findByClubChannel(
     clubId: string,
     clubChannelId: string,
-    includeLegacy: boolean,
     limit: number,
     offset: number
   ): Promise<MessageViewDto[]> {
@@ -116,13 +104,10 @@ export class MessagesRepository extends BaseRepository {
        JOIN users u ON u.id = m.user_id
        WHERE m.channel_type = 'club'
          AND m.channel_id = $1
-         AND (
-           m.club_channel_id = $2
-           OR ($3 AND m.club_channel_id IS NULL)
-         )
+         AND m.club_channel_id = $2
        ORDER BY m.created_at DESC
-       LIMIT $4 OFFSET $5`,
-      [clubId, clubChannelId, includeLegacy, limit, offset]
+       LIMIT $3 OFFSET $4`,
+      [clubId, clubChannelId, limit, offset]
     );
     return rows.map(rowToMessageViewDto);
   }

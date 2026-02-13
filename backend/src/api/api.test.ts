@@ -246,6 +246,63 @@ describe('API Routes', () => {
     });
   });
 
+  describe('Messages default channel behavior', () => {
+    const { mockUsersRepository, mockClubMembersRepository, mockMessagesRepository, mockClubChannelsRepository } = require('../db/repositories');
+
+    beforeEach(() => {
+      // Clear call history but keep default mock implementations for other suites.
+      mockUsersRepository.findByFirebaseUid.mockClear();
+      mockClubMembersRepository.findByClubAndUser.mockClear();
+      mockMessagesRepository.findByClubChannel.mockClear();
+      mockMessagesRepository.create.mockClear();
+      mockClubChannelsRepository.findDefaultByClub.mockClear();
+      mockClubChannelsRepository.createDefaultForClub.mockClear();
+      mockClubChannelsRepository.findById.mockClear();
+    });
+
+    it('GET /api/messages/clubs/:clubId without channelId uses default channel', async () => {
+      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({ id: 'user-1', firebaseUid: 'uid-1', name: 'U' });
+      mockClubMembersRepository.findByClubAndUser.mockResolvedValueOnce({ id: 'cm-1', clubId: TEST_CLUB_1, userId: 'user-1', status: 'active' });
+      mockClubChannelsRepository.findDefaultByClub.mockResolvedValueOnce({ id: 'chan-1', clubId: TEST_CLUB_1, type: 'general', name: 'General', isDefault: true, createdAt: new Date() });
+      mockMessagesRepository.findByClubChannel.mockResolvedValueOnce([
+        { id: 'm-1', text: 'hello', userId: 'user-1', userName: 'U', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+      ]);
+
+      const res = await request(app)
+        .get(`/api/messages/clubs/${TEST_CLUB_1}`)
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(mockMessagesRepository.findByClubChannel).toHaveBeenCalledWith(TEST_CLUB_1, 'chan-1', expect.any(Number), expect.any(Number));
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body[0]).toHaveProperty('id', 'm-1');
+    });
+
+    it('POST /api/messages/clubs/:clubId without channelId writes to default channel', async () => {
+      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({ id: 'user-1', firebaseUid: 'uid-1', name: 'U' });
+      mockClubMembersRepository.findByClubAndUser.mockResolvedValueOnce({ id: 'cm-1', clubId: TEST_CLUB_1, userId: 'user-1', status: 'active' });
+      mockClubChannelsRepository.findDefaultByClub.mockResolvedValueOnce({ id: 'chan-1', clubId: TEST_CLUB_1, type: 'general', name: 'General', isDefault: true, createdAt: new Date() });
+      mockMessagesRepository.create.mockResolvedValueOnce({
+        id: 'm-1',
+        channelType: 'club',
+        channelId: TEST_CLUB_1,
+        userId: 'user-1',
+        text: 'hello',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const res = await request(app)
+        .post(`/api/messages/clubs/${TEST_CLUB_1}`)
+        .set('Authorization', 'Bearer test-token')
+        .send({ text: 'hello' });
+
+      expect(res.status).toBe(201);
+      expect(mockMessagesRepository.create).toHaveBeenCalledWith(expect.objectContaining({ channelType: 'club', channelId: TEST_CLUB_1, clubChannelId: 'chan-1' }));
+      expect(res.body).toHaveProperty('id', 'm-1');
+    });
+  });
+
   describe('Clubs clubId validation', () => {
     it('GET /api/clubs/:id returns 400 for invalid clubId format', async () => {
       const res = await request(app)

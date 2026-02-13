@@ -35,10 +35,12 @@ interface EventRow {
  * Compute actual event status based on time and participant count.
  *
  * Logic:
- * - If endDateTime has passed, status is COMPLETED
+ * - If effective end time has passed, status is COMPLETED
  * - If participant limit is reached, status is FULL
  * - Otherwise, use status from DB
  */
+const DEFAULT_EVENT_DURATION_MS = 4 * 60 * 60 * 1000; // 4 hours
+
 function computeEventStatus(row: EventRow): EventStatus {
   const dbStatus = row.status as EventStatus;
 
@@ -47,12 +49,12 @@ function computeEventStatus(row: EventRow): EventStatus {
     return dbStatus;
   }
 
-  // Check if event has ended (time-based transition to completed)
-  if (row.end_date_time) {
-    const now = new Date();
-    if (row.end_date_time < now) {
-      return EventStatus.COMPLETED;
-    }
+  // Check if event has ended (time-based transition to completed).
+  // Some events may not have end_date_time; treat them as ended after a default duration.
+  const effectiveEnd = row.end_date_time ?? new Date(row.start_date_time.getTime() + DEFAULT_EVENT_DURATION_MS);
+  const now = new Date();
+  if (effectiveEnd < now) {
+    return EventStatus.COMPLETED;
   }
 
   // Check if event is full (participant limit reached)
@@ -159,7 +161,7 @@ export class EventsRepository extends BaseRepository {
     } else {
       // Default: show open/full events that haven't ended yet
       conditions.push(`status IN ('open', 'full')`);
-      conditions.push(`(end_date_time IS NULL OR end_date_time > NOW())`);
+      conditions.push(`COALESCE(end_date_time, start_date_time + INTERVAL '4 hours') > NOW()`);
     }
     
     // Date filter

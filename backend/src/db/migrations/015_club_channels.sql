@@ -40,3 +40,6 @@ BEGIN
       FOREIGN KEY (club_channel_id) REFERENCES club_channels(id);
   END IF;
 END $$;
+
+-- Record this migration
+INSERT INTO migrations (name) VALUES ('015_club_channels') ON CONFLICT (name) DO NOTHING;
