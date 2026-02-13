@@ -59,10 +59,20 @@ echo "=== 3. Upload to Firebase App Distribution ==="
 APK_SIZE_MB=$(du -m "$APK_PATH" | cut -f1)
 echo "APK size: ~${APK_SIZE_MB} MB. Upload can take 5-15 min for large debug APK; progress may not show."
 [ -n "$FIREBASE_DEBUG" ] && echo "FIREBASE_DEBUG is set - verbose Firebase CLI output enabled."
-firebase appdistribution:distribute "$APK_PATH" \
-  --app "$APP_ID" \
-  --release-notes "$RELEASE_NOTES" \
+FIREBASE_ARGS=(
+  appdistribution:distribute "$APK_PATH"
+  --app "$APP_ID"
+  --release-notes "$RELEASE_NOTES"
   --testers "$TESTERS"
+)
+
+# Support headless auth (e.g., CI): set FIREBASE_TOKEN from `firebase login:ci`.
+# Do NOT print the token.
+if [ -n "$FIREBASE_TOKEN" ]; then
+  FIREBASE_ARGS+=(--token "$FIREBASE_TOKEN")
+fi
+
+firebase "${FIREBASE_ARGS[@]}"
 
 echo ""
 echo "Done. Testers will receive an email: $TESTERS"

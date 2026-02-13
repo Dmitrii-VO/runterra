@@ -202,10 +202,21 @@ if ($SkipFirebase) {
         exit 0
     }
 
-    firebase appdistribution:distribute $ApkPath `
-        --app $appId `
-        --release-notes $ReleaseNotes `
-        --testers $testers
+    $firebaseArgs = @(
+        "appdistribution:distribute",
+        $ApkPath,
+        "--app", $appId,
+        "--release-notes", $ReleaseNotes,
+        "--testers", $testers
+    )
+
+    # Support headless auth (e.g., CI / locked-down machines): set FIREBASE_TOKEN from `firebase login:ci`.
+    # Do NOT print the token.
+    if (-not [string]::IsNullOrWhiteSpace($env:FIREBASE_TOKEN)) {
+        $firebaseArgs += @("--token", $env:FIREBASE_TOKEN)
+    }
+
+    firebase @firebaseArgs
 
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
