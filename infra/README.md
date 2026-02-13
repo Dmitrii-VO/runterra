@@ -96,6 +96,10 @@ GitHub Actions CI (`ci.yml`) запускается на каждый push/PR в
 - CI run (GitHub Actions): `21961188876` (success).
 - Примечание: CI валит `flutter analyze` на warnings. После изменения ARB нужно прогонять `flutter gen-l10n`, а также не оставлять предупреждения уровня warning.
 
+### Verification (2026-02-13)
+
+- Messages: removed legacy mixing, added DB backfill + constraint + index. Details: `docs/changes/2026-02-13-messages-channels-optimization.md`.
+
 ## TODO
 
 > Выполненные задачи и закрытые баги теперь фиксируются в `docs/progress.md` и `docs/changes/*`. Ниже остаются только актуальные открытые пункты.
