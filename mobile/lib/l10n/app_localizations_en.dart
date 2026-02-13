@@ -819,6 +819,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clubMetricPlaceholder => '—';
 
   @override
+  String get clubActivationHint =>
+      'Add 1 more member to activate the club and participate in territory capture.';
+
+  @override
   String get territoryDetailsTitle => 'Territory';
 
   @override

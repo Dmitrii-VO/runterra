@@ -50,18 +50,22 @@ type StaticTerritoryConfig = Omit<TerritoryViewDto, 'createdAt' | 'updatedAt'>;
 /** Square size in meters for MVP zone visualization */
 const TERRITORY_SQUARE_SIZE_M = 1000;
 
+/**
+ * All territories use clubId: undefined (free) until capture logic is implemented.
+ * Legacy club-1/club-2 removed to avoid UUID validation conflicts.
+ */
 const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
   {
     id: 'spb-primorsky-park-pobedy',
     name: 'Приморский парк Победы (Крестовский остров)',
-    status: TerritoryStatus.CAPTURED,
+    status: TerritoryStatus.FREE,
     coordinates: {
       // Approximate center of Primorsky Victory Park running area
       latitude: 59.9708,
       longitude: 30.2453,
     },
     cityId: 'spb',
-    clubId: 'club-1',
+    clubId: undefined,
     capturedByUserId: undefined,
   },
   {
@@ -80,14 +84,14 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
   {
     id: 'spb-park-300',
     name: 'Парк 300-летия Санкт-Петербурга',
-    status: TerritoryStatus.CONTESTED,
+    status: TerritoryStatus.FREE,
     coordinates: {
       // Approximate center of 300th Anniversary Park
       latitude: 60.0084,
       longitude: 30.2133,
     },
     cityId: 'spb',
-    clubId: 'club-2',
+    clubId: undefined,
     capturedByUserId: undefined,
   },
 ];

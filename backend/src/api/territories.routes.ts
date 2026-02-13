@@ -11,10 +11,19 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { TerritoryStatus, TerritoryViewDto, CreateTerritoryDto, CreateTerritorySchema } from '../modules/territories';
+import {
+  TerritoryStatus,
+  TerritoryViewDto,
+  CreateTerritoryDto,
+  CreateTerritorySchema,
+  CaptureTerritoryDto,
+  CaptureTerritorySchema,
+} from '../modules/territories';
 import { getTerritoriesForCity, getTerritoryById } from '../modules/territories/territories.config';
 import { validateBody } from './validateBody';
 import { isPointWithinCityBounds } from '../modules/cities/city.utils';
+import { getUsersRepository, getClubMembersRepository } from '../db/repositories';
+import { logger } from '../shared/logger';
 
 const router = Router();
 
@@ -70,6 +79,88 @@ router.get('/:id', (req: Request, res: Response) => {
   }
 
   res.status(200).json(territory);
+});
+
+/**
+ * POST /api/territories/:id/capture
+ * 
+ * Capture or contribute to a territory.
+ * ADR-0007: Only ACTIVE club members can capture a territory.
+ */
+router.post('/:id/capture', validateBody(CaptureTerritorySchema), async (req: Request<{ id: string }, any, CaptureTerritoryDto>, res: Response) => {
+  const { id: territoryId } = req.params;
+  const { clubId } = req.body;
+  const firebaseUid = req.authUser?.uid;
+
+  if (!firebaseUid) {
+    return res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+    });
+  }
+
+  try {
+    const territory = getTerritoryById(territoryId);
+    if (!territory) {
+      return res.status(404).json({
+        code: 'not_found',
+        message: 'Territory not found',
+        details: { territoryId },
+      });
+    }
+
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(firebaseUid);
+    if (!user) {
+      return res.status(401).json({
+        code: 'unauthorized',
+        message: 'User profile not found',
+      });
+    }
+
+    const clubMembersRepo = getClubMembersRepository();
+    const membership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
+
+    if (!membership) {
+      return res.status(403).json({
+        code: 'forbidden',
+        message: 'You must be a member of the club to capture territories for it',
+        details: { clubId, status: 'none' },
+      });
+    }
+
+    if (membership.status !== 'active') {
+      return res.status(403).json({
+        code: 'forbidden',
+        message: 'Only active club members can capture territories',
+        details: { 
+          clubId, 
+          status: membership.status,
+          requiredStatus: 'active'
+        },
+      });
+    }
+
+    // Success (Mock)
+    logger.info('Territory capture contribution successful', {
+      territoryId,
+      clubId,
+      userId: user.id
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Contribution accepted',
+      territoryId,
+      clubId,
+    });
+  } catch (error) {
+    logger.error('Error in territory capture', { territoryId, clubId, error });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+    });
+  }
 });
 
 /**

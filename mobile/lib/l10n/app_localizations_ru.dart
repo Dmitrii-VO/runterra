@@ -822,6 +822,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get clubMetricPlaceholder => '—';
 
   @override
+  String get clubActivationHint =>
+      'Наберите ещё 1 участника, чтобы активировать клуб и участвовать в захвате территорий.';
+
+  @override
   String get territoryDetailsTitle => 'Территория';
 
   @override

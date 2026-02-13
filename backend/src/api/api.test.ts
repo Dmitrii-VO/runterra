@@ -930,7 +930,7 @@ describe('API Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.territories).toBeDefined();
       expect(res.body.events).toBeDefined();
-      // onlyActive=true filters to CAPTURED and CONTESTED only
+      // onlyActive=true filters to CAPTURED and CONTESTED only; with all FREE territories, result is empty
       const statuses = res.body.territories.map((t: { status: string }) => t.status);
       expect(statuses.every((s: string) => s === 'captured' || s === 'contested')).toBe(true);
     });
@@ -942,7 +942,8 @@ describe('API Routes', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.territories).toBeDefined();
-      expect(res.body.territories.every((t: { clubId: string }) => t.clubId === TEST_CLUB_1)).toBe(true);
+      // With all territories free (clubId undefined), filter by clubId returns empty array
+      expect(res.body.territories.every((t: { clubId?: string }) => t.clubId === TEST_CLUB_1)).toBe(true);
     });
   });
 

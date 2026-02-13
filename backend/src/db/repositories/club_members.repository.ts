@@ -223,6 +223,62 @@ export class ClubMembersRepository extends BaseRepository {
     return row ? rowToMembership(row) : null;
   }
 
+  /**
+   * Update role with leader transfer: when promoting to leader, demote current leader to trainer.
+   * Ensures only one leader per club. Uses transaction for atomicity.
+   */
+  async updateRoleWithLeaderTransfer(
+    clubId: string,
+    newLeaderUserId: string,
+    role: 'member' | 'trainer' | 'leader',
+  ): Promise<ClubMembershipRow | null> {
+    if (role !== 'leader') {
+      return this.updateRole(clubId, newLeaderUserId, role);
+    }
+
+    const pool = this.getPool();
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Find current leader (if different from new leader)
+      const currentLeaderRes = await client.query<ClubMemberRow>(
+        `SELECT * FROM club_members
+         WHERE club_id = $1 AND role = 'leader' AND status = 'active' AND user_id != $2`,
+        [clubId, newLeaderUserId],
+      );
+      const currentLeader = currentLeaderRes.rows[0];
+
+      if (currentLeader) {
+        await client.query(
+          `UPDATE club_members SET role = 'trainer', updated_at = NOW()
+           WHERE club_id = $1 AND user_id = $2`,
+          [clubId, currentLeader.user_id],
+        );
+      }
+
+      const newLeaderRes = await client.query<ClubMemberRow>(
+        `UPDATE club_members SET role = 'leader', updated_at = NOW()
+         WHERE club_id = $1 AND user_id = $2 AND status = 'active'
+         RETURNING *`,
+        [clubId, newLeaderUserId],
+      );
+      const row = newLeaderRes.rows[0];
+
+      await client.query('COMMIT');
+      return row ? rowToMembership(row) : null;
+    } catch (error) {
+      try {
+        await client.query('ROLLBACK');
+      } catch {
+        // ignore rollback errors
+      }
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   /** Deactivate all members of a club (used when disbanding) */
   async deactivateAllMembers(clubId: string): Promise<void> {
     await this.query(

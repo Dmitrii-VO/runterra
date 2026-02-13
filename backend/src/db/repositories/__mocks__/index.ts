@@ -112,6 +112,11 @@ export const mockClubMembersRepository = {
   countActiveMembers: jest.fn().mockResolvedValue(5),
   findActiveByUser: jest.fn().mockResolvedValue([]),
   findActiveClubsByUser: jest.fn().mockResolvedValue([]),
+  updateRole: jest.fn().mockResolvedValue({ id: 'cm-1', clubId: '1', userId: 'test-user-id', status: 'active', role: 'leader', createdAt: new Date(), updatedAt: new Date() }),
+  updateRoleWithLeaderTransfer: jest.fn().mockResolvedValue({ id: 'cm-1', clubId: '1', userId: 'test-user-id', status: 'active', role: 'leader', createdAt: new Date(), updatedAt: new Date() }),
+  approveMembership: jest.fn().mockResolvedValue({ id: 'cm-1', clubId: '1', userId: 'test-user-id', status: 'active', role: 'member', createdAt: new Date(), updatedAt: new Date() }),
+  findMembersByClub: jest.fn().mockResolvedValue([]),
+  findPendingByClub: jest.fn().mockResolvedValue([]),
 };
 
 export const mockClubsRepository = {

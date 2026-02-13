@@ -635,98 +635,7 @@ class _MapScreenState extends State<MapScreen> {
       context: context,
       isScrollControlled: true,
       builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.5,
-          minChildSize: 0.25,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (context, scrollController) {
-            return FutureBuilder<List<ClubModel>>(
-              future: ServiceLocator.clubsService.getClubs(cityId: cityId),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const CircularProgressIndicator(),
-                          const SizedBox(height: 16),
-                          Text(AppLocalizations.of(context)!.mapClubsSheetTitle),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-                if (snapshot.hasError) {
-                  return Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          AppLocalizations.of(context)!.mapClubsSheetTitle,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(snapshot.error.toString()),
-                        const SizedBox(height: 16),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: Text(AppLocalizations.of(context)!.cancel),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                final clubs = snapshot.data ?? [];
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Text(
-                        AppLocalizations.of(context)!.mapClubsSheetTitle,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                    ),
-                    Flexible(
-                      child: clubs.isEmpty
-                          ? Padding(
-                              padding: const EdgeInsets.all(24.0),
-                              child: Center(
-                                child: Text(
-                                  AppLocalizations.of(context)!.mapClubsEmpty,
-                                  style: Theme.of(context).textTheme.bodyLarge,
-                                ),
-                              ),
-                            )
-                          : ListView.builder(
-                              controller: scrollController,
-                              itemCount: clubs.length,
-                              itemBuilder: (context, index) {
-                                final club = clubs[index];
-                                return ListTile(
-                                  title: Text(club.name),
-                                  subtitle: club.description != null && club.description!.isNotEmpty
-                                      ? Text(club.description!)
-                                      : null,
-                                  onTap: () {
-                                    Navigator.pop(context);
-                                    context.push('/club/${club.id}');
-                                  },
-                                );
-                              },
-                            ),
-                    ),
-                  ],
-                );
-              },
-            );
-          },
-        );
+        return _ClubsBottomSheet(cityId: cityId);
       },
     );
   }
@@ -906,6 +815,122 @@ class _MapScreenState extends State<MapScreen> {
 
         ],
       ),
+    );
+  }
+}
+
+class _ClubsBottomSheet extends StatefulWidget {
+  final String cityId;
+
+  const _ClubsBottomSheet({required this.cityId});
+
+  @override
+  State<_ClubsBottomSheet> createState() => _ClubsBottomSheetState();
+}
+
+class _ClubsBottomSheetState extends State<_ClubsBottomSheet> {
+  late Future<List<ClubModel>> _clubsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _clubsFuture = ServiceLocator.clubsService.getClubs(cityId: widget.cityId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return DraggableScrollableSheet(
+      initialChildSize: 0.5,
+      minChildSize: 0.25,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) {
+        return FutureBuilder<List<ClubModel>>(
+          future: _clubsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text(l10n.mapClubsSheetTitle),
+                    ],
+                  ),
+                ),
+              );
+            }
+            if (snapshot.hasError) {
+              return Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      l10n.mapClubsSheetTitle,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(snapshot.error.toString()),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(l10n.cancel),
+                    ),
+                  ],
+                ),
+              );
+            }
+            final clubs = snapshot.data ?? [];
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    l10n.mapClubsSheetTitle,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                Flexible(
+                  child: clubs.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Center(
+                            child: Text(
+                              l10n.mapClubsEmpty,
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          controller: scrollController,
+                          itemCount: clubs.length,
+                          itemBuilder: (context, index) {
+                            final club = clubs[index];
+                            return ListTile(
+                              title: Text(club.name),
+                              subtitle: club.description != null && club.description!.isNotEmpty
+                                  ? Text(club.description!)
+                                  : null,
+                              onTap: () {
+                                Navigator.pop(context);
+                                context.push('/club/');
+                              },
+                            );
+                          },
+                        ),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

@@ -8,3 +8,4 @@
 ## Список ADR
 - [0001-sentry-error-logging.md](0001-sentry-error-logging.md) — Использование Sentry для логирования ошибок пользователей
 - [0006-territory-polygon-visualization.md](0006-territory-polygon-visualization.md) — Полигоны вместо кругов для визуализации территорий
+- [0007-territory-capture-active-club-only.md](0007-territory-capture-active-club-only.md) — Захват территорий только активными клубами

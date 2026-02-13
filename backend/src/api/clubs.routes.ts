@@ -22,6 +22,7 @@ import {
   UpdateClubSchema,
 } from '../modules/clubs';
 import { findCityById } from '../modules/cities/cities.config';
+import { getTerritoriesForCity } from '../modules/territories/territories.config';
 import { validateBody } from './validateBody';
 import { getUsersRepository, getClubMembersRepository, getClubsRepository, getClubChannelsRepository } from '../db/repositories';
 import { logger } from '../shared/logger';
@@ -195,6 +196,13 @@ router.get('/:id', async (req: Request, res: Response) => {
     const clubMembersRepo = getClubMembersRepository();
     const membersCount = await clubMembersRepo.countActiveMembers(id);
 
+    // Territories count (static config: territories with clubId matching this club)
+    const territoriesForClub = getTerritoriesForCity(club.cityId, id);
+    const territoriesCount = territoriesForClub.length;
+
+    // City rank: membersCount * 1 + territoriesCount * 10 (MVP formula from audit)
+    const cityRank = membersCount * 1 + territoriesCount * 10;
+
     // Resolve creator name
     const usersRepo = getUsersRepository();
     const creator = await usersRepo.findById(club.creatorId);
@@ -224,8 +232,8 @@ router.get('/:id', async (req: Request, res: Response) => {
       userRole: null,
       cityName: city?.name,
       membersCount,
-      territoriesCount: 0, // TODO: calculate from territories
-      cityRank: 0, // TODO: calculate rank
+      territoriesCount,
+      cityRank,
       creatorId: club.creatorId,
       creatorName,
     };
@@ -311,14 +319,14 @@ router.post('/', validateBody(CreateClubSchema), async (req: Request<{}, ClubVie
       });
     }
 
-    // Create club
+    // Create club — always PENDING until 2+ active members (auto-activation on approve)
     const clubsRepo = getClubsRepository();
     const club = await clubsRepo.create(
       dto.name,
       dto.cityId,
       user.id,
       dto.description,
-      dto.status ?? ClubStatus.ACTIVE
+      ClubStatus.PENDING,
     );
 
     // Auto-add creator as active leader
@@ -652,8 +660,8 @@ router.patch('/:id/members/:userId/role', validateBody(UpdateMemberRoleSchema), 
       });
     }
 
-    // Update role
-    const updated = await clubMembersRepo.updateRole(clubId, targetUserId, role);
+    // Update role (with leader transfer: demote old leader when promoting new one)
+    const updated = await clubMembersRepo.updateRoleWithLeaderTransfer(clubId, targetUserId, role);
     if (!updated) {
       return res.status(500).json({
         code: 'internal_error',
@@ -1091,6 +1099,13 @@ router.post('/:id/membership-requests/:userId/approve', async (req: Request, res
         message: 'No pending request found for this user',
         details: { clubId, userId: targetUserId },
       });
+    }
+
+    // Auto-activate club when 2+ active members
+    const membersCount = await clubMembersRepo.countActiveMembers(clubId);
+    if (membersCount >= 2) {
+      const clubsRepo = getClubsRepository();
+      await clubsRepo.update(clubId, { status: ClubStatus.ACTIVE });
     }
 
     res.status(200).json({

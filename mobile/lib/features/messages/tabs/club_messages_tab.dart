@@ -52,12 +52,23 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
   int _historyOffset = 0;
   Timer? _pollTimer;
   StreamSubscription? _wsSubscription;
+  StreamSubscription? _wsStatusSubscription;
   List<MessageModel> _messages = <MessageModel>[];
 
   @override
   void initState() {
     super.initState();
     _loadClubList();
+    
+    // Listen for WebSocket status changes to manage polling fallback
+    _wsStatusSubscription = ChatWebSocketService.instance.statusStream.listen((status) {
+      if (!mounted || _clubId == null) return;
+      if (status == WsStatus.connected) {
+        _stopPolling();
+      } else if (status == WsStatus.error || status == WsStatus.disconnected) {
+        _startPolling();
+      }
+    });
   }
 
   @override
@@ -83,6 +94,7 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
   void dispose() {
     _stopPolling();
     _disconnectWebSocket();
+    _wsStatusSubscription?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
     _focusNode.dispose();
@@ -202,8 +214,7 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
         _hasMoreHistory = loadedMessages.length == _pageSize;
         _isLoading = false;
       });
-      final wsConnected = await _connectWebSocket(clubId, channelId);
-      if (!wsConnected) _startPolling();
+      await _connectWebSocket(clubId, channelId);
       _scrollToBottomDeferred(animated: false);
     } catch (error) {
       if (!mounted || _clubId != clubId) return;

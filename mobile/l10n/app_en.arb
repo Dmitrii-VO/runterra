@@ -436,6 +436,7 @@
   "clubTerritoriesLabel": "Territories",
   "clubCityRankLabel": "City rank",
   "clubMetricPlaceholder": "—",
+  "clubActivationHint": "Add 1 more member to activate the club and participate in territory capture.",
   "@clubJoinError": {
     "placeholders": {
       "message": {

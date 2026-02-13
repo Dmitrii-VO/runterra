@@ -491,7 +491,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                     const SizedBox(height: 12),
-                    // Р“РѕСЂРѕРґ
+                    // City
                     Row(
                       children: [
                         Icon(Icons.location_city, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -504,8 +504,31 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                         ),
                       ],
                     ),
+                    // Activation hint when club is pending and user is a member
+                    if (club.status == 'pending' && club.isMember == true) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.info_outline, size: 20, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                l10n.clubActivationHint,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 16),
-                    // РњРµС‚СЂРёРєРё MVP (СѓС‡Р°СЃС‚РЅРёРєРё, С‚РµСЂСЂРёС‚РѕСЂРёРё, СЂРµР№С‚РёРЅРі)
+                    // MVP metrics (СѓС‡Р°СЃС‚РЅРёРєРё, С‚РµСЂСЂРёС‚РѕСЂРёРё, СЂРµР№С‚РёРЅРі)
                     Row(
                       children: [
                         Expanded(

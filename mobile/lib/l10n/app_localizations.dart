@@ -1580,6 +1580,12 @@ abstract class AppLocalizations {
   /// **'—'**
   String get clubMetricPlaceholder;
 
+  /// No description provided for @clubActivationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add 1 more member to activate the club and participate in territory capture.'**
+  String get clubActivationHint;
+
   /// No description provided for @territoryDetailsTitle.
   ///
   /// In en, this message translates to:

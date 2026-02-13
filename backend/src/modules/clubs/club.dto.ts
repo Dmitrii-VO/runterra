@@ -14,33 +14,31 @@ import { ClubRole } from './club-role';
 
 /**
  * DTO для создания клуба
- * 
+ *
  * Используется при создании нового клуба в системе.
+ * Status is always PENDING on creation; auto-activated when 2+ active members.
  */
 export interface CreateClubDto {
   /** Название клуба */
   name: string;
-  
+
   /** Описание клуба (опционально) */
   description?: string;
-  
+
   /** Идентификатор города, в котором базируется клуб */
   cityId: string;
-  
-  /** Статус клуба (по умолчанию PENDING) */
-  status?: ClubStatus;
 }
 
 /**
  * Runtime schema for validating CreateClubDto payloads.
  *
  * NOTE: Only technical shape/type validation, no business rules.
+ * Status is ignored — clubs always start as PENDING.
  */
 export const CreateClubSchema = z.object({
   name: z.string().min(3).max(50),
   description: z.string().optional(),
   cityId: z.string(),
-  status: z.nativeEnum(ClubStatus).optional(),
 });
 
 /**

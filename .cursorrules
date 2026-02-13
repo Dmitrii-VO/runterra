@@ -32,6 +32,7 @@
 - Документация: на русском языке
 
 ПРАВИЛА РАБОТЫ:
+- ОБЯЗАТЕЛЬНО использовать и учитывать Gemini CLI Skills из `.gemini/skills/` (websocket-engineer, software-architecture, firebase, postgresql-expert, api-security) при анализе и изменении кода.
 - Перед началом задачи смотри релевантные docs/ (product_spec.md, progress.md, changes/, adr/), чтобы не дублировать решения.
 - Реализуй согласно спецификации и существующим паттернам проекта (backend/mobile/admin/infra).
 - Документацию обновляй по правилам из раздела «ПРАВИЛА ДОКУМЕНТАЦИИ» ниже.

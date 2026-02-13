@@ -47,6 +47,22 @@ export const CreateTerritorySchema = z.object({
 });
 
 /**
+ * DTO for capturing a territory.
+ * User must be an ACTIVE member of the club specified by clubId.
+ */
+export interface CaptureTerritoryDto {
+  /** The club ID claiming the territory */
+  clubId: string;
+}
+
+/**
+ * Runtime schema for validating CaptureTerritoryDto payloads.
+ */
+export const CaptureTerritorySchema = z.object({
+  clubId: z.string().uuid(),
+});
+
+/**
  * DTO для отображения территории
  * 
  * Используется для передачи данных территории клиенту.

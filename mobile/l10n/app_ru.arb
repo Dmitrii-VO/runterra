@@ -282,6 +282,7 @@
   "clubTerritoriesLabel": "Территории",
   "clubCityRankLabel": "Рейтинг в городе",
   "clubMetricPlaceholder": "—",
+  "clubActivationHint": "Наберите ещё 1 участника, чтобы активировать клуб и участвовать в захвате территорий.",
   "@clubJoinError": {
     "placeholders": {
       "message": {
