@@ -37,6 +37,8 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   late Future<ProfileModel> _profileFuture;
   bool _locationPermissionGranted = false;
+  bool? _profileVisibleOverride;
+  bool _savingProfileVisible = false;
 
   @override
   void initState() {
@@ -48,6 +50,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   /// Создает Future для получения данных профиля
   Future<ProfileModel> _fetchProfile() async {
     final profile = await ServiceLocator.usersService.getProfile();
+
+    // If we optimistically updated profile visibility and backend confirms it, drop override.
+    if (_profileVisibleOverride != null &&
+        profile.user.profileVisible == _profileVisibleOverride) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _profileVisibleOverride = null;
+        });
+      });
+    }
 
     // Keep local currentClubId in sync with backend profile contract:
     // if backend does not return club object, user is considered not in a club.
@@ -197,7 +210,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ProfileNotificationsSection(notifications: profile.notifications),
         ProfileSettingsSection(
           locationPermissionGranted: _locationPermissionGranted,
-          profileVisible: true, // TODO: Загружать из профиля
+          profileVisible: _profileVisibleOverride ?? profile.user.profileVisible,
+          onProfileVisibilityChanged: _savingProfileVisible
+              ? null
+              : (value) async {
+            final prev = _profileVisibleOverride ?? profile.user.profileVisible;
+            try {
+              setState(() {
+                _profileVisibleOverride = value;
+                _savingProfileVisible = true;
+              });
+              await ServiceLocator.usersService.updateProfile(profileVisible: value);
+              if (context.mounted) _retry();
+            } catch (e) {
+              if (context.mounted) {
+                setState(() {
+                  _profileVisibleOverride = prev;
+                });
+              }
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      e is ApiException ? e.message : l10n.errorGeneric(e.toString()),
+                    ),
+                  ),
+                );
+              }
+            } finally {
+              if (context.mounted) {
+                setState(() {
+                  _savingProfileVisible = false;
+                });
+              }
+            }
+          },
           onLogout: () async {
             final confirm = await showDialog<bool>(
               context: context,
@@ -226,8 +273,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (context.mounted) context.go('/login');
             }
           },
-          onDeleteAccount: () {
-            // TODO: Реализовать удаление аккаунта
+          onDeleteAccount: () async {
+            final l10n = AppLocalizations.of(context)!;
+            final confirm = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: Text(l10n.deleteAccountTitle),
+                content: Text(l10n.deleteAccountConfirm),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(false),
+                    child: Text(l10n.cancel),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(true),
+                    style: TextButton.styleFrom(foregroundColor: Colors.red),
+                    child: Text(l10n.deleteAccountConfirmButton),
+                  ),
+                ],
+              ),
+            );
+            if (confirm != true || !context.mounted) return;
+            try {
+              await ServiceLocator.usersService.deleteAccount();
+              if (!context.mounted) return;
+              await AuthService.instance.signOut();
+              ServiceLocator.updateAuthToken(null);
+              authRefreshNotifier.refresh();
+              if (context.mounted) context.go('/login');
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      e is ApiException ? e.message : l10n.errorGeneric(e.toString()),
+                    ),
+                  ),
+                );
+              }
+            }
           },
         ),
       ],

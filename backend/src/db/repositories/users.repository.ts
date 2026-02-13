@@ -18,6 +18,7 @@ interface UserRow {
   avatar_url: string | null;
   city_id: string | null;
   is_mercenary: boolean;
+  profile_visible: boolean | null;
   status: string;
   created_at: Date;
   updated_at: Date;
@@ -37,6 +38,7 @@ function rowToUser(row: UserRow): User {
     avatarUrl: row.avatar_url || undefined,
     cityId: row.city_id || undefined,
     isMercenary: row.is_mercenary,
+    profileVisible: row.profile_visible ?? true,
     status: row.status as UserStatus,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -71,7 +73,7 @@ export class UsersRepository extends BaseRepository {
 
   async findAll(limit = 50, offset = 0): Promise<User[]> {
     const rows = await this.queryMany<UserRow>(
-      'SELECT * FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2',
+      'SELECT * FROM users WHERE profile_visible = true ORDER BY created_at DESC LIMIT $1 OFFSET $2',
       [limit, offset]
     );
     return rows.map(rowToUser);
@@ -134,6 +136,7 @@ export class UsersRepository extends BaseRepository {
     avatarUrl: string;
     cityId: string;
     isMercenary: boolean;
+    profileVisible: boolean;
     status: UserStatus;
   }>): Promise<User | null> {
     const fields: string[] = [];
@@ -175,6 +178,10 @@ export class UsersRepository extends BaseRepository {
     if (data.isMercenary !== undefined) {
       fields.push(`is_mercenary = $${paramIndex++}`);
       values.push(data.isMercenary);
+    }
+    if (data.profileVisible !== undefined) {
+      fields.push(`profile_visible = $${paramIndex++}`);
+      values.push(data.profileVisible);
     }
     if (data.status !== undefined) {
       fields.push(`status = $${paramIndex++}`);

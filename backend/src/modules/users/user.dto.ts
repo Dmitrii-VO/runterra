@@ -150,6 +150,9 @@ export interface UpdateProfileDto {
   gender?: 'male' | 'female';
   /** URL фото профиля */
   avatarUrl?: string;
+
+  /** Видимость профиля (false — скрыт от публичного поиска) */
+  profileVisible?: boolean;
 }
 
 /**
@@ -165,4 +168,5 @@ export const UpdateProfileSchema = z.object({
   country: z.string().max(100).optional(),
   gender: z.enum(['male', 'female']).optional(),
   avatarUrl: z.union([z.string().url(), z.literal('')]).optional(),
+  profileVisible: z.boolean().optional(),
 });

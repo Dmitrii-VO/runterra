@@ -79,6 +79,8 @@ export interface ProfileDto {
     primaryClubId?: string;
     isMercenary: boolean;
     status: User['status'];
+    /** Видимость профиля (false — скрыт от публичного поиска) */
+    profileVisible?: boolean;
   };
   
   /**

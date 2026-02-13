@@ -468,6 +468,96 @@ describe('API Routes', () => {
     });
   });
 
+  describe('GET /api/users/me/profile profileVisible', () => {
+    const { mockUsersRepository } = require('../db/repositories');
+
+    beforeEach(() => {
+      // Keep default mock implementations for other suites; just clear call history.
+      mockUsersRepository.findByFirebaseUid.mockClear();
+    });
+
+    it('returns profileVisible=false when user.profileVisible=false', async () => {
+      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({
+        id: 'user-1',
+        firebaseUid: 'uid-1',
+        email: 'u@example.com',
+        name: 'U',
+        firstName: 'U',
+        lastName: undefined,
+        birthDate: undefined,
+        country: undefined,
+        gender: undefined,
+        avatarUrl: undefined,
+        cityId: undefined,
+        isMercenary: false,
+        status: 'active',
+        profileVisible: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const res = await request(app)
+        .get('/api/users/me/profile')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body?.user?.profileVisible).toBe(false);
+    });
+
+    it('defaults profileVisible=true when user.profileVisible is missing', async () => {
+      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({
+        id: 'user-1',
+        firebaseUid: 'uid-1',
+        email: 'u@example.com',
+        name: 'U',
+        firstName: 'U',
+        lastName: undefined,
+        birthDate: undefined,
+        country: undefined,
+        gender: undefined,
+        avatarUrl: undefined,
+        cityId: undefined,
+        isMercenary: false,
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const res = await request(app)
+        .get('/api/users/me/profile')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body?.user?.profileVisible).toBe(true);
+    });
+  });
+
+  describe('PATCH /api/users/me/profile profileVisible', () => {
+    const { mockUsersRepository } = require('../db/repositories');
+
+    beforeEach(() => {
+      // Keep default mock implementations for other suites; just clear call history.
+      mockUsersRepository.findByFirebaseUid.mockClear();
+      mockUsersRepository.update.mockClear();
+    });
+
+    it('passes profileVisible to repository update', async () => {
+      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({
+        id: 'user-1',
+        firebaseUid: 'uid-1',
+        name: 'U',
+      });
+
+      const res = await request(app)
+        .patch('/api/users/me/profile')
+        .set('Authorization', 'Bearer test-token')
+        .send({ profileVisible: false });
+
+      expect(res.status).toBe(200);
+      expect(mockUsersRepository.update).toHaveBeenCalledWith('user-1', { profileVisible: false });
+    });
+  });
+
   describe('POST /api/events/:id/join', () => {
     const { mockEventsRepository } = require('../db/repositories');
 
@@ -754,6 +844,12 @@ describe('API Routes', () => {
   describe('DELETE /api/users/me', () => {
     const { mockUsersRepository } = require('../db/repositories');
 
+    beforeEach(() => {
+      // Keep default mock implementations for other suites; just clear call history.
+      mockUsersRepository.findByFirebaseUid.mockClear();
+      mockUsersRepository.delete.mockClear();
+    });
+
     it('should return 404 when user not found by firebase uid', async () => {
       mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce(null);
 
@@ -764,6 +860,22 @@ describe('API Routes', () => {
       expect(res.status).toBe(404);
       expect(res.body.message).toMatch(/not found/i);
       expect(mockUsersRepository.delete).not.toHaveBeenCalled();
+    });
+
+    it('should delete user and return 200 when user exists', async () => {
+      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({
+        id: 'user-1',
+        firebaseUid: 'uid-1',
+      });
+      mockUsersRepository.delete.mockResolvedValueOnce(true);
+
+      const res = await request(app)
+        .delete('/api/users/me')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body?.success).toBe(true);
+      expect(mockUsersRepository.delete).toHaveBeenCalledWith('user-1');
     });
   });
 

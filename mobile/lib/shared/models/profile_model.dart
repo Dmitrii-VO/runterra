@@ -116,6 +116,9 @@ class ProfileUserData {
   /// Флаг меркателя (true - меркатель, false - участник клуба)
   final bool isMercenary;
 
+  /// Видимость профиля (false — скрыт от публичного поиска)
+  final bool profileVisible;
+
   /// Статус пользователя
   ///
   /// Возможные значения: 'active', 'inactive', 'blocked'
@@ -134,6 +137,7 @@ class ProfileUserData {
     this.cityName,
     this.primaryClubId,
     required this.isMercenary,
+    this.profileVisible = true,
     required this.status,
   });
 
@@ -154,6 +158,7 @@ class ProfileUserData {
       cityName: json['cityName'] as String?,
       primaryClubId: json['primaryClubId'] as String?,
       isMercenary: json['isMercenary'] as bool? ?? false,
+      profileVisible: json['profileVisible'] as bool? ?? true,
       status: json['status'] as String,
     );
   }

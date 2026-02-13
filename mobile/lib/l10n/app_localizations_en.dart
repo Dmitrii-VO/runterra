@@ -33,10 +33,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retry => 'Retry';
 
   @override
-  String get errorTimeoutMessage => 'Connection timeout.\n\nMake sure:\n1. Backend server is running (npm run dev in backend folder)\n2. Server listens on all interfaces (0.0.0.0)\n3. No network or firewall issues';
+  String get errorTimeoutMessage =>
+      'Connection timeout.\n\nMake sure:\n1. Backend server is running (npm run dev in backend folder)\n2. Server listens on all interfaces (0.0.0.0)\n3. No network or firewall issues';
 
   @override
-  String get errorConnectionMessage => 'Could not connect to server.\n\nMake sure backend server is running and available.';
+  String get errorConnectionMessage =>
+      'Could not connect to server.\n\nMake sure backend server is running and available.';
 
   @override
   String errorGeneric(String message) {
@@ -44,7 +46,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get profileCityRequired => 'Set your city in profile to participate in chat';
+  String get profileCityRequired =>
+      'Set your city in profile to participate in chat';
 
   @override
   String get messageHint => 'Message...';
@@ -104,7 +107,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileNotFound => 'Profile data not found';
 
   @override
-  String get profileConnectionError => 'Could not connect to server.\n\nMake sure:\n1. Backend server is running (npm run dev in backend folder)\n2. For Android emulator use 10.0.2.2:3000\n3. For physical device use your computer IP address';
+  String get profileConnectionError =>
+      'Could not connect to server.\n\nMake sure:\n1. Backend server is running (npm run dev in backend folder)\n2. For Android emulator use 10.0.2.2:3000\n3. For physical device use your computer IP address';
 
   @override
   String get logoutTitle => 'Sign out';
@@ -218,6 +222,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsDeleteAccount => 'Delete account';
+
+  @override
+  String get deleteAccountTitle => 'Delete account';
+
+  @override
+  String get deleteAccountConfirm =>
+      'Delete your account permanently? This cannot be undone. All your data will be removed.';
+
+  @override
+  String get deleteAccountConfirmButton => 'Delete';
 
   @override
   String get statsTrainings => 'Workouts';
@@ -470,13 +484,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventSwipeToRunAlreadyCheckedIn => 'You have already checked in';
 
   @override
-  String get eventSwipeToRunTooEarly => 'Check-in opens 30 minutes before the event';
+  String get eventSwipeToRunTooEarly =>
+      'Check-in opens 30 minutes before the event';
 
   @override
   String get eventSwipeToRunTooLate => 'Check-in window has closed';
 
   @override
-  String get eventSwipeToRunTooFar => 'Move closer to the start point (within 500 m)';
+  String get eventSwipeToRunTooFar =>
+      'Move closer to the start point (within 500 m)';
 
   @override
   String get eventSwipeToRunLocationError => 'Could not get your location';
@@ -529,7 +545,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mapMyLocationTooltip => 'My location';
 
   @override
-  String get mapLocationDeniedSnackbar => 'Location access not granted. Using default position.';
+  String get mapLocationDeniedSnackbar =>
+      'Location access not granted. Using default position.';
 
   @override
   String mapLoadErrorSnackbar(String error) {
@@ -642,13 +659,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get runStartError => 'Error starting run';
 
   @override
-  String get runStartPermissionDenied => 'Location permission not granted.\n\nFor Windows: Settings → Privacy → Location → App permissions and enable Runterra.\n\nFor Android: allow location access when prompted.';
+  String get runStartPermissionDenied =>
+      'Location permission not granted.\n\nFor Windows: Settings → Privacy → Location → App permissions and enable Runterra.\n\nFor Android: allow location access when prompted.';
 
   @override
-  String get runStartPermanentlyDenied => 'Location access blocked.\n\nPlease enable permission in device settings:\nWindows: Settings → Privacy → Location\nAndroid: Settings → Apps → Runterra → Permissions';
+  String get runStartPermanentlyDenied =>
+      'Location access blocked.\n\nPlease enable permission in device settings:\nWindows: Settings → Privacy → Location\nAndroid: Settings → Apps → Runterra → Permissions';
 
   @override
-  String get runStartServiceDisabled => 'Location service is disabled.\n\nPlease enable location in device settings.';
+  String get runStartServiceDisabled =>
+      'Location service is disabled.\n\nPlease enable location in device settings.';
 
   @override
   String runStartErrorGeneric(String error) {
@@ -953,7 +973,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get runStuckSessionTitle => 'Run in progress';
 
   @override
-  String get runStuckSessionMessage => 'You have an unfinished run. Would you like to continue it or start fresh?';
+  String get runStuckSessionMessage =>
+      'You have an unfinished run. Would you like to continue it or start fresh?';
 
   @override
   String get runStuckSessionResume => 'Continue run';

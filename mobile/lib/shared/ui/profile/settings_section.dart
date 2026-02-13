@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../../l10n/app_localizations.dart';
 
 /// Секция настроек
-/// 
+///
 /// Отображает минимальные настройки для MVP:
-/// - Статус разрешения геолокации
+/// - Статус разрешения геолокации (тап — открытие настроек приложения)
 /// - Видимость профиля
 /// - Выйти из аккаунта
 /// - Удалить аккаунт
-/// 
-/// ВАЖНО: На текущей стадии (skeleton) только UI без логики.
 class ProfileSettingsSection extends StatelessWidget {
   final bool locationPermissionGranted;
   final bool profileVisible;
+  final void Function(bool value)? onProfileVisibilityChanged;
   final VoidCallback? onLogout;
   final VoidCallback? onDeleteAccount;
 
@@ -20,6 +20,7 @@ class ProfileSettingsSection extends StatelessWidget {
     super.key,
     this.locationPermissionGranted = false,
     this.profileVisible = true,
+    this.onProfileVisibilityChanged,
     this.onLogout,
     this.onDeleteAccount,
   });
@@ -42,7 +43,7 @@ class ProfileSettingsSection extends StatelessWidget {
               locationPermissionGranted ? Icons.check_circle : Icons.cancel,
               color: locationPermissionGranted ? Colors.green : Colors.red,
             ),
-            // TODO: Реализовать открытие настроек разрешений
+            onTap: () => Geolocator.openAppSettings(),
           ),
           const Divider(height: 1),
           ListTile(
@@ -55,10 +56,7 @@ class ProfileSettingsSection extends StatelessWidget {
             ),
             trailing: Switch(
               value: profileVisible,
-              onChanged: (_) {
-                // TODO: Реализовать изменение видимости профиля
-                // Currently disabled as profile visibility toggle is not implemented
-              },
+              onChanged: onProfileVisibilityChanged,
             ),
           ),
           const Divider(height: 1),
@@ -69,7 +67,6 @@ class ProfileSettingsSection extends StatelessWidget {
               style: const TextStyle(color: Colors.red),
             ),
             onTap: onLogout,
-            // TODO: Реализовать выход из аккаунта
           ),
           const Divider(height: 1),
           ListTile(
@@ -79,7 +76,6 @@ class ProfileSettingsSection extends StatelessWidget {
               style: const TextStyle(color: Colors.red),
             ),
             onTap: onDeleteAccount,
-            // TODO: Реализовать удаление аккаунта
           ),
         ],
       ),

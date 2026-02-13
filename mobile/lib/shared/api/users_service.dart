@@ -64,6 +64,7 @@ class UsersService {
   /// Обновляет профиль текущего пользователя (PATCH /api/users/me/profile).
   /// [currentCityId] — идентификатор города из /api/cities.
   /// [name] — имя пользователя. [avatarUrl] — URL фото (omit to leave unchanged, '' to clear).
+  /// [profileVisible] — видимость профиля (false — скрыт от публичного поиска).
   Future<void> updateProfile({
     String? currentCityId,
     String? name,
@@ -73,6 +74,7 @@ class UsersService {
     String? country,
     String? gender,
     String? avatarUrl,
+    bool? profileVisible,
   }) async {
     final body = <String, dynamic>{};
     if (currentCityId != null) body['currentCityId'] = currentCityId;
@@ -88,6 +90,7 @@ class UsersService {
     if (country != null) body['country'] = country;
     if (gender != null) body['gender'] = gender;
     if (avatarUrl != null) body['avatarUrl'] = avatarUrl;
+    if (profileVisible != null) body['profileVisible'] = profileVisible;
     if (body.isEmpty) return;
 
     final response = await _apiClient.patch(
@@ -100,6 +103,23 @@ class UsersService {
         'HTTP ${response.statusCode}',
         'Не удалось обновить профиль: ${response.statusCode}. ${response.body}',
       );
+    }
+  }
+
+  /// Удаляет аккаунт текущего пользователя (DELETE /api/users/me).
+  /// После успешного удаления необходимо вызвать signOut и перейти на экран входа.
+  Future<void> deleteAccount() async {
+    final response = await _apiClient.delete('/api/users/me');
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      String message = 'Could not delete account: ${response.statusCode}';
+      String code = 'http_${response.statusCode}';
+      try {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        if (json['message'] != null) message = json['message'] as String;
+        if (json['code'] != null) code = json['code'] as String;
+      } catch (_) {}
+      throw ApiException(code, message);
     }
   }
 }

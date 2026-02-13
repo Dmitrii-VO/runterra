@@ -72,7 +72,10 @@ export interface User {
   
   /** Статус пользователя */
   status: UserStatus;
-  
+
+  /** Видимость профиля (false — скрыт от публичного поиска, product_spec §7) */
+  profileVisible?: boolean;
+
   /** Дата создания пользователя */
   createdAt: Date;
   

@@ -123,6 +123,7 @@ router.get('/me/profile', async (req: Request, res: Response) => {
         primaryClubId: primaryClubId ?? undefined,
         isMercenary: user.isMercenary,
         status: user.status,
+        profileVisible: user.profileVisible ?? true,
       },
       club,
       stats: {
@@ -181,6 +182,7 @@ router.patch('/me/profile', validateBody(UpdateProfileSchema), async (req: Reque
       country?: string;
       gender?: 'male' | 'female';
       avatarUrl?: string;
+      profileVisible?: boolean;
     };
     const updates: {
       cityId?: string;
@@ -191,6 +193,7 @@ router.patch('/me/profile', validateBody(UpdateProfileSchema), async (req: Reque
       country?: string;
       gender?: 'male' | 'female';
       avatarUrl?: string;
+      profileVisible?: boolean;
     } = {};
     if (body.currentCityId !== undefined) updates.cityId = body.currentCityId;
     if (body.name !== undefined) updates.name = body.name;
@@ -200,6 +203,7 @@ router.patch('/me/profile', validateBody(UpdateProfileSchema), async (req: Reque
     if (body.country !== undefined) updates.country = body.country;
     if (body.gender !== undefined) updates.gender = body.gender;
     if (body.avatarUrl !== undefined) updates.avatarUrl = body.avatarUrl;
+    if (body.profileVisible !== undefined) updates.profileVisible = body.profileVisible;
 
     if (body.firstName !== undefined || body.lastName !== undefined) {
       const resolvedFirstName = body.firstName ?? user.firstName ?? user.name;
