@@ -33,12 +33,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get retry => 'Повторить';
 
   @override
-  String get errorTimeoutMessage =>
-      'Превышен таймаут подключения.\n\nУбедитесь, что:\n1. Backend сервер запущен (npm run dev в папке backend)\n2. Сервер слушает на всех интерфейсах (0.0.0.0)\n3. Нет проблем с сетью или файрволом';
+  String get errorTimeoutMessage => 'Превышен таймаут подключения.\n\nУбедитесь, что:\n1. Backend сервер запущен (npm run dev в папке backend)\n2. Сервер слушает на всех интерфейсах (0.0.0.0)\n3. Нет проблем с сетью или файрволом';
 
   @override
-  String get errorConnectionMessage =>
-      'Не удалось подключиться к серверу.\n\nУбедитесь, что backend сервер запущен и доступен.';
+  String get errorConnectionMessage => 'Не удалось подключиться к серверу.\n\nУбедитесь, что backend сервер запущен и доступен.';
 
   @override
   String errorGeneric(String message) {
@@ -46,8 +44,7 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
-  String get profileCityRequired =>
-      'Укажите город в профиле, чтобы участвовать в чате';
+  String get profileCityRequired => 'Укажите город в профиле, чтобы участвовать в чате';
 
   @override
   String get messageHint => 'Сообщение...';
@@ -73,14 +70,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get tabCoach => 'Тренер';
 
   @override
-  String get personalChatsEmpty => 'Пока нет личных сообщений';
+  String get personalChatsEmpty => 'Личные чаты — в разработке';
 
   @override
-  String get coachMessagesEmpty => 'Пока нет сообщений от тренера';
+  String get coachMessagesEmpty => 'Сообщения тренера — в разработке';
 
   @override
-  String get noClubChats =>
-      'Нет чатов клубов\n\nВы пока не состоите ни в одном клубе';
+  String get noClubChats => 'Нет чатов клубов\n\nВы пока не состоите ни в одном клубе';
 
   @override
   String get messagesBackToClubs => 'К списку клубов';
@@ -108,8 +104,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get profileNotFound => 'Данные профиля не найдены';
 
   @override
-  String get profileConnectionError =>
-      'Не удалось подключиться к серверу.\n\nУбедитесь, что:\n1. Backend сервер запущен (npm run dev в папке backend)\n2. Для Android эмулятора используется адрес 10.0.2.2:3000\n3. Для физического устройства используйте IP адрес компьютера';
+  String get profileConnectionError => 'Не удалось подключиться к серверу.\n\nУбедитесь, что:\n1. Backend сервер запущен (npm run dev в папке backend)\n2. Для Android эмулятора используется адрес 10.0.2.2:3000\n3. Для физического устройства используйте IP адрес компьютера';
 
   @override
   String get logoutTitle => 'Выход';
@@ -461,8 +456,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get eventSwipeToRunTitle => 'Свайп — начать пробежку';
 
   @override
-  String get eventSwipeToRunHint =>
-      'Свайпните влево, чтобы отметиться и начать пробежку';
+  String get eventSwipeToRunHint => 'Свайпните влево, чтобы отметиться и начать пробежку';
 
   @override
   String get eventSwipeToRunSuccess => 'Отметка принята! Пробежка начата.';
@@ -476,19 +470,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get eventSwipeToRunAlreadyCheckedIn => 'Вы уже отметились';
 
   @override
-  String get eventSwipeToRunTooEarly =>
-      'Check-in открывается за 30 минут до события';
+  String get eventSwipeToRunTooEarly => 'Check-in открывается за 30 минут до события';
 
   @override
   String get eventSwipeToRunTooLate => 'Окно check-in закрыто';
 
   @override
-  String get eventSwipeToRunTooFar =>
-      'Подойдите ближе к точке старта (в пределах 500 м)';
+  String get eventSwipeToRunTooFar => 'Подойдите ближе к точке старта (в пределах 500 м)';
 
   @override
-  String get eventSwipeToRunLocationError =>
-      'Не удалось определить местоположение';
+  String get eventSwipeToRunLocationError => 'Не удалось определить местоположение';
 
   @override
   String get eventSwipeToRunCheckingLocation => 'Проверяем местоположение...';
@@ -538,8 +529,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get mapMyLocationTooltip => 'Моё местоположение';
 
   @override
-  String get mapLocationDeniedSnackbar =>
-      'Доступ к геолокации не предоставлен. Используется позиция по умолчанию.';
+  String get mapLocationDeniedSnackbar => 'Доступ к геолокации не предоставлен. Используется позиция по умолчанию.';
 
   @override
   String mapLoadErrorSnackbar(String error) {
@@ -652,16 +642,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get runStartError => 'Ошибка при запуске пробежки';
 
   @override
-  String get runStartPermissionDenied =>
-      'Разрешение на геолокацию не предоставлено.\n\nДля Windows: откройте Настройки → Конфиденциальность → Расположение → Разрешения приложений и включите доступ для Runterra.\n\nДля Android: разрешите доступ к геолокации при запросе.';
+  String get runStartPermissionDenied => 'Разрешение на геолокацию не предоставлено.\n\nДля Windows: откройте Настройки → Конфиденциальность → Расположение → Разрешения приложений и включите доступ для Runterra.\n\nДля Android: разрешите доступ к геолокации при запросе.';
 
   @override
-  String get runStartPermanentlyDenied =>
-      'Доступ к геолокации заблокирован.\n\nПожалуйста, включите разрешение в настройках устройства:\nWindows: Настройки → Конфиденциальность → Расположение\nAndroid: Настройки → Приложения → Runterra → Разрешения';
+  String get runStartPermanentlyDenied => 'Доступ к геолокации заблокирован.\n\nПожалуйста, включите разрешение в настройках устройства:\nWindows: Настройки → Конфиденциальность → Расположение\nAndroid: Настройки → Приложения → Runterra → Разрешения';
 
   @override
-  String get runStartServiceDisabled =>
-      'Служба геолокации отключена.\n\nПожалуйста, включите геолокацию в настройках устройства.';
+  String get runStartServiceDisabled => 'Служба геолокации отключена.\n\nПожалуйста, включите геолокацию в настройках устройства.';
 
   @override
   String runStartErrorGeneric(String error) {
@@ -966,8 +953,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get runStuckSessionTitle => 'Пробежка в процессе';
 
   @override
-  String get runStuckSessionMessage =>
-      'У вас есть незавершённая пробежка. Хотите продолжить её или начать заново?';
+  String get runStuckSessionMessage => 'У вас есть незавершённая пробежка. Хотите продолжить её или начать заново?';
 
   @override
   String get runStuckSessionResume => 'Продолжить';
@@ -1095,8 +1081,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get runHistoryEmpty => 'Пробежек пока нет';
 
   @override
-  String get runHistoryEmptyHint =>
-      'Начните первую пробежку, и она появится здесь';
+  String get runHistoryEmptyHint => 'Начните первую пробежку, и она появится здесь';
 
   @override
   String get runHistoryToday => 'Сегодня';
