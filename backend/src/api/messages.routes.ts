@@ -11,6 +11,7 @@ import { getMessagesRepository, getUsersRepository, getClubMembersRepository, ge
 import { broadcast } from '../ws/chatWs';
 import { logger } from '../shared/logger';
 import { isValidClubId } from '../shared/clubId';
+import { isValidUuid } from '../shared/validation';
 
 const router = Router();
 
@@ -37,10 +38,6 @@ function getAuthUidOrRespondUnauthorized(req: Request, res: Response): string | 
     return null;
   }
   return uid;
-}
-
-function isValidUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
 
 async function getOrCreateDefaultChannelId(clubId: string): Promise<string> {

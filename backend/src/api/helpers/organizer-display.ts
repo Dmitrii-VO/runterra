@@ -5,9 +5,7 @@
 
 import { getClubsRepository, getUsersRepository } from '../../db/repositories';
 import { logger } from '../../shared/logger';
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const isUuid = (id: string) => UUID_RE.test(id);
+import { isValidUuid } from '../../shared/validation';
 
 const key = (organizerId: string, organizerType: 'club' | 'trainer') =>
   `${organizerType}:${organizerId}`;
@@ -17,7 +15,7 @@ export async function getOrganizerDisplayName(
   organizerId: string,
   organizerType: 'club' | 'trainer',
 ): Promise<string | undefined> {
-  if (!organizerId?.trim() || !isUuid(organizerId)) return undefined;
+  if (!organizerId?.trim() || !isValidUuid(organizerId)) return undefined;
   try {
     if (organizerType === 'club') {
       const club = await getClubsRepository().findById(organizerId);
@@ -43,7 +41,7 @@ export async function getOrganizerDisplayNamesBatch(
   const result = new Map<string, string | undefined>();
   if (pairs.length === 0) return result;
 
-  const validId = (id: string) => isUuid(id);
+  const validId = (id: string) => isValidUuid(id);
   const clubIds = Array.from(
     new Set(
       pairs.filter((p) => p.organizerType === 'club' && validId(p.organizerId)).map((p) => p.organizerId),

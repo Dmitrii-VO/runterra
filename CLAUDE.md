@@ -122,6 +122,7 @@ Runs on push/PR to `main`: backend typecheck + tests + build; mobile analyze + t
 - **Never** call HTTP/API in `FutureBuilder.future` — use `StatefulWidget` and cache `Future` in `initState`
 - Use only `ApiClient.getInstance()` via `ServiceLocator` — never create new `ApiClient` instances
 - All UI strings via `AppLocalizations.of(context)!` — add new keys to both ARB files
+- **Real-time chat:** Use WebSocket (`ChatWebSocketService`) as primary for new messages; polling only as fallback when WebSocket fails. Do not use polling alone for real-time.
 
 ### Backend-specific
 - Auth via shared middleware only, not per-route

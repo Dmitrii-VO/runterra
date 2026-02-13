@@ -9,6 +9,7 @@ import '../../../shared/di/service_locator.dart';
 import '../../../shared/models/club_chat_model.dart';
 import '../../../shared/models/club_channel_model.dart';
 import '../../../shared/models/message_model.dart';
+import '../../../shared/services/chat_websocket_service.dart';
 
 /// Club tab in messages screen.
 ///
@@ -50,6 +51,7 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
 
   int _historyOffset = 0;
   Timer? _pollTimer;
+  StreamSubscription? _wsSubscription;
   List<MessageModel> _messages = <MessageModel>[];
 
   @override
@@ -79,7 +81,8 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
 
   @override
   void dispose() {
-    _pollTimer?.cancel();
+    _stopPolling();
+    _disconnectWebSocket();
     _messageController.dispose();
     _scrollController.dispose();
     _focusNode.dispose();
@@ -111,6 +114,7 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
 
   Future<void> _openClubChat(String clubId) async {
     _stopPolling();
+    _disconnectWebSocket();
     setState(() {
       _clubId = clubId;
       _channelId = null;
@@ -131,6 +135,13 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
           _isChannelsLoading = false;
         });
         _openChannel(clubId, channels.first.id);
+      } else if (channels.isEmpty) {
+        // No channels yet — backend will create default on first message fetch
+        setState(() {
+          _channels = [];
+          _isChannelsLoading = false;
+        });
+        _openChannelChat(clubId, null);
       } else {
         setState(() {
           _channels = channels;
@@ -157,6 +168,7 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
 
   Future<void> _openChannelChat(String clubId, String? channelId) async {
     _stopPolling();
+    _disconnectWebSocket();
     setState(() {
       _isLoading = true;
       _errorOnMessagesLoad = false;
@@ -190,7 +202,8 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
         _hasMoreHistory = loadedMessages.length == _pageSize;
         _isLoading = false;
       });
-      _startPolling();
+      final wsConnected = await _connectWebSocket(clubId, channelId);
+      if (!wsConnected) _startPolling();
       _scrollToBottomDeferred(animated: false);
     } catch (error) {
       if (!mounted || _clubId != clubId) return;
@@ -204,6 +217,7 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
 
   void _backToClubList() {
     _stopPolling();
+    _disconnectWebSocket();
     setState(() {
       _clubId = null;
       _channelId = null;
@@ -216,6 +230,7 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
 
   void _backToChannelList() {
     _stopPolling();
+    _disconnectWebSocket();
     setState(() {
       _channelId = null;
       _messages = <MessageModel>[];
@@ -235,6 +250,36 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
   void _stopPolling() {
     _pollTimer?.cancel();
     _pollTimer = null;
+  }
+
+  Future<bool> _connectWebSocket(String clubId, String? channelId) async {
+    _disconnectWebSocket();
+    final key = ChatWebSocketService.channelKey(clubId, channelId: channelId);
+    final connected = await ChatWebSocketService.instance.connectAndSubscribe(key);
+    if (!connected || !mounted || _clubId != clubId) return false;
+
+    _wsSubscription = ChatWebSocketService.instance.messageStream.listen((payload) {
+      if (!mounted || _clubId != clubId) return;
+      try {
+        final msg = MessageModel.fromJson(
+          Map<String, dynamic>.from(payload as Map),
+        );
+        if (_messages.any((m) => m.id == msg.id)) return;
+        final wasNearBottom = _isNearBottom();
+        setState(() {
+          _messages = [..._messages, msg]..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+          _historyOffset += 1;
+        });
+        if (wasNearBottom) _scrollToBottomDeferred(animated: true);
+      } catch (_) {}
+    });
+    return true;
+  }
+
+  void _disconnectWebSocket() {
+    _wsSubscription?.cancel();
+    _wsSubscription = null;
+    ChatWebSocketService.instance.disconnect();
   }
 
   bool _isNearBottom() {

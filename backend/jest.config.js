@@ -16,4 +16,5 @@ module.exports = {
   silent: true,
   // Force exit after tests complete (avoid hanging due to open handles)
   forceExit: true,
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
 };
