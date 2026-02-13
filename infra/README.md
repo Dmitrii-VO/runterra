@@ -90,6 +90,12 @@ GitHub Actions CI (`ci.yml`) запускается на каждый push/PR в
 
 Скрипт `npm run deploy` автоматически ждёт прохождения CI перед деплоем.
 
+### Verification (2026-02-12)
+
+- Выполнен полный `npm run deploy` (backend + mobile): CI passed, backend обновлён по SSH, mobile debug APK собран и опубликован в Firebase App Distribution (0.1.0+97).
+- CI run (GitHub Actions): `21961188876` (success).
+- Примечание: CI валит `flutter analyze` на warnings. После изменения ARB нужно прогонять `flutter gen-l10n`, а также не оставлять предупреждения уровня warning.
+
 ## TODO
 
 > Выполненные задачи и закрытые баги теперь фиксируются в `docs/progress.md` и `docs/changes/*`. Ниже остаются только актуальные открытые пункты.
