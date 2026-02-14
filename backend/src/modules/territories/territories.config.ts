@@ -63,9 +63,8 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
     coordinates: { latitude: 59.9708, longitude: 30.2453 },
     cityId: 'spb',
     geometry: [
-      { latitude: 59.9765, longitude: 30.2200 },
-      { latitude: 59.9785, longitude: 30.2550 },
-      { latitude: 59.9725, longitude: 30.2650 },
+      { latitude: 59.9740, longitude: 30.2200 },
+      { latitude: 59.9720, longitude: 30.2550 },
       { latitude: 59.9660, longitude: 30.2500 },
       { latitude: 59.9680, longitude: 30.2150 },
     ],
@@ -78,13 +77,12 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
     cityId: 'spb',
     geometry: [
       { latitude: 59.9790, longitude: 30.2350 },
-      { latitude: 59.9810, longitude: 30.2550 },
+      { latitude: 59.9815, longitude: 30.2550 },
       { latitude: 59.9805, longitude: 30.2750 },
-      { latitude: 59.9750, longitude: 30.2850 },
-      { latitude: 59.9710, longitude: 30.2820 },
-      { latitude: 59.9680, longitude: 30.2650 },
-      { latitude: 59.9695, longitude: 30.2400 },
-      { latitude: 59.9740, longitude: 30.2300 },
+      { latitude: 59.9755, longitude: 30.2850 },
+      { latitude: 59.9735, longitude: 30.2800 },
+      { latitude: 59.9750, longitude: 30.2600 },
+      { latitude: 59.9770, longitude: 30.2400 },
     ],
   },
   {
@@ -109,8 +107,8 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
     cityId: 'spb',
     geometry: [
       { latitude: 60.0280, longitude: 30.3350 },
-      { latitude: 60.0305, longitude: 30.3600 },
-      { latitude: 60.0150, longitude: 30.3750 },
+      { latitude: 60.0305, longitude: 30.3650 },
+      { latitude: 60.0150, longitude: 30.3700 },
       { latitude: 60.0080, longitude: 30.3550 },
       { latitude: 60.0100, longitude: 30.3300 },
     ],
@@ -124,7 +122,7 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
     geometry: [
       { latitude: 60.0125, longitude: 30.3050 },
       { latitude: 60.0115, longitude: 30.3250 },
-      { latitude: 59.9985, longitude: 30.3350 },
+      { latitude: 59.9985, longitude: 30.3300 },
       { latitude: 59.9965, longitude: 30.3150 },
       { latitude: 60.0035, longitude: 30.2950 },
     ],
@@ -162,10 +160,10 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
     coordinates: { latitude: 60.0250, longitude: 30.3950 },
     cityId: 'spb',
     geometry: [
-      { latitude: 60.0315, longitude: 30.3700 },
+      { latitude: 60.0315, longitude: 30.3750 },
       { latitude: 60.0335, longitude: 30.4150 },
       { latitude: 60.0225, longitude: 30.4200 },
-      { latitude: 60.0205, longitude: 30.3750 },
+      { latitude: 60.0205, longitude: 30.3800 },
     ],
   },
   {
@@ -201,10 +199,10 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
     coordinates: { latitude: 59.8300, longitude: 30.3300 },
     cityId: 'spb',
     geometry: [
-      { latitude: 59.8355, longitude: 30.3200 },
-      { latitude: 59.8365, longitude: 30.3400 },
-      { latitude: 59.8255, longitude: 30.3450 },
-      { latitude: 59.8245, longitude: 30.3250 },
+      { latitude: 59.8340, longitude: 30.3220 },
+      { latitude: 59.8350, longitude: 30.3380 },
+      { latitude: 59.8265, longitude: 30.3400 },
+      { latitude: 59.8255, longitude: 30.3240 },
     ],
   },
   {
