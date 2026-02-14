@@ -45,14 +45,15 @@ function generateSquareGeometry(
  * real persistence without changing API contracts.
  */
 
-type StaticTerritoryConfig = Omit<TerritoryViewDto, 'createdAt' | 'updatedAt'>;
+type StaticTerritoryConfig = Omit<TerritoryViewDto, 'createdAt' | 'updatedAt' | 'geometry'> & {
+  geometry?: GeoCoordinates[];
+};
 
-/** Square size in meters for MVP zone visualization */
+/** Square size in meters for MVP zone visualization (fallback) */
 const TERRITORY_SQUARE_SIZE_M = 1000;
 
 /**
  * All territories use clubId: undefined (free) until capture logic is implemented.
- * Legacy club-1/club-2 removed to avoid UUID validation conflicts.
  */
 const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
   {
@@ -61,6 +62,13 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
     status: TerritoryStatus.FREE,
     coordinates: { latitude: 59.9708, longitude: 30.2453 },
     cityId: 'spb',
+    geometry: [
+      { latitude: 59.9765, longitude: 30.2200 },
+      { latitude: 59.9785, longitude: 30.2550 },
+      { latitude: 59.9725, longitude: 30.2650 },
+      { latitude: 59.9660, longitude: 30.2500 },
+      { latitude: 59.9680, longitude: 30.2150 },
+    ],
   },
   {
     id: 'spb-yalagin-island',
@@ -68,6 +76,16 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
     status: TerritoryStatus.FREE,
     coordinates: { latitude: 59.9713, longitude: 30.2590 },
     cityId: 'spb',
+    geometry: [
+      { latitude: 59.9790, longitude: 30.2350 },
+      { latitude: 59.9810, longitude: 30.2550 },
+      { latitude: 59.9805, longitude: 30.2750 },
+      { latitude: 59.9750, longitude: 30.2850 },
+      { latitude: 59.9710, longitude: 30.2820 },
+      { latitude: 59.9680, longitude: 30.2650 },
+      { latitude: 59.9695, longitude: 30.2400 },
+      { latitude: 59.9740, longitude: 30.2300 },
+    ],
   },
   {
     id: 'spb-park-300',
@@ -75,6 +93,13 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
     status: TerritoryStatus.FREE,
     coordinates: { latitude: 60.0084, longitude: 30.2133 },
     cityId: 'spb',
+    geometry: [
+      { latitude: 60.0115, longitude: 30.1950 },
+      { latitude: 60.0135, longitude: 30.2150 },
+      { latitude: 60.0090, longitude: 30.2300 },
+      { latitude: 60.0045, longitude: 30.2200 },
+      { latitude: 60.0065, longitude: 30.1980 },
+    ],
   },
   {
     id: 'spb-sosnovka-central',
@@ -82,6 +107,13 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
     status: TerritoryStatus.FREE,
     coordinates: { latitude: 60.0180, longitude: 30.3500 },
     cityId: 'spb',
+    geometry: [
+      { latitude: 60.0280, longitude: 30.3350 },
+      { latitude: 60.0305, longitude: 30.3600 },
+      { latitude: 60.0150, longitude: 30.3750 },
+      { latitude: 60.0080, longitude: 30.3550 },
+      { latitude: 60.0100, longitude: 30.3300 },
+    ],
   },
   {
     id: 'spb-udely-park',
@@ -89,6 +121,13 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
     status: TerritoryStatus.FREE,
     coordinates: { latitude: 60.0050, longitude: 30.3150 },
     cityId: 'spb',
+    geometry: [
+      { latitude: 60.0125, longitude: 30.3050 },
+      { latitude: 60.0115, longitude: 30.3250 },
+      { latitude: 59.9985, longitude: 30.3350 },
+      { latitude: 59.9965, longitude: 30.3150 },
+      { latitude: 60.0035, longitude: 30.2950 },
+    ],
   },
   {
     id: 'spb-tavrichesky',
@@ -96,6 +135,12 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
     status: TerritoryStatus.FREE,
     coordinates: { latitude: 59.9440, longitude: 30.3720 },
     cityId: 'spb',
+    geometry: [
+      { latitude: 59.9475, longitude: 30.3680 },
+      { latitude: 59.9465, longitude: 30.3780 },
+      { latitude: 59.9410, longitude: 30.3750 },
+      { latitude: 59.9420, longitude: 30.3650 },
+    ],
   },
   {
     id: 'spb-victory-park-moscow',
@@ -103,6 +148,12 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
     status: TerritoryStatus.FREE,
     coordinates: { latitude: 59.8680, longitude: 30.3280 },
     cityId: 'spb',
+    geometry: [
+      { latitude: 59.8745, longitude: 30.3200 },
+      { latitude: 59.8735, longitude: 30.3400 },
+      { latitude: 59.8625, longitude: 30.3420 },
+      { latitude: 59.8615, longitude: 30.3220 },
+    ],
   },
   {
     id: 'spb-murinsky',
@@ -110,6 +161,12 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
     status: TerritoryStatus.FREE,
     coordinates: { latitude: 60.0250, longitude: 30.3950 },
     cityId: 'spb',
+    geometry: [
+      { latitude: 60.0315, longitude: 30.3700 },
+      { latitude: 60.0335, longitude: 30.4150 },
+      { latitude: 60.0225, longitude: 30.4200 },
+      { latitude: 60.0205, longitude: 30.3750 },
+    ],
   },
   {
     id: 'spb-smolny-embankment',
@@ -117,6 +174,12 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
     status: TerritoryStatus.FREE,
     coordinates: { latitude: 59.9480, longitude: 30.3950 },
     cityId: 'spb',
+    geometry: [
+      { latitude: 59.9535, longitude: 30.3850 },
+      { latitude: 59.9515, longitude: 30.4100 },
+      { latitude: 59.9445, longitude: 30.4150 },
+      { latitude: 59.9425, longitude: 30.3900 },
+    ],
   },
   {
     id: 'spb-petrovsky-island',
@@ -124,6 +187,12 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
     status: TerritoryStatus.FREE,
     coordinates: { latitude: 59.9580, longitude: 30.2750 },
     cityId: 'spb',
+    geometry: [
+      { latitude: 59.9625, longitude: 30.2600 },
+      { latitude: 59.9635, longitude: 30.2850 },
+      { latitude: 59.9545, longitude: 30.2900 },
+      { latitude: 59.9535, longitude: 30.2650 },
+    ],
   },
   {
     id: 'spb-pulkovo-park',
@@ -131,6 +200,12 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
     status: TerritoryStatus.FREE,
     coordinates: { latitude: 59.8300, longitude: 30.3300 },
     cityId: 'spb',
+    geometry: [
+      { latitude: 59.8355, longitude: 30.3200 },
+      { latitude: 59.8365, longitude: 30.3400 },
+      { latitude: 59.8255, longitude: 30.3450 },
+      { latitude: 59.8245, longitude: 30.3250 },
+    ],
   },
   {
     id: 'spb-rzhevsky-forest',
@@ -138,17 +213,25 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
     status: TerritoryStatus.FREE,
     coordinates: { latitude: 59.9600, longitude: 30.4850 },
     cityId: 'spb',
+    geometry: [
+      { latitude: 59.9755, longitude: 30.4650 },
+      { latitude: 59.9785, longitude: 30.5100 },
+      { latitude: 59.9455, longitude: 30.5150 },
+      { latitude: 59.9425, longitude: 30.4700 },
+    ],
   },
 ];
 
 function materialize(config: StaticTerritoryConfig): TerritoryViewDto {
   const now = new Date();
-  const { coordinates } = config;
-  const geometry = generateSquareGeometry(
+  const { coordinates, geometry: manualGeometry } = config;
+  
+  const geometry = manualGeometry || generateSquareGeometry(
     coordinates.latitude,
     coordinates.longitude,
     TERRITORY_SQUARE_SIZE_M,
   );
+
   return {
     ...config,
     geometry,
