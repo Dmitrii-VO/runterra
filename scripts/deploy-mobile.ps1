@@ -102,6 +102,23 @@ function Get-ReleaseNotesFromGit {
     return $lines -join "`n"
 }
 
+# App Distribution release notes have a size limit; keep a conservative cap
+# so deploy doesn't fail after a successful binary upload.
+function Normalize-ReleaseNotes {
+    param([string]$Notes)
+
+    if ([string]::IsNullOrWhiteSpace($Notes)) { return $Notes }
+
+    # Normalize line endings and trim.
+    $text = ($Notes -replace "`r`n", "`n").Trim()
+
+    # Keep a safe margin under typical API limits.
+    $maxLen = 4000
+    if ($text.Length -le $maxLen) { return $text }
+
+    return ($text.Substring(0, $maxLen - 20) + "`n- ... (truncated)")
+}
+
 # --- Compute version & release notes ---
 $versionInfo = Get-VersionFromGit
 $buildName = $versionInfo.Version
@@ -144,6 +161,8 @@ if ([string]::IsNullOrWhiteSpace($ReleaseNotes)) {
     Write-Host "`n=== Release notes (manual) ===" -ForegroundColor Cyan
     Write-Host $ReleaseNotes -ForegroundColor White
 }
+
+$ReleaseNotes = Normalize-ReleaseNotes -Notes $ReleaseNotes
 
 # 1. Read config (only needed when uploading to Firebase)
 if (-not $SkipFirebase) {
@@ -221,9 +240,24 @@ if ($SkipFirebase) {
         $firebaseArgs += @("--token", $env:FIREBASE_TOKEN)
     }
 
-    firebase @firebaseArgs
+    # Capture output to detect "upload succeeded, release notes failed" and not fail the whole deploy.
+    $firebaseOutput = @()
+    firebase @firebaseArgs 2>&1 | Tee-Object -Variable firebaseOutput
 
-    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    $firebaseExit = $LASTEXITCODE
+    if ($firebaseExit -ne 0) {
+        $firebaseText = ($firebaseOutput | Out-String)
+        $uploadedOk = $firebaseText -match "(?im)^\\+\\s+uploaded new release .* successfully!\\s*$"
+        $notesFailed = $firebaseText -match "(?im)failed to update release notes"
+
+        if ($uploadedOk -and $notesFailed) {
+            Write-Host "" 
+            Write-Host "WARNING: Release binary was uploaded successfully, but updating release notes failed." -ForegroundColor Yellow
+            Write-Host "You can update release notes manually in the Firebase console for this release." -ForegroundColor Yellow
+        } else {
+            exit $firebaseExit
+        }
+    }
 
     Write-Host "`nDone ($buildName+$buildNumber). Testers will receive an email: $testers" -ForegroundColor Green
 }
