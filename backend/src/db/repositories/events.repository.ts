@@ -146,6 +146,7 @@ export class EventsRepository extends BaseRepository {
     organizerId?: string;
     participantOnly?: boolean;
     participantUserId?: string;
+    onlyOpen?: boolean;
     limit?: number;
     offset?: number;
   }): Promise<Event[]> {
@@ -161,8 +162,12 @@ export class EventsRepository extends BaseRepository {
       conditions.push(`status = ANY($${paramIndex++})`);
       params.push(options.status);
     } else {
-      // Default: show open/full events that haven't ended yet
-      conditions.push(`status IN ('open', 'full')`);
+      // onlyOpen=true: only 'open' (exclude 'full'); otherwise open+full
+      if (options?.onlyOpen) {
+        conditions.push(`status = 'open'`);
+      } else {
+        conditions.push(`status IN ('open', 'full')`);
+      }
       conditions.push(`COALESCE(end_date_time, start_date_time + INTERVAL '4 hours') > NOW()`);
     }
     

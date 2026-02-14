@@ -21,7 +21,7 @@ import 'features/events/create_event_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'features/profile/edit_profile_screen.dart';
 import 'features/profile/my_clubs_screen.dart';
-import 'shared/models/profile_model.dart';
+import 'shared/models/profile_model.dart' show ProfileModel;
 import 'shared/models/club_model.dart';
 import 'shared/auth/auth_service.dart';
 import 'shared/di/service_locator.dart';
@@ -152,8 +152,8 @@ class RunterraApp extends StatelessWidget {
       GoRoute(
         path: '/profile/edit',
         builder: (context, state) {
-          final user = state.extra as ProfileUserData;
-          return EditProfileScreen(user: user);
+          final profile = state.extra as ProfileModel;
+          return EditProfileScreen(profile: profile);
         },
       ),
       GoRoute(

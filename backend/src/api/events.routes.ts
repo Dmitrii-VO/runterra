@@ -37,6 +37,7 @@ const router = Router();
  * Query параметры:
  * - cityId: string (обязателен) — идентификатор города
  * - dateFilter?: 'today' | 'tomorrow' | 'next7days'
+ * - onlyOpen?: 'true' | '1' — only events with status 'open' (exclude 'full')
  * - clubId?: string
  * - difficultyLevel?: 'beginner' | 'intermediate' | 'advanced'
  * - eventType?: 'group_run' | 'training' | 'competition' | 'club_event'
@@ -47,7 +48,7 @@ const router = Router();
  */
 router.get('/', async (req: Request, res: Response) => {
   const query = req.query as Record<string, string | undefined>;
-  const { cityId, dateFilter, clubId, difficultyLevel, eventType, participantOnly, limit, offset } = query;
+  const { cityId, dateFilter, clubId, difficultyLevel, eventType, participantOnly, onlyOpen, limit, offset } = query;
 
   if (!cityId) {
     return res.status(400).json({
@@ -98,6 +99,7 @@ router.get('/', async (req: Request, res: Response) => {
       eventType: eventType as EventType | undefined,
       participantOnly: participantOnly === 'true' || participantOnly === '1',
       participantUserId,
+      onlyOpen: onlyOpen === 'true' || onlyOpen === '1',
       limit: limit ? parseInt(limit, 10) : 50,
       offset: offset ? parseInt(offset, 10) : 0,
     });

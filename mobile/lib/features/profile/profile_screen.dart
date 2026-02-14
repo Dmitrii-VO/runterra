@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/api/users_service.dart';
-import '../../shared/auth/auth_service.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/profile_model.dart';
 import '../../shared/ui/profile/header_section.dart';
@@ -12,21 +10,17 @@ import '../../shared/ui/profile/activity_section.dart';
 import '../../shared/ui/profile/quick_actions_section.dart';
 import '../../shared/ui/profile/personal_info_section.dart';
 import '../../shared/ui/profile/notifications_section.dart';
-import '../../shared/ui/profile/settings_section.dart';
 import '../city/city_picker_dialog.dart';
-import '../../app.dart';
 
 /// Profile screen - Личный кабинет пользователя
-/// 
+///
 /// Отображает все данные личного кабинета согласно требованиям MVP:
 /// 1. Идентификация пользователя (имя, фото, статус, клуб)
 /// 2. Мини-статистика (тренировки, территории, баллы)
 /// 3. Ближайшая и последняя активности
 /// 4. Быстрые действия (CTA)
 /// 5. Уведомления
-/// 6. Настройки
-/// 
-/// Минимальная реализация без state management, использует FutureBuilder.
+/// Настройки (геолокация, видимость, выход, удаление) — в «Редактирование профиля».
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -36,31 +30,16 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late Future<ProfileModel> _profileFuture;
-  bool _locationPermissionGranted = false;
-  bool? _profileVisibleOverride;
-  bool _savingProfileVisible = false;
 
   @override
   void initState() {
     super.initState();
     _profileFuture = _fetchProfile();
-    _checkLocationPermission();
   }
 
   /// Создает Future для получения данных профиля
   Future<ProfileModel> _fetchProfile() async {
     final profile = await ServiceLocator.usersService.getProfile();
-
-    // If we optimistically updated profile visibility and backend confirms it, drop override.
-    if (_profileVisibleOverride != null &&
-        profile.user.profileVisible == _profileVisibleOverride) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        setState(() {
-          _profileVisibleOverride = null;
-        });
-      });
-    }
 
     // Keep local currentClubId in sync with backend profile contract:
     // if backend does not return club object, user is considered not in a club.
@@ -78,16 +57,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _retry() {
     setState(() {
       _profileFuture = _fetchProfile();
-    });
-  }
-
-  /// Проверяет статус разрешения геолокации
-  Future<void> _checkLocationPermission() async {
-    final locationService = ServiceLocator.locationService;
-    final permission = await locationService.checkPermission();
-    setState(() {
-      _locationPermissionGranted = permission != LocationPermission.denied &&
-          permission != LocationPermission.deniedForever;
     });
   }
 
@@ -111,7 +80,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onPressed: () async {
                     final result = await context.push<bool>(
                       '/profile/edit',
-                      extra: profile.user,
+                      extra: profile,
                     );
                     if (result == true && context.mounted) _retry();
                   },
@@ -208,112 +177,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         ProfileNotificationsSection(notifications: profile.notifications),
-        ProfileSettingsSection(
-          locationPermissionGranted: _locationPermissionGranted,
-          profileVisible: _profileVisibleOverride ?? profile.user.profileVisible,
-          onProfileVisibilityChanged: _savingProfileVisible
-              ? null
-              : (value) async {
-            final prev = _profileVisibleOverride ?? profile.user.profileVisible;
-            try {
-              setState(() {
-                _profileVisibleOverride = value;
-                _savingProfileVisible = true;
-              });
-              await ServiceLocator.usersService.updateProfile(profileVisible: value);
-              if (context.mounted) _retry();
-            } catch (e) {
-              if (context.mounted) {
-                setState(() {
-                  _profileVisibleOverride = prev;
-                });
-              }
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      e is ApiException ? e.message : l10n.errorGeneric(e.toString()),
-                    ),
-                  ),
-                );
-              }
-            } finally {
-              if (context.mounted) {
-                setState(() {
-                  _savingProfileVisible = false;
-                });
-              }
-            }
-          },
-          onLogout: () async {
-            final confirm = await showDialog<bool>(
-              context: context,
-              builder: (context) {
-                final l10n = AppLocalizations.of(context)!;
-                return AlertDialog(
-                  title: Text(l10n.logoutTitle),
-                  content: Text(l10n.logoutConfirm),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      child: Text(l10n.cancel),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      child: Text(l10n.logout),
-                    ),
-                  ],
-                );
-              },
-            );
-            if (confirm == true && context.mounted) {
-              await AuthService.instance.signOut();
-              ServiceLocator.updateAuthToken(null);
-              authRefreshNotifier.refresh();
-              if (context.mounted) context.go('/login');
-            }
-          },
-          onDeleteAccount: () async {
-            final l10n = AppLocalizations.of(context)!;
-            final confirm = await showDialog<bool>(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                title: Text(l10n.deleteAccountTitle),
-                content: Text(l10n.deleteAccountConfirm),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(ctx).pop(false),
-                    child: Text(l10n.cancel),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.of(ctx).pop(true),
-                    style: TextButton.styleFrom(foregroundColor: Colors.red),
-                    child: Text(l10n.deleteAccountConfirmButton),
-                  ),
-                ],
-              ),
-            );
-            if (confirm != true || !context.mounted) return;
-            try {
-              await ServiceLocator.usersService.deleteAccount();
-              if (!context.mounted) return;
-              await AuthService.instance.signOut();
-              ServiceLocator.updateAuthToken(null);
-              authRefreshNotifier.refresh();
-              if (context.mounted) context.go('/login');
-            } catch (e) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      e is ApiException ? e.message : l10n.errorGeneric(e.toString()),
-                    ),
-                  ),
-                );
-              }
-            }
-          },
-        ),
       ],
     );
   }

@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
+import '../../shared/api/users_service.dart';
+import '../../shared/auth/auth_service.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/profile_model.dart';
 import '../city/city_picker_dialog.dart';
+import '../../app.dart';
 
-/// Edit profile screen — form to change name and avatar URL.
-/// City is edited from the main profile screen.
+/// Edit profile screen — form to change name, avatar URL, and settings.
+/// Settings: geolocation, profile visibility, logout, delete account.
 class EditProfileScreen extends StatefulWidget {
-  const EditProfileScreen({super.key, required this.user});
+  const EditProfileScreen({super.key, required this.profile});
 
-  final ProfileUserData user;
+  final ProfileModel profile;
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
@@ -27,18 +31,33 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String? _gender;
   String? _cityId;
   String? _cityName;
+  bool _locationPermissionGranted = false;
+  bool? _profileVisibleOverride;
+  bool _savingProfileVisible = false;
+
+  ProfileUserData get _user => widget.profile.user;
 
   @override
   void initState() {
     super.initState();
-    _firstNameController = TextEditingController(text: widget.user.firstName ?? widget.user.name);
-    _lastNameController = TextEditingController(text: widget.user.lastName ?? '');
-    _countryController = TextEditingController(text: widget.user.country ?? '');
-    _avatarUrlController = TextEditingController(text: widget.user.avatarUrl ?? '');
-    _birthDate = widget.user.birthDate;
-    _gender = widget.user.gender;
-    _cityId = widget.user.cityId;
-    _cityName = widget.user.cityName;
+    _firstNameController = TextEditingController(text: _user.firstName ?? _user.name);
+    _lastNameController = TextEditingController(text: _user.lastName ?? '');
+    _countryController = TextEditingController(text: _user.country ?? '');
+    _avatarUrlController = TextEditingController(text: _user.avatarUrl ?? '');
+    _birthDate = _user.birthDate;
+    _gender = _user.gender;
+    _cityId = _user.cityId;
+    _cityName = _user.cityName;
+    _checkLocationPermission();
+  }
+
+  Future<void> _checkLocationPermission() async {
+    final permission = await ServiceLocator.locationService.checkPermission();
+    if (!mounted) return;
+    setState(() {
+      _locationPermissionGranted = permission != LocationPermission.denied &&
+          permission != LocationPermission.deniedForever;
+    });
   }
 
   @override
@@ -223,9 +242,158 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     )
                   : Text(l10n.editProfileSave),
             ),
+            const SizedBox(height: 32),
+            _buildSettingsSection(l10n),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildSettingsSection(AppLocalizations l10n) {
+    final profileVisible = _profileVisibleOverride ?? _user.profileVisible;
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Column(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.location_on),
+            title: Text(l10n.settingsLocation),
+            subtitle: Text(
+              _locationPermissionGranted
+                  ? l10n.settingsLocationAllowed
+                  : l10n.settingsLocationDenied,
+            ),
+            trailing: Icon(
+              _locationPermissionGranted ? Icons.check_circle : Icons.cancel,
+              color: _locationPermissionGranted ? Colors.green : Colors.red,
+            ),
+            onTap: () => Geolocator.openAppSettings(),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.visibility),
+            title: Text(l10n.settingsVisibility),
+            subtitle: Text(
+              profileVisible ? l10n.settingsVisible : l10n.settingsHidden,
+            ),
+            trailing: Switch(
+              value: profileVisible,
+              onChanged: _savingProfileVisible
+                  ? null
+                  : (value) => _onProfileVisibilityChanged(value, l10n),
+            ),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: Text(
+              l10n.settingsLogout,
+              style: const TextStyle(color: Colors.red),
+            ),
+            onTap: () => _onLogout(l10n),
+          ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.delete_forever, color: Colors.red),
+            title: Text(
+              l10n.settingsDeleteAccount,
+              style: const TextStyle(color: Colors.red),
+            ),
+            onTap: () => _onDeleteAccount(l10n),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _onProfileVisibilityChanged(bool value, AppLocalizations l10n) async {
+    final prev = _profileVisibleOverride ?? _user.profileVisible;
+    try {
+      setState(() {
+        _profileVisibleOverride = value;
+        _savingProfileVisible = true;
+      });
+      await ServiceLocator.usersService.updateProfile(profileVisible: value);
+      if (mounted) setState(() => _profileVisibleOverride = null);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _profileVisibleOverride = prev);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              e is ApiException ? e.message : l10n.errorGeneric(e.toString()),
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _savingProfileVisible = false);
+    }
+  }
+
+  Future<void> _onLogout(AppLocalizations l10n) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.logoutTitle),
+        content: Text(l10n.logoutConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(l10n.logout),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+    await AuthService.instance.signOut();
+    ServiceLocator.updateAuthToken(null);
+    authRefreshNotifier.refresh();
+    if (mounted) context.go('/login');
+  }
+
+  Future<void> _onDeleteAccount(AppLocalizations l10n) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.deleteAccountTitle),
+        content: Text(l10n.deleteAccountConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text(l10n.deleteAccountConfirmButton),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+    try {
+      await ServiceLocator.usersService.deleteAccount();
+      if (!mounted) return;
+      await AuthService.instance.signOut();
+      ServiceLocator.updateAuthToken(null);
+      authRefreshNotifier.refresh();
+      if (mounted) context.go('/login');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              e is ApiException ? e.message : l10n.errorGeneric(e.toString()),
+            ),
+          ),
+        );
+      }
+    }
   }
 }

@@ -78,6 +78,29 @@ describe('EventsRepository', () => {
     mockQuery.mockReset();
   });
 
+  describe('findAll', () => {
+    it("when onlyOpen=true, filters by status = 'open' (not open+full)", async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
+      await repo.findAll({ onlyOpen: true, cityId: 'spb' });
+
+      expect(mockQuery).toHaveBeenCalled();
+      const [sql] = mockQuery.mock.calls[0];
+      expect(String(sql)).toContain("status = 'open'");
+      expect(String(sql)).not.toContain("status IN ('open', 'full')");
+    });
+
+    it("when onlyOpen is missing/false, filters by status IN ('open', 'full')", async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
+      await repo.findAll({ cityId: 'spb' });
+
+      expect(mockQuery).toHaveBeenCalled();
+      const [sql] = mockQuery.mock.calls[0];
+      expect(String(sql)).toContain("status IN ('open', 'full')");
+    });
+  });
+
   describe('joinEvent', () => {
     it('should return error when event does not exist', async () => {
       mockQuery.mockImplementation(async (sql: string) => {

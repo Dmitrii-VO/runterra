@@ -171,6 +171,12 @@ describe('API Routes', () => {
   });
 
   describe('GET /api/events', () => {
+    const { mockEventsRepository } = require('../db/repositories');
+
+    beforeEach(() => {
+      mockEventsRepository.findAll.mockClear();
+    });
+
     it('returns 200 with array', async () => {
       const res = await request(app)
         .get('/api/events?cityId=spb')
@@ -178,6 +184,43 @@ describe('API Routes', () => {
 
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
+      expect(mockEventsRepository.findAll).toHaveBeenCalled();
+      expect(mockEventsRepository.findAll).toHaveBeenCalledWith(
+        expect.objectContaining({ cityId: 'spb' }),
+      );
+    });
+
+    it('passes onlyOpen=true to repository when query onlyOpen=true', async () => {
+      const res = await request(app)
+        .get('/api/events?cityId=spb&onlyOpen=true')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(mockEventsRepository.findAll).toHaveBeenCalledWith(
+        expect.objectContaining({ onlyOpen: true }),
+      );
+    });
+
+    it('passes onlyOpen=true to repository when query onlyOpen=1', async () => {
+      const res = await request(app)
+        .get('/api/events?cityId=spb&onlyOpen=1')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(mockEventsRepository.findAll).toHaveBeenCalledWith(
+        expect.objectContaining({ onlyOpen: true }),
+      );
+    });
+
+    it('passes onlyOpen=false to repository when query onlyOpen is missing', async () => {
+      const res = await request(app)
+        .get('/api/events?cityId=spb')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(mockEventsRepository.findAll).toHaveBeenCalledWith(
+        expect.objectContaining({ onlyOpen: false }),
+      );
     });
 
     it('returns events with organizerDisplayName when organizer exists', async () => {

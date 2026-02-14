@@ -1,5 +1,15 @@
 # Изменения: События (Events)
 
+## Текущее состояние фильтров (EventsScreen)
+
+**Дата-фильтры:** Сегодня | Завтра | 7 дней (взаимоисключающие чипы, `dateFilter`: `today` | `tomorrow` | `next7days`). Backend `EventsRepository.findAll()` применяет диапазоны: today = сегодня 00:00–завтра 00:00; tomorrow = завтра 00:00–послезавтра 00:00; next7days = сегодня 00:00–через 7 дней.
+
+**Дополнительные фильтры:** Только открытые (`onlyOpen`, по умолчанию true — backend с 2026-02-14); Мой клуб (`clubId` из CurrentClubService); Участвую (`participantOnly`, backend `participantUserId`).
+
+**См. также:** docs/changes/feedback-2026-02-14.md (перепроверка фильтров), docs/changes/2026-02-13-events-swipe-to-run-implementation.md (фильтр «Участвую»).
+
+---
+
 ## История изменений
 
 ### 2026-02-09 — Мини-карта точки старта + переход на вкладку Карта
