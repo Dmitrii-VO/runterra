@@ -11,6 +11,12 @@
 !.env*.example
 .gh/
 
+# Firebase / Google credentials (service account keys — never commit)
+firebase-service-account.json
+firebase-sa.json
+*-firebase-adminsdk-*.json
+*service*account*.json
+
 # Node
 node_modules/
 
