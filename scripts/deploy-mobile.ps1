@@ -234,9 +234,22 @@ if ($SkipFirebase) {
         "--testers", $testers
     )
 
-    # Support headless auth (e.g., CI / locked-down machines): set FIREBASE_TOKEN from `firebase login:ci`.
-    # Do NOT print the token.
-    if (-not [string]::IsNullOrWhiteSpace($env:FIREBASE_TOKEN)) {
+    # Auth: prefer GOOGLE_APPLICATION_CREDENTIALS (service account JSON path) to avoid deprecation warning.
+    # Fallback: FIREBASE_TOKEN from `firebase login:ci` (deprecated in future firebase-tools).
+    # Do NOT print tokens.
+    $useToken = $false
+    if (-not [string]::IsNullOrWhiteSpace($env:GOOGLE_APPLICATION_CREDENTIALS)) {
+        $saPath = $env:GOOGLE_APPLICATION_CREDENTIALS
+        if (Test-Path $saPath) {
+            Write-Host "Using service account: $saPath" -ForegroundColor Gray
+        } else {
+            Write-Host "GOOGLE_APPLICATION_CREDENTIALS points to missing file: $saPath" -ForegroundColor Yellow
+            $useToken = -not [string]::IsNullOrWhiteSpace($env:FIREBASE_TOKEN)
+        }
+    } else {
+        $useToken = -not [string]::IsNullOrWhiteSpace($env:FIREBASE_TOKEN)
+    }
+    if ($useToken) {
         $firebaseArgs += @("--token", $env:FIREBASE_TOKEN)
     }
 

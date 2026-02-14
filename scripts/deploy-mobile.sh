@@ -66,9 +66,19 @@ FIREBASE_ARGS=(
   --testers "$TESTERS"
 )
 
-# Support headless auth (e.g., CI): set FIREBASE_TOKEN from `firebase login:ci`.
-# Do NOT print the token.
-if [ -n "$FIREBASE_TOKEN" ]; then
+# Auth: prefer GOOGLE_APPLICATION_CREDENTIALS (service account JSON path) to avoid deprecation warning.
+# Fallback: FIREBASE_TOKEN from `firebase login:ci` (deprecated in future firebase-tools).
+# Do NOT print tokens.
+USE_TOKEN=false
+if [ -n "$GOOGLE_APPLICATION_CREDENTIALS" ] && [ -f "$GOOGLE_APPLICATION_CREDENTIALS" ]; then
+  echo "Using service account: $GOOGLE_APPLICATION_CREDENTIALS"
+elif [ -n "$GOOGLE_APPLICATION_CREDENTIALS" ]; then
+  echo "GOOGLE_APPLICATION_CREDENTIALS points to missing file: $GOOGLE_APPLICATION_CREDENTIALS"
+  [ -n "$FIREBASE_TOKEN" ] && USE_TOKEN=true
+else
+  [ -n "$FIREBASE_TOKEN" ] && USE_TOKEN=true
+fi
+if [ "$USE_TOKEN" = true ]; then
   FIREBASE_ARGS+=(--token "$FIREBASE_TOKEN")
 fi
 

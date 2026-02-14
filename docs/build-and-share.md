@@ -69,7 +69,7 @@ npm run deploy:mobile
 **SSH хост** — в скриптах используется алиас `runterra` (настроен в `~/.ssh/config`).
 
 **Перед первым запуском:**
-- `firebase login` (для mobile)
+- **Firebase auth** (для mobile): предпочтительно `GOOGLE_APPLICATION_CREDENTIALS` — путь к JSON ключу service account (Firebase Console → Project settings → Service accounts → Generate new private key). Пример: `$env:GOOGLE_APPLICATION_CREDENTIALS = "D:\myprojects\Runterra\firebase-service-account.json"`. Альтернатива: `firebase login` или `FIREBASE_TOKEN` (deprecated).
 - SSH ключ должен быть настроен для хоста `runterra`
 
 ---

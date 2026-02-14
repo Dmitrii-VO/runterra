@@ -3,6 +3,7 @@
 ## Обзор
 Документ отслеживает выполнение задач и прогресс разработки проекта Runterra.
 
+- **Firebase App Distribution: GOOGLE_APPLICATION_CREDENTIALS (2026-02-14):** deploy-mobile.ps1 и deploy-mobile.sh теперь предпочитают service account (GOOGLE_APPLICATION_CREDENTIALS) вместо FIREBASE_TOKEN — убирает deprecation warning. Fallback на FIREBASE_TOKEN сохранён. docs/build-and-share.md обновлён.
 - **Feedback 2026-02-14 — реализация:** (1) Профиль: Геолокация, Видимость профиля, Выйти из аккаунта, Удалить аккаунт перенесены в «Редактирование профиля». ProfileScreen упрощён; EditProfileScreen принимает ProfileModel и содержит блок настроек; settings_section.dart удалён. (2) Backend: добавлена поддержка `onlyOpen=true` в GET /api/events — при onlyOpen применяется `status = 'open'`. Подробности — docs/changes/2026-02-14-profile-settings-and-onlyopen.md.
 - **Feedback 2026-02-14 — перепроверка (2026-02-14):** Код проверен по чеклисту (профиль + onlyOpen). Автопроверки: backend `npx jest --runInBand` — 98 passed (в среде агента `npm test` падал с `spawn EPERM`); mobile `flutter analyze` — 0 issues; `flutter test` — 21 passed. Ручная проверка UI-фильтров событий на устройстве/эмуляторе не выполнялась.
 - **Deploy mobile: App Distribution release notes (2026-02-14):** `scripts/deploy-mobile.ps1` теперь ограничивает длину release notes и не валит деплой, если APK успешно загружен, но обновление release notes упало. Подробности — docs/changes/2026-02-14-deploy-mobile-release-notes.md.
