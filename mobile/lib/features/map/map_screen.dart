@@ -356,8 +356,20 @@ class _MapScreenState extends State<MapScreen> {
     final objects = <MapObject>[];
     for (var i = 0; i < _mapData!.territories.length; i++) {
       final territory = _mapData!.territories[i];
-      final color = _getTerritoryColor(territory.status);
-      final strokeColor = _getTerritoryStrokeColor(territory.status);
+      
+      // Determine colors
+      final parsedColor = _parseColor(territory.color);
+      final statusStrokeColor = _getTerritoryStrokeColor(territory.status);
+      final statusFillColor = _getTerritoryColor(territory.status);
+
+      // Prefer explicit territory color for stroke, fallback to status color
+      final strokeColor = parsedColor ?? statusStrokeColor;
+      
+      // Use semi-transparent territory color for fill if available, fallback to status fill
+      final fillColor = parsedColor != null 
+          ? parsedColor.withOpacity(0.2) 
+          : statusFillColor;
+
       void onTerritoryTap(_, __) => _showTerritoryBottomSheet(territory);
 
       if (territory.geometry != null && territory.geometry!.length >= 3) {
@@ -379,9 +391,9 @@ class _MapScreenState extends State<MapScreen> {
             outerRing: LinearRing(points: points),
             innerRings: const [],
           ),
-          fillColor: color,
+          fillColor: fillColor,
           strokeColor: strokeColor,
-          strokeWidth: 1.5,
+          strokeWidth: 2.0, // Slightly thicker for visibility
           onTap: onTerritoryTap,
         ));
       } else {
@@ -395,7 +407,7 @@ class _MapScreenState extends State<MapScreen> {
             ),
             radius: _territoryRadiusMeters,
           ),
-          fillColor: color,
+          fillColor: fillColor,
           strokeColor: strokeColor,
           strokeWidth: 2.0,
           onTap: onTerritoryTap,
@@ -406,6 +418,18 @@ class _MapScreenState extends State<MapScreen> {
     setState(() {
       _territoryMapObjects = objects;
     });
+  }
+
+  Color? _parseColor(String? hexString) {
+    if (hexString == null || hexString.isEmpty) return null;
+    try {
+      final buffer = StringBuffer();
+      if (hexString.length == 6 || hexString.length == 7) buffer.write('ff');
+      buffer.write(hexString.replaceFirst('#', ''));
+      return Color(int.parse(buffer.toString(), radix: 16));
+    } catch (e) {
+      return null;
+    }
   }
 
   /// Updates event markers on the map

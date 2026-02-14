@@ -33,6 +33,9 @@ class TerritoryMapModel {
   
   /// Идентификатор клуба-владельца территории (если захвачена клубом)
   final String? clubId;
+
+  /// Цвет территории (hex string, e.g. '#FF0000') для отображения границ
+  final String? color;
   
   /// Дата создания
   final DateTime createdAt;
@@ -49,6 +52,7 @@ class TerritoryMapModel {
     this.geometry,
     this.capturedByUserId,
     this.clubId,
+    this.color,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -73,6 +77,7 @@ class TerritoryMapModel {
       geometry: geometry,
       capturedByUserId: json['capturedByUserId'] as String?,
       clubId: json['clubId'] as String?,
+      color: json['color'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -89,6 +94,7 @@ class TerritoryMapModel {
       if (geometry != null) 'geometry': geometry!.map((e) => e.toJson()).toList(),
       if (capturedByUserId != null) 'capturedByUserId': capturedByUserId,
       if (clubId != null) 'clubId': clubId,
+      if (color != null) 'color': color,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };

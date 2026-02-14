@@ -49,6 +49,7 @@ import { SPB_DISTRICTS_DATA } from './spb-districts.data';
 
 type StaticTerritoryConfig = Omit<TerritoryViewDto, 'createdAt' | 'updatedAt' | 'geometry'> & {
   geometry?: GeoCoordinates[];
+  color?: string;
 };
 
 /** Square size in meters for MVP zone visualization (fallback) */
@@ -63,7 +64,7 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = SPB_DISTRICTS_DATA;
 
 function materialize(config: StaticTerritoryConfig): TerritoryViewDto {
   const now = new Date();
-  const { coordinates, geometry: manualGeometry } = config;
+  const { coordinates, geometry: manualGeometry, color } = config;
   
   const geometry = manualGeometry || generateSquareGeometry(
     coordinates.latitude,
@@ -74,6 +75,7 @@ function materialize(config: StaticTerritoryConfig): TerritoryViewDto {
   return {
     ...config,
     geometry,
+    color,
     createdAt: now,
     updatedAt: now,
   };

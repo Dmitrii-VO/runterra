@@ -6,6 +6,29 @@ const outputPath = path.join(__dirname, '../src/modules/territories/spb-district
 
 const geojson = JSON.parse(fs.readFileSync(geojsonPath, 'utf8'));
 
+// Palette of 18 distinctive colors (Hex) for the districts
+const DISTRICT_COLORS = [
+  '#E6194B', // Red
+  '#3CB44B', // Green
+  '#FFE119', // Yellow
+  '#4363D8', // Blue
+  '#F58231', // Orange
+  '#911EB4', // Purple
+  '#42D4F4', // Cyan
+  '#F032E6', // Magenta
+  '#BFEF45', // Lime
+  '#FABED4', // Pink
+  '#469990', // Teal
+  '#DCBEFF', // Lavender
+  '#9A6324', // Brown
+  '#FFFAC8', // Beige
+  '#800000', // Maroon
+  '#AAFFC3', // Mint
+  '#808000', // Olive
+  '#FFD8B1', // Apricot
+  '#000075', // Navy
+];
+
 function calculateCentroid(coordinates) {
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
   
@@ -56,9 +79,13 @@ function transliterate(word) {
   return answer.join('').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 }
 
-const territories = geojson.features.map(f => {
+// Sort features by name to ensure consistent coloring
+const sortedFeatures = geojson.features.sort((a, b) => a.properties.name.localeCompare(b.properties.name));
+
+const territories = sortedFeatures.map((f, index) => {
   const name = f.properties.name;
   const id = 'spb-' + transliterate(name.replace(' район', ''));
+  const color = DISTRICT_COLORS[index % DISTRICT_COLORS.length]; // Assign color
   
   // Handle MultiPolygon and Polygon
   let geometryCoords = [];
@@ -72,11 +99,6 @@ const territories = geojson.features.map(f => {
     }));
     center = calculateCentroid(f.geometry.coordinates);
   } else if (f.geometry.type === 'MultiPolygon') {
-    // Find largest polygon? Or just take the first one?
-    // Usually the first one is the main landmass.
-    // Or we should flatten everything? MapKit Polygon usually supports one outer ring and holes.
-    // MultiPolygon is multiple polygons.
-    // For simplicity, let's take the largest polygon by number of points
     let maxPoints = 0;
     let bestPoly = null;
     
@@ -98,16 +120,14 @@ const territories = geojson.features.map(f => {
     }
   }
 
-  // Yandex MapKit optimization: Limit points if too many?
-  // For now, let's keep them all unless > 2000 or something.
-
   return {
     id,
     name,
     status: 'free', // TerritoryStatus.FREE
     cityId: 'spb',
     coordinates: center,
-    geometry: geometryCoords
+    geometry: geometryCoords,
+    color: color // New field
   };
 });
 
@@ -115,7 +135,7 @@ const tsContent = `import { TerritoryStatus } from './territory.status';
 import type { TerritoryViewDto } from './territory.dto';
 import type { GeoCoordinates } from '../../shared/types/coordinates';
 
-type StaticTerritoryConfig = Omit<TerritoryViewDto, 'createdAt' | 'updatedAt'>;
+type StaticTerritoryConfig = Omit<TerritoryViewDto, 'createdAt' | 'updatedAt'> & { color?: string };
 
 export const SPB_DISTRICTS_DATA: StaticTerritoryConfig[] = ${JSON.stringify(territories, null, 2).replace(/"status": "free"/g, 'status: TerritoryStatus.FREE')};
 `;

@@ -97,6 +97,9 @@ export interface TerritoryViewDto {
   /** Идентификатор клуба-владельца территории (если захвачена клубом) */
   clubId?: string;
   
+  /** Цвет территории (hex string, e.g. '#FF0000') для отображения границ */
+  color?: string;
+
   /** Дата создания записи */
   createdAt: Date;
   
