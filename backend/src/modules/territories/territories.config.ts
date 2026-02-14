@@ -63,10 +63,11 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
     coordinates: { latitude: 59.9708, longitude: 30.2453 },
     cityId: 'spb',
     geometry: [
-      { latitude: 59.9740, longitude: 30.2200 },
+      // Tightened west side to keep the polygon more compact (avoid "wide grab" to the gulf).
+      { latitude: 59.9740, longitude: 30.2280 },
       { latitude: 59.9720, longitude: 30.2550 },
       { latitude: 59.9660, longitude: 30.2500 },
-      { latitude: 59.9680, longitude: 30.2150 },
+      { latitude: 59.9680, longitude: 30.2230 },
     ],
   },
   {
@@ -76,13 +77,14 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
     coordinates: { latitude: 59.9713, longitude: 30.2590 },
     cityId: 'spb',
     geometry: [
-      { latitude: 59.9790, longitude: 30.2350 },
+      { latitude: 59.9790, longitude: 30.2420 },
       { latitude: 59.9815, longitude: 30.2550 },
-      { latitude: 59.9805, longitude: 30.2750 },
-      { latitude: 59.9755, longitude: 30.2850 },
-      { latitude: 59.9735, longitude: 30.2800 },
+      // Slightly tightened east side to reduce elongated shape.
+      { latitude: 59.9805, longitude: 30.2700 },
+      { latitude: 59.9755, longitude: 30.2790 },
+      { latitude: 59.9735, longitude: 30.2740 },
       { latitude: 59.9750, longitude: 30.2600 },
-      { latitude: 59.9770, longitude: 30.2400 },
+      { latitude: 59.9770, longitude: 30.2460 },
     ],
   },
   {
@@ -239,8 +241,10 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
     cityId: 'spb',
     geometry: [
       { latitude: 59.9430, longitude: 30.3120 },
-      { latitude: 59.9450, longitude: 30.3250 },
-      { latitude: 59.9380, longitude: 30.3280 },
+      // Keep this polygon tighter to the Palace Square / Dvortsovaya embankment area
+      // to avoid overlapping nearby central territories.
+      { latitude: 59.9450, longitude: 30.3210 },
+      { latitude: 59.9380, longitude: 30.3230 },
       { latitude: 59.9360, longitude: 30.3120 },
     ],
   },
@@ -290,10 +294,11 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = [
     coordinates: { latitude: 59.9390, longitude: 30.3300 },
     cityId: 'spb',
     geometry: [
-      { latitude: 59.9420, longitude: 30.3250 },
+      // Slightly shifted east to avoid overlapping the "Dvortsovaya embankment" polygon.
+      { latitude: 59.9420, longitude: 30.3265 },
       { latitude: 59.9410, longitude: 30.3320 },
       { latitude: 59.9360, longitude: 30.3320 },
-      { latitude: 59.9370, longitude: 30.3220 },
+      { latitude: 59.9370, longitude: 30.3235 },
     ],
   },
   {
