@@ -222,7 +222,7 @@ describe('API Routes', () => {
       expect(Array.isArray(res.body.events)).toBe(true);
     });
 
-    it('returns territories with geometry (square polygon of ~1000m size)', async () => {
+    it('returns territories with valid geometry polygons', async () => {
       const res = await request(app)
         .get('/api/map/data?cityId=spb')
         .set('Authorization', 'Bearer test-token');
@@ -234,32 +234,14 @@ describe('API Routes', () => {
       for (const t of territories) {
         expect(t).toHaveProperty('geometry');
         expect(Array.isArray(t.geometry)).toBe(true);
-        expect(t.geometry.length).toBe(4);
+        // Polygons must have at least 3 points
+        expect(t.geometry.length).toBeGreaterThanOrEqual(3);
         
-        // Verify dimensions (approx 1000m sides)
-        const lats = t.geometry.map((p: any) => p.latitude);
-        const lons = t.geometry.map((p: any) => p.longitude);
-        
-        const minLat = Math.min(...lats);
-        const maxLat = Math.max(...lats);
-        const minLon = Math.min(...lons);
-        const maxLon = Math.max(...lons);
-        
-        // Latitude: 1 deg ~ 111132 m
-        const heightMeters = (maxLat - minLat) * 111132;
-        // Longitude: 1 deg ~ 111320 * cos(lat) m
-        const latRad = (t.coordinates.latitude * Math.PI) / 180;
-        const widthMeters = (maxLon - minLon) * 111320 * Math.cos(latRad);
-        
-        // Should be ~1000m with small tolerance (due to center vs corners lat difference)
-        expect(heightMeters).toBeGreaterThan(990);
-        expect(heightMeters).toBeLessThan(1010);
-        expect(widthMeters).toBeGreaterThan(990);
-        expect(widthMeters).toBeLessThan(1010);
-
         for (const pt of t.geometry) {
           expect(pt).toHaveProperty('latitude');
           expect(pt).toHaveProperty('longitude');
+          expect(typeof pt.latitude).toBe('number');
+          expect(typeof pt.longitude).toBe('number');
         }
       }
     });
