@@ -80,6 +80,9 @@ else
 fi
 if [ "$USE_TOKEN" = true ]; then
   FIREBASE_ARGS+=(--token "$FIREBASE_TOKEN")
+else
+  # Firebase CLI auto-reads FIREBASE_TOKEN from env; unset it so it uses GOOGLE_APPLICATION_CREDENTIALS only.
+  unset FIREBASE_TOKEN
 fi
 
 firebase "${FIREBASE_ARGS[@]}"

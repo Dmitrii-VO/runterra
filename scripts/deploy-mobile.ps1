@@ -238,6 +238,7 @@ if ($SkipFirebase) {
     # Fallback: FIREBASE_TOKEN from `firebase login:ci` (deprecated in future firebase-tools).
     # Do NOT print tokens.
     $useToken = $false
+    $savedFirebaseToken = $null
     if (-not [string]::IsNullOrWhiteSpace($env:GOOGLE_APPLICATION_CREDENTIALS)) {
         $saPath = $env:GOOGLE_APPLICATION_CREDENTIALS
         if (Test-Path $saPath) {
@@ -251,11 +252,21 @@ if ($SkipFirebase) {
     }
     if ($useToken) {
         $firebaseArgs += @("--token", $env:FIREBASE_TOKEN)
+    } else {
+        # Firebase CLI auto-reads FIREBASE_TOKEN from env; clear it so it uses GOOGLE_APPLICATION_CREDENTIALS only.
+        $savedFirebaseToken = $env:FIREBASE_TOKEN
+        $env:FIREBASE_TOKEN = $null
     }
 
     # Capture output to detect "upload succeeded, release notes failed" and not fail the whole deploy.
     $firebaseOutput = @()
-    firebase @firebaseArgs 2>&1 | Tee-Object -Variable firebaseOutput
+    try {
+        firebase @firebaseArgs 2>&1 | Tee-Object -Variable firebaseOutput
+    } finally {
+        if (-not $useToken -and $null -ne $savedFirebaseToken) {
+            $env:FIREBASE_TOKEN = $savedFirebaseToken
+        }
+    }
 
     $firebaseExit = $LASTEXITCODE
     if ($firebaseExit -ne 0) {

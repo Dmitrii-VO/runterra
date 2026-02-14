@@ -10,7 +10,7 @@ Firebase CLI выдаёт deprecation warning при использовании 
 
 **deploy-mobile.ps1 и deploy-mobile.sh:**
 - Приоритет аутентификации: `GOOGLE_APPLICATION_CREDENTIALS` (путь к JSON service account) → `FIREBASE_TOKEN` (fallback).
-- Если `GOOGLE_APPLICATION_CREDENTIALS` задана и файл существует — `--token` не передаётся, deprecation warning не появляется.
+- Если `GOOGLE_APPLICATION_CREDENTIALS` задана и файл существует — `--token` не передаётся и `FIREBASE_TOKEN` временно сбрасывается (Firebase CLI автоматически читает его из env и предпочитает над service account).
 - Если `GOOGLE_APPLICATION_CREDENTIALS` указывает на несуществующий файл — fallback на `FIREBASE_TOKEN`.
 
 **docs/build-and-share.md:**
