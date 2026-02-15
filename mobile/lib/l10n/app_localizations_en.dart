@@ -1134,4 +1134,99 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get runGpsPoints => 'GPS points';
+
+  @override
+  String get tierGreen => 'Green Zone';
+
+  @override
+  String get tierBlue => 'Blue Zone';
+
+  @override
+  String get tierRed => 'Red Zone';
+
+  @override
+  String get tierBlack => 'Black Zone';
+
+  @override
+  String get tierLabelNovice => 'Novice';
+
+  @override
+  String get tierLabelAdvanced => 'Advanced';
+
+  @override
+  String get tierLabelSpecialist => 'Specialist';
+
+  @override
+  String get tierLabelElite => 'Elite';
+
+  @override
+  String zoneCaptured(String clubName) {
+    return 'Controlled by $clubName';
+  }
+
+  @override
+  String get zoneOpenSeason => 'Open Season';
+
+  @override
+  String get zoneContested => 'Contested';
+
+  @override
+  String paceBonus(String pace, String multiplier) {
+    return 'Pace < $pace → x$multiplier';
+  }
+
+  @override
+  String zoneBountyLabel(String bounty) {
+    return 'x$bounty Points';
+  }
+
+  @override
+  String seasonResetIn(int days) {
+    return 'Reset in ${days}d';
+  }
+
+  @override
+  String runForZone(String bounty) {
+    return 'RUN FOR ZONE (+${bounty}x)';
+  }
+
+  @override
+  String leaderboardTitle(String zoneName) {
+    return '$zoneName — Leaderboard';
+  }
+
+  @override
+  String get yourClub => 'Your club';
+
+  @override
+  String gapToLeader(String km) {
+    return '$km km to leader';
+  }
+
+  @override
+  String get joinClubCta => 'Join a club to compete for territories';
+
+  @override
+  String get findClub => 'FIND A CLUB';
+
+  @override
+  String get seasonStarted => 'New season started, no data yet. Be the first!';
+
+  @override
+  String get loadError => 'Failed to load data';
+
+  @override
+  String leaderKm(String km) {
+    return '$km km';
+  }
+
+  @override
+  String clubLeading(String km) {
+    return 'Your club is leading! +$km km ahead';
+  }
+
+  @override
+  String clubPosition(String km, String position) {
+    return 'Your club: $km km ($position place)';
+  }
 }

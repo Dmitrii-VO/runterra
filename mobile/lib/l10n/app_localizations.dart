@@ -2185,6 +2185,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'GPS points'**
   String get runGpsPoints;
+
+  /// No description provided for @tierGreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Green Zone'**
+  String get tierGreen;
+
+  /// No description provided for @tierBlue.
+  ///
+  /// In en, this message translates to:
+  /// **'Blue Zone'**
+  String get tierBlue;
+
+  /// No description provided for @tierRed.
+  ///
+  /// In en, this message translates to:
+  /// **'Red Zone'**
+  String get tierRed;
+
+  /// No description provided for @tierBlack.
+  ///
+  /// In en, this message translates to:
+  /// **'Black Zone'**
+  String get tierBlack;
+
+  /// No description provided for @tierLabelNovice.
+  ///
+  /// In en, this message translates to:
+  /// **'Novice'**
+  String get tierLabelNovice;
+
+  /// No description provided for @tierLabelAdvanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced'**
+  String get tierLabelAdvanced;
+
+  /// No description provided for @tierLabelSpecialist.
+  ///
+  /// In en, this message translates to:
+  /// **'Specialist'**
+  String get tierLabelSpecialist;
+
+  /// No description provided for @tierLabelElite.
+  ///
+  /// In en, this message translates to:
+  /// **'Elite'**
+  String get tierLabelElite;
+
+  /// No description provided for @zoneCaptured.
+  ///
+  /// In en, this message translates to:
+  /// **'Controlled by {clubName}'**
+  String zoneCaptured(String clubName);
+
+  /// No description provided for @zoneOpenSeason.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Season'**
+  String get zoneOpenSeason;
+
+  /// No description provided for @zoneContested.
+  ///
+  /// In en, this message translates to:
+  /// **'Contested'**
+  String get zoneContested;
+
+  /// No description provided for @paceBonus.
+  ///
+  /// In en, this message translates to:
+  /// **'Pace < {pace} → x{multiplier}'**
+  String paceBonus(String pace, String multiplier);
+
+  /// No description provided for @zoneBountyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'x{bounty} Points'**
+  String zoneBountyLabel(String bounty);
+
+  /// No description provided for @seasonResetIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset in {days}d'**
+  String seasonResetIn(int days);
+
+  /// No description provided for @runForZone.
+  ///
+  /// In en, this message translates to:
+  /// **'RUN FOR ZONE (+{bounty}x)'**
+  String runForZone(String bounty);
+
+  /// No description provided for @leaderboardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{zoneName} — Leaderboard'**
+  String leaderboardTitle(String zoneName);
+
+  /// No description provided for @yourClub.
+  ///
+  /// In en, this message translates to:
+  /// **'Your club'**
+  String get yourClub;
+
+  /// No description provided for @gapToLeader.
+  ///
+  /// In en, this message translates to:
+  /// **'{km} km to leader'**
+  String gapToLeader(String km);
+
+  /// No description provided for @joinClubCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Join a club to compete for territories'**
+  String get joinClubCta;
+
+  /// No description provided for @findClub.
+  ///
+  /// In en, this message translates to:
+  /// **'FIND A CLUB'**
+  String get findClub;
+
+  /// No description provided for @seasonStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'New season started, no data yet. Be the first!'**
+  String get seasonStarted;
+
+  /// No description provided for @loadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load data'**
+  String get loadError;
+
+  /// No description provided for @leaderKm.
+  ///
+  /// In en, this message translates to:
+  /// **'{km} km'**
+  String leaderKm(String km);
+
+  /// No description provided for @clubLeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Your club is leading! +{km} km ahead'**
+  String clubLeading(String km);
+
+  /// No description provided for @clubPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Your club: {km} km ({position} place)'**
+  String clubPosition(String km, String position);
 }
 
 class _AppLocalizationsDelegate

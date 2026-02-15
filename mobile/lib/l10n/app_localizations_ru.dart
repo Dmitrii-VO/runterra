@@ -1138,4 +1138,100 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get runGpsPoints => 'GPS точки';
+
+  @override
+  String get tierGreen => 'Зелёная зона';
+
+  @override
+  String get tierBlue => 'Синяя зона';
+
+  @override
+  String get tierRed => 'Красная зона';
+
+  @override
+  String get tierBlack => 'Чёрная зона';
+
+  @override
+  String get tierLabelNovice => 'Новички';
+
+  @override
+  String get tierLabelAdvanced => 'Продвинутые';
+
+  @override
+  String get tierLabelSpecialist => 'Специалисты';
+
+  @override
+  String get tierLabelElite => 'Элита';
+
+  @override
+  String zoneCaptured(String clubName) {
+    return 'Захвачена: $clubName';
+  }
+
+  @override
+  String get zoneOpenSeason => 'Открытый сезон';
+
+  @override
+  String get zoneContested => 'Оспаривается';
+
+  @override
+  String paceBonus(String pace, String multiplier) {
+    return 'Темп < $pace → x$multiplier';
+  }
+
+  @override
+  String zoneBountyLabel(String bounty) {
+    return 'x$bounty очков';
+  }
+
+  @override
+  String seasonResetIn(int days) {
+    return 'Сброс через $daysд';
+  }
+
+  @override
+  String runForZone(String bounty) {
+    return 'БЕЖАТЬ ЗА ЗОНУ (+${bounty}x)';
+  }
+
+  @override
+  String leaderboardTitle(String zoneName) {
+    return '$zoneName — Лидерборд';
+  }
+
+  @override
+  String get yourClub => 'Ваш клуб';
+
+  @override
+  String gapToLeader(String km) {
+    return '$km км до лидера';
+  }
+
+  @override
+  String get joinClubCta => 'Вступи в клуб, чтобы соревноваться';
+
+  @override
+  String get findClub => 'НАЙТИ КЛУБ';
+
+  @override
+  String get seasonStarted =>
+      'Новый сезон начался, данных пока нет. Стань первым!';
+
+  @override
+  String get loadError => 'Не удалось загрузить данные';
+
+  @override
+  String leaderKm(String km) {
+    return '$km км';
+  }
+
+  @override
+  String clubLeading(String km) {
+    return 'Ваш клуб лидирует! +$km км отрыв';
+  }
+
+  @override
+  String clubPosition(String km, String position) {
+    return 'Ваш клуб: $km км ($position-е место)';
+  }
 }

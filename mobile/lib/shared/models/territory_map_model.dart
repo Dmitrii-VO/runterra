@@ -1,4 +1,5 @@
 import 'territory_model.dart';
+import 'territory_league_models.dart';
 
 /// Модель территории для отображения на карте
 /// 
@@ -36,10 +37,13 @@ class TerritoryMapModel {
 
   /// Цвет территории (hex string, e.g. '#FF0000') для отображения границ
   final String? color;
-  
+
+  /// League info (tier, leaderboard, etc.) — null if API didn't return league data
+  final TerritoryLeagueInfo? leagueInfo;
+
   /// Дата создания
   final DateTime createdAt;
-  
+
   /// Дата последнего обновления
   final DateTime updatedAt;
 
@@ -53,6 +57,7 @@ class TerritoryMapModel {
     this.capturedByUserId,
     this.clubId,
     this.color,
+    this.leagueInfo,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -78,6 +83,7 @@ class TerritoryMapModel {
       capturedByUserId: json['capturedByUserId'] as String?,
       clubId: json['clubId'] as String?,
       color: json['color'] as String?,
+      leagueInfo: TerritoryLeagueInfo.fromJson(json),
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -95,6 +101,26 @@ class TerritoryMapModel {
       if (capturedByUserId != null) 'capturedByUserId': capturedByUserId,
       if (clubId != null) 'clubId': clubId,
       if (color != null) 'color': color,
+      if (leagueInfo != null) ...{
+        'tier': leagueInfo!.tier.name,
+        'paceThreshold': leagueInfo!.paceThreshold,
+        'pointMultiplier': leagueInfo!.pointMultiplier,
+        'zoneBounty': leagueInfo!.zoneBounty,
+        'seasonEndsAt': leagueInfo!.seasonEndsAt.toIso8601String(),
+        'leaderboard': leagueInfo!.leaderboard.map((e) => <String, dynamic>{
+            'clubId': e.clubId,
+            'clubName': e.clubName,
+            'totalKm': e.totalKm,
+            'position': e.position,
+          }).toList(),
+        if (leagueInfo!.myClubProgress != null) 'myClubProgress': {
+          'clubId': leagueInfo!.myClubProgress!.clubId,
+          'clubName': leagueInfo!.myClubProgress!.clubName,
+          'totalKm': leagueInfo!.myClubProgress!.totalKm,
+          'position': leagueInfo!.myClubProgress!.position,
+          'gapToLeader': leagueInfo!.myClubProgress!.gapToLeader,
+        },
+      },
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };

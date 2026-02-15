@@ -417,5 +417,106 @@
   "runStatsAvgPace": "Ср. темп",
   "runDetailTitle": "Детали пробежки",
   "runDetailLoadError": "Не удалось загрузить данные пробежки",
-  "runGpsPoints": "GPS точки"
+  "runGpsPoints": "GPS точки",
+  "tierGreen": "Зелёная зона",
+  "tierBlue": "Синяя зона",
+  "tierRed": "Красная зона",
+  "tierBlack": "Чёрная зона",
+  "tierLabelNovice": "Новички",
+  "tierLabelAdvanced": "Продвинутые",
+  "tierLabelSpecialist": "Специалисты",
+  "tierLabelElite": "Элита",
+  "zoneCaptured": "Захвачена: {clubName}",
+  "@zoneCaptured": {
+    "placeholders": {
+      "clubName": {
+        "type": "String"
+      }
+    }
+  },
+  "zoneOpenSeason": "Открытый сезон",
+  "zoneContested": "Оспаривается",
+  "paceBonus": "Темп < {pace} → x{multiplier}",
+  "@paceBonus": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
+      },
+      "multiplier": {
+        "type": "String"
+      }
+    }
+  },
+  "zoneBountyLabel": "x{bounty} очков",
+  "@zoneBountyLabel": {
+    "placeholders": {
+      "bounty": {
+        "type": "String"
+      }
+    }
+  },
+  "seasonResetIn": "Сброс через {days}д",
+  "@seasonResetIn": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "runForZone": "БЕЖАТЬ ЗА ЗОНУ (+{bounty}x)",
+  "@runForZone": {
+    "placeholders": {
+      "bounty": {
+        "type": "String"
+      }
+    }
+  },
+  "leaderboardTitle": "{zoneName} — Лидерборд",
+  "@leaderboardTitle": {
+    "placeholders": {
+      "zoneName": {
+        "type": "String"
+      }
+    }
+  },
+  "yourClub": "Ваш клуб",
+  "gapToLeader": "{km} км до лидера",
+  "@gapToLeader": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "joinClubCta": "Вступи в клуб, чтобы соревноваться",
+  "findClub": "НАЙТИ КЛУБ",
+  "seasonStarted": "Новый сезон начался, данных пока нет. Стань первым!",
+  "loadError": "Не удалось загрузить данные",
+  "leaderKm": "{km} км",
+  "@leaderKm": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "clubLeading": "Ваш клуб лидирует! +{km} км отрыв",
+  "@clubLeading": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "clubPosition": "Ваш клуб: {km} км ({position}-е место)",
+  "@clubPosition": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      },
+      "position": {
+        "type": "String"
+      }
+    }
+  }
 }

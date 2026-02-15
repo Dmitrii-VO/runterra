@@ -591,5 +591,106 @@
   "runStatsAvgPace": "Avg pace",
   "runDetailTitle": "Run details",
   "runDetailLoadError": "Could not load run details",
-  "runGpsPoints": "GPS points"
+  "runGpsPoints": "GPS points",
+  "tierGreen": "Green Zone",
+  "tierBlue": "Blue Zone",
+  "tierRed": "Red Zone",
+  "tierBlack": "Black Zone",
+  "tierLabelNovice": "Novice",
+  "tierLabelAdvanced": "Advanced",
+  "tierLabelSpecialist": "Specialist",
+  "tierLabelElite": "Elite",
+  "zoneCaptured": "Controlled by {clubName}",
+  "@zoneCaptured": {
+    "placeholders": {
+      "clubName": {
+        "type": "String"
+      }
+    }
+  },
+  "zoneOpenSeason": "Open Season",
+  "zoneContested": "Contested",
+  "paceBonus": "Pace < {pace} → x{multiplier}",
+  "@paceBonus": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
+      },
+      "multiplier": {
+        "type": "String"
+      }
+    }
+  },
+  "zoneBountyLabel": "x{bounty} Points",
+  "@zoneBountyLabel": {
+    "placeholders": {
+      "bounty": {
+        "type": "String"
+      }
+    }
+  },
+  "seasonResetIn": "Reset in {days}d",
+  "@seasonResetIn": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "runForZone": "RUN FOR ZONE (+{bounty}x)",
+  "@runForZone": {
+    "placeholders": {
+      "bounty": {
+        "type": "String"
+      }
+    }
+  },
+  "leaderboardTitle": "{zoneName} — Leaderboard",
+  "@leaderboardTitle": {
+    "placeholders": {
+      "zoneName": {
+        "type": "String"
+      }
+    }
+  },
+  "yourClub": "Your club",
+  "gapToLeader": "{km} km to leader",
+  "@gapToLeader": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "joinClubCta": "Join a club to compete for territories",
+  "findClub": "FIND A CLUB",
+  "seasonStarted": "New season started, no data yet. Be the first!",
+  "loadError": "Failed to load data",
+  "leaderKm": "{km} km",
+  "@leaderKm": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "clubLeading": "Your club is leading! +{km} km ahead",
+  "@clubLeading": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "clubPosition": "Your club: {km} km ({position} place)",
+  "@clubPosition": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      },
+      "position": {
+        "type": "String"
+      }
+    }
+  }
 }

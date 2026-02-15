@@ -72,6 +72,25 @@ export const CaptureTerritorySchema = z.object({
  * geometry — опциональный массив точек полигона границ.
  * Если задан, клиент рисует PolygonMapObject; иначе — CircleMapObject (fallback).
  */
+// --- League / Tier types ---
+
+export type ZoneTier = 'green' | 'blue' | 'red' | 'black';
+
+export interface LeaderboardEntryDto {
+  clubId: string;
+  clubName: string;
+  totalKm: number;
+  position: number;
+}
+
+export interface ClubProgressDto {
+  clubId: string;
+  clubName: string;
+  totalKm: number;
+  position: number;
+  gapToLeader: number;
+}
+
 export interface TerritoryViewDto {
   /** Уникальный идентификатор территории в системе */
   id: string;
@@ -100,9 +119,26 @@ export interface TerritoryViewDto {
   /** Цвет территории (hex string, e.g. '#FF0000') для отображения границ */
   color?: string;
 
+  // --- League fields (optional for backwards compatibility) ---
+
+  /** Zone difficulty tier */
+  tier?: ZoneTier;
+  /** Pace threshold for bonus, e.g. "5:30" */
+  paceThreshold?: string;
+  /** Point multiplier for meeting pace threshold */
+  pointMultiplier?: number;
+  /** Zone bounty multiplier (currently always 1.5) */
+  zoneBounty?: number;
+  /** ISO 8601 date when the current season ends */
+  seasonEndsAt?: string;
+  /** Top clubs leaderboard for this territory */
+  leaderboard?: LeaderboardEntryDto[];
+  /** Progress of the requesting user's club (null if no club) */
+  myClubProgress?: ClubProgressDto | null;
+
   /** Дата создания записи */
   createdAt: Date;
-  
+
   /** Дата последнего обновления */
   updatedAt: Date;
 }
