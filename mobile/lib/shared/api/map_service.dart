@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'api_client.dart';
 import 'users_service.dart' show ApiException;
 import '../models/map_data_model.dart';
+import '../models/territory_map_model.dart';
 
 /// Сервис для работы с картой
 /// 
@@ -94,5 +95,26 @@ class MapService {
       }
       rethrow;
     }
+  }
+
+  /// Fetches full territory details (with leaderboard and myClubProgress)
+  /// via GET /api/territories/:id
+  Future<TerritoryMapModel> getTerritoryDetails(String id) async {
+    final response = await _apiClient.get('/api/territories/$id');
+
+    if (response.statusCode == 401) {
+      throw ApiException('unauthorized', 'Authorization required');
+    }
+
+    if (response.statusCode == 404) {
+      throw ApiException('not_found', 'Territory not found');
+    }
+
+    if (response.statusCode != 200) {
+      throw Exception('Server error: ${response.statusCode}');
+    }
+
+    final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+    return TerritoryMapModel.fromJson(jsonData);
   }
 }

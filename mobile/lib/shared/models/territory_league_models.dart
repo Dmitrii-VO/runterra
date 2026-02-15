@@ -109,7 +109,9 @@ class TerritoryLeagueInfo {
       paceThreshold: json['paceThreshold'] as String? ?? '7:00',
       pointMultiplier: (json['pointMultiplier'] as num?)?.toDouble() ?? 1.0,
       zoneBounty: (json['zoneBounty'] as num?)?.toDouble() ?? 1.5,
-      seasonEndsAt: DateTime.parse(json['seasonEndsAt'] as String),
+      seasonEndsAt: json['seasonEndsAt'] != null
+          ? DateTime.parse(json['seasonEndsAt'] as String)
+          : DateTime(DateTime.now().year, DateTime.now().month + 1, 1),
       leaderboard: leaderboard,
       myClubProgress: myClubProgress,
     );

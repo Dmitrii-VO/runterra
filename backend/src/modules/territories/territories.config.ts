@@ -1,4 +1,4 @@
-import { TerritoryViewDto, ZoneTier, LeaderboardEntryDto } from './territory.dto';
+import { TerritoryViewDto, ZoneTier, LeaderboardEntryDto, ClubProgressDto } from './territory.dto';
 import { TerritoryStatus } from './territory.status';
 import type { GeoCoordinates } from '../../shared/types/coordinates';
 
@@ -190,7 +190,39 @@ const SPB_TERRITORIES_CONFIG: StaticTerritoryConfig[] = SPB_DISTRICTS_DATA;
 
 const ZONE_BOUNTY = 1.5;
 
-function materialize(config: StaticTerritoryConfig): TerritoryViewDto {
+/**
+ * Resolves myClubProgress from leaderboard for the user's clubs.
+ * Returns the first match found in the leaderboard, or null.
+ */
+export function resolveMyClubProgress(
+  leaderboard: LeaderboardEntryDto[],
+  userClubIds: string[],
+): ClubProgressDto | null {
+  if (!userClubIds.length || !leaderboard.length) return null;
+
+  const userClubSet = new Set(userClubIds);
+  const entry = leaderboard.find((e) => userClubSet.has(e.clubId));
+  if (!entry) return null;
+
+  const leaderKm = leaderboard[0].totalKm;
+  const gapToLeader = entry.position === 1
+    ? leaderKm - (leaderboard[1]?.totalKm ?? 0)
+    : entry.totalKm - leaderKm;
+
+  return {
+    clubId: entry.clubId,
+    clubName: entry.clubName,
+    totalKm: entry.totalKm,
+    position: entry.position,
+    gapToLeader,
+  };
+}
+
+/**
+ * Materializes a light territory DTO for map rendering.
+ * Excludes heavy fields (leaderboard, myClubProgress) to keep map payload small.
+ */
+function materializeLight(config: StaticTerritoryConfig): TerritoryViewDto {
   const now = new Date();
   const { coordinates, geometry: manualGeometry } = config;
 
@@ -200,7 +232,39 @@ function materialize(config: StaticTerritoryConfig): TerritoryViewDto {
     TERRITORY_SQUARE_SIZE_M,
   );
 
-  // Compute tier from mock activity data
+  const activity = DISTRICT_MOCK_ACTIVITY[config.id];
+  const tier: ZoneTier = activity
+    ? computeTier(activity.totalKm, activity.avgPace)
+    : 'green';
+  const tierCfg = TIER_CONFIG[tier];
+
+  return {
+    ...config,
+    geometry,
+    color: tierCfg.color,
+    tier,
+    paceThreshold: tierCfg.paceThreshold,
+    pointMultiplier: tierCfg.pointMultiplier,
+    zoneBounty: ZONE_BOUNTY,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+/**
+ * Materializes the full territory DTO with leaderboard and seasonEndsAt.
+ * myClubProgress is set to null; callers should resolve it via resolveMyClubProgress().
+ */
+function materializeFull(config: StaticTerritoryConfig): TerritoryViewDto {
+  const now = new Date();
+  const { coordinates, geometry: manualGeometry } = config;
+
+  const geometry = manualGeometry || generateSquareGeometry(
+    coordinates.latitude,
+    coordinates.longitude,
+    TERRITORY_SQUARE_SIZE_M,
+  );
+
   const activity = DISTRICT_MOCK_ACTIVITY[config.id];
   const tier: ZoneTier = activity
     ? computeTier(activity.totalKm, activity.avgPace)
@@ -239,10 +303,10 @@ export function getTerritoriesForCity(
     ? source.filter((t) => t.clubId === clubId)
     : source;
 
-  return filtered.map(materialize);
+  return filtered.map(materializeLight);
 }
 
 export function getTerritoryById(id: string): TerritoryViewDto | null {
   const config = SPB_TERRITORIES_CONFIG.find((t) => t.id === id);
-  return config ? materialize(config) : null;
+  return config ? materializeFull(config) : null;
 }

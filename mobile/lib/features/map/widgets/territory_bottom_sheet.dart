@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../shared/di/service_locator.dart';
 import '../../../shared/models/territory_map_model.dart';
 import '../../../shared/models/territory_league_models.dart';
 import '../../../shared/theme/tier_colors.dart';
@@ -8,8 +9,8 @@ import 'leaderboard_sheet.dart';
 
 /// Bottom sheet for territory info — League Tactics design.
 ///
-/// Shows tier header, rules grid, battle progress, and action bar
-/// when league data is available; falls back to simple view otherwise.
+/// Lazy-loads full territory details (leaderboard, myClubProgress) via
+/// GET /api/territories/:id when opened. Shows loading/error states.
 class TerritoryBottomSheet extends StatefulWidget {
   final TerritoryMapModel territory;
 
@@ -23,11 +24,54 @@ class TerritoryBottomSheet extends StatefulWidget {
 }
 
 class _TerritoryBottomSheetState extends State<TerritoryBottomSheet> {
-  TerritoryMapModel get territory => widget.territory;
+  TerritoryMapModel? _fullTerritory;
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDetails();
+  }
+
+  Future<void> _loadDetails() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final details = await ServiceLocator.mapService
+          .getTerritoryDetails(widget.territory.id);
+      if (mounted) {
+        setState(() {
+          _fullTerritory = details;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  TerritoryMapModel get _territory => _fullTerritory ?? widget.territory;
 
   @override
   Widget build(BuildContext context) {
-    final leagueInfo = territory.leagueInfo;
+    if (_isLoading) {
+      return _buildLoading(context);
+    }
+
+    if (_error != null) {
+      return _buildError(context);
+    }
+
+    final leagueInfo = _territory.leagueInfo;
 
     if (leagueInfo == null) {
       return _buildFallback(context);
@@ -63,6 +107,69 @@ class _TerritoryBottomSheetState extends State<TerritoryBottomSheet> {
     );
   }
 
+  /// Loading state with skeleton placeholders
+  Widget _buildLoading(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            widget.territory.name,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 24),
+          const CircularProgressIndicator(),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  /// Error state with retry button
+  Widget _buildError(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            widget.territory.name,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 16),
+          Icon(Icons.error_outline, size: 40, color: Colors.grey[400]),
+          const SizedBox(height: 8),
+          Text(
+            l10n.loadError,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey[600],
+                ),
+          ),
+          const SizedBox(height: 12),
+          TextButton.icon(
+            onPressed: _loadDetails,
+            icon: const Icon(Icons.refresh),
+            label: Text(l10n.retry),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Gradient header with tier badge and capture status
   Widget _buildTierHeader(BuildContext context, TerritoryLeagueInfo info) {
     final l10n = AppLocalizations.of(context)!;
@@ -83,14 +190,14 @@ class _TerritoryBottomSheetState extends State<TerritoryBottomSheet> {
         children: [
           // Territory name
           Text(
-            territory.name,
+            _territory.name,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
           ),
           const SizedBox(height: 8),
-          // Tier badge
+          // Tier badge + capture status
           Row(
             children: [
               Container(
@@ -109,16 +216,46 @@ class _TerritoryBottomSheetState extends State<TerritoryBottomSheet> {
                 ),
               ),
               const Spacer(),
-              // Capture status
-              Text(
-                _captureStatus(l10n, info),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white70,
-                    ),
-              ),
+              _buildCaptureStatusBadge(context, l10n, info),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  /// Capture status badge with club count for contested
+  Widget _buildCaptureStatusBadge(
+    BuildContext context,
+    AppLocalizations l10n,
+    TerritoryLeagueInfo info,
+  ) {
+    final String statusText;
+    final Color bgColor;
+
+    if (info.leaderboard.isEmpty) {
+      statusText = l10n.zoneOpenSeason;
+      bgColor = Colors.white.withOpacity(0.15);
+    } else if (info.leaderboard.length >= 2) {
+      statusText = '${l10n.zoneContested} (${info.leaderboard.length})';
+      bgColor = Colors.orange.withOpacity(0.3);
+    } else {
+      statusText = l10n.zoneCaptured(info.leaderboard.first.clubName);
+      bgColor = Colors.white.withOpacity(0.15);
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        statusText,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+            ),
       ),
     );
   }
@@ -229,11 +366,13 @@ class _TerritoryBottomSheetState extends State<TerritoryBottomSheet> {
                   ),
             )
           else ...[
-            // Progress bar
+            // Progress bar (clamped to 0.0-1.0)
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
-                value: leader.totalKm > 0 ? myClub.totalKm / leader.totalKm : 0,
+                value: leader.totalKm > 0
+                    ? (myClub.totalKm / leader.totalKm).clamp(0.0, 1.0)
+                    : 0,
                 backgroundColor: Colors.grey[200],
                 color: TierColors.forTier(info.tier),
                 minHeight: 6,
@@ -328,14 +467,14 @@ class _TerritoryBottomSheetState extends State<TerritoryBottomSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            territory.name,
+            _territory.name,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
           ),
           const SizedBox(height: 12),
           Text(
-            territory.status == 'captured'
+            _territory.status == 'captured'
                 ? l10n.territoryCaptured
                 : l10n.territoryFree,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -348,7 +487,7 @@ class _TerritoryBottomSheetState extends State<TerritoryBottomSheet> {
             child: TextButton(
               onPressed: () {
                 Navigator.pop(context);
-                context.push('/territory/${territory.id}');
+                context.push('/territory/${_territory.id}');
               },
               child: Text(l10n.territoryMore),
             ),
@@ -363,7 +502,7 @@ class _TerritoryBottomSheetState extends State<TerritoryBottomSheet> {
       context: context,
       isScrollControlled: true,
       builder: (_) => LeaderboardSheet(
-        zoneName: territory.name,
+        zoneName: _territory.name,
         tier: info.tier,
         leaderboard: info.leaderboard,
         myClubProgress: info.myClubProgress,
@@ -395,16 +534,6 @@ class _TerritoryBottomSheetState extends State<TerritoryBottomSheet> {
       case ZoneTier.black:
         return l10n.tierLabelElite;
     }
-  }
-
-  String _captureStatus(AppLocalizations l10n, TerritoryLeagueInfo info) {
-    if (info.leaderboard.isEmpty) {
-      return l10n.zoneOpenSeason;
-    }
-    if (info.leaderboard.length >= 2) {
-      return l10n.zoneContested;
-    }
-    return l10n.zoneCaptured(info.leaderboard.first.clubName);
   }
 }
 

@@ -3,6 +3,9 @@ import '../../../l10n/app_localizations.dart';
 import '../../../shared/models/territory_league_models.dart';
 import '../../../shared/theme/tier_colors.dart';
 
+/// Maximum number of leaderboard entries to display
+const _maxLeaderboardEntries = 10;
+
 /// Bottom sheet displaying the territory leaderboard (top clubs)
 class LeaderboardSheet extends StatelessWidget {
   final String zoneName;
@@ -22,6 +25,15 @@ class LeaderboardSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final tierColor = TierColors.forTier(tier);
+
+    // Limit visible entries to top 10
+    final visibleEntries = leaderboard.length > _maxLeaderboardEntries
+        ? leaderboard.sublist(0, _maxLeaderboardEntries)
+        : leaderboard;
+
+    // Check if my club is outside visible entries and needs separate row
+    final myClubOutsideTop = _isMyClubOutsideVisible(visibleEntries);
+    final extraRows = myClubOutsideTop ? 2 : 0; // ellipsis + my club row
 
     return Container(
       constraints: BoxConstraints(
@@ -67,30 +79,44 @@ class LeaderboardSheet extends StatelessWidget {
                 : ListView.builder(
                     shrinkWrap: true,
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: leaderboard.length + _showMyClubSeparately(),
+                    itemCount: visibleEntries.length + extraRows,
                     itemBuilder: (context, index) {
-                      if (index < leaderboard.length) {
-                        final entry = leaderboard[index];
+                      if (index < visibleEntries.length) {
+                        final entry = visibleEntries[index];
                         final isMyClub = myClubProgress != null &&
                             entry.clubId == myClubProgress!.clubId;
-                        return _buildRow(context, entry, isMyClub, tierColor);
+                        return _buildRow(context, l10n, entry, isMyClub, tierColor);
                       }
-                      // My club outside top list
-                      return Column(
-                        children: [
-                          const Divider(),
-                          _buildRow(
-                            context,
-                            LeaderboardEntry(
-                              clubId: myClubProgress!.clubId,
-                              clubName: myClubProgress!.clubName,
-                              totalKm: myClubProgress!.totalKm,
-                              position: myClubProgress!.position,
+
+                      // Ellipsis separator
+                      if (index == visibleEntries.length) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 4),
+                          child: Center(
+                            child: Text(
+                              '...',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                            true,
-                            tierColor,
                           ),
-                        ],
+                        );
+                      }
+
+                      // My club outside top
+                      return _buildRow(
+                        context,
+                        l10n,
+                        LeaderboardEntry(
+                          clubId: myClubProgress!.clubId,
+                          clubName: myClubProgress!.clubName,
+                          totalKm: myClubProgress!.totalKm,
+                          position: myClubProgress!.position,
+                        ),
+                        true,
+                        tierColor,
                       );
                     },
                   ),
@@ -102,15 +128,15 @@ class LeaderboardSheet extends StatelessWidget {
     );
   }
 
-  /// Returns 1 if my club is not already in the leaderboard list
-  int _showMyClubSeparately() {
-    if (myClubProgress == null) return 0;
-    final inList = leaderboard.any((e) => e.clubId == myClubProgress!.clubId);
-    return inList ? 0 : 1;
+  /// Returns true if my club exists but is not in the visible entries list
+  bool _isMyClubOutsideVisible(List<LeaderboardEntry> visibleEntries) {
+    if (myClubProgress == null) return false;
+    return !visibleEntries.any((e) => e.clubId == myClubProgress!.clubId);
   }
 
   Widget _buildRow(
     BuildContext context,
+    AppLocalizations l10n,
     LeaderboardEntry entry,
     bool isMyClub,
     Color tierColor,
@@ -156,9 +182,9 @@ class LeaderboardSheet extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          // Km
+          // Km (using i18n)
           Text(
-            '${entry.totalKm.toStringAsFixed(1)} km',
+            l10n.leaderKm(entry.totalKm.toStringAsFixed(1)),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: Colors.grey[800],

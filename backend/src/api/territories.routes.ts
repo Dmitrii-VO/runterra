@@ -19,7 +19,7 @@ import {
   CaptureTerritoryDto,
   CaptureTerritorySchema,
 } from '../modules/territories';
-import { getTerritoriesForCity, getTerritoryById } from '../modules/territories/territories.config';
+import { getTerritoriesForCity, getTerritoryById, resolveMyClubProgress } from '../modules/territories/territories.config';
 import { validateBody } from './validateBody';
 import { isPointWithinCityBounds } from '../modules/cities/city.utils';
 import { getUsersRepository, getClubMembersRepository } from '../db/repositories';
@@ -60,12 +60,11 @@ router.get('/', (req: Request, res: Response) => {
 
 /**
  * GET /api/territories/:id
- * 
- * Возвращает территорию по ID.
- * 
- * TODO: Реализовать проверку существования территории.
+ *
+ * Returns full territory details including leaderboard and myClubProgress.
+ * myClubProgress is resolved from the authenticated user's active clubs.
  */
-router.get('/:id', (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
 
   const territory = getTerritoryById(id);
@@ -76,6 +75,24 @@ router.get('/:id', (req: Request, res: Response) => {
       details: { territoryId: id },
     });
     return;
+  }
+
+  // Resolve myClubProgress from user's active clubs
+  try {
+    const firebaseUid = req.authUser?.uid;
+    if (firebaseUid && territory.leaderboard?.length) {
+      const usersRepo = getUsersRepository();
+      const user = await usersRepo.findByFirebaseUid(firebaseUid);
+      if (user) {
+        const clubMembersRepo = getClubMembersRepository();
+        const userClubs = await clubMembersRepo.findActiveClubsByUser(user.id);
+        const userClubIds = userClubs.map((c: { clubId: string }) => c.clubId);
+        territory.myClubProgress = resolveMyClubProgress(territory.leaderboard, userClubIds);
+      }
+    }
+  } catch (error) {
+    logger.warn('Could not resolve myClubProgress', { territoryId: id, error });
+    // Non-critical: return territory without myClubProgress
   }
 
   res.status(200).json(territory);

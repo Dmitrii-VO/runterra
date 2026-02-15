@@ -64,8 +64,9 @@ class _MapScreenState extends State<MapScreen> {
   bool _hasFocusPoint = false;
   bool _isAnimatingToFocus = false;
   
-  // Объекты на карте (территории — полигоны или круги; события — маркеры)
+  // Map objects: territories (polygons/circles), capture labels, event markers
   List<MapObject> _territoryMapObjects = [];
+  List<PlacemarkMapObject> _captureLabels = [];
   List<PlacemarkMapObject> _eventMarkers = [];
   BitmapDescriptor? _eventMarkerIcon;
 
@@ -339,6 +340,7 @@ class _MapScreenState extends State<MapScreen> {
 
     try {
       _updateTerritoryMapObjects();
+      _updateCaptureLabels();
       _updateEventMarkers();
     } catch (e) {
       debugPrint('Error updating map objects: $e');
@@ -420,6 +422,103 @@ class _MapScreenState extends State<MapScreen> {
     setState(() {
       _territoryMapObjects = objects;
     });
+  }
+
+  /// Creates PlacemarkMapObjects with club initials at the centroid of captured territories
+  Future<void> _updateCaptureLabels() async {
+    if (_mapData == null) return;
+
+    final labels = <PlacemarkMapObject>[];
+    for (var i = 0; i < _mapData!.territories.length; i++) {
+      final territory = _mapData!.territories[i];
+      if (territory.clubId == null) continue;
+
+      // Compute centroid
+      final Point centroid;
+      if (territory.geometry != null && territory.geometry!.length >= 3) {
+        double latSum = 0, lonSum = 0;
+        for (final c in territory.geometry!) {
+          latSum += c.latitude;
+          lonSum += c.longitude;
+        }
+        final n = territory.geometry!.length;
+        centroid = Point(latitude: latSum / n, longitude: lonSum / n);
+      } else {
+        centroid = Point(
+          latitude: territory.coordinates.latitude,
+          longitude: territory.coordinates.longitude,
+        );
+      }
+
+      // Create a small icon with club initials
+      final initials = territory.clubId!.length >= 2
+          ? territory.clubId!.substring(0, 2).toUpperCase()
+          : territory.clubId!.toUpperCase();
+
+      final icon = await _createTextIcon(initials);
+      if (icon == null || !mounted) continue;
+
+      labels.add(PlacemarkMapObject(
+        mapId: MapObjectId('capture_label_$i'),
+        point: centroid,
+        icon: PlacemarkIcon.single(PlacemarkIconStyle(
+          image: icon,
+          scale: 0.6,
+        )),
+        opacity: 0.9,
+      ));
+    }
+
+    if (mounted) {
+      setState(() {
+        _captureLabels = labels;
+      });
+    }
+  }
+
+  /// Creates a programmatic icon with text initials (circle background + text)
+  Future<BitmapDescriptor?> _createTextIcon(String text) async {
+    const size = 48.0;
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder, const Rect.fromLTWH(0, 0, size, size));
+
+    // Circle background
+    final paint = Paint()..color = Colors.white;
+    canvas.drawCircle(const Offset(size / 2, size / 2), size / 2, paint);
+
+    // Border
+    final borderPaint = Paint()
+      ..color = Colors.black54
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+    canvas.drawCircle(const Offset(size / 2, size / 2), size / 2 - 1, borderPaint);
+
+    // Text
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: const TextStyle(
+          color: Colors.black87,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: ui.TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(
+        (size - textPainter.width) / 2,
+        (size - textPainter.height) / 2,
+      ),
+    );
+
+    final picture = recorder.endRecording();
+    final image = await picture.toImage(size.toInt(), size.toInt());
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    if (byteData == null) return null;
+    return BitmapDescriptor.fromBytes(byteData.buffer.asUint8List());
   }
 
   Color? _parseColor(String? hexString) {
@@ -785,7 +884,7 @@ class _MapScreenState extends State<MapScreen> {
                 onCameraPositionChanged: (position, reason, finished) {
                   _handleCameraPositionChanged(position);
                 },
-                mapObjects: [..._territoryMapObjects, ..._eventMarkers],
+                mapObjects: [..._territoryMapObjects, ..._captureLabels, ..._eventMarkers],
               );
             },
           ),
