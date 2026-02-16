@@ -169,6 +169,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.sports),
+                title: Text(l10n.trainerProfile),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/trainer/${profile.user.id}'),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.edit_note),
+                title: Text(l10n.trainerEditProfile),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/trainer/edit'),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.fitness_center),
+                title: Text(l10n.workouts),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/workouts'),
+              ),
+            ],
+          ),
+        ),
+        Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: ListTile(
             leading: const Icon(Icons.groups),
             title: Text(l10n.profileMyClubsButton),
