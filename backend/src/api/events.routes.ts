@@ -20,14 +20,96 @@ import {
   EventParticipantViewDto,
   CreateEventDto,
   CreateEventSchema,
+  UpdateEventTrainerFieldsSchema,
 } from '../modules/events';
 import { validateBody } from './validateBody';
-import { getEventsRepository, getUsersRepository } from '../db/repositories';
+import { getEventsRepository, getUsersRepository, getWorkoutsRepository } from '../db/repositories';
 import { logger } from '../shared/logger';
 import { isPointWithinCityBounds } from '../modules/cities/city.utils';
 import { getOrganizerDisplayName, getOrganizerDisplayNamesBatch } from './helpers/organizer-display';
+import { isTrainerOrLeaderInClub, isLeaderInClub } from './helpers/trainer-role';
 
 const router = Router();
+
+interface EventIntegrationFields {
+  workoutId?: string;
+  trainerId?: string;
+  workoutName?: string;
+  workoutDescription?: string;
+  workoutType?: string;
+  workoutDifficulty?: string;
+  trainerName?: string;
+}
+
+function resolveTrainerDisplayName(user: {
+  name: string;
+  firstName?: string;
+  lastName?: string;
+}): string {
+  const first = user.firstName?.trim();
+  const last = user.lastName?.trim();
+  const fullName = [first, last].filter((v): v is string => Boolean(v)).join(' ').trim();
+  if (fullName) return fullName;
+  return user.name;
+}
+
+async function resolveEventIntegrationFields(
+  events: Array<{ id: string; workoutId?: string; trainerId?: string }>,
+): Promise<Map<string, EventIntegrationFields>> {
+  const result = new Map<string, EventIntegrationFields>();
+  if (events.length === 0) return result;
+
+  const workoutIds = Array.from(
+    new Set(events.map((event) => event.workoutId).filter((id): id is string => Boolean(id))),
+  );
+  const trainerIds = Array.from(
+    new Set(events.map((event) => event.trainerId).filter((id): id is string => Boolean(id))),
+  );
+
+  const workoutsById = new Map<string, Awaited<ReturnType<ReturnType<typeof getWorkoutsRepository>['findById']>>>();
+  if (workoutIds.length > 0) {
+    const workoutsRepo = getWorkoutsRepository();
+    const workouts = await Promise.all(workoutIds.map((id) => workoutsRepo.findById(id)));
+    workouts.forEach((workout) => {
+      if (workout) workoutsById.set(workout.id, workout);
+    });
+  }
+
+  const trainersById = new Map<string, Awaited<ReturnType<ReturnType<typeof getUsersRepository>['findByIds']>>[number]>();
+  if (trainerIds.length > 0) {
+    const trainers = await getUsersRepository().findByIds(trainerIds);
+    trainers.forEach((trainer) => {
+      trainersById.set(trainer.id, trainer);
+    });
+  }
+
+  events.forEach((event) => {
+    const fields: EventIntegrationFields = {};
+
+    if (event.workoutId) {
+      fields.workoutId = event.workoutId;
+      const workout = workoutsById.get(event.workoutId);
+      if (workout) {
+        fields.workoutName = workout.name;
+        fields.workoutDescription = workout.description;
+        fields.workoutType = workout.type;
+        fields.workoutDifficulty = workout.difficulty;
+      }
+    }
+
+    if (event.trainerId) {
+      fields.trainerId = event.trainerId;
+      const trainer = trainersById.get(event.trainerId);
+      if (trainer) {
+        fields.trainerName = resolveTrainerDisplayName(trainer);
+      }
+    }
+
+    result.set(event.id, fields);
+  });
+
+  return result;
+}
 
 /**
  * GET /api/events
@@ -108,6 +190,7 @@ router.get('/', async (req: Request, res: Response) => {
     const organizerNames = await getOrganizerDisplayNamesBatch(
       events.map((e) => ({ organizerId: e.organizerId, organizerType: e.organizerType })),
     );
+    const eventIntegration = await resolveEventIntegrationFields(events);
     const eventsDto: EventListItemDto[] = events.map((event) => ({
       id: event.id,
       name: event.name,
@@ -125,6 +208,12 @@ router.get('/', async (req: Request, res: Response) => {
       participantCount: event.participantCount,
       territoryId: event.territoryId,
       cityId: event.cityId,
+      workoutId: eventIntegration.get(event.id)?.workoutId,
+      trainerId: eventIntegration.get(event.id)?.trainerId,
+      workoutName: eventIntegration.get(event.id)?.workoutName,
+      workoutType: eventIntegration.get(event.id)?.workoutType,
+      workoutDifficulty: eventIntegration.get(event.id)?.workoutDifficulty,
+      trainerName: eventIntegration.get(event.id)?.trainerName,
     }));
 
     res.status(200).json(eventsDto);
@@ -175,6 +264,8 @@ router.get('/:id', async (req: Request, res: Response) => {
     }
 
     const organizerDisplayName = await getOrganizerDisplayName(event.organizerId, event.organizerType);
+    const eventIntegration = await resolveEventIntegrationFields([event]);
+    const integration = eventIntegration.get(event.id);
 
     const eventDto: EventDetailsDto = {
       id: event.id,
@@ -195,6 +286,13 @@ router.get('/:id', async (req: Request, res: Response) => {
       cityId: event.cityId,
       createdAt: event.createdAt,
       updatedAt: event.updatedAt,
+      workoutId: integration?.workoutId,
+      trainerId: integration?.trainerId,
+      workoutName: integration?.workoutName,
+      workoutDescription: integration?.workoutDescription,
+      workoutType: integration?.workoutType,
+      workoutDifficulty: integration?.workoutDifficulty,
+      trainerName: integration?.trainerName,
       isParticipant,
       participantStatus,
     };
@@ -569,6 +667,121 @@ router.post('/:id/check-in', async (req: Request, res: Response) => {
       message: 'Internal server error',
       details: undefined,
     });
+  }
+});
+
+/**
+ * PATCH /api/events/:id
+ *
+ * Update trainer-related fields (workoutId, trainerId) on a club event.
+ * Only trainer/leader of the organizing club can update.
+ * trainerId assignment is restricted to leaders only.
+ */
+router.patch('/:id', validateBody(UpdateEventTrainerFieldsSchema), async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const uid = req.authUser?.uid;
+  if (!uid) {
+    return res.status(401).json({ code: 'unauthorized', message: 'Authorization required' });
+  }
+
+  try {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'User not found',
+        details: { fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }] },
+      });
+    }
+    const userId = user.id;
+
+    const eventsRepo = getEventsRepository();
+    const event = await eventsRepo.findById(id);
+    if (!event) {
+      return res.status(404).json({ code: 'not_found', message: 'Event not found' });
+    }
+
+    // Only club events can have trainer fields
+    if (event.organizerType !== 'club') {
+      return res.status(400).json({ code: 'validation_error', message: 'Trainer fields can only be set on club events' });
+    }
+
+    const clubId = event.organizerId;
+
+    // User must be trainer or leader in the organizing club
+    const hasRole = await isTrainerOrLeaderInClub(userId, clubId);
+    if (!hasRole) {
+      return res.status(403).json({ code: 'forbidden', message: 'Trainer or leader role required in organizing club' });
+    }
+
+    const { workoutId, trainerId } = req.body;
+
+    // trainerId can only be assigned by leader
+    if (trainerId !== undefined) {
+      const userIsLeader = await isLeaderInClub(userId, clubId);
+      if (!userIsLeader) {
+        return res.status(403).json({ code: 'forbidden', message: 'Only club leader can assign a trainer' });
+      }
+
+      // Verify target user is trainer/leader in club
+      if (trainerId !== null) {
+        const targetIsTrainer = await isTrainerOrLeaderInClub(trainerId, clubId);
+        if (!targetIsTrainer) {
+          return res.status(400).json({
+            code: 'validation_error',
+            message: 'Target user is not a trainer or leader in this club',
+          });
+        }
+      }
+    }
+
+    // Verify workout exists and belongs to club or author
+    if (workoutId !== undefined && workoutId !== null) {
+      const workoutsRepo = getWorkoutsRepository();
+      const workout = await workoutsRepo.findById(workoutId);
+      if (!workout) {
+        return res.status(400).json({ code: 'validation_error', message: 'Workout not found' });
+      }
+      if (workout.clubId !== clubId && workout.authorId !== userId) {
+        return res.status(400).json({ code: 'validation_error', message: 'Workout does not belong to this club or author' });
+      }
+    }
+
+    const updated = await eventsRepo.updateTrainerFields(id, { workoutId, trainerId });
+    if (!updated) {
+      return res.status(500).json({ code: 'internal_error', message: 'Failed to update event' });
+    }
+
+    const organizerDisplayName = await getOrganizerDisplayName(updated.organizerId, updated.organizerType);
+
+    const eventDto: EventDetailsDto = {
+      id: updated.id,
+      name: updated.name,
+      type: updated.type,
+      status: updated.status,
+      startDateTime: updated.startDateTime,
+      startLocation: updated.startLocation,
+      locationName: updated.locationName,
+      organizerId: updated.organizerId,
+      organizerType: updated.organizerType,
+      organizerDisplayName,
+      difficultyLevel: updated.difficultyLevel,
+      description: updated.description,
+      participantLimit: updated.participantLimit,
+      participantCount: updated.participantCount,
+      territoryId: updated.territoryId,
+      cityId: updated.cityId,
+      createdAt: updated.createdAt,
+      updatedAt: updated.updatedAt,
+      workoutId: updated.workoutId,
+      trainerId: updated.trainerId,
+    };
+
+    res.status(200).json(eventDto);
+  } catch (error) {
+    logger.error('Error patching event trainer fields', { eventId: id, error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
   }
 });
 

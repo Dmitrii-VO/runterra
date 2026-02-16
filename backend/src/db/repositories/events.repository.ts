@@ -29,6 +29,8 @@ interface EventRow {
   city_id: string;
   created_at: Date;
   updated_at: Date;
+  workout_id: string | null;
+  trainer_id: string | null;
 }
 
 /**
@@ -89,6 +91,8 @@ function rowToEvent(row: EventRow): Event {
     cityId: row.city_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    workoutId: row.workout_id || undefined,
+    trainerId: row.trainer_id || undefined,
   };
 }
 
@@ -553,6 +557,36 @@ export class EventsRepository extends BaseRepository {
       [eventId, userId]
     );
     return row ? rowToParticipant(row) : null;
+  }
+
+  async updateTrainerFields(
+    eventId: string,
+    data: { workoutId?: string | null; trainerId?: string | null },
+  ): Promise<Event | null> {
+    const sets: string[] = [];
+    const params: unknown[] = [];
+    let idx = 1;
+
+    if (data.workoutId !== undefined) {
+      sets.push(`workout_id = $${idx++}`);
+      params.push(data.workoutId);
+    }
+    if (data.trainerId !== undefined) {
+      sets.push(`trainer_id = $${idx++}`);
+      params.push(data.trainerId);
+    }
+
+    if (sets.length === 0) {
+      return this.findById(eventId);
+    }
+
+    sets.push(`updated_at = NOW()`);
+    params.push(eventId);
+    const row = await this.queryOne<EventRow>(
+      `UPDATE events SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`,
+      params,
+    );
+    return row ? rowToEvent(row) : null;
   }
 
   async getParticipants(eventId: string): Promise<EventParticipant[]> {

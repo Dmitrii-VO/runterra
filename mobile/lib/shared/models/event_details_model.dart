@@ -86,6 +86,27 @@ class EventDetailsModel {
   /// Дата последнего обновления
   final DateTime updatedAt;
 
+  /// Linked workout template ID
+  final String? workoutId;
+
+  /// Assigned trainer ID
+  final String? trainerId;
+
+  /// Workout name (resolved for display)
+  final String? workoutName;
+
+  /// Workout description (resolved for display)
+  final String? workoutDescription;
+
+  /// Workout type (resolved for display)
+  final String? workoutType;
+
+  /// Workout difficulty (resolved for display)
+  final String? workoutDifficulty;
+
+  /// Trainer display name (resolved for display)
+  final String? trainerName;
+
   /// Признак участия текущего пользователя
   final bool? isParticipant;
 
@@ -111,6 +132,13 @@ class EventDetailsModel {
     required this.cityId,
     required this.createdAt,
     required this.updatedAt,
+    this.workoutId,
+    this.trainerId,
+    this.workoutName,
+    this.workoutDescription,
+    this.workoutType,
+    this.workoutDifficulty,
+    this.trainerName,
     this.isParticipant,
     this.participantStatus,
   });
@@ -143,6 +171,13 @@ class EventDetailsModel {
       cityId: json['cityId'] as String? ?? '',
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
+      workoutId: json['workoutId'] as String?,
+      trainerId: json['trainerId'] as String?,
+      workoutName: json['workoutName'] as String?,
+      workoutDescription: json['workoutDescription'] as String?,
+      workoutType: json['workoutType'] as String?,
+      workoutDifficulty: json['workoutDifficulty'] as String?,
+      trainerName: json['trainerName'] as String?,
       isParticipant: json['isParticipant'] as bool?,
       participantStatus: json['participantStatus'] as String?,
     );
@@ -171,6 +206,13 @@ class EventDetailsModel {
       'cityId': cityId,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      if (workoutId != null) 'workoutId': workoutId,
+      if (trainerId != null) 'trainerId': trainerId,
+      if (workoutName != null) 'workoutName': workoutName,
+      if (workoutDescription != null) 'workoutDescription': workoutDescription,
+      if (workoutType != null) 'workoutType': workoutType,
+      if (workoutDifficulty != null) 'workoutDifficulty': workoutDifficulty,
+      if (trainerName != null) 'trainerName': trainerName,
       if (isParticipant != null) 'isParticipant': isParticipant,
       if (participantStatus != null) 'participantStatus': participantStatus,
     };

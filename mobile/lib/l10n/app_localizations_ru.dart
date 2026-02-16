@@ -1234,4 +1234,171 @@ class AppLocalizationsRu extends AppLocalizations {
   String clubPosition(String km, String position) {
     return 'Ваш клуб: $km км ($position-е место)';
   }
+
+  @override
+  String get trainerProfile => 'Профиль тренера';
+
+  @override
+  String get trainerEditProfile => 'Редактировать профиль';
+
+  @override
+  String get trainerBio => 'О себе';
+
+  @override
+  String get trainerBioHint => 'Опишите ваш подход к тренировкам...';
+
+  @override
+  String get trainerSpecialization => 'Специализация';
+
+  @override
+  String get trainerExperience => 'Стаж (лет)';
+
+  @override
+  String get trainerCertificates => 'Сертификаты';
+
+  @override
+  String get trainerCertificateName => 'Название сертификата';
+
+  @override
+  String get trainerCertificateDate => 'Дата';
+
+  @override
+  String get trainerCertificateOrg => 'Организация';
+
+  @override
+  String get trainerAddCertificate => 'Добавить сертификат';
+
+  @override
+  String get trainerProfileSaved => 'Профиль сохранён';
+
+  @override
+  String get trainerProfileNotAvailable => 'Профиль тренера недоступен';
+
+  @override
+  String get trainerRoleRequired =>
+      'Для редактирования профиля нужна роль тренера в клубе';
+
+  @override
+  String get trainerSpecializationRequired =>
+      'Выберите хотя бы одну специализацию';
+
+  @override
+  String get trainerExperienceRange => 'Значение должно быть от 0 до 50';
+
+  @override
+  String get specMarathon => 'Марафон';
+
+  @override
+  String get specSprint => 'Спринт';
+
+  @override
+  String get specTrail => 'Трейл';
+
+  @override
+  String get specRecovery => 'Восстановление';
+
+  @override
+  String get specGeneral => 'Общая подготовка';
+
+  @override
+  String get workouts => 'Тренировки';
+
+  @override
+  String get myWorkouts => 'Мои тренировки';
+
+  @override
+  String get createWorkout => 'Создать тренировку';
+
+  @override
+  String get editWorkout => 'Редактировать тренировку';
+
+  @override
+  String get workoutName => 'Название';
+
+  @override
+  String get workoutDescription => 'Описание';
+
+  @override
+  String get workoutDescriptionHint => 'Опишите план тренировки...';
+
+  @override
+  String get workoutType => 'Тип';
+
+  @override
+  String get workoutDifficulty => 'Сложность';
+
+  @override
+  String get workoutTargetMetric => 'Целевая метрика';
+
+  @override
+  String get workoutClub => 'Клуб (опционально)';
+
+  @override
+  String get workoutPersonal => 'Личная';
+
+  @override
+  String get workoutSaved => 'Тренировка сохранена';
+
+  @override
+  String get workoutDeleted => 'Тренировка удалена';
+
+  @override
+  String get workoutDeleteConfirm => 'Удалить тренировку?';
+
+  @override
+  String get workoutInUse => 'Нельзя удалить: привязана к будущим событиям';
+
+  @override
+  String get workoutEmpty => 'Тренировок пока нет';
+
+  @override
+  String get typeRecovery => 'Восстановительная';
+
+  @override
+  String get typeTempo => 'Темповая';
+
+  @override
+  String get typeInterval => 'Интервальная';
+
+  @override
+  String get typeFartlek => 'Фартлек';
+
+  @override
+  String get typeLongRun => 'Длительная';
+
+  @override
+  String get diffBeginner => 'Начинающий';
+
+  @override
+  String get diffIntermediate => 'Средний';
+
+  @override
+  String get diffAdvanced => 'Продвинутый';
+
+  @override
+  String get diffPro => 'Профи';
+
+  @override
+  String get metricDistance => 'Дистанция';
+
+  @override
+  String get metricTime => 'Время';
+
+  @override
+  String get metricPace => 'Темп';
+
+  @override
+  String get eventWorkout => 'Тренировка';
+
+  @override
+  String get eventSelectWorkout => 'Выбрать тренировку';
+
+  @override
+  String get eventTrainer => 'Тренер';
+
+  @override
+  String get eventSelectTrainer => 'Выбрать тренера';
+
+  @override
+  String get eventNoWorkout => 'Тренировка не назначена';
 }

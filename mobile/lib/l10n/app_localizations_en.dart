@@ -1229,4 +1229,171 @@ class AppLocalizationsEn extends AppLocalizations {
   String clubPosition(String km, String position) {
     return 'Your club: $km km ($position place)';
   }
+
+  @override
+  String get trainerProfile => 'Trainer Profile';
+
+  @override
+  String get trainerEditProfile => 'Edit Trainer Profile';
+
+  @override
+  String get trainerBio => 'About';
+
+  @override
+  String get trainerBioHint => 'Describe your coaching philosophy...';
+
+  @override
+  String get trainerSpecialization => 'Specialization';
+
+  @override
+  String get trainerExperience => 'Experience (years)';
+
+  @override
+  String get trainerCertificates => 'Certificates';
+
+  @override
+  String get trainerCertificateName => 'Certificate name';
+
+  @override
+  String get trainerCertificateDate => 'Date';
+
+  @override
+  String get trainerCertificateOrg => 'Organization';
+
+  @override
+  String get trainerAddCertificate => 'Add certificate';
+
+  @override
+  String get trainerProfileSaved => 'Profile saved';
+
+  @override
+  String get trainerProfileNotAvailable => 'Trainer profile not available';
+
+  @override
+  String get trainerRoleRequired =>
+      'You need a trainer role in a club to edit your profile';
+
+  @override
+  String get trainerSpecializationRequired =>
+      'Select at least one specialization';
+
+  @override
+  String get trainerExperienceRange => 'Value must be between 0 and 50';
+
+  @override
+  String get specMarathon => 'Marathon';
+
+  @override
+  String get specSprint => 'Sprint';
+
+  @override
+  String get specTrail => 'Trail';
+
+  @override
+  String get specRecovery => 'Recovery';
+
+  @override
+  String get specGeneral => 'General';
+
+  @override
+  String get workouts => 'Workouts';
+
+  @override
+  String get myWorkouts => 'My Workouts';
+
+  @override
+  String get createWorkout => 'Create Workout';
+
+  @override
+  String get editWorkout => 'Edit Workout';
+
+  @override
+  String get workoutName => 'Name';
+
+  @override
+  String get workoutDescription => 'Description';
+
+  @override
+  String get workoutDescriptionHint => 'Describe the workout plan...';
+
+  @override
+  String get workoutType => 'Type';
+
+  @override
+  String get workoutDifficulty => 'Difficulty';
+
+  @override
+  String get workoutTargetMetric => 'Target metric';
+
+  @override
+  String get workoutClub => 'Club (optional)';
+
+  @override
+  String get workoutPersonal => 'Personal';
+
+  @override
+  String get workoutSaved => 'Workout saved';
+
+  @override
+  String get workoutDeleted => 'Workout deleted';
+
+  @override
+  String get workoutDeleteConfirm => 'Delete this workout?';
+
+  @override
+  String get workoutInUse => 'Cannot delete: linked to upcoming events';
+
+  @override
+  String get workoutEmpty => 'No workouts yet';
+
+  @override
+  String get typeRecovery => 'Recovery';
+
+  @override
+  String get typeTempo => 'Tempo';
+
+  @override
+  String get typeInterval => 'Interval';
+
+  @override
+  String get typeFartlek => 'Fartlek';
+
+  @override
+  String get typeLongRun => 'Long Run';
+
+  @override
+  String get diffBeginner => 'Beginner';
+
+  @override
+  String get diffIntermediate => 'Intermediate';
+
+  @override
+  String get diffAdvanced => 'Advanced';
+
+  @override
+  String get diffPro => 'Pro';
+
+  @override
+  String get metricDistance => 'Distance';
+
+  @override
+  String get metricTime => 'Time';
+
+  @override
+  String get metricPace => 'Pace';
+
+  @override
+  String get eventWorkout => 'Workout';
+
+  @override
+  String get eventSelectWorkout => 'Select workout';
+
+  @override
+  String get eventTrainer => 'Trainer';
+
+  @override
+  String get eventSelectTrainer => 'Select trainer';
+
+  @override
+  String get eventNoWorkout => 'No workout assigned';
 }

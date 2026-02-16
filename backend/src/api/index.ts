@@ -20,6 +20,8 @@ import eventsRouter from './events.routes';
 import runsRouter from './runs.routes';
 import mapRouter from './map.routes';
 import messagesRouter from './messages.routes';
+import trainerRouter from './trainer.routes';
+import workoutsRouter from './workouts.routes';
 
 const apiRouter = Router();
 
@@ -43,5 +45,7 @@ apiRouter.use('/events', eventsRouter);
 apiRouter.use('/runs', runsRouter);
 apiRouter.use('/map', mapRouter);
 apiRouter.use('/messages', messagesRouter);
+apiRouter.use('/trainer', trainerRouter);
+apiRouter.use('/workouts', workoutsRouter);
 
 export default apiRouter;

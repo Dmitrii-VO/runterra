@@ -156,6 +156,40 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     }
   }
 
+  String _getWorkoutTypeText(BuildContext context, String type) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (type) {
+      case 'RECOVERY':
+        return l10n.typeRecovery;
+      case 'TEMPO':
+        return l10n.typeTempo;
+      case 'INTERVAL':
+        return l10n.typeInterval;
+      case 'FARTLEK':
+        return l10n.typeFartlek;
+      case 'LONG_RUN':
+        return l10n.typeLongRun;
+      default:
+        return type;
+    }
+  }
+
+  String _getWorkoutDifficultyText(BuildContext context, String difficulty) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (difficulty) {
+      case 'BEGINNER':
+        return l10n.diffBeginner;
+      case 'INTERMEDIATE':
+        return l10n.diffIntermediate;
+      case 'ADVANCED':
+        return l10n.diffAdvanced;
+      case 'PRO':
+        return l10n.diffPro;
+      default:
+        return difficulty;
+    }
+  }
+
   String _formatDateTime(DateTime dateTime) {
     final dateFormat = DateFormat('d.M.y H:mm');
     return dateFormat.format(dateTime);
@@ -295,6 +329,47 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       onTap: () {
                         context.push('/territory/${event.territoryId}');
                       },
+                    ),
+                  if (event.workoutId != null || event.workoutName != null)
+                    _buildInfoRow(
+                      context,
+                      Icons.fitness_center,
+                      AppLocalizations.of(context)!.eventWorkout,
+                      event.workoutName ?? AppLocalizations.of(context)!.eventNoWorkout,
+                    ),
+                  if (event.workoutType != null)
+                    _buildInfoRow(
+                      context,
+                      Icons.flag,
+                      AppLocalizations.of(context)!.workoutType,
+                      _getWorkoutTypeText(context, event.workoutType!),
+                    ),
+                  if (event.workoutDifficulty != null)
+                    _buildInfoRow(
+                      context,
+                      Icons.speed,
+                      AppLocalizations.of(context)!.workoutDifficulty,
+                      _getWorkoutDifficultyText(context, event.workoutDifficulty!),
+                    ),
+                  if (event.workoutDescription != null &&
+                      event.workoutDescription!.trim().isNotEmpty)
+                    _buildInfoRow(
+                      context,
+                      Icons.notes,
+                      AppLocalizations.of(context)!.workoutDescription,
+                      event.workoutDescription!,
+                    ),
+                  if (event.trainerId != null || event.trainerName != null)
+                    _buildInfoRow(
+                      context,
+                      Icons.person_outline,
+                      AppLocalizations.of(context)!.eventTrainer,
+                      event.trainerName ?? event.trainerId!,
+                      onTap: event.trainerId == null
+                          ? null
+                          : () {
+                              context.push('/trainer/${event.trainerId}');
+                            },
                     ),
 
                   const SizedBox(height: 24),

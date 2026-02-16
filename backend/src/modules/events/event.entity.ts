@@ -100,4 +100,10 @@ export interface Event {
   
   /** Дата последнего обновления */
   updatedAt: Date;
+
+  /** Linked workout template (optional) */
+  workoutId?: string;
+
+  /** Assigned trainer (optional) */
+  trainerId?: string;
 }

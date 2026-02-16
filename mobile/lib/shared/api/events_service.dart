@@ -233,4 +233,22 @@ class EventsService {
     if (response.statusCode >= 200 && response.statusCode < 300) return;
     _throwApiException(response, 'leave_event_error');
   }
+
+  /// Выполняет PATCH /api/events/:id для назначения workout/trainer.
+  Future<EventDetailsModel> updateEventTrainerFields(
+    String eventId, {
+    String? workoutId,
+    String? trainerId,
+  }) async {
+    final body = <String, dynamic>{};
+    if (workoutId != null) body['workoutId'] = workoutId;
+    if (trainerId != null) body['trainerId'] = trainerId;
+
+    final response = await _apiClient.patch('/api/events/$eventId', body: body);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+      return EventDetailsModel.fromJson(jsonData);
+    }
+    _throwApiException(response, 'update_event_trainer_fields_error');
+  }
 }

@@ -92,6 +92,7 @@ export const mockEventsRepository = {
   checkIn: jest.fn().mockResolvedValue({ participant: { ...mockParticipant, status: 'checked_in' as const } }),
   getParticipant: jest.fn().mockResolvedValue(null),
   getParticipants: jest.fn().mockResolvedValue([]),
+  updateTrainerFields: jest.fn().mockResolvedValue(mockEvent),
 };
 
 // Mock RunsRepository
@@ -157,6 +158,58 @@ export const mockClubChannelsRepository = {
   }),
 };
 
+// Mock TrainerProfilesRepository
+export const mockTrainerProfilesRepository = {
+  findByUserId: jest.fn().mockResolvedValue(null),
+  create: jest.fn().mockResolvedValue({
+    userId: 'test-user-id',
+    bio: 'Test bio',
+    specialization: ['GENERAL'],
+    experienceYears: 5,
+    certificates: [],
+    createdAt: new Date(),
+  }),
+  update: jest.fn().mockResolvedValue({
+    userId: 'test-user-id',
+    bio: 'Updated bio',
+    specialization: ['GENERAL'],
+    experienceYears: 5,
+    certificates: [],
+    createdAt: new Date(),
+  }),
+};
+
+// Mock WorkoutsRepository
+export const mockWorkoutsRepository = {
+  findById: jest.fn().mockResolvedValue(null),
+  findByAuthor: jest.fn().mockResolvedValue([]),
+  findByClub: jest.fn().mockResolvedValue([]),
+  create: jest.fn().mockResolvedValue({
+    id: 'workout-1',
+    authorId: 'test-user-id',
+    clubId: undefined,
+    name: 'Test Workout',
+    description: 'Test description',
+    type: 'TEMPO',
+    difficulty: 'INTERMEDIATE',
+    targetMetric: 'DISTANCE',
+    createdAt: new Date(),
+  }),
+  update: jest.fn().mockResolvedValue({
+    id: 'workout-1',
+    authorId: 'test-user-id',
+    clubId: undefined,
+    name: 'Updated Workout',
+    description: 'Updated description',
+    type: 'TEMPO',
+    difficulty: 'INTERMEDIATE',
+    targetMetric: 'DISTANCE',
+    createdAt: new Date(),
+  }),
+  delete: jest.fn().mockResolvedValue(true),
+  hasUpcomingEvents: jest.fn().mockResolvedValue(false),
+};
+
 // Getter functions
 export const getUsersRepository = jest.fn(() => mockUsersRepository);
 export const getEventsRepository = jest.fn(() => mockEventsRepository);
@@ -165,6 +218,8 @@ export const getClubMembersRepository = jest.fn(() => mockClubMembersRepository)
 export const getClubsRepository = jest.fn(() => mockClubsRepository);
 export const getMessagesRepository = jest.fn(() => mockMessagesRepository);
 export const getClubChannelsRepository = jest.fn(() => mockClubChannelsRepository);
+export const getTrainerProfilesRepository = jest.fn(() => mockTrainerProfilesRepository);
+export const getWorkoutsRepository = jest.fn(() => mockWorkoutsRepository);
 
 // Re-export classes (not used in mocks but needed for type compatibility)
 export class BaseRepository {}
@@ -175,7 +230,10 @@ export class ClubMembersRepository {}
 export class ClubsRepository {}
 export class MessagesRepository {}
 export class ClubChannelsRepository {}
+export class TrainerProfilesRepository {}
+export class WorkoutsRepository {}
 export type EventParticipant = { id: string };
 export type RunValidationResult = { valid: boolean };
 export type ClubMembershipRow = { id: string; clubId: string; userId: string; status: string };
 export type ActiveUserClubMembershipRow = { clubId: string; clubName: string; clubCityId: string; clubStatus: string; role: string; joinedAt: Date };
+export type ClubMemberDetailDto = { userId: string; displayName: string; role: string; joinedAt: Date };

@@ -15,6 +15,14 @@ import { EventStatus } from './event.status';
 import type { EventStartLocation } from './event.entity';
 
 /**
+ * Zod schema for PATCH /api/events/:id trainer fields
+ */
+export const UpdateEventTrainerFieldsSchema = z.object({
+  workoutId: z.string().uuid().nullable().optional(),
+  trainerId: z.string().uuid().nullable().optional(),
+});
+
+/**
  * DTO для создания события
  * 
  * Используется при создании нового события в системе.
@@ -170,6 +178,27 @@ export interface EventDetailsDto {
   /** Дата последнего обновления */
   updatedAt: Date;
 
+  /** Linked workout template (optional) */
+  workoutId?: string;
+
+  /** Assigned trainer (optional) */
+  trainerId?: string;
+
+  /** Workout name (resolved for display) */
+  workoutName?: string;
+
+  /** Workout description (resolved for display) */
+  workoutDescription?: string;
+
+  /** Workout type (resolved for display) */
+  workoutType?: string;
+
+  /** Workout difficulty (resolved for display) */
+  workoutDifficulty?: string;
+
+  /** Trainer display name (resolved for display) */
+  trainerName?: string;
+
   /** Является ли текущий пользователь участником события */
   isParticipant?: boolean;
 
@@ -228,6 +257,24 @@ export interface EventListItemDto {
 
   /** Идентификатор города, в котором проходит событие */
   cityId: string;
+
+  /** Linked workout template (optional) */
+  workoutId?: string;
+
+  /** Assigned trainer (optional) */
+  trainerId?: string;
+
+  /** Workout name (resolved for display) */
+  workoutName?: string;
+
+  /** Workout type (resolved for display) */
+  workoutType?: string;
+
+  /** Workout difficulty (resolved for display) */
+  workoutDifficulty?: string;
+
+  /** Trainer display name (resolved for display) */
+  trainerName?: string;
 }
 
 /**

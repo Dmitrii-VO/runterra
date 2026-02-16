@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
+import '../../shared/models/club_member_model.dart';
 import '../../shared/models/event_start_location.dart';
+import '../../shared/models/workout.dart';
 import '../../shared/models/city_model.dart';
 
 class CreateEventScreen extends StatefulWidget {
@@ -28,6 +30,12 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   String? _cityId;
   String? _cityName;
   bool _hasClub = false;
+  bool _loadingIntegrationOptions = false;
+  bool _canAssignTrainer = false;
+  String? _selectedWorkoutId;
+  String? _selectedTrainerId;
+  List<Workout> _availableWorkouts = [];
+  List<ClubMemberModel> _availableTrainers = [];
 
   // Location picker state (replaces lat/lon controllers)
   double? _selectedLat;
@@ -70,6 +78,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       } catch (e) {
         debugPrint('Error loading profile for organizer: $e');
       }
+      _resetEventIntegrationSelection();
     }
 
     CityModel? city;
@@ -86,6 +95,85 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         _selectedLat = city.center.latitude;
         _selectedLon = city.center.longitude;
       });
+    }
+
+    if (!mounted) return;
+    await _loadEventIntegrationOptions();
+  }
+
+  void _resetEventIntegrationSelection() {
+    if (!mounted) return;
+    setState(() {
+      _availableWorkouts = [];
+      _availableTrainers = [];
+      _selectedWorkoutId = null;
+      _selectedTrainerId = null;
+      _canAssignTrainer = false;
+      _loadingIntegrationOptions = false;
+    });
+  }
+
+  Future<void> _loadEventIntegrationOptions() async {
+    if (!mounted) return;
+    if (_organizerType != 'club') {
+      _resetEventIntegrationSelection();
+      return;
+    }
+
+    final clubId = _organizerIdController.text.trim();
+    if (clubId.isEmpty) {
+      _resetEventIntegrationSelection();
+      return;
+    }
+
+    setState(() => _loadingIntegrationOptions = true);
+    try {
+      final personalWorkouts = await ServiceLocator.workoutsService.getWorkouts();
+      final clubWorkouts = await ServiceLocator.workoutsService.getWorkouts(clubId: clubId);
+      final members = await ServiceLocator.clubsService.getClubMembers(clubId);
+      final profile = await ServiceLocator.usersService.getProfile();
+
+      final byId = <String, Workout>{};
+      for (final workout in [...clubWorkouts, ...personalWorkouts]) {
+        byId[workout.id] = workout;
+      }
+      final trainers = members
+          .where((member) => member.role == 'trainer' || member.role == 'leader')
+          .toList();
+      final myMembership = members.where((member) => member.userId == profile.user.id);
+      final canAssignTrainer = myMembership.any((member) => member.role == 'leader');
+
+      if (!mounted) return;
+      setState(() {
+        _availableWorkouts = byId.values.toList();
+        _availableTrainers = trainers;
+        _canAssignTrainer = canAssignTrainer;
+        if (_selectedWorkoutId != null &&
+            !_availableWorkouts.any((workout) => workout.id == _selectedWorkoutId)) {
+          _selectedWorkoutId = null;
+        }
+        if (_selectedTrainerId != null &&
+            !_availableTrainers.any((trainer) => trainer.userId == _selectedTrainerId)) {
+          _selectedTrainerId = null;
+        }
+        if (!_canAssignTrainer) {
+          _selectedTrainerId = null;
+        }
+      });
+    } catch (e) {
+      debugPrint('Error loading event integration options: $e');
+      if (!mounted) return;
+      setState(() {
+        _availableWorkouts = [];
+        _availableTrainers = [];
+        _selectedWorkoutId = null;
+        _selectedTrainerId = null;
+        _canAssignTrainer = false;
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _loadingIntegrationOptions = false);
+      }
     }
   }
 
@@ -183,6 +271,18 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             : _descriptionController.text.trim(),
         participantLimit: participantLimit,
       );
+
+      if (_organizerType == 'club') {
+        final hasWorkout = _selectedWorkoutId != null;
+        final hasTrainer = _canAssignTrainer && _selectedTrainerId != null;
+        if (hasWorkout || hasTrainer) {
+          await ServiceLocator.eventsService.updateEventTrainerFields(
+            event.id,
+            workoutId: _selectedWorkoutId,
+            trainerId: hasTrainer ? _selectedTrainerId : null,
+          );
+        }
+      }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -314,9 +414,75 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                               _organizerIdController.text = profile.user.id;
                             } catch (_) {}
                           }
+                          await _loadEventIntegrationOptions();
                         },
                 ),
                 const SizedBox(height: 16),
+              ],
+              if (_organizerType == 'club') ...[
+                if (_loadingIntegrationOptions)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedWorkoutId ?? '__none_workout__',
+                  decoration: InputDecoration(
+                    labelText: l10n.eventWorkout,
+                    border: const OutlineInputBorder(),
+                  ),
+                  items: [
+                    DropdownMenuItem(
+                      value: '__none_workout__',
+                      child: Text(l10n.eventNoWorkout),
+                    ),
+                    ..._availableWorkouts.map(
+                      (workout) => DropdownMenuItem(
+                        value: workout.id,
+                        child: Text(workout.name),
+                      ),
+                    ),
+                  ],
+                  onChanged: (_saving || _loadingIntegrationOptions)
+                      ? null
+                      : (value) {
+                          setState(() {
+                            _selectedWorkoutId =
+                                value == '__none_workout__' ? null : value;
+                          });
+                        },
+                ),
+                const SizedBox(height: 16),
+                if (_canAssignTrainer) ...[
+                  DropdownButtonFormField<String>(
+                    initialValue: _selectedTrainerId ?? '__none_trainer__',
+                    decoration: InputDecoration(
+                      labelText: l10n.eventTrainer,
+                      border: const OutlineInputBorder(),
+                    ),
+                    items: [
+                      DropdownMenuItem(
+                        value: '__none_trainer__',
+                        child: Text(l10n.eventSelectTrainer),
+                      ),
+                      ..._availableTrainers.map(
+                        (trainer) => DropdownMenuItem(
+                          value: trainer.userId,
+                          child: Text(trainer.displayName),
+                        ),
+                      ),
+                    ],
+                    onChanged: (_saving || _loadingIntegrationOptions)
+                        ? null
+                        : (value) {
+                            setState(() {
+                              _selectedTrainerId =
+                                  value == '__none_trainer__' ? null : value;
+                            });
+                          },
+                  ),
+                  const SizedBox(height: 16),
+                ],
               ],
               TextFormField(
                 controller: _locationNameController,

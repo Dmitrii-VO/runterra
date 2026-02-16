@@ -2335,6 +2335,336 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your club: {km} km ({position} place)'**
   String clubPosition(String km, String position);
+
+  /// No description provided for @trainerProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Trainer Profile'**
+  String get trainerProfile;
+
+  /// No description provided for @trainerEditProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Trainer Profile'**
+  String get trainerEditProfile;
+
+  /// No description provided for @trainerBio.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get trainerBio;
+
+  /// No description provided for @trainerBioHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe your coaching philosophy...'**
+  String get trainerBioHint;
+
+  /// No description provided for @trainerSpecialization.
+  ///
+  /// In en, this message translates to:
+  /// **'Specialization'**
+  String get trainerSpecialization;
+
+  /// No description provided for @trainerExperience.
+  ///
+  /// In en, this message translates to:
+  /// **'Experience (years)'**
+  String get trainerExperience;
+
+  /// No description provided for @trainerCertificates.
+  ///
+  /// In en, this message translates to:
+  /// **'Certificates'**
+  String get trainerCertificates;
+
+  /// No description provided for @trainerCertificateName.
+  ///
+  /// In en, this message translates to:
+  /// **'Certificate name'**
+  String get trainerCertificateName;
+
+  /// No description provided for @trainerCertificateDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get trainerCertificateDate;
+
+  /// No description provided for @trainerCertificateOrg.
+  ///
+  /// In en, this message translates to:
+  /// **'Organization'**
+  String get trainerCertificateOrg;
+
+  /// No description provided for @trainerAddCertificate.
+  ///
+  /// In en, this message translates to:
+  /// **'Add certificate'**
+  String get trainerAddCertificate;
+
+  /// No description provided for @trainerProfileSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile saved'**
+  String get trainerProfileSaved;
+
+  /// No description provided for @trainerProfileNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Trainer profile not available'**
+  String get trainerProfileNotAvailable;
+
+  /// No description provided for @trainerRoleRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'You need a trainer role in a club to edit your profile'**
+  String get trainerRoleRequired;
+
+  /// No description provided for @trainerSpecializationRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Select at least one specialization'**
+  String get trainerSpecializationRequired;
+
+  /// No description provided for @trainerExperienceRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Value must be between 0 and 50'**
+  String get trainerExperienceRange;
+
+  /// No description provided for @specMarathon.
+  ///
+  /// In en, this message translates to:
+  /// **'Marathon'**
+  String get specMarathon;
+
+  /// No description provided for @specSprint.
+  ///
+  /// In en, this message translates to:
+  /// **'Sprint'**
+  String get specSprint;
+
+  /// No description provided for @specTrail.
+  ///
+  /// In en, this message translates to:
+  /// **'Trail'**
+  String get specTrail;
+
+  /// No description provided for @specRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery'**
+  String get specRecovery;
+
+  /// No description provided for @specGeneral.
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get specGeneral;
+
+  /// No description provided for @workouts.
+  ///
+  /// In en, this message translates to:
+  /// **'Workouts'**
+  String get workouts;
+
+  /// No description provided for @myWorkouts.
+  ///
+  /// In en, this message translates to:
+  /// **'My Workouts'**
+  String get myWorkouts;
+
+  /// No description provided for @createWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Workout'**
+  String get createWorkout;
+
+  /// No description provided for @editWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Workout'**
+  String get editWorkout;
+
+  /// No description provided for @workoutName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get workoutName;
+
+  /// No description provided for @workoutDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get workoutDescription;
+
+  /// No description provided for @workoutDescriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe the workout plan...'**
+  String get workoutDescriptionHint;
+
+  /// No description provided for @workoutType.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get workoutType;
+
+  /// No description provided for @workoutDifficulty.
+  ///
+  /// In en, this message translates to:
+  /// **'Difficulty'**
+  String get workoutDifficulty;
+
+  /// No description provided for @workoutTargetMetric.
+  ///
+  /// In en, this message translates to:
+  /// **'Target metric'**
+  String get workoutTargetMetric;
+
+  /// No description provided for @workoutClub.
+  ///
+  /// In en, this message translates to:
+  /// **'Club (optional)'**
+  String get workoutClub;
+
+  /// No description provided for @workoutPersonal.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal'**
+  String get workoutPersonal;
+
+  /// No description provided for @workoutSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout saved'**
+  String get workoutSaved;
+
+  /// No description provided for @workoutDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout deleted'**
+  String get workoutDeleted;
+
+  /// No description provided for @workoutDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this workout?'**
+  String get workoutDeleteConfirm;
+
+  /// No description provided for @workoutInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot delete: linked to upcoming events'**
+  String get workoutInUse;
+
+  /// No description provided for @workoutEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No workouts yet'**
+  String get workoutEmpty;
+
+  /// No description provided for @typeRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery'**
+  String get typeRecovery;
+
+  /// No description provided for @typeTempo.
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo'**
+  String get typeTempo;
+
+  /// No description provided for @typeInterval.
+  ///
+  /// In en, this message translates to:
+  /// **'Interval'**
+  String get typeInterval;
+
+  /// No description provided for @typeFartlek.
+  ///
+  /// In en, this message translates to:
+  /// **'Fartlek'**
+  String get typeFartlek;
+
+  /// No description provided for @typeLongRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Long Run'**
+  String get typeLongRun;
+
+  /// No description provided for @diffBeginner.
+  ///
+  /// In en, this message translates to:
+  /// **'Beginner'**
+  String get diffBeginner;
+
+  /// No description provided for @diffIntermediate.
+  ///
+  /// In en, this message translates to:
+  /// **'Intermediate'**
+  String get diffIntermediate;
+
+  /// No description provided for @diffAdvanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced'**
+  String get diffAdvanced;
+
+  /// No description provided for @diffPro.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro'**
+  String get diffPro;
+
+  /// No description provided for @metricDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get metricDistance;
+
+  /// No description provided for @metricTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get metricTime;
+
+  /// No description provided for @metricPace.
+  ///
+  /// In en, this message translates to:
+  /// **'Pace'**
+  String get metricPace;
+
+  /// No description provided for @eventWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout'**
+  String get eventWorkout;
+
+  /// No description provided for @eventSelectWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Select workout'**
+  String get eventSelectWorkout;
+
+  /// No description provided for @eventTrainer.
+  ///
+  /// In en, this message translates to:
+  /// **'Trainer'**
+  String get eventTrainer;
+
+  /// No description provided for @eventSelectTrainer.
+  ///
+  /// In en, this message translates to:
+  /// **'Select trainer'**
+  String get eventSelectTrainer;
+
+  /// No description provided for @eventNoWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'No workout assigned'**
+  String get eventNoWorkout;
 }
 
 class _AppLocalizationsDelegate

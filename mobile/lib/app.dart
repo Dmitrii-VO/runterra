@@ -21,8 +21,14 @@ import 'features/events/create_event_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'features/profile/edit_profile_screen.dart';
 import 'features/profile/my_clubs_screen.dart';
+import 'features/trainer/trainer_profile_screen.dart';
+import 'features/trainer/trainer_edit_profile_screen.dart';
+import 'features/trainer/workouts_list_screen.dart';
+import 'features/trainer/workout_form_screen.dart';
 import 'shared/models/profile_model.dart' show ProfileModel;
 import 'shared/models/club_model.dart';
+import 'shared/models/workout.dart';
+import 'shared/models/trainer_profile.dart';
 import 'shared/auth/auth_service.dart';
 import 'shared/di/service_locator.dart';
 import 'shared/navigation/bottom_nav.dart';
@@ -242,6 +248,35 @@ class RunterraApp extends StatelessWidget {
         builder: (context, state) {
           final eventId = state.pathParameters['id'] ?? '';
           return EventDetailsScreen(eventId: eventId);
+        },
+      ),
+      GoRoute(
+        path: '/trainer/:userId',
+        builder: (context, state) {
+          final userId = state.pathParameters['userId'] ?? '';
+          return TrainerProfileScreen(userId: userId);
+        },
+      ),
+      GoRoute(
+        path: '/trainer/edit',
+        builder: (context, state) {
+          final profile = state.extra as TrainerProfile?;
+          return TrainerEditProfileScreen(existingProfile: profile);
+        },
+      ),
+      GoRoute(
+        path: '/workouts',
+        builder: (context, state) => const WorkoutsListScreen(),
+      ),
+      GoRoute(
+        path: '/workouts/create',
+        builder: (context, state) => const WorkoutFormScreen(),
+      ),
+      GoRoute(
+        path: '/workouts/:id/edit',
+        builder: (context, state) {
+          final workout = state.extra as Workout?;
+          return WorkoutFormScreen(existing: workout);
         },
       ),
     ],

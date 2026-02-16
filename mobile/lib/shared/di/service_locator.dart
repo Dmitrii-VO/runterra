@@ -7,7 +7,9 @@ import '../api/map_service.dart';
 import '../api/messages_service.dart';
 import '../api/run_service.dart';
 import '../api/territories_service.dart';
+import '../api/trainer_service.dart';
 import '../api/users_service.dart';
+import '../api/workouts_service.dart';
 import '../auth/auth_service.dart';
 import '../config/api_config.dart';
 import '../location/location_service.dart';
@@ -35,6 +37,8 @@ class ServiceLocator {
   static late final RunService _runService;
   static late final TerritoriesService _territoriesService;
   static late final UsersService _usersService;
+  static late final TrainerService _trainerService;
+  static late final WorkoutsService _workoutsService;
   static late final CurrentCityService _currentCityService;
   static late final CurrentClubService _currentClubService;
 
@@ -51,6 +55,8 @@ class ServiceLocator {
     _mapService = MapService(apiClient: _apiClient);
     _messagesService = MessagesService(apiClient: _apiClient);
     _territoriesService = TerritoriesService(apiClient: _apiClient);
+    _trainerService = TrainerService(apiClient: _apiClient);
+    _workoutsService = WorkoutsService(apiClient: _apiClient);
     _usersService = UsersService(apiClient: _apiClient);
     _runService = RunService(
       apiClient: _apiClient,
@@ -75,6 +81,8 @@ class ServiceLocator {
   static RunService get runService => _runService;
   static TerritoriesService get territoriesService => _territoriesService;
   static UsersService get usersService => _usersService;
+  static TrainerService get trainerService => _trainerService;
+  static WorkoutsService get workoutsService => _workoutsService;
   static CurrentCityService get currentCityService => _currentCityService;
   static CurrentClubService get currentClubService => _currentClubService;
 

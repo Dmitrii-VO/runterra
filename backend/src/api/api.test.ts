@@ -171,10 +171,16 @@ describe('API Routes', () => {
   });
 
   describe('GET /api/events', () => {
-    const { mockEventsRepository } = require('../db/repositories');
+    const {
+      mockEventsRepository,
+      mockWorkoutsRepository,
+      mockUsersRepository,
+    } = require('../db/repositories');
 
     beforeEach(() => {
       mockEventsRepository.findAll.mockClear();
+      mockWorkoutsRepository.findById.mockClear();
+      mockUsersRepository.findByIds.mockClear();
     });
 
     it('returns 200 with array', async () => {
@@ -238,6 +244,66 @@ describe('API Routes', () => {
       if (first.organizerType === 'club' && first.organizerId === 'a0000000-0000-4000-8000-000000000001') {
         expect(first.organizerDisplayName).toBe('Test Club');
       }
+    });
+
+    it('returns workout/trainer integration fields for list items', async () => {
+      mockEventsRepository.findAll.mockResolvedValueOnce([
+        {
+          id: 'event-with-integration',
+          name: 'Tempo Training',
+          type: 'training',
+          status: 'open',
+          startDateTime: new Date(),
+          startLocation: { longitude: 30.3351, latitude: 59.9343 },
+          organizerId: TEST_CLUB_1,
+          organizerType: 'club',
+          participantCount: 10,
+          cityId: 'spb',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          workoutId: 'workout-1',
+          trainerId: 'trainer-1',
+        },
+      ]);
+      mockWorkoutsRepository.findById.mockResolvedValueOnce({
+        id: 'workout-1',
+        authorId: 'trainer-1',
+        clubId: TEST_CLUB_1,
+        name: 'Intervals 8x400',
+        description: 'Warm-up and intervals',
+        type: 'INTERVAL',
+        difficulty: 'INTERMEDIATE',
+        targetMetric: 'DISTANCE',
+        createdAt: new Date(),
+      });
+      mockUsersRepository.findByIds.mockResolvedValueOnce([
+        {
+          id: 'trainer-1',
+          firebaseUid: 'uid-trainer',
+          email: 'trainer@example.com',
+          name: 'Trainer One',
+          firstName: 'Trainer',
+          lastName: 'One',
+          status: 'active',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ]);
+
+      const res = await request(app)
+        .get('/api/events?cityId=spb')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveLength(1);
+      expect(res.body[0]).toMatchObject({
+        workoutId: 'workout-1',
+        trainerId: 'trainer-1',
+        workoutName: 'Intervals 8x400',
+        workoutType: 'INTERVAL',
+        workoutDifficulty: 'INTERMEDIATE',
+        trainerName: 'Trainer One',
+      });
     });
   });
 
@@ -415,6 +481,14 @@ describe('API Routes', () => {
   });
 
   describe('GET by ID', () => {
+    const { mockEventsRepository, mockWorkoutsRepository, mockUsersRepository } = require('../db/repositories');
+
+    beforeEach(() => {
+      mockEventsRepository.findById.mockClear();
+      mockWorkoutsRepository.findById.mockClear();
+      mockUsersRepository.findByIds.mockClear();
+    });
+
     // NOTE: Stubs return 200 with mock data for any ID.
     // TODO: Update tests when real DB integration is added.
     
@@ -437,6 +511,65 @@ describe('API Routes', () => {
       if (res.body.organizerType === 'club') {
         expect(res.body.organizerDisplayName).toBe('Test Club');
       }
+    });
+
+    it('GET /api/events/:id returns workout/trainer integration fields', async () => {
+      mockEventsRepository.findById.mockResolvedValueOnce({
+        id: 'event-details-1',
+        name: 'Club Workout',
+        type: 'training',
+        status: 'open',
+        startDateTime: new Date(),
+        startLocation: { longitude: 30.3351, latitude: 59.9343 },
+        locationName: 'Park',
+        organizerId: TEST_CLUB_1,
+        organizerType: 'club',
+        participantCount: 12,
+        cityId: 'spb',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        workoutId: 'workout-2',
+        trainerId: 'trainer-2',
+      });
+      mockWorkoutsRepository.findById.mockResolvedValueOnce({
+        id: 'workout-2',
+        authorId: 'trainer-2',
+        clubId: TEST_CLUB_1,
+        name: 'Long Tempo',
+        description: '15 min warm-up + tempo blocks',
+        type: 'TEMPO',
+        difficulty: 'ADVANCED',
+        targetMetric: 'TIME',
+        createdAt: new Date(),
+      });
+      mockUsersRepository.findByIds.mockResolvedValueOnce([
+        {
+          id: 'trainer-2',
+          firebaseUid: 'uid-trainer-2',
+          email: 'trainer2@example.com',
+          name: 'Coach Anna',
+          firstName: 'Anna',
+          lastName: 'Petrova',
+          status: 'active',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ]);
+
+      const res = await request(app)
+        .get('/api/events/event-details-1')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        workoutId: 'workout-2',
+        trainerId: 'trainer-2',
+        workoutName: 'Long Tempo',
+        workoutDescription: '15 min warm-up + tempo blocks',
+        workoutType: 'TEMPO',
+        workoutDifficulty: 'ADVANCED',
+        trainerName: 'Anna Petrova',
+      });
     });
 
     it('GET /api/clubs/:id returns 200 (stub)', async () => {
