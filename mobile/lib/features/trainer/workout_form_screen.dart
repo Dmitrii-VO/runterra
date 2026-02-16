@@ -155,7 +155,8 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
               )
             else
               DropdownButtonFormField<String>(
-                initialValue: _clubId == null ? 'personal' : 'club',
+                // ignore: deprecated_member_use
+                value: _clubId == null ? 'personal' : 'club',
                 decoration: InputDecoration(labelText: l10n.workoutClub),
                 items: [
                   DropdownMenuItem(
@@ -180,7 +181,8 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
 
             // Type dropdown
             DropdownButtonFormField<String>(
-              initialValue: _type,
+              // ignore: deprecated_member_use
+              value: _type,
               decoration: InputDecoration(labelText: l10n.workoutType),
               items: _types
                   .map((t) => DropdownMenuItem(
@@ -194,7 +196,8 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
 
             // Difficulty dropdown
             DropdownButtonFormField<String>(
-              initialValue: _difficulty,
+              // ignore: deprecated_member_use
+              value: _difficulty,
               decoration: InputDecoration(labelText: l10n.workoutDifficulty),
               items: _difficulties
                   .map((d) => DropdownMenuItem(
@@ -208,7 +211,8 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
 
             // Target metric dropdown
             DropdownButtonFormField<String>(
-              initialValue: _targetMetric,
+              // ignore: deprecated_member_use
+              value: _targetMetric,
               decoration: InputDecoration(labelText: l10n.workoutTargetMetric),
               items: _metrics
                   .map((m) => DropdownMenuItem(

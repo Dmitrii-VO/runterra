@@ -426,7 +426,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     child: Center(child: CircularProgressIndicator()),
                   ),
                 DropdownButtonFormField<String>(
-                  initialValue: _selectedWorkoutId ?? '__none_workout__',
+                  // ignore: deprecated_member_use
+                  value: _selectedWorkoutId ?? '__none_workout__',
                   decoration: InputDecoration(
                     labelText: l10n.eventWorkout,
                     border: const OutlineInputBorder(),
@@ -455,7 +456,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 const SizedBox(height: 16),
                 if (_canAssignTrainer) ...[
                   DropdownButtonFormField<String>(
-                    initialValue: _selectedTrainerId ?? '__none_trainer__',
+                    // ignore: deprecated_member_use
+                    value: _selectedTrainerId ?? '__none_trainer__',
                     decoration: InputDecoration(
                       labelText: l10n.eventTrainer,
                       border: const OutlineInputBorder(),
