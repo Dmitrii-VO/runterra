@@ -251,17 +251,17 @@ class RunterraApp extends StatelessWidget {
         },
       ),
       GoRoute(
-        path: '/trainer/:userId',
-        builder: (context, state) {
-          final userId = state.pathParameters['userId'] ?? '';
-          return TrainerProfileScreen(userId: userId);
-        },
-      ),
-      GoRoute(
         path: '/trainer/edit',
         builder: (context, state) {
           final profile = state.extra as TrainerProfile?;
           return TrainerEditProfileScreen(existingProfile: profile);
+        },
+      ),
+      GoRoute(
+        path: '/trainer/:userId',
+        builder: (context, state) {
+          final userId = state.pathParameters['userId'] ?? '';
+          return TrainerProfileScreen(userId: userId);
         },
       ),
       GoRoute(
@@ -303,4 +303,3 @@ class RunterraApp extends StatelessWidget {
     );
   }
 }
-

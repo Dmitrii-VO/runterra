@@ -17,6 +17,8 @@ const app = createApp();
  */
 describe('Trainer Routes', () => {
   const originalEnv = process.env.NODE_ENV;
+  const userId = '11111111-1111-1111-1111-111111111111';
+  const otherUserId = '22222222-2222-2222-2222-222222222222';
 
   beforeAll(() => {
     process.env.NODE_ENV = 'test';
@@ -33,7 +35,7 @@ describe('Trainer Routes', () => {
   } = require('../db/repositories');
 
   const mockProfile = {
-    userId: 'user-1',
+    userId,
     bio: 'Experienced running coach',
     specialization: ['GENERAL'],
     experienceYears: 5,
@@ -51,7 +53,7 @@ describe('Trainer Routes', () => {
 
     // Default: user exists
     mockUsersRepository.findByFirebaseUid.mockResolvedValue({
-      id: 'user-1',
+      id: userId,
       firebaseUid: 'uid-1',
       email: 'test@example.com',
       name: 'Test User',
@@ -67,7 +69,7 @@ describe('Trainer Routes', () => {
         .set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(200);
-      expect(res.body).toHaveProperty('userId', 'user-1');
+      expect(res.body).toHaveProperty('userId', userId);
       expect(res.body).toHaveProperty('bio', 'Experienced running coach');
       expect(res.body).toHaveProperty('specialization');
       expect(res.body).toHaveProperty('experienceYears', 5);
@@ -91,11 +93,11 @@ describe('Trainer Routes', () => {
       mockTrainerProfilesRepository.findByUserId.mockResolvedValueOnce(mockProfile);
 
       const res = await request(app)
-        .get('/api/trainer/profile/user-1')
+        .get(`/api/trainer/profile/${userId}`)
         .set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(200);
-      expect(res.body).toHaveProperty('userId', 'user-1');
+      expect(res.body).toHaveProperty('userId', userId);
       expect(res.body).toHaveProperty('specialization');
     });
 
@@ -103,11 +105,21 @@ describe('Trainer Routes', () => {
       mockTrainerProfilesRepository.findByUserId.mockResolvedValueOnce(null);
 
       const res = await request(app)
-        .get('/api/trainer/profile/nonexistent-user')
+        .get(`/api/trainer/profile/${otherUserId}`)
         .set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(404);
       expect(res.body).toHaveProperty('code', 'not_found');
+    });
+
+    it('returns 400 when userId is not a UUID', async () => {
+      const res = await request(app)
+        .get('/api/trainer/profile/edit')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('code', 'validation_error');
+      expect(mockTrainerProfilesRepository.findByUserId).not.toHaveBeenCalled();
     });
   });
 
@@ -121,7 +133,14 @@ describe('Trainer Routes', () => {
     it('returns 201 when trainer profile is created (user is trainer in a club)', async () => {
       // User is a trainer in at least one club
       mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([
-        { clubId: 'club-1', clubName: 'Club A', clubCityId: 'spb', clubStatus: 'active', role: 'trainer', joinedAt: new Date() },
+        {
+          clubId: 'club-1',
+          clubName: 'Club A',
+          clubCityId: 'spb',
+          clubStatus: 'active',
+          role: 'trainer',
+          joinedAt: new Date(),
+        },
       ]);
       mockTrainerProfilesRepository.findByUserId.mockResolvedValueOnce(null);
       mockTrainerProfilesRepository.create.mockResolvedValueOnce(mockProfile);
@@ -132,10 +151,10 @@ describe('Trainer Routes', () => {
         .send(validBody);
 
       expect(res.status).toBe(201);
-      expect(res.body).toHaveProperty('userId', 'user-1');
+      expect(res.body).toHaveProperty('userId', userId);
       expect(mockTrainerProfilesRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          userId: 'user-1',
+          userId,
           specialization: ['GENERAL'],
           experienceYears: 5,
         }),
@@ -145,7 +164,14 @@ describe('Trainer Routes', () => {
     it('returns 403 when user is not a trainer or leader in any club', async () => {
       // User has only member role
       mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([
-        { clubId: 'club-1', clubName: 'Club A', clubCityId: 'spb', clubStatus: 'active', role: 'member', joinedAt: new Date() },
+        {
+          clubId: 'club-1',
+          clubName: 'Club A',
+          clubCityId: 'spb',
+          clubStatus: 'active',
+          role: 'member',
+          joinedAt: new Date(),
+        },
       ]);
 
       const res = await request(app)
@@ -160,7 +186,14 @@ describe('Trainer Routes', () => {
 
     it('returns 409 when trainer profile already exists', async () => {
       mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([
-        { clubId: 'club-1', clubName: 'Club A', clubCityId: 'spb', clubStatus: 'active', role: 'trainer', joinedAt: new Date() },
+        {
+          clubId: 'club-1',
+          clubName: 'Club A',
+          clubCityId: 'spb',
+          clubStatus: 'active',
+          role: 'trainer',
+          joinedAt: new Date(),
+        },
       ]);
       mockTrainerProfilesRepository.findByUserId.mockResolvedValueOnce(mockProfile);
 
@@ -188,7 +221,14 @@ describe('Trainer Routes', () => {
   describe('PATCH /api/trainer/profile', () => {
     it('returns 200 with updated profile', async () => {
       mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([
-        { clubId: 'club-1', clubName: 'Club A', clubCityId: 'spb', clubStatus: 'active', role: 'trainer', joinedAt: new Date() },
+        {
+          clubId: 'club-1',
+          clubName: 'Club A',
+          clubCityId: 'spb',
+          clubStatus: 'active',
+          role: 'trainer',
+          joinedAt: new Date(),
+        },
       ]);
       const updatedProfile = { ...mockProfile, bio: 'Updated bio' };
       mockTrainerProfilesRepository.update.mockResolvedValueOnce(updatedProfile);
@@ -201,14 +241,21 @@ describe('Trainer Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('bio', 'Updated bio');
       expect(mockTrainerProfilesRepository.update).toHaveBeenCalledWith(
-        'user-1',
+        userId,
         expect.objectContaining({ bio: 'Updated bio' }),
       );
     });
 
     it('returns 403 when user is not trainer or leader', async () => {
       mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([
-        { clubId: 'club-1', clubName: 'Club A', clubCityId: 'spb', clubStatus: 'active', role: 'member', joinedAt: new Date() },
+        {
+          clubId: 'club-1',
+          clubName: 'Club A',
+          clubCityId: 'spb',
+          clubStatus: 'active',
+          role: 'member',
+          joinedAt: new Date(),
+        },
       ]);
 
       const res = await request(app)
@@ -222,7 +269,14 @@ describe('Trainer Routes', () => {
 
     it('returns 404 when profile does not exist for update', async () => {
       mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([
-        { clubId: 'club-1', clubName: 'Club A', clubCityId: 'spb', clubStatus: 'active', role: 'trainer', joinedAt: new Date() },
+        {
+          clubId: 'club-1',
+          clubName: 'Club A',
+          clubCityId: 'spb',
+          clubStatus: 'active',
+          role: 'trainer',
+          joinedAt: new Date(),
+        },
       ]);
       mockTrainerProfilesRepository.update.mockResolvedValueOnce(null);
 
@@ -236,3 +290,4 @@ describe('Trainer Routes', () => {
     });
   });
 });
+

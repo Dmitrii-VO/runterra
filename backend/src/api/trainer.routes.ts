@@ -13,6 +13,7 @@ import { getUsersRepository, getTrainerProfilesRepository } from '../db/reposito
 import { CreateTrainerProfileSchema, UpdateTrainerProfileSchema } from '../modules/trainer';
 import { isTrainerInAnyClub } from './helpers/trainer-role';
 import { logger } from '../shared/logger';
+import { isValidUuid } from '../shared/validation';
 
 const router = Router();
 
@@ -57,6 +58,13 @@ router.get('/profile', async (req: Request, res: Response) => {
 router.get('/profile/:userId', async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
+    if (!isValidUuid(userId)) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'userId must be a valid UUID',
+        details: { fields: [{ field: 'userId', message: 'Invalid UUID', code: 'invalid_uuid' }] },
+      });
+    }
     const repo = getTrainerProfilesRepository();
     const profile = await repo.findByUserId(userId);
     if (!profile) {

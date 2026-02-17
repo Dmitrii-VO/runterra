@@ -48,6 +48,11 @@
 
 ## Известные открытые (не из логов backend)
 
+- **Trainer profile edit — 500 при GET /api/trainer/profile/edit (исправление в коде, ожидает деплой) (22P02 string_to_uuid)**
+  Сигнатура: `Error fetching trainer profile`, `code: 22P02`, `routine: string_to_uuid`, запрос `GET /api/trainer/profile/edit` → 500 (в access-логах путь виден как `/profile/edit`).
+  Причина: роут `GET /api/trainer/profile/:userId` принимает `userId=edit` (не UUID) и передаёт в запрос к БД → PostgreSQL падает на приведении к UUID. Частая причина на клиенте: маршрут `/trainer/edit` матчится как `/trainer/:userId` (userId="edit").
+  Исправление в коде (ожидает деплой): в mobile переставить роуты так, чтобы `/trainer/edit` был выше `/trainer/:userId`; в backend добавить UUID-валидацию `:userId` (400 вместо 500).
+
 - **Вылет при «Начать пробежку» в Nox** — краш на эмуляторе при старте foreground service (GPS). Решение не вводили: оставлен фоновый режим и в debug по запросу. Не бэкенд, не логи runterra.
 
 ---
