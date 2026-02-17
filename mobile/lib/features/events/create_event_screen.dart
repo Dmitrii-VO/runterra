@@ -208,14 +208,19 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   }
 
   Future<void> _pickLocation() async {
-    final result = await context.push<Map<String, double>>(
+    final result = await context.push<Map<String, dynamic>>(
       '/map/pick?lat=${_selectedLat ?? 59.93}&lon=${_selectedLon ?? 30.33}',
     );
     if (result != null && mounted) {
       setState(() {
-        _selectedLat = result['lat'];
-        _selectedLon = result['lon'];
+        _selectedLat = (result['lat'] as num?)?.toDouble();
+        _selectedLon = (result['lon'] as num?)?.toDouble();
       });
+      // Auto-fill location name from address search if empty
+      final address = result['address'] as String?;
+      if (address != null && _locationNameController.text.trim().isEmpty) {
+        _locationNameController.text = address;
+      }
     }
   }
 

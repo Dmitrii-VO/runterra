@@ -234,6 +234,40 @@ class EventsService {
     _throwApiException(response, 'leave_event_error');
   }
 
+  /// Выполняет PATCH /api/events/:id for general event updates.
+  Future<EventDetailsModel> updateEvent(
+    String eventId, {
+    String? name,
+    String? type,
+    DateTime? startDateTime,
+    EventStartLocation? startLocation,
+    String? locationName,
+    String? description,
+    int? participantLimit,
+    bool clearParticipantLimit = false,
+    String? difficultyLevel,
+    bool clearDifficultyLevel = false,
+  }) async {
+    final body = <String, dynamic>{};
+    if (name != null) body['name'] = name;
+    if (type != null) body['type'] = type;
+    if (startDateTime != null) body['startDateTime'] = startDateTime.toIso8601String();
+    if (startLocation != null) body['startLocation'] = startLocation.toJson();
+    if (locationName != null) body['locationName'] = locationName;
+    if (description != null) body['description'] = description;
+    if (participantLimit != null) body['participantLimit'] = participantLimit;
+    if (clearParticipantLimit) body['participantLimit'] = null;
+    if (difficultyLevel != null) body['difficultyLevel'] = difficultyLevel;
+    if (clearDifficultyLevel) body['difficultyLevel'] = null;
+
+    final response = await _apiClient.patch('/api/events/$eventId', body: body);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+      return EventDetailsModel.fromJson(jsonData);
+    }
+    _throwApiException(response, 'update_event_error');
+  }
+
   /// Выполняет PATCH /api/events/:id для назначения workout/trainer.
   Future<EventDetailsModel> updateEventTrainerFields(
     String eventId, {

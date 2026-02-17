@@ -68,6 +68,7 @@ describe('PATCH /api/events/:id', () => {
   beforeEach(() => {
     mockUsersRepository.findByFirebaseUid.mockClear();
     mockEventsRepository.findById.mockClear();
+    mockEventsRepository.update.mockClear();
     mockEventsRepository.updateTrainerFields.mockClear();
     mockClubMembersRepository.findByClubAndUser.mockClear();
     mockClubMembersRepository.findActiveClubsByUser.mockClear();
@@ -107,7 +108,7 @@ describe('PATCH /api/events/:id', () => {
     });
 
     const updatedEvent = { ...mockClubEvent, workoutId: TEST_WORKOUT_ID };
-    mockEventsRepository.updateTrainerFields.mockResolvedValueOnce(updatedEvent);
+    mockEventsRepository.update.mockResolvedValueOnce(updatedEvent);
 
     const res = await request(app)
       .patch('/api/events/event-1')
@@ -116,7 +117,7 @@ describe('PATCH /api/events/:id', () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('workoutId', TEST_WORKOUT_ID);
-    expect(mockEventsRepository.updateTrainerFields).toHaveBeenCalledWith(
+    expect(mockEventsRepository.update).toHaveBeenCalledWith(
       'event-1',
       expect.objectContaining({ workoutId: TEST_WORKOUT_ID }),
     );
@@ -152,7 +153,7 @@ describe('PATCH /api/events/:id', () => {
       });
 
     const updatedEvent = { ...mockClubEvent, trainerId: TEST_TRAINER_ID };
-    mockEventsRepository.updateTrainerFields.mockResolvedValueOnce(updatedEvent);
+    mockEventsRepository.update.mockResolvedValueOnce(updatedEvent);
 
     const res = await request(app)
       .patch('/api/events/event-1')
@@ -207,6 +208,7 @@ describe('PATCH /api/events/:id', () => {
     expect(res.body).toHaveProperty('code', 'validation_error');
     expect(res.body.message).toMatch(/club/i);
     expect(mockEventsRepository.updateTrainerFields).not.toHaveBeenCalled();
+    expect(mockEventsRepository.update).not.toHaveBeenCalled();
   });
 
   it('returns 404 when event is not found', async () => {
@@ -220,6 +222,7 @@ describe('PATCH /api/events/:id', () => {
     expect(res.status).toBe(404);
     expect(res.body).toHaveProperty('code', 'not_found');
     expect(mockEventsRepository.updateTrainerFields).not.toHaveBeenCalled();
+    expect(mockEventsRepository.update).not.toHaveBeenCalled();
   });
 
   it('returns 403 when user is not trainer or leader in the organizing club', async () => {

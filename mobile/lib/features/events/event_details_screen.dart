@@ -5,7 +5,6 @@ import '../../l10n/app_localizations.dart';
 import '../../shared/api/users_service.dart' show ApiException;
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/event_details_model.dart';
-import '../../shared/ui/details_scaffold.dart';
 import '../../shared/ui/error_display.dart';
 import 'widgets/event_mini_map.dart';
 import 'widgets/participants_list.dart';
@@ -197,8 +196,41 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return DetailsScaffold(
-      title: AppLocalizations.of(context)!.eventDetailsTitle,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)!.eventDetailsTitle),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/');
+            }
+          },
+        ),
+        actions: [
+          FutureBuilder<EventDetailsModel>(
+            future: _eventFuture,
+            builder: (context, snapshot) {
+              final event = snapshot.data;
+              if (event == null) return const SizedBox.shrink();
+              final effectiveStatus = _effectiveStatus(event);
+              if (event.isOrganizer != true) return const SizedBox.shrink();
+              if (effectiveStatus == 'completed' || effectiveStatus == 'cancelled') {
+                return const SizedBox.shrink();
+              }
+              return IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () async {
+                  await context.push('/event/${event.id}/edit');
+                  _retry();
+                },
+              );
+            },
+          ),
+        ],
+      ),
       body: FutureBuilder<EventDetailsModel>(
         future: _eventFuture,
         builder: (context, snapshot) {

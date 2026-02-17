@@ -18,6 +18,7 @@ import 'features/messages/messages_screen.dart';
 import 'features/events/events_screen.dart';
 import 'features/events/event_details_screen.dart';
 import 'features/events/create_event_screen.dart';
+import 'features/events/edit_event_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'features/profile/edit_profile_screen.dart';
 import 'features/profile/my_clubs_screen.dart';
@@ -248,6 +249,13 @@ class RunterraApp extends StatelessWidget {
         builder: (context, state) {
           final eventId = state.pathParameters['id'] ?? '';
           return EventDetailsScreen(eventId: eventId);
+        },
+      ),
+      GoRoute(
+        path: '/event/:id/edit',
+        builder: (context, state) {
+          final eventId = state.pathParameters['id'] ?? '';
+          return EditEventScreen(eventId: eventId);
         },
       ),
       GoRoute(

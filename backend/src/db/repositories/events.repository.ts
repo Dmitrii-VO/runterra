@@ -559,6 +559,81 @@ export class EventsRepository extends BaseRepository {
     return row ? rowToParticipant(row) : null;
   }
 
+  async update(
+    eventId: string,
+    data: {
+      name?: string;
+      type?: EventType;
+      startDateTime?: Date;
+      startLocation?: { longitude: number; latitude: number };
+      locationName?: string;
+      description?: string;
+      participantLimit?: number | null;
+      difficultyLevel?: 'beginner' | 'intermediate' | 'advanced' | null;
+      workoutId?: string | null;
+      trainerId?: string | null;
+    },
+  ): Promise<Event | null> {
+    const sets: string[] = [];
+    const params: unknown[] = [];
+    let idx = 1;
+
+    if (data.name !== undefined) {
+      sets.push(`name = $${idx++}`);
+      params.push(data.name);
+    }
+    if (data.type !== undefined) {
+      sets.push(`type = $${idx++}`);
+      params.push(data.type);
+    }
+    if (data.startDateTime !== undefined) {
+      sets.push(`start_date_time = $${idx++}`);
+      params.push(data.startDateTime);
+    }
+    if (data.startLocation !== undefined) {
+      sets.push(`start_longitude = $${idx++}`);
+      params.push(data.startLocation.longitude);
+      sets.push(`start_latitude = $${idx++}`);
+      params.push(data.startLocation.latitude);
+    }
+    if (data.locationName !== undefined) {
+      sets.push(`location_name = $${idx++}`);
+      params.push(data.locationName || null);
+    }
+    if (data.description !== undefined) {
+      sets.push(`description = $${idx++}`);
+      params.push(data.description || null);
+    }
+    if (data.participantLimit !== undefined) {
+      sets.push(`participant_limit = $${idx++}`);
+      params.push(data.participantLimit);
+    }
+    if (data.difficultyLevel !== undefined) {
+      sets.push(`difficulty_level = $${idx++}`);
+      params.push(data.difficultyLevel);
+    }
+    if (data.workoutId !== undefined) {
+      sets.push(`workout_id = $${idx++}`);
+      params.push(data.workoutId);
+    }
+    if (data.trainerId !== undefined) {
+      sets.push(`trainer_id = $${idx++}`);
+      params.push(data.trainerId);
+    }
+
+    if (sets.length === 0) {
+      return this.findById(eventId);
+    }
+
+    sets.push(`updated_at = NOW()`);
+    params.push(eventId);
+    const row = await this.queryOne<EventRow>(
+      `UPDATE events SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`,
+      params,
+    );
+    return row ? rowToEvent(row) : null;
+  }
+
   async updateTrainerFields(
     eventId: string,
     data: { workoutId?: string | null; trainerId?: string | null },

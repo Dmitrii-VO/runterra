@@ -15,9 +15,26 @@ import { EventStatus } from './event.status';
 import type { EventStartLocation } from './event.entity';
 
 /**
- * Zod schema for PATCH /api/events/:id trainer fields
+ * Zod schema for PATCH /api/events/:id trainer fields (legacy, kept for reference)
  */
 export const UpdateEventTrainerFieldsSchema = z.object({
+  workoutId: z.string().uuid().nullable().optional(),
+  trainerId: z.string().uuid().nullable().optional(),
+});
+
+/**
+ * Zod schema for PATCH /api/events/:id — general event update.
+ * All fields optional. Backward-compatible with UpdateEventTrainerFieldsSchema.
+ */
+export const UpdateEventSchema = z.object({
+  name: z.string().min(1).optional(),
+  type: z.nativeEnum(EventType).optional(),
+  startDateTime: z.coerce.date().optional(),
+  startLocation: GeoCoordinatesSchema.optional(),
+  locationName: z.string().optional(),
+  description: z.string().optional(),
+  participantLimit: z.number().int().nullable().optional(),
+  difficultyLevel: z.enum(['beginner', 'intermediate', 'advanced']).nullable().optional(),
   workoutId: z.string().uuid().nullable().optional(),
   trainerId: z.string().uuid().nullable().optional(),
 });
@@ -204,6 +221,9 @@ export interface EventDetailsDto {
 
   /** Статус участия текущего пользователя */
   participantStatus?: 'registered' | 'checked_in' | 'cancelled' | 'no_show';
+
+  /** Whether the current user is an organizer (can edit the event) */
+  isOrganizer?: boolean;
 }
 
 /**

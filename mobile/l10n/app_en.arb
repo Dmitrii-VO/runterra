@@ -573,6 +573,7 @@
   "eventCreateLocationRequired": "Select a start point",
   "locationPickerTitle": "Pick location",
   "locationPickerConfirm": "Confirm",
+  "locationPickerSearchHint": "Search address...",
   "leaderCannotLeave": "Transfer leadership first",
   "transferLeadership": "Transfer leadership",
   "disbandClub": "Disband club",
@@ -748,6 +749,17 @@
   "eventTrainer": "Trainer",
   "eventSelectTrainer": "Select trainer",
   "eventNoWorkout": "No workout assigned",
+  "eventEditTitle": "Edit Event",
+  "eventEditSave": "Save Changes",
+  "eventEditSuccess": "Event updated",
+  "eventEditError": "Failed to update: {error}",
+  "@eventEditError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "captureButton": "Capture",
   "captureSuccess": "Territory capture contribution submitted!",
   "captureError": "Could not capture: {message}",

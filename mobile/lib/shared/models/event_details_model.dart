@@ -113,6 +113,9 @@ class EventDetailsModel {
   /// Статус участия текущего пользователя
   final String? participantStatus;
 
+  /// Whether the current user is an organizer (can edit the event)
+  final bool? isOrganizer;
+
   EventDetailsModel({
     required this.id,
     required this.name,
@@ -141,6 +144,7 @@ class EventDetailsModel {
     this.trainerName,
     this.isParticipant,
     this.participantStatus,
+    this.isOrganizer,
   });
 
   /// Создает EventDetailsModel из JSON
@@ -180,6 +184,7 @@ class EventDetailsModel {
       trainerName: json['trainerName'] as String?,
       isParticipant: json['isParticipant'] as bool?,
       participantStatus: json['participantStatus'] as String?,
+      isOrganizer: json['isOrganizer'] as bool?,
     );
   }
 
@@ -215,6 +220,7 @@ class EventDetailsModel {
       if (trainerName != null) 'trainerName': trainerName,
       if (isParticipant != null) 'isParticipant': isParticipant,
       if (participantStatus != null) 'participantStatus': participantStatus,
+      if (isOrganizer != null) 'isOrganizer': isOrganizer,
     };
   }
 }

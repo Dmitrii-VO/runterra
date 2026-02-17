@@ -1,11 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
 import '../../l10n/app_localizations.dart';
 
 /// Full-screen map for picking a location (start point for events).
 ///
-/// Returns a `Map<String, double>` with 'lat' and 'lon' keys via Navigator.pop.
+/// Returns a `Map<String, dynamic>` with 'lat', 'lon', and optionally 'address' keys via Navigator.pop.
 /// Center-pin approach: the user pans/drags the map, pin stays at center, coordinates update on stop.
+/// Includes address search via Yandex Suggest.
 class LocationPickerScreen extends StatefulWidget {
   final double initialLatitude;
   final double initialLongitude;
@@ -23,12 +25,25 @@ class LocationPickerScreen extends StatefulWidget {
 class _LocationPickerScreenState extends State<LocationPickerScreen> {
   late double _selectedLat;
   late double _selectedLon;
+  YandexMapController? _mapController;
+  final _searchController = TextEditingController();
+  Timer? _debounceTimer;
+  List<SuggestItem> _searchResults = [];
+  bool _isSearching = false;
+  String? _selectedAddress;
 
   @override
   void initState() {
     super.initState();
     _selectedLat = widget.initialLatitude;
     _selectedLon = widget.initialLongitude;
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _onCameraPositionChanged(CameraPosition position, CameraUpdateReason reason, bool finished) {
@@ -41,7 +56,91 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
   }
 
   void _confirm() {
-    Navigator.pop(context, {'lat': _selectedLat, 'lon': _selectedLon});
+    Navigator.pop(context, {
+      'lat': _selectedLat,
+      'lon': _selectedLon,
+      if (_selectedAddress != null) 'address': _selectedAddress,
+    });
+  }
+
+  void _onSearchChanged(String text) {
+    _debounceTimer?.cancel();
+    if (text.trim().isEmpty) {
+      setState(() {
+        _searchResults = [];
+        _isSearching = false;
+      });
+      return;
+    }
+    _debounceTimer = Timer(const Duration(milliseconds: 400), () {
+      _performSearch(text.trim());
+    });
+  }
+
+  Future<void> _performSearch(String query) async {
+    setState(() => _isSearching = true);
+    try {
+      final boundingBox = BoundingBox(
+        southWest: Point(
+          latitude: _selectedLat - 0.5,
+          longitude: _selectedLon - 0.5,
+        ),
+        northEast: Point(
+          latitude: _selectedLat + 0.5,
+          longitude: _selectedLon + 0.5,
+        ),
+      );
+
+      final (session, future) = await YandexSuggest.getSuggestions(
+        text: query,
+        boundingBox: boundingBox,
+        suggestOptions: const SuggestOptions(
+          suggestType: SuggestType.geo,
+          suggestWords: false,
+        ),
+      );
+
+      final result = await future;
+      await session.close();
+
+      if (!mounted) return;
+      setState(() {
+        _searchResults = (result.items ?? [])
+            .where((item) => item.center != null)
+            .toList();
+        _isSearching = false;
+      });
+    } catch (e) {
+      debugPrint('Suggest error: $e');
+      if (!mounted) return;
+      setState(() {
+        _searchResults = [];
+        _isSearching = false;
+      });
+    }
+  }
+
+  void _onSuggestItemSelected(SuggestItem item) {
+    final center = item.center;
+    if (center == null) return;
+
+    setState(() {
+      _selectedLat = center.latitude;
+      _selectedLon = center.longitude;
+      _selectedAddress = item.displayText;
+      _searchResults = [];
+      _searchController.clear();
+    });
+
+    _mapController?.moveCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: Point(latitude: center.latitude, longitude: center.longitude),
+          zoom: 16.0,
+        ),
+      ),
+      animation: const MapAnimation(type: MapAnimationType.smooth, duration: 0.5),
+    );
   }
 
   @override
@@ -62,6 +161,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
         children: [
           YandexMap(
             onMapCreated: (controller) {
+              _mapController = controller;
               controller.moveCamera(
                 CameraUpdate.newCameraPosition(
                   CameraPosition(
@@ -85,6 +185,89 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                   color: Colors.deepOrange,
                 ),
               ),
+            ),
+          ),
+          // Search field at top
+          Positioned(
+            top: 8,
+            left: 8,
+            right: 8,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Material(
+                  elevation: 4,
+                  borderRadius: BorderRadius.circular(8),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: _onSearchChanged,
+                    decoration: InputDecoration(
+                      hintText: l10n.locationPickerSearchHint,
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _isSearching
+                          ? const Padding(
+                              padding: EdgeInsets.all(12),
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            )
+                          : _searchController.text.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() {
+                                      _searchResults = [];
+                                    });
+                                  },
+                                )
+                              : null,
+                      filled: true,
+                      fillColor: Theme.of(context).colorScheme.surface,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                  ),
+                ),
+                if (_searchResults.isNotEmpty)
+                  Material(
+                    elevation: 4,
+                    borderRadius: BorderRadius.circular(8),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 240),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        padding: EdgeInsets.zero,
+                        itemCount: _searchResults.length,
+                        itemBuilder: (context, index) {
+                          final item = _searchResults[index];
+                          return ListTile(
+                            dense: true,
+                            leading: const Icon(Icons.place, size: 20),
+                            title: Text(
+                              item.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle: item.subtitle != null
+                                ? Text(
+                                    item.subtitle!,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  )
+                                : null,
+                            onTap: () => _onSuggestItemSelected(item),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
           // Coordinates display at bottom

@@ -20,7 +20,7 @@ import {
   EventParticipantViewDto,
   CreateEventDto,
   CreateEventSchema,
-  UpdateEventTrainerFieldsSchema,
+  UpdateEventSchema,
 } from '../modules/events';
 import { validateBody } from './validateBody';
 import { getEventsRepository, getUsersRepository, getWorkoutsRepository } from '../db/repositories';
@@ -249,6 +249,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     
     let isParticipant: boolean | undefined;
     let participantStatus: EventDetailsDto['participantStatus'];
+    let isOrganizer: boolean | undefined;
 
     const uid = req.authUser?.uid;
     if (uid) {
@@ -259,6 +260,12 @@ router.get('/:id', async (req: Request, res: Response) => {
         if (participant) {
           isParticipant = participant.status === 'registered' || participant.status === 'checked_in';
           participantStatus = participant.status;
+        }
+        // Check if user is organizer (can edit this event)
+        if (event.organizerType === 'trainer') {
+          isOrganizer = event.organizerId === user.id;
+        } else {
+          isOrganizer = await isTrainerOrLeaderInClub(user.id, event.organizerId);
         }
       }
     }
@@ -295,6 +302,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       trainerName: integration?.trainerName,
       isParticipant,
       participantStatus,
+      isOrganizer,
     };
 
     res.status(200).json(eventDto);
@@ -673,11 +681,18 @@ router.post('/:id/check-in', async (req: Request, res: Response) => {
 /**
  * PATCH /api/events/:id
  *
- * Update trainer-related fields (workoutId, trainerId) on a club event.
- * Only trainer/leader of the organizing club can update.
+ * Update event fields. Supports all editable fields (name, type, startDateTime,
+ * startLocation, locationName, description, participantLimit, difficultyLevel,
+ * workoutId, trainerId).
+ *
+ * Auth:
+ *  - club events: trainer or leader in the organizing club
+ *  - trainer events: the organizer (trainer) themselves
+ *
  * trainerId assignment is restricted to leaders only.
+ * Cannot edit completed/cancelled events.
  */
-router.patch('/:id', validateBody(UpdateEventTrainerFieldsSchema), async (req: Request, res: Response) => {
+router.patch('/:id', validateBody(UpdateEventSchema), async (req: Request, res: Response) => {
   const { id } = req.params;
   const uid = req.authUser?.uid;
   if (!uid) {
@@ -702,31 +717,46 @@ router.patch('/:id', validateBody(UpdateEventTrainerFieldsSchema), async (req: R
       return res.status(404).json({ code: 'not_found', message: 'Event not found' });
     }
 
-    // Only club events can have trainer fields
-    if (event.organizerType !== 'club') {
-      return res.status(400).json({ code: 'validation_error', message: 'Trainer fields can only be set on club events' });
+    // Cannot edit completed/cancelled events
+    if (event.status === EventStatus.COMPLETED || event.status === EventStatus.CANCELLED) {
+      return res.status(400).json({ code: 'event_not_editable', message: 'Cannot edit completed or cancelled events' });
     }
 
-    const clubId = event.organizerId;
-
-    // User must be trainer or leader in the organizing club
-    const hasRole = await isTrainerOrLeaderInClub(userId, clubId);
-    if (!hasRole) {
-      return res.status(403).json({ code: 'forbidden', message: 'Trainer or leader role required in organizing club' });
+    // Authorization check based on organizer type
+    if (event.organizerType === 'club') {
+      const hasRole = await isTrainerOrLeaderInClub(userId, event.organizerId);
+      if (!hasRole) {
+        return res.status(403).json({ code: 'forbidden', message: 'Trainer or leader role required in organizing club' });
+      }
+    } else {
+      // trainer event — only the organizer can edit
+      if (event.organizerId !== userId) {
+        return res.status(403).json({ code: 'forbidden', message: 'Only the event organizer can edit this event' });
+      }
     }
 
-    const { workoutId, trainerId } = req.body;
+    const { workoutId, trainerId, startLocation, ...rest } = req.body;
 
-    // trainerId can only be assigned by leader
+    // Keep the existing product constraint: trainer/workout integration fields
+    // are only supported for club events.
+    if ((workoutId !== undefined || trainerId !== undefined) && event.organizerType !== 'club') {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'Trainer fields can only be set on club events',
+      });
+    }
+
+    // trainerId assignment restricted to leaders (club events only)
     if (trainerId !== undefined) {
-      const userIsLeader = await isLeaderInClub(userId, clubId);
+      if (event.organizerType !== 'club') {
+        return res.status(400).json({ code: 'validation_error', message: 'Trainer fields can only be set on club events' });
+      }
+      const userIsLeader = await isLeaderInClub(userId, event.organizerId);
       if (!userIsLeader) {
         return res.status(403).json({ code: 'forbidden', message: 'Only club leader can assign a trainer' });
       }
-
-      // Verify target user is trainer/leader in club
       if (trainerId !== null) {
-        const targetIsTrainer = await isTrainerOrLeaderInClub(trainerId, clubId);
+        const targetIsTrainer = await isTrainerOrLeaderInClub(trainerId, event.organizerId);
         if (!targetIsTrainer) {
           return res.status(400).json({
             code: 'validation_error',
@@ -743,17 +773,43 @@ router.patch('/:id', validateBody(UpdateEventTrainerFieldsSchema), async (req: R
       if (!workout) {
         return res.status(400).json({ code: 'validation_error', message: 'Workout not found' });
       }
-      if (workout.clubId !== clubId && workout.authorId !== userId) {
-        return res.status(400).json({ code: 'validation_error', message: 'Workout does not belong to this club or author' });
+      if (event.organizerType === 'club') {
+        if (workout.clubId !== event.organizerId && workout.authorId !== userId) {
+          return res.status(400).json({ code: 'validation_error', message: 'Workout does not belong to this club or author' });
+        }
       }
     }
 
-    const updated = await eventsRepo.updateTrainerFields(id, { workoutId, trainerId });
+    // Validate startLocation within city bounds if being updated
+    if (startLocation) {
+      if (!isPointWithinCityBounds(startLocation, event.cityId)) {
+        return res.status(400).json({
+          code: 'validation_error',
+          message: 'Request body validation failed',
+          details: {
+            fields: [{
+              field: 'startLocation',
+              message: 'startLocation coordinates are outside city bounds',
+              code: 'coordinates_out_of_city',
+            }],
+          },
+        });
+      }
+    }
+
+    const updated = await eventsRepo.update(id, {
+      ...rest,
+      ...(startLocation ? { startLocation } : {}),
+      ...(workoutId !== undefined ? { workoutId } : {}),
+      ...(trainerId !== undefined ? { trainerId } : {}),
+    });
     if (!updated) {
       return res.status(500).json({ code: 'internal_error', message: 'Failed to update event' });
     }
 
     const organizerDisplayName = await getOrganizerDisplayName(updated.organizerId, updated.organizerType);
+    const eventIntegration = await resolveEventIntegrationFields([updated]);
+    const integration = eventIntegration.get(updated.id);
 
     const eventDto: EventDetailsDto = {
       id: updated.id,
@@ -774,13 +830,19 @@ router.patch('/:id', validateBody(UpdateEventTrainerFieldsSchema), async (req: R
       cityId: updated.cityId,
       createdAt: updated.createdAt,
       updatedAt: updated.updatedAt,
-      workoutId: updated.workoutId,
-      trainerId: updated.trainerId,
+      workoutId: integration?.workoutId,
+      trainerId: integration?.trainerId,
+      workoutName: integration?.workoutName,
+      workoutDescription: integration?.workoutDescription,
+      workoutType: integration?.workoutType,
+      workoutDifficulty: integration?.workoutDifficulty,
+      trainerName: integration?.trainerName,
+      isOrganizer: true,
     };
 
     res.status(200).json(eventDto);
   } catch (error) {
-    logger.error('Error patching event trainer fields', { eventId: id, error });
+    logger.error('Error patching event', { eventId: id, error });
     res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
   }
 });

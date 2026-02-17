@@ -92,6 +92,7 @@ export const mockEventsRepository = {
   checkIn: jest.fn().mockResolvedValue({ participant: { ...mockParticipant, status: 'checked_in' as const } }),
   getParticipant: jest.fn().mockResolvedValue(null),
   getParticipants: jest.fn().mockResolvedValue([]),
+  update: jest.fn().mockResolvedValue(mockEvent),
   updateTrainerFields: jest.fn().mockResolvedValue(mockEvent),
 };
 

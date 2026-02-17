@@ -399,6 +399,7 @@
   "eventCreateLocationRequired": "Выберите точку старта",
   "locationPickerTitle": "Выбор точки",
   "locationPickerConfirm": "Подтвердить",
+  "locationPickerSearchHint": "Поиск адреса...",
   "leaderCannotLeave": "Сначала передайте лидерство",
   "transferLeadership": "Передать лидерство",
   "disbandClub": "Распустить клуб",
@@ -574,6 +575,17 @@
   "eventTrainer": "Тренер",
   "eventSelectTrainer": "Выбрать тренера",
   "eventNoWorkout": "Тренировка не назначена",
+  "eventEditTitle": "Редактирование события",
+  "eventEditSave": "Сохранить изменения",
+  "eventEditSuccess": "Событие обновлено",
+  "eventEditError": "Ошибка обновления: {error}",
+  "@eventEditError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "captureButton": "Захватить",
   "captureSuccess": "Вклад в захват территории отправлен!",
   "captureError": "Не удалось захватить: {message}",
