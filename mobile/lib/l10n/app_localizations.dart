@@ -2072,6 +2072,12 @@ abstract class AppLocalizations {
   /// **'Confirm'**
   String get locationPickerConfirm;
 
+  /// No description provided for @locationPickerSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search address...'**
+  String get locationPickerSearchHint;
+
   /// No description provided for @leaderCannotLeave.
   ///
   /// In en, this message translates to:
@@ -2666,6 +2672,30 @@ abstract class AppLocalizations {
   /// **'No workout assigned'**
   String get eventNoWorkout;
 
+  /// No description provided for @eventEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Event'**
+  String get eventEditTitle;
+
+  /// No description provided for @eventEditSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Changes'**
+  String get eventEditSave;
+
+  /// No description provided for @eventEditSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Event updated'**
+  String get eventEditSuccess;
+
+  /// No description provided for @eventEditError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update: {error}'**
+  String eventEditError(String error);
+
   /// No description provided for @captureButton.
   ///
   /// In en, this message translates to:
@@ -2683,6 +2713,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not capture: {message}'**
   String captureError(String message);
+
+  /// No description provided for @eventCreatePrivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Private Event'**
+  String get eventCreatePrivate;
+
+  /// No description provided for @eventCreatePrivateDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Only visible to invited members'**
+  String get eventCreatePrivateDescription;
+
+  /// No description provided for @runSelectClubTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Club for Scoring'**
+  String get runSelectClubTitle;
+
+  /// No description provided for @runNoClubs.
+  ///
+  /// In en, this message translates to:
+  /// **'No active clubs found'**
+  String get runNoClubs;
+
+  /// No description provided for @runSkipScoring.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip Scoring (Not Saved)'**
+  String get runSkipScoring;
+
+  /// No description provided for @runClubRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a club to contribute points.'**
+  String get runClubRequired;
 }
 
 class _AppLocalizationsDelegate

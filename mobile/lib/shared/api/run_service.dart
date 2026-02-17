@@ -333,7 +333,7 @@ class RunService {
   /// Бросает исключение, если:
   /// - сессия не завершена
   /// - запрос к API не удался
-  Future<void> submitRun() async {
+  Future<void> submitRun({String? scoringClubId}) async {
     if (_currentSession == null) {
       throw Exception('No run session to submit');
     }
@@ -360,6 +360,11 @@ class RunService {
     // Only include activityId if not null
     if (session.activityId != null) {
       requestBody['activityId'] = session.activityId;
+    }
+    
+    // Include scoringClubId if provided (for territory capture)
+    if (scoringClubId != null) {
+      requestBody['scoringClubId'] = scoringClubId;
     }
 
     // Send to backend. Canonical path: POST /api/runs (do not use base URL only or path "/").

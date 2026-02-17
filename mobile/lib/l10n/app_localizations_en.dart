@@ -1079,6 +1079,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locationPickerConfirm => 'Confirm';
 
   @override
+  String get locationPickerSearchHint => 'Search address...';
+
+  @override
   String get leaderCannotLeave => 'Transfer leadership first';
 
   @override
@@ -1398,6 +1401,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventNoWorkout => 'No workout assigned';
 
   @override
+  String get eventEditTitle => 'Edit Event';
+
+  @override
+  String get eventEditSave => 'Save Changes';
+
+  @override
+  String get eventEditSuccess => 'Event updated';
+
+  @override
+  String eventEditError(String error) {
+    return 'Failed to update: $error';
+  }
+
+  @override
   String get captureButton => 'Capture';
 
   @override
@@ -1407,4 +1424,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String captureError(String message) {
     return 'Could not capture: $message';
   }
+
+  @override
+  String get eventCreatePrivate => 'Private Event';
+
+  @override
+  String get eventCreatePrivateDescription => 'Only visible to invited members';
+
+  @override
+  String get runSelectClubTitle => 'Select Club for Scoring';
+
+  @override
+  String get runNoClubs => 'No active clubs found';
+
+  @override
+  String get runSkipScoring => 'Skip Scoring (Not Saved)';
+
+  @override
+  String get runClubRequired => 'Please select a club to contribute points.';
 }

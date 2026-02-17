@@ -158,26 +158,55 @@ class EventsService {
     String? description,
     int? participantLimit,
     String? territoryId,
+    String? visibility, // 'public' or 'private'
   }) async {
-    final response = await _apiClient.post(
-      '/api/events',
-      body: {
-        'name': name,
-        'type': type,
-        'startDateTime': startDateTime.toIso8601String(),
-        'startLocation': startLocation.toJson(),
-        if (locationName != null) 'locationName': locationName,
-        'organizerId': organizerId,
-        'organizerType': organizerType,
-        if (difficultyLevel != null) 'difficultyLevel': difficultyLevel,
-        if (description != null) 'description': description,
-        if (participantLimit != null) 'participantLimit': participantLimit,
-        if (territoryId != null) 'territoryId': territoryId,
-        'cityId': cityId,
+    final body = <String, dynamic>{
+      'name': name,
+      'type': type,
+      'startDateTime': startDateTime.toUtc().toIso8601String(),
+      'startLocation': <String, dynamic>{
+        'latitude': startLocation.latitude,
+        'longitude': startLocation.longitude,
       },
-    );
+      'organizerId': organizerId,
+      'organizerType': organizerType,
+      'cityId': cityId,
+    };
+
+    if (locationName != null && locationName.isNotEmpty) {
+      body['locationName'] = locationName;
+    }
+    if (description != null && description.isNotEmpty) {
+      body['description'] = description;
+    }
+    if (participantLimit != null) {
+      body['participantLimit'] = participantLimit;
+    }
+    if (difficultyLevel != null) {
+      body['difficultyLevel'] = difficultyLevel;
+    }
+    if (territoryId != null) {
+      body['territoryId'] = territoryId;
+    }
+    if (visibility != null) {
+      body['visibility'] = visibility;
+    }
+
+    final response = await _apiClient.post('/api/events', body: body);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      _throwApiException(response, 'create_event_error');
+      // Helper defined below in the file
+      String errorCode = 'create_event_error';
+      String errorMessage = 'Request failed (${response.statusCode})';
+      try {
+        final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
+        if (decoded != null) {
+          errorCode = (decoded['code'] as String?) ?? errorCode;
+          errorMessage = (decoded['message'] as String?) ?? errorMessage;
+        }
+      } on FormatException {
+        // Non-JSON response
+      }
+      throw ApiException(errorCode, errorMessage);
     }
     final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
     return EventDetailsModel.fromJson(jsonData);

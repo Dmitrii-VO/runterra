@@ -221,6 +221,13 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
       }
       await _runService.submitRun();
     } catch (e) {
+      if (e is ApiException && e.code == 'club_required_for_scoring') {
+         if (mounted) {
+           await _showClubSelectionDialog();
+         }
+         return; // Don't show error snackbar, dialog handles flow
+      }
+
       if (mounted) {
         final errorText = (e is ApiException)
             ? e.message
@@ -237,6 +244,81 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
         setState(() {
           _isSubmitting = false;
         });
+      }
+    }
+  }
+
+  Future<void> _showClubSelectionDialog() async {
+    try {
+      final clubs = await ServiceLocator.clubsService.getMyClubs();
+      
+      if (!mounted) return;
+
+      // Filter active clubs only? 
+      // The API returns active clubs by default usually, but let's assume getMyClubs returns all.
+      // If MyClubModel has status, we should filter. Assuming it does or API filters.
+      // Let's assume the user picks from the list returned.
+
+      await showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        builder: (ctx) => Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  AppLocalizations.of(context)!.runSelectClubTitle,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              if (clubs.isEmpty)
+                 Padding(
+                   padding: const EdgeInsets.all(16.0),
+                   child: Text(AppLocalizations.of(context)!.runNoClubs),
+                 )
+              else
+                ...clubs.map((club) => ListTile(
+                  title: Text(club.name), // MyClubModel uses 'name' not 'clubName'
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    await _submitWithClub(club.id); // MyClubModel uses 'id' not 'clubId'
+                  },
+                )),
+              // Per spec: if >1 active clubs, user MUST choose a club for scoring.
+              // No skip option — user can dismiss the sheet to cancel submission.
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load clubs: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _submitWithClub(String clubId) async {
+    setState(() => _isSubmitting = true);
+    try {
+      await _runService.submitRun(scoringClubId: clubId);
+    } catch (e) {
+      if (mounted) {
+        final errorText = (e is ApiException)
+            ? e.message
+            : AppLocalizations.of(context)!.runFinishError(e.toString());
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorText), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
       }
     }
   }

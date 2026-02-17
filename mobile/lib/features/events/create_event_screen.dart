@@ -36,6 +36,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   String? _selectedTrainerId;
   List<Workout> _availableWorkouts = [];
   List<ClubMemberModel> _availableTrainers = [];
+  bool _isPrivate = false; // New state for visibility
 
   // Location picker state (replaces lat/lon controllers)
   double? _selectedLat;
@@ -275,6 +276,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             ? null
             : _descriptionController.text.trim(),
         participantLimit: participantLimit,
+        visibility: _isPrivate ? 'private' : 'public',
       );
 
       if (_organizerType == 'club') {
@@ -527,6 +529,13 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 ),
                 keyboardType: TextInputType.number,
                 enabled: !_saving,
+              ),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                title: Text(l10n.eventCreatePrivate),
+                subtitle: Text(l10n.eventCreatePrivateDescription),
+                value: _isPrivate,
+                onChanged: _saving ? null : (val) => setState(() => _isPrivate = val),
               ),
               const SizedBox(height: 16),
               TextFormField(

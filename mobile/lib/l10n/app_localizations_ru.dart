@@ -1082,6 +1082,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get locationPickerConfirm => 'Подтвердить';
 
   @override
+  String get locationPickerSearchHint => 'Поиск адреса...';
+
+  @override
   String get leaderCannotLeave => 'Сначала передайте лидерство';
 
   @override
@@ -1403,6 +1406,20 @@ class AppLocalizationsRu extends AppLocalizations {
   String get eventNoWorkout => 'Тренировка не назначена';
 
   @override
+  String get eventEditTitle => 'Редактирование события';
+
+  @override
+  String get eventEditSave => 'Сохранить изменения';
+
+  @override
+  String get eventEditSuccess => 'Событие обновлено';
+
+  @override
+  String eventEditError(String error) {
+    return 'Ошибка обновления: $error';
+  }
+
+  @override
   String get captureButton => 'Захватить';
 
   @override
@@ -1412,4 +1429,22 @@ class AppLocalizationsRu extends AppLocalizations {
   String captureError(String message) {
     return 'Не удалось захватить: $message';
   }
+
+  @override
+  String get eventCreatePrivate => 'Приватное событие';
+
+  @override
+  String get eventCreatePrivateDescription => 'Видно только приглашенным';
+
+  @override
+  String get runSelectClubTitle => 'Выберите клуб для зачета';
+
+  @override
+  String get runNoClubs => 'Нет активных клубов';
+
+  @override
+  String get runSkipScoring => 'Пропустить (не сохранять)';
+
+  @override
+  String get runClubRequired => 'Выберите клуб, чтобы начислить баллы.';
 }

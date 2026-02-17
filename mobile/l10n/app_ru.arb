@@ -595,5 +595,11 @@
         "type": "String"
       }
     }
-  }
+  },
+  "eventCreatePrivate": "Приватное событие",
+  "eventCreatePrivateDescription": "Видно только приглашенным",
+  "runSelectClubTitle": "Выберите клуб для зачета",
+  "runNoClubs": "Нет активных клубов",
+  "runSkipScoring": "Пропустить (не сохранять)",
+  "runClubRequired": "Выберите клуб, чтобы начислить баллы."
 }

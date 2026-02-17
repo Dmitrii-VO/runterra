@@ -769,5 +769,11 @@
         "type": "String"
       }
     }
-  }
+  },
+  "eventCreatePrivate": "Private Event",
+  "eventCreatePrivateDescription": "Only visible to invited members",
+  "runSelectClubTitle": "Select Club for Scoring",
+  "runNoClubs": "No active clubs found",
+  "runSkipScoring": "Skip Scoring (Not Saved)",
+  "runClubRequired": "Please select a club to contribute points."
 }

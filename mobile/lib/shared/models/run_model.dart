@@ -9,6 +9,7 @@ class RunModel {
   final String id;
   final String userId;
   final String? activityId;
+  final String? scoringClubId;
   final DateTime startedAt;
   final DateTime endedAt;
   /// Duration derived from backend duration (seconds).
@@ -22,6 +23,7 @@ class RunModel {
     required this.id,
     required this.userId,
     this.activityId,
+    this.scoringClubId,
     required this.startedAt,
     required this.endedAt,
     required this.duration,
@@ -41,6 +43,7 @@ class RunModel {
       id: json['id'] as String,
       userId: json['userId'] as String,
       activityId: json['activityId'] as String?,
+      scoringClubId: json['scoringClubId'] as String?,
       startedAt: DateTime.parse(json['startedAt'] as String),
       endedAt: DateTime.parse(json['endedAt'] as String),
       duration: Duration(seconds: durationSec.toInt()),
@@ -84,6 +87,7 @@ class RunDetailModel extends RunModel {
     required super.id,
     required super.userId,
     super.activityId,
+    super.scoringClubId,
     required super.startedAt,
     required super.endedAt,
     required super.duration,
@@ -104,6 +108,7 @@ class RunDetailModel extends RunModel {
       id: base.id,
       userId: base.userId,
       activityId: base.activityId,
+      scoringClubId: base.scoringClubId,
       startedAt: base.startedAt,
       endedAt: base.endedAt,
       duration: base.duration,
