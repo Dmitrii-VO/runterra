@@ -1396,4 +1396,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get eventNoWorkout => 'No workout assigned';
+
+  @override
+  String get captureButton => 'Capture';
+
+  @override
+  String get captureSuccess => 'Territory capture contribution submitted!';
+
+  @override
+  String captureError(String message) {
+    return 'Could not capture: $message';
+  }
 }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'api_client.dart';
 import '../models/territory_model.dart';
+import 'users_service.dart' show ApiException;
 
 /// Сервис для работы с территориями
 /// 
@@ -108,6 +109,30 @@ class TerritoriesService {
         );
       }
       rethrow;
+    }
+  }
+
+  /// POST /api/territories/:id/capture
+  ///
+  /// Submit a capture contribution for the given territory on behalf of a club.
+  Future<void> captureTerritory(String territoryId, String clubId) async {
+    final response = await _apiClient.post(
+      '/api/territories/$territoryId/capture',
+      body: {'clubId': clubId},
+    );
+
+    if (response.statusCode == 200) return;
+
+    // Parse error body
+    try {
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      throw ApiException(
+        body['code'] as String? ?? 'unknown_error',
+        body['message'] as String? ?? 'Unknown error',
+      );
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('request_failed', 'Request failed: ${response.statusCode}');
     }
   }
 }

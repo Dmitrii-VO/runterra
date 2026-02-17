@@ -573,5 +573,15 @@
   "eventSelectWorkout": "Выбрать тренировку",
   "eventTrainer": "Тренер",
   "eventSelectTrainer": "Выбрать тренера",
-  "eventNoWorkout": "Тренировка не назначена"
+  "eventNoWorkout": "Тренировка не назначена",
+  "captureButton": "Захватить",
+  "captureSuccess": "Вклад в захват территории отправлен!",
+  "captureError": "Не удалось захватить: {message}",
+  "@captureError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  }
 }

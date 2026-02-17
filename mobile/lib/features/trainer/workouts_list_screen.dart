@@ -173,15 +173,20 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
               },
               child: ListTile(
                 title: Text(w.name),
-                subtitle: Row(
+                subtitle: Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
                   children: [
                     Chip(
                       label: Text(_localizeType(l10n, w.type)),
                       visualDensity: VisualDensity.compact,
                     ),
-                    const SizedBox(width: 4),
                     Chip(
                       label: Text(_localizeDifficulty(l10n, w.difficulty)),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    Chip(
+                      label: Text(_localizeTargetMetric(l10n, w.targetMetric)),
                       visualDensity: VisualDensity.compact,
                     ),
                   ],
@@ -228,6 +233,19 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
         return l10n.diffPro;
       default:
         return diff;
+    }
+  }
+
+  String _localizeTargetMetric(AppLocalizations l10n, String metric) {
+    switch (metric) {
+      case 'DISTANCE':
+        return l10n.metricDistance;
+      case 'TIME':
+        return l10n.metricTime;
+      case 'PACE':
+        return l10n.metricPace;
+      default:
+        return metric;
     }
   }
 }

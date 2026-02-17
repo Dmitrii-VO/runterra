@@ -5,6 +5,7 @@ import '../../../shared/di/service_locator.dart';
 import '../../../shared/models/territory_map_model.dart';
 import '../../../shared/models/territory_league_models.dart';
 import '../../../shared/theme/tier_colors.dart';
+import '../../../shared/api/users_service.dart' show ApiException;
 import 'leaderboard_sheet.dart';
 
 /// Bottom sheet for territory info — League Tactics design.
@@ -27,6 +28,7 @@ class _TerritoryBottomSheetState extends State<TerritoryBottomSheet> {
   TerritoryMapModel? _fullTerritory;
   bool _isLoading = true;
   String? _error;
+  bool _isCapturing = false;
 
   @override
   void initState() {
@@ -440,6 +442,24 @@ class _TerritoryBottomSheetState extends State<TerritoryBottomSheet> {
             ),
           ),
         ),
+        if (info.myClubProgress != null) ...[
+          const SizedBox(width: 8),
+          IconButton.filled(
+            onPressed: _isCapturing ? null : () => _captureTerritory(info),
+            icon: _isCapturing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.flag),
+            tooltip: l10n.captureButton,
+            style: IconButton.styleFrom(
+              backgroundColor: TierColors.forTier(info.tier).withValues(alpha: 0.15),
+              foregroundColor: TierColors.forTier(info.tier),
+            ),
+          ),
+        ],
         const SizedBox(width: 8),
         IconButton.filled(
           onPressed: () => _showLeaderboard(context, info),
@@ -495,6 +515,37 @@ class _TerritoryBottomSheetState extends State<TerritoryBottomSheet> {
         ],
       ),
     );
+  }
+
+  Future<void> _captureTerritory(TerritoryLeagueInfo info) async {
+    final l10n = AppLocalizations.of(context)!;
+    final clubId = info.myClubProgress!.clubId;
+
+    setState(() => _isCapturing = true);
+    try {
+      await ServiceLocator.territoriesService
+          .captureTerritory(_territory.id, clubId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.captureSuccess)),
+        );
+        _loadDetails();
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.captureError(e.message))),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.captureError(e.toString()))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isCapturing = false);
+    }
   }
 
   void _showLeaderboard(BuildContext context, TerritoryLeagueInfo info) {

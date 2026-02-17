@@ -747,5 +747,15 @@
   "eventSelectWorkout": "Select workout",
   "eventTrainer": "Trainer",
   "eventSelectTrainer": "Select trainer",
-  "eventNoWorkout": "No workout assigned"
+  "eventNoWorkout": "No workout assigned",
+  "captureButton": "Capture",
+  "captureSuccess": "Territory capture contribution submitted!",
+  "captureError": "Could not capture: {message}",
+  "@captureError": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  }
 }

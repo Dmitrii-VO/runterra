@@ -1401,4 +1401,15 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get eventNoWorkout => 'Тренировка не назначена';
+
+  @override
+  String get captureButton => 'Захватить';
+
+  @override
+  String get captureSuccess => 'Вклад в захват территории отправлен!';
+
+  @override
+  String captureError(String message) {
+    return 'Не удалось захватить: $message';
+  }
 }

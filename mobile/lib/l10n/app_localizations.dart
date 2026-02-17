@@ -2665,6 +2665,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No workout assigned'**
   String get eventNoWorkout;
+
+  /// No description provided for @captureButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Capture'**
+  String get captureButton;
+
+  /// No description provided for @captureSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Territory capture contribution submitted!'**
+  String get captureSuccess;
+
+  /// No description provided for @captureError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not capture: {message}'**
+  String captureError(String message);
 }
 
 class _AppLocalizationsDelegate
