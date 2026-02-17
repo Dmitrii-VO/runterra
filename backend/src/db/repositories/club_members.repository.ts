@@ -334,6 +334,17 @@ export class ClubMembersRepository extends BaseRepository {
     );
     return parseInt(row?.count ?? '0', 10);
   }
+
+  /** Count active leaders for a club (guardrail: club must not end up without a leader). */
+  async countActiveLeaders(clubId: string): Promise<number> {
+    const row = await this.queryOne<{ count: string }>(
+      `SELECT COUNT(*) as count
+       FROM club_members
+       WHERE club_id = $1 AND status = 'active' AND role = 'leader'`,
+      [clubId],
+    );
+    return parseInt(row?.count ?? '0', 10);
+  }
 }
 
 let instance: ClubMembersRepository | null = null;

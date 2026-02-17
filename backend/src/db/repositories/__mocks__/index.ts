@@ -111,6 +111,7 @@ export const mockClubMembersRepository = {
   activate: jest.fn().mockResolvedValue({ id: 'cm-1', clubId: '1', userId: 'test-user-id', status: 'active', role: 'member', createdAt: new Date(), updatedAt: new Date() }),
   findPrimaryClubIdByUser: jest.fn().mockResolvedValue(null),
   countActiveMembers: jest.fn().mockResolvedValue(5),
+  countActiveLeaders: jest.fn().mockResolvedValue(1),
   findActiveByUser: jest.fn().mockResolvedValue([]),
   findActiveClubsByUser: jest.fn().mockResolvedValue([]),
   updateRole: jest.fn().mockResolvedValue({ id: 'cm-1', clubId: '1', userId: 'test-user-id', status: 'active', role: 'leader', createdAt: new Date(), updatedAt: new Date() }),

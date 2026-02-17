@@ -129,6 +129,32 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
 
     if (selected == null || selected == member.role || !mounted) return;
 
+    // Prevent leaving a club without a leader. The correct flow is to transfer leadership
+    // (promote another member to leader, which demotes current leader to trainer).
+    if (member.role == 'leader' && selected != 'leader') {
+      final action = await showDialog<String>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.leaderCannotLeave),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, 'transfer'),
+              child: Text(l10n.transferLeadership),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.cancel),
+            ),
+          ],
+        ),
+      );
+      if (!mounted) return;
+      if (action == 'transfer') {
+        context.push('/club/${widget.clubId}/transfer-leadership');
+      }
+      return;
+    }
+
     try {
       await ServiceLocator.clubsService.updateMemberRole(
         widget.clubId,

@@ -1012,6 +1012,47 @@ describe('API Routes', () => {
     });
   });
 
+  describe('PATCH /api/clubs/:id/members/:userId/role leader guardrail', () => {
+    const { mockUsersRepository, mockClubMembersRepository, mockClubsRepository } = require('../db/repositories');
+
+    beforeEach(() => {
+      mockUsersRepository.findByFirebaseUid.mockReset();
+      mockClubMembersRepository.findByClubAndUser.mockReset();
+      mockClubMembersRepository.countActiveLeaders.mockReset();
+      mockClubMembersRepository.updateRoleWithLeaderTransfer.mockReset();
+      mockClubsRepository.findById.mockReset();
+    });
+
+    it('returns 400 when attempting to demote the last active leader', async () => {
+      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({ id: 'user-1', firebaseUid: 'uid-1' });
+      mockClubsRepository.findById.mockResolvedValueOnce({
+        id: TEST_CLUB_1,
+        name: 'Test Club',
+        status: 'active',
+        cityId: 'spb',
+        creatorId: 'creator-id',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      // requesterMembership (leader) then targetMembership (same leader)
+      mockClubMembersRepository.findByClubAndUser
+        .mockResolvedValueOnce({ id: 'cm-req', clubId: TEST_CLUB_1, userId: 'user-1', status: 'active', role: 'leader' })
+        .mockResolvedValueOnce({ id: 'cm-target', clubId: TEST_CLUB_1, userId: 'user-1', status: 'active', role: 'leader' });
+
+      mockClubMembersRepository.countActiveLeaders.mockResolvedValueOnce(1);
+
+      const res = await request(app)
+        .patch(`/api/clubs/${TEST_CLUB_1}/members/user-1/role`)
+        .set('Authorization', 'Bearer test-token')
+        .send({ role: 'trainer' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('code', 'leader_transfer_required');
+      expect(mockClubMembersRepository.updateRoleWithLeaderTransfer).not.toHaveBeenCalled();
+    });
+  });
+
   describe('POST /api/users', () => {
     const { mockUsersRepository } = require('../db/repositories');
 

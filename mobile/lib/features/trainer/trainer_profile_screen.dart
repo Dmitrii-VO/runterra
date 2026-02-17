@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/trainer_profile.dart';
+import '../../shared/models/profile_model.dart';
 
 /// Screen to view a trainer's public profile
 class TrainerProfileScreen extends StatefulWidget {
@@ -15,11 +17,13 @@ class TrainerProfileScreen extends StatefulWidget {
 
 class _TrainerProfileScreenState extends State<TrainerProfileScreen> {
   late Future<TrainerProfile?> _profileFuture;
+  late Future<ProfileModel> _meFuture;
 
   @override
   void initState() {
     super.initState();
     _profileFuture = ServiceLocator.trainerService.getProfile(widget.userId);
+    _meFuture = ServiceLocator.usersService.getProfile();
   }
 
   @override
@@ -57,7 +61,31 @@ class _TrainerProfileScreenState extends State<TrainerProfileScreen> {
 
           final profile = snapshot.data;
           if (profile == null) {
-            return Center(child: Text(l10n.trainerProfileNotAvailable));
+            return FutureBuilder<ProfileModel>(
+              future: _meFuture,
+              builder: (context, meSnap) {
+                final meId = meSnap.data?.user.id;
+                final isMe = meId != null && meId == widget.userId;
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(l10n.trainerProfileNotAvailable, textAlign: TextAlign.center),
+                        if (isMe) ...[
+                          const SizedBox(height: 12),
+                          ElevatedButton(
+                            onPressed: () => context.push('/trainer/edit'),
+                            child: Text(l10n.trainerEditProfile),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
           }
 
           return SingleChildScrollView(

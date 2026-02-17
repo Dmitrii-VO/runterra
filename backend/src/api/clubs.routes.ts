@@ -660,6 +660,19 @@ router.patch('/:id/members/:userId/role', validateBody(UpdateMemberRoleSchema), 
       });
     }
 
+    // Guardrail: do not allow demoting the last active leader without transferring leadership.
+    // The correct flow is to promote another member to leader (which demotes the current leader to trainer).
+    if (targetMembership.role === 'leader' && role !== 'leader') {
+      const leadersCount = await clubMembersRepo.countActiveLeaders(clubId);
+      if (leadersCount <= 1) {
+        return res.status(400).json({
+          code: 'leader_transfer_required',
+          message: 'Transfer leadership before changing leader role',
+          details: { clubId },
+        });
+      }
+    }
+
     // Update role (with leader transfer: demote old leader when promoting new one)
     const updated = await clubMembersRepo.updateRoleWithLeaderTransfer(clubId, targetUserId, role);
     if (!updated) {
