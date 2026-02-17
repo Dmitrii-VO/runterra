@@ -13,8 +13,11 @@
 import { Router, Request, Response } from 'express';
 import { RunStatus, RunViewDto, CreateRunDto, CreateRunSchema, RunHistoryItemDto, RunDetailDto, UserRunStatsDto } from '../modules/runs';
 import { validateBody } from './validateBody';
-import { getRunsRepository, getUsersRepository } from '../db/repositories';
+import { getRunsRepository, getUsersRepository, getClubMembersRepository, getTerritoriesRepository } from '../db/repositories';
 import { logger } from '../shared/logger';
+import { calculateRunContribution } from '../modules/territories/utils/geo';
+import { getTerritoriesForCity } from '../modules/territories/territories.config';
+import { TerritoryViewDto } from '../modules/territories/territory.dto';
 
 const router = Router();
 
@@ -252,20 +255,82 @@ router.post('/', validateBody(CreateRunSchema), async (req: Request<{}, RunViewD
       return;
     }
 
-    const { run, validation } = await repo.create({
-      userId: user.id,
-      activityId: dto.activityId,
-      startedAt,
-      endedAt,
-      duration,
-      distance,
-      gpsPoints,
+    // --- Scoring Club Validation ---
+    const clubMembersRepo = getClubMembersRepository();
+    const activeClubs = await clubMembersRepo.findActiveClubsByUser(user.id);
+    let scoringClubId = dto.scoringClubId;
+
+    if (scoringClubId) {
+      // Validate user is active member of provided club
+      const isMember = activeClubs.some(c => c.clubId === scoringClubId);
+      if (!isMember) {
+        res.status(400).json({
+          code: 'validation_error',
+          message: 'User is not an active member of the selected scoring club',
+          details: { fields: [{ field: 'scoringClubId', message: 'Not a member', code: 'invalid_club' }] },
+        });
+        return;
+      }
+    } else {
+      // Auto-select or require selection
+      if (activeClubs.length === 1) {
+        scoringClubId = activeClubs[0].clubId;
+      } else if (activeClubs.length > 1) {
+        res.status(400).json({
+          code: 'club_required_for_scoring',
+          message: 'Multiple active clubs found. Please select a club for scoring.',
+        });
+        return;
+      }
+      // If 0 clubs, scoringClubId remains undefined (no scoring)
+    }
+
+    // --- Transaction Execution ---
+    const runsRepo = getRunsRepository();
+    const territoriesRepo = getTerritoriesRepository();
+
+    const { run, validation } = await runsRepo.transaction(async (client) => {
+      // 1. Create Run
+      const result = await runsRepo.create({
+        userId: user.id,
+        activityId: dto.activityId,
+        scoringClubId, // Pass the resolved scoringClubId
+        startedAt,
+        endedAt,
+        duration,
+        distance,
+        gpsPoints,
+      }, client);
+
+      // 2. Calculate and Save Contribution (if eligible)
+      if (result.validation.valid && scoringClubId && gpsPoints && gpsPoints.length > 1) {
+        // TODO: Resolve city from run GPS points instead of hardcoding 'spb'.
+        // When adding a second city, contributions will be miscalculated without this.
+        const territories = getTerritoriesForCity('spb');
+        
+        // Filter territories with valid geometry
+        const validTerritories = territories.filter(
+            (t): t is TerritoryViewDto & { geometry: NonNullable<TerritoryViewDto['geometry']> } => 
+            !!t.geometry && t.geometry.length > 0
+        );
+        
+        // Calculate contribution
+        // We map gpsPoints to GeoCoordinates (already done above)
+        // We map territories to TerritoryGeometry (compatible)
+        const contributions = calculateRunContribution(gpsPoints, validTerritories);
+        
+        // Save to DB
+        await territoriesRepo.addRunContribution(client, result.run.id, scoringClubId, contributions);
+      }
+
+      return result;
     });
 
     const response: RunViewDto = {
       id: run.id,
       userId: run.userId,
       activityId: run.activityId,
+      scoringClubId: run.scoringClubId,
       startedAt: run.startedAt,
       endedAt: run.endedAt,
       duration: run.duration,
@@ -284,6 +349,15 @@ router.post('/', validateBody(CreateRunSchema), async (req: Request<{}, RunViewD
     });
   } catch (error) {
     logger.error('Error creating run', { userId: user.id, error });
+    // Check for idempotency violation (unique index)
+    if (error instanceof Error && error.message.includes('idx_runs_user_started')) {
+       // Return 200 OK or 409 Conflict. Spec says "Return 200 (idempotency)".
+       // But to return 200 we need the run object. 
+       // For now, let's return 409 and let client handle, or return a specific error code.
+       // Spec: "Ignore or return 200". If I can't easily fetch the existing run, 409 is safer to indicate it exists.
+       res.status(409).json({ code: 'conflict', message: 'Run already exists' });
+       return;
+    }
     res.status(500).json({
       code: 'internal_error',
       message: 'Internal server error',

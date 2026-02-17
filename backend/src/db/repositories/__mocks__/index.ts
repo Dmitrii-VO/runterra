@@ -29,6 +29,7 @@ const mockEvent = {
   name: 'Test Event',
   type: EventType.TRAINING,
   status: EventStatus.OPEN,
+  visibility: 'public' as const,
   startDateTime: new Date(),
   startLocation: { longitude: 30.3351, latitude: 59.9343 },
   locationName: 'Test Park',
@@ -212,6 +213,13 @@ export const mockWorkoutsRepository = {
   hasUpcomingEvents: jest.fn().mockResolvedValue(false),
 };
 
+// Mock TerritoriesRepository
+export const mockTerritoriesRepository = {
+  getSeasonStart: jest.fn().mockReturnValue(new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1))),
+  getTerritoryScores: jest.fn().mockResolvedValue([]),
+  addRunContribution: jest.fn().mockResolvedValue(undefined),
+};
+
 // Getter functions
 export const getUsersRepository = jest.fn(() => mockUsersRepository);
 export const getEventsRepository = jest.fn(() => mockEventsRepository);
@@ -222,6 +230,7 @@ export const getMessagesRepository = jest.fn(() => mockMessagesRepository);
 export const getClubChannelsRepository = jest.fn(() => mockClubChannelsRepository);
 export const getTrainerProfilesRepository = jest.fn(() => mockTrainerProfilesRepository);
 export const getWorkoutsRepository = jest.fn(() => mockWorkoutsRepository);
+export const getTerritoriesRepository = jest.fn(() => mockTerritoriesRepository);
 
 // Re-export classes (not used in mocks but needed for type compatibility)
 export class BaseRepository {}
@@ -234,6 +243,7 @@ export class MessagesRepository {}
 export class ClubChannelsRepository {}
 export class TrainerProfilesRepository {}
 export class WorkoutsRepository {}
+export class TerritoriesRepository {}
 export type EventParticipant = { id: string };
 export type RunValidationResult = { valid: boolean };
 export type ClubMembershipRow = { id: string; clubId: string; userId: string; status: string };

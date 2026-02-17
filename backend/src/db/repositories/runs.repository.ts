@@ -10,6 +10,7 @@ interface RunRow {
   id: string;
   user_id: string;
   activity_id: string | null;
+  scoring_club_id: string | null;
   started_at: Date;
   ended_at: Date;
   duration: number;
@@ -33,6 +34,7 @@ function rowToRun(row: RunRow): Run {
     id: row.id,
     userId: row.user_id,
     activityId: row.activity_id || undefined,
+    scoringClubId: row.scoring_club_id || undefined,
     startedAt: row.started_at,
     endedAt: row.ended_at,
     duration: row.duration,
@@ -130,12 +132,13 @@ export class RunsRepository extends BaseRepository {
   async create(data: {
     userId: string;
     activityId?: string;
+    scoringClubId?: string;
     startedAt: Date;
     endedAt: Date;
     duration: number;
     distance: number;
     gpsPoints?: GpsPoint[];
-  }): Promise<{ run: Run; validation: RunValidationResult }> {
+  }, client?: import('pg').PoolClient): Promise<{ run: Run; validation: RunValidationResult }> {
     // Validate
     const validation = this.validateRun({
       duration: data.duration,
@@ -146,25 +149,27 @@ export class RunsRepository extends BaseRepository {
     
     // Create run record
     const row = await this.queryOne<RunRow>(
-      `INSERT INTO runs (user_id, activity_id, started_at, ended_at, duration, distance, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO runs (user_id, activity_id, scoring_club_id, started_at, ended_at, duration, distance, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
       [
         data.userId,
         data.activityId || null,
+        data.scoringClubId || null,
         data.startedAt,
         data.endedAt,
         data.duration,
         data.distance,
         validation.status,
-      ]
+      ],
+      client
     );
     
     const run = rowToRun(row!);
     
     // Save GPS points if provided
     if (data.gpsPoints && data.gpsPoints.length > 0) {
-      await this.saveGpsPoints(run.id, data.gpsPoints);
+      await this.saveGpsPoints(run.id, data.gpsPoints, client);
     }
     
     return { run, validation };
@@ -173,7 +178,7 @@ export class RunsRepository extends BaseRepository {
   /**
    * Save GPS points for a run
    */
-  private async saveGpsPoints(runId: string, points: GpsPoint[]): Promise<void> {
+  private async saveGpsPoints(runId: string, points: GpsPoint[], client?: import('pg').PoolClient): Promise<void> {
     if (points.length === 0) return;
     
     // Build bulk insert query
@@ -190,7 +195,8 @@ export class RunsRepository extends BaseRepository {
     await this.query(
       `INSERT INTO run_gps_points (run_id, longitude, latitude, timestamp, point_order)
        VALUES ${placeholders.join(', ')}`,
-      values
+      values,
+      client
     );
   }
 

@@ -42,6 +42,9 @@ export interface Event {
   
   /** Статус события */
   status: EventStatus;
+
+  /** Видимость события */
+  visibility: 'public' | 'private';
   
   /** Дата и время начала события */
   startDateTime: Date;

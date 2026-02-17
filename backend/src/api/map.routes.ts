@@ -76,12 +76,24 @@ router.get('/data', async (req: Request, res: Response) => {
         (t) => t.status === TerritoryStatus.CAPTURED || t.status === TerritoryStatus.CONTESTED,
       );
     }
+
+    // Resolve current user for visibility filter
+    let currentUserId: string | undefined;
+    if (req.authUser?.uid) {
+       // We need to import getUsersRepository here
+       const { getUsersRepository } = await import('../db/repositories');
+       const usersRepo = getUsersRepository();
+       const user = await usersRepo.findByFirebaseUid(req.authUser.uid);
+       if (user) currentUserId = user.id;
+    }
+
     // Получаем события из БД с фильтрами
     const repo = getEventsRepository();
     const events = await repo.findAll({
       cityId,
       dateFilter: dateFilter === 'today' ? 'today' : dateFilter === 'week' ? 'next7days' : undefined,
       clubId,
+      currentUserId,
       limit: 100,
     });
     

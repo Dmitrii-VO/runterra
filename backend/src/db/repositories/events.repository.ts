@@ -14,6 +14,7 @@ interface EventRow {
   name: string;
   type: string;
   status: string;
+  visibility: string;
   start_date_time: Date;
   end_date_time: Date | null;
   start_longitude: number;
@@ -74,6 +75,7 @@ function rowToEvent(row: EventRow): Event {
     name: row.name,
     type: row.type as EventType,
     status: computeEventStatus(row),
+    visibility: row.visibility as 'public' | 'private',
     startDateTime: row.start_date_time,
     endDateTime: row.end_date_time || undefined,
     startLocation: {
@@ -151,6 +153,7 @@ export class EventsRepository extends BaseRepository {
     participantOnly?: boolean;
     participantUserId?: string;
     onlyOpen?: boolean;
+    currentUserId?: string;
     limit?: number;
     offset?: number;
   }): Promise<Event[]> {
@@ -244,6 +247,21 @@ export class EventsRepository extends BaseRepository {
       params.push(options.participantUserId);
     }
 
+    // Visibility filter
+    if (options?.currentUserId) {
+      // Show public + private where user is participant/organizer
+      // Note: organizer check logic is separate, but usually organizer is participant? 
+      // For now, let's assume private events require being a participant (invited).
+      // Or we can check if user is organizer. 
+      // Plan says: "AND (visibility = 'public' OR (visibility = 'private' AND EXISTS(participants...)))"
+      conditions.push(`(visibility = 'public' OR (visibility = 'private' AND EXISTS (SELECT 1 FROM event_participants ep WHERE ep.event_id = events.id AND ep.user_id = $${paramIndex})))`);
+      params.push(options.currentUserId);
+      paramIndex++;
+    } else {
+      // Show only public if no user context
+      conditions.push(`visibility = 'public'`);
+    }
+
     let sql = 'SELECT * FROM events';
     if (conditions.length > 0) {
       sql += ` WHERE ${conditions.join(' AND ')}`;
@@ -269,13 +287,14 @@ export class EventsRepository extends BaseRepository {
     participantLimit?: number;
     territoryId?: string;
     cityId: string;
+    visibility?: 'public' | 'private';
   }): Promise<Event> {
     const row = await this.queryOne<EventRow>(
       `INSERT INTO events (
         name, type, status, start_date_time, end_date_time, start_longitude, start_latitude,
         location_name, organizer_id, organizer_type, difficulty_level,
-        description, participant_limit, territory_id, city_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        description, participant_limit, territory_id, city_id, visibility
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       RETURNING *`,
       [
         data.name,
@@ -293,6 +312,7 @@ export class EventsRepository extends BaseRepository {
         data.participantLimit || null,
         data.territoryId || null,
         data.cityId,
+        data.visibility || 'public',
       ]
     );
     return rowToEvent(row!);

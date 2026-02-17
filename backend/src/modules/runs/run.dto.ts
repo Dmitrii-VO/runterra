@@ -21,6 +21,9 @@ export interface CreateRunDto {
   /** Идентификатор тренировки, к которой привязана пробежка (опционально) */
   activityId?: string;
   
+  /** Идентификатор клуба, в который идет зачет очков (опционально) */
+  scoringClubId?: string;
+  
   /** Время начала пробежки (ISO 8601 строка) */
   startedAt: string;
   
@@ -52,6 +55,7 @@ export const GpsPointSchema = GeoCoordinatesSchema.extend({
 
 export const CreateRunSchema = z.object({
   activityId: z.string().optional(),
+  scoringClubId: z.string().uuid().optional(),
   startedAt: z.string().datetime(),
   endedAt: z.string().datetime(),
   duration: z.number(),
@@ -75,6 +79,9 @@ export interface RunViewDto {
 
   /** Идентификатор тренировки, к которой привязана пробежка (опционально) */
   activityId?: string;
+
+  /** Идентификатор клуба, в который идет зачет очков (опционально) */
+  scoringClubId?: string;
 
   /** Время начала пробежки */
   startedAt: Date;

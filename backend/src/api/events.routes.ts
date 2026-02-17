@@ -172,6 +172,14 @@ router.get('/', async (req: Request, res: Response) => {
       participantUserId = user.id;
     }
 
+    // Resolve current user for visibility filter (optional for public feed)
+    let currentUserId: string | undefined;
+    if (req.authUser?.uid) {
+       const usersRepo = getUsersRepository();
+       const user = await usersRepo.findByFirebaseUid(req.authUser.uid);
+       if (user) currentUserId = user.id;
+    }
+
     const repo = getEventsRepository();
     const events = await repo.findAll({
       cityId,
@@ -181,6 +189,7 @@ router.get('/', async (req: Request, res: Response) => {
       eventType: eventType as EventType | undefined,
       participantOnly: participantOnly === 'true' || participantOnly === '1',
       participantUserId,
+      currentUserId,
       onlyOpen: onlyOpen === 'true' || onlyOpen === '1',
       limit: limit ? parseInt(limit, 10) : 50,
       offset: offset ? parseInt(offset, 10) : 0,
@@ -252,21 +261,34 @@ router.get('/:id', async (req: Request, res: Response) => {
     let isOrganizer: boolean | undefined;
 
     const uid = req.authUser?.uid;
+    let resolvedUser: { id: string } | null = null;
     if (uid) {
       const usersRepo = getUsersRepository();
-      const user = await usersRepo.findByFirebaseUid(uid);
-      if (user) {
-        const participant = await repo.getParticipant(id, user.id);
+      resolvedUser = await usersRepo.findByFirebaseUid(uid);
+      if (resolvedUser) {
+        const participant = await repo.getParticipant(id, resolvedUser.id);
         if (participant) {
           isParticipant = participant.status === 'registered' || participant.status === 'checked_in';
           participantStatus = participant.status;
         }
         // Check if user is organizer (can edit this event)
         if (event.organizerType === 'trainer') {
-          isOrganizer = event.organizerId === user.id;
+          isOrganizer = event.organizerId === resolvedUser.id;
         } else {
-          isOrganizer = await isTrainerOrLeaderInClub(user.id, event.organizerId);
+          isOrganizer = await isTrainerOrLeaderInClub(resolvedUser.id, event.organizerId);
         }
+      }
+    }
+
+    // Private events: only participants and organizers can view
+    if (event.visibility === 'private') {
+      if (!isParticipant && !isOrganizer) {
+        res.status(404).json({
+          code: 'not_found',
+          message: 'Event not found',
+          details: { eventId: id },
+        });
+        return;
       }
     }
 
@@ -406,6 +428,7 @@ router.post('/', validateBody(CreateEventSchema), async (req: Request<{}, EventD
       participantLimit: dto.participantLimit,
       territoryId: dto.territoryId,
       cityId: dto.cityId,
+      visibility: dto.visibility,
     });
 
     const organizerDisplayName = await getOrganizerDisplayName(event.organizerId, event.organizerType);

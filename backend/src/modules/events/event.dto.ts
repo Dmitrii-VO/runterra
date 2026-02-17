@@ -85,6 +85,9 @@ export interface CreateEventDto {
 
   /** Идентификатор города, в котором проходит событие */
   cityId: string;
+
+  /** Event visibility: public (default) or private */
+  visibility?: 'public' | 'private';
 }
 
 /**
@@ -109,6 +112,7 @@ export const CreateEventSchema = z.object({
   participantLimit: z.number().int().optional(),
   territoryId: z.string().optional(),
   cityId: z.string(),
+  visibility: z.enum(['public', 'private']).default('public').optional(),
 });
 
 /**
