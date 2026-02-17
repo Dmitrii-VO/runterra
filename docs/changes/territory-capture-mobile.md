@@ -48,6 +48,20 @@
 - TerritoryDetailsScreen (`/territory/:id`) — не показывает league-информацию, оставлено как есть (основной UX — bottom sheet)
 - Backend — без изменений, эндпоинт capture уже существовал
 
+## 5. Фикс: myClubProgress всегда null для реальных клубов (2026-02-17)
+
+**Файл:** `backend/src/api/territories.routes.ts`
+
+**Проблема:** Mock-лидерборд содержит фейковые `clubId` (`mock-club-0`, `mock-club-1`, ...), а реальные пользователи состоят в клубах с UUID из БД. `resolveMyClubProgress` ищет пересечение — совпадение невозможно → `myClubProgress = null` всегда → bottom sheet показывает «Найти клуб» дважды (в Battle Progress и Action Bar).
+
+**Решение:** После вызова `resolveMyClubProgress`, если результат null и у пользователя есть клуб — создаётся синтетическая запись:
+- `position` = последнее место + 1
+- `totalKm` = 0
+- `gapToLeader` = -(km лидера)
+- Запись добавляется в `leaderboard` (виден в полном лидерборде) и в `myClubProgress`
+
+**Результат:** Пользователь в клубе видит Battle Progress с позицией своего клуба и кнопку «Run for Zone» в action bar. Нет дублирования «Найти клуб».
+
 ## Верификация
 
 - `flutter analyze` — 0 errors (8 pre-existing info warnings)

@@ -88,6 +88,31 @@ router.get('/:id', async (req: Request, res: Response) => {
         const userClubs = await clubMembersRepo.findActiveClubsByUser(user.id);
         const userClubIds = userClubs.map((c: { clubId: string }) => c.clubId);
         territory.myClubProgress = resolveMyClubProgress(territory.leaderboard, userClubIds);
+
+        // If user is in a club but it's not in the (mock) leaderboard,
+        // inject a synthetic entry so the user sees their starting position
+        if (!territory.myClubProgress && userClubs.length > 0) {
+          const clubMembership = userClubs[0];
+          const leaderboard = territory.leaderboard!;
+          const newPosition = leaderboard.length + 1;
+          const leaderKm = leaderboard[0]?.totalKm ?? 0;
+
+          const syntheticEntry = {
+            clubId: clubMembership.clubId,
+            clubName: clubMembership.clubName,
+            totalKm: 0,
+            position: newPosition,
+          };
+          leaderboard.push(syntheticEntry);
+
+          territory.myClubProgress = {
+            clubId: clubMembership.clubId,
+            clubName: clubMembership.clubName,
+            totalKm: 0,
+            position: newPosition,
+            gapToLeader: -leaderKm,
+          };
+        }
       }
     }
   } catch (error) {
