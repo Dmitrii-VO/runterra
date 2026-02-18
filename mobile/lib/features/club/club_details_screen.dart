@@ -536,7 +536,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
+                          color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.5),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(

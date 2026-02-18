@@ -455,7 +455,7 @@ class _TerritoryBottomSheetState extends State<TerritoryBottomSheet> {
                 : const Icon(Icons.flag),
             tooltip: l10n.captureButton,
             style: IconButton.styleFrom(
-              backgroundColor: TierColors.forTier(info.tier).withValues(alpha: 0.15),
+              backgroundColor: TierColors.forTier(info.tier).withOpacity(0.15),
               foregroundColor: TierColors.forTier(info.tier),
             ),
           ),
