@@ -60,6 +60,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Patch yandex_mapkit for Flutter 3.24 (toARGB32 removed)
+        run: |
+          YMK="$HOME/.pub-cache/hosted/pub.dev/yandex_mapkit-"*
+          for d in $YMK; do
+            [ -d "$d" ] || continue
+            find "$d/lib" -name "*.dart" -exec sed -i 's/\.toARGB32()/.value/g' {} \;
+          done
+
       - name: Analyze code
         run: flutter analyze --no-fatal-infos
 
