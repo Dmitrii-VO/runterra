@@ -50,10 +50,40 @@
 
 - **Trainer profile edit — 500 при GET /api/trainer/profile/edit (исправление в коде, ожидает деплой) (22P02 string_to_uuid)**
   Сигнатура: `Error fetching trainer profile`, `code: 22P02`, `routine: string_to_uuid`, запрос `GET /api/trainer/profile/edit` → 500 (в access-логах путь виден как `/profile/edit`).
+  Наблюдение: ошибка уже фиксируется в backend error-логах (например, `error-2026-02-16.log`: `GET /profile/edit` → 500).
   Причина: роут `GET /api/trainer/profile/:userId` принимает `userId=edit` (не UUID) и передаёт в запрос к БД → PostgreSQL падает на приведении к UUID. Частая причина на клиенте: маршрут `/trainer/edit` матчится как `/trainer/:userId` (userId="edit").
   Исправление в коде (ожидает деплой): в mobile переставить роуты так, чтобы `/trainer/edit` был выше `/trainer/:userId`; в backend добавить UUID-валидацию `:userId` (400 вместо 500).
 
 - **Вылет при «Начать пробежку» в Nox** — краш на эмуляторе при старте foreground service (GPS). Решение не вводили: оставлен фоновый режим и в debug по запросу. Не бэкенд, не логи runterra.
+
+---
+
+## Анализ логов Mobile/Logcat (2026-02-17)
+
+Ошибки, найденные в логах `logs/1.txt`, `logs/2.txt`, `logs/3.txt` (Android Emulator).
+
+### 1. Flutter Lifecycle Exception (Критично)
+- **Сигнатура:** `Uncaught error: dependOnInheritedWidgetOfExactType<_LocalizationsScope>() or dependOnInheritedElement() was called before _MapScreenState.initState() completed.`
+- **Причина:** В `MapScreen` (или связанном виджете) происходит обращение к `context` (например, `Theme.of(context)` или `AppLocalizations.of(context)`) внутри метода `initState()`, где контекст еще не полностью инициализирован для наследования.
+- **Статус:** **ОТКРЫТА**. Требует правки кода: перенести логику в `didChangeDependencies()` или использовать `addPostFrameCallback`.
+
+### 2. Ошибки авторизации Google / Firebase (Конфигурация)
+- **Сигнатура:** `NEED_REMOTE_CONSENT`, `NETWORK_ERROR`, `FIS_AUTH_ERROR`, `[GoogleAuthUtil] error status: NEED_REMOTE_CONSENT`.
+- **Причина:**
+  1. Эмулятор не имеет корректного доступа к сети или Google Play Services.
+  2. Несовпадение SHA-1 отпечатков (Debug Keystore vs Firebase Console).
+  3. Отсутствие или устаревший `google-services.json`.
+- **Статус:** **Конфигурация среды**. Проверить `google-services.json` и SHA-1.
+
+### 3. Графические ошибки эмулятора (Шум)
+- **Сигнатура:** `EGL Error: Success (12288)`, `ANativeWindow::dequeueBuffer failed`, `[ERROR:flutter/impeller/toolkit/egl/egl.cc(56)]`.
+- **Причина:** Известная проблема графического движка Impeller (Flutter) на некоторых эмуляторах Android.
+- **Статус:** **Игнорировать** (не влияет на продакшн на реальных устройствах).
+
+### 4. Системный шум Google Play Services (Шум)
+- **Сигнатура:** `Phenotype API error`, `RcsClientLib: Unexpected error`, `DomainFilterImpl: Error while reading domain filter`.
+- **Причина:** Внутренние сбои сервисов Google на образе эмулятора.
+- **Статус:** **Игнорировать**.
 
 ---
 
@@ -66,6 +96,8 @@
 - **Backend (runterra):**  
   - systemd: `ssh runterra "journalctl -u runterra-backend -n 500 --no-pager"`  
   - Файлы: `ssh runterra "tail -200 /home/user1/runterra/logs/error-YYYY-MM-DD.log"`  
+- **Mobile (local):**
+  - `adb logcat -d > logs/logcat.txt`
 - **Дата в имени файла** — по UTC (или по серверу). Для «сегодня» подставлять актуальную дату.
 
 При добавлении нового пункта в «Исправлено» указывать дату и файлы/коммиты, чтобы не дублировать правки.

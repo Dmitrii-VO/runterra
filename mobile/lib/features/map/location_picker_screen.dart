@@ -31,6 +31,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
   List<SuggestItem> _searchResults = [];
   bool _isSearching = false;
   String? _selectedAddress;
+  String? _searchError;
 
   @override
   void initState() {
@@ -69,6 +70,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
       setState(() {
         _searchResults = [];
         _isSearching = false;
+        _searchError = null;
       });
       return;
     }
@@ -78,7 +80,10 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
   }
 
   Future<void> _performSearch(String query) async {
-    setState(() => _isSearching = true);
+    setState(() {
+      _isSearching = true;
+      _searchError = null;
+    });
     try {
       final boundingBox = BoundingBox(
         southWest: Point(
@@ -105,9 +110,9 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
 
       if (!mounted) return;
       setState(() {
-        _searchResults = (result.items ?? [])
-            .where((item) => item.center != null)
-            .toList();
+        // Show all items — center may be null for some suggest types,
+        // but we still display them so user can select and accept pin position
+        _searchResults = result.items ?? [];
         _isSearching = false;
       });
     } catch (e) {
@@ -116,31 +121,37 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
       setState(() {
         _searchResults = [];
         _isSearching = false;
+        _searchError = e.toString();
       });
     }
   }
 
   void _onSuggestItemSelected(SuggestItem item) {
     final center = item.center;
-    if (center == null) return;
 
     setState(() {
-      _selectedLat = center.latitude;
-      _selectedLon = center.longitude;
       _selectedAddress = item.displayText;
       _searchResults = [];
       _searchController.clear();
+      _searchError = null;
+      if (center != null) {
+        _selectedLat = center.latitude;
+        _selectedLon = center.longitude;
+      }
+      // If center is null — coordinates stay at current pin position
     });
 
-    _mapController?.moveCamera(
-      CameraUpdate.newCameraPosition(
-        CameraPosition(
-          target: Point(latitude: center.latitude, longitude: center.longitude),
-          zoom: 16.0,
+    if (center != null) {
+      _mapController?.moveCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: Point(latitude: center.latitude, longitude: center.longitude),
+            zoom: 16.0,
+          ),
         ),
-      ),
-      animation: const MapAnimation(type: MapAnimationType.smooth, duration: 0.5),
-    );
+        animation: const MapAnimation(type: MapAnimationType.smooth, duration: 0.5),
+      );
+    }
   }
 
   @override
@@ -234,6 +245,21 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                     ),
                   ),
                 ),
+                if (_searchError != null)
+                  Material(
+                    elevation: 4,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Text(
+                        'Search error: $_searchError',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
                 if (_searchResults.isNotEmpty)
                   Material(
                     elevation: 4,
