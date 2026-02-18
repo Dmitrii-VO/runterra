@@ -45,6 +45,8 @@ coverage/
 # Temp files
 123.md
 imageslogs/
+_write_test_root.txt
+mobile_acl.txt
 
 # AI workspace
 ai/
