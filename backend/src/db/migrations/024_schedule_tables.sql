@@ -85,6 +85,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_events_template_date_unique
 
 -- 6. Link runs to activities
 -- Note: runs.activity_id already exists in 001_initial.sql
+-- We nullify existing activity_id values because the activities table was just created
+-- and any existing values would violate the new foreign key constraint.
+UPDATE runs SET activity_id = NULL WHERE activity_id IS NOT NULL;
+
 ALTER TABLE runs
     ADD CONSTRAINT runs_activity_id_fk FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE SET NULL;
 
