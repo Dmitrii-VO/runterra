@@ -5,6 +5,9 @@ import 'features/activity/activity_details_screen.dart';
 import 'features/city/city_details_screen.dart';
 import 'features/club/club_details_screen.dart';
 import 'features/club/clubs_list_screen.dart';
+import 'features/club/club_schedule_screen.dart';
+import 'features/club/club_roster_screen.dart';
+import 'features/club/personal_schedule_screen.dart';
 import 'features/map/location_picker_screen.dart';
 import 'features/club/transfer_leadership_screen.dart';
 import 'features/club/create_club_screen.dart';
@@ -28,6 +31,7 @@ import 'features/trainer/workouts_list_screen.dart';
 import 'features/trainer/workout_form_screen.dart';
 import 'shared/models/profile_model.dart' show ProfileModel;
 import 'shared/models/club_model.dart';
+import 'shared/models/club_member_model.dart';
 import 'shared/models/workout.dart';
 import 'shared/models/trainer_profile.dart';
 import 'shared/auth/auth_service.dart';
@@ -204,6 +208,33 @@ class RunterraApp extends StatelessWidget {
         builder: (context, state) {
           final club = state.extra as ClubModel;
           return EditClubScreen(club: club);
+        },
+      ),
+      GoRoute(
+        path: '/club/:id/schedule',
+        builder: (context, state) {
+          final clubId = state.pathParameters['id'] ?? '';
+          return ClubScheduleScreen(clubId: clubId);
+        },
+      ),
+      GoRoute(
+        path: '/club/:id/roster',
+        builder: (context, state) {
+          final clubId = state.pathParameters['id'] ?? '';
+          return ClubRosterScreen(clubId: clubId);
+        },
+      ),
+      GoRoute(
+        path: '/club/:id/members/:userId/plan',
+        builder: (context, state) {
+          final clubId = state.pathParameters['id'] ?? '';
+          final userId = state.pathParameters['userId'] ?? '';
+          final member = state.extra as ClubMemberModel;
+          return PersonalScheduleScreen(
+            clubId: clubId,
+            userId: userId,
+            member: member,
+          );
         },
       ),
       GoRoute(

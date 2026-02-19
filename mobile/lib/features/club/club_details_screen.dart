@@ -582,7 +582,37 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
+
+                    // Trainer Management Section (Leader/Trainer only)
+                    if (club.userRole == 'leader' || club.userRole == 'trainer') ...[
+                      Text(
+                        l10n.clubManagementTitle,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () => context.push('/club/${club.id}/schedule'),
+                              icon: const Icon(Icons.calendar_month),
+                              label: Text(l10n.clubManageSchedule),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () => context.push('/club/${club.id}/roster'),
+                              icon: const Icon(Icons.people_outline),
+                              label: Text(l10n.clubManageRoster),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
                     // РљРЅРѕРїРєР° В«Р§Р°С‚ РєР»СѓР±Р°В» вЂ” РїРµСЂРµС…РѕРґ РІ РЎРѕРѕР±С‰РµРЅРёСЏ, РІРєР»Р°РґРєР° РљР»СѓР±
                     SizedBox(
                       width: double.infinity,

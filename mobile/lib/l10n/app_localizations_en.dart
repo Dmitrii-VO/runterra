@@ -1014,6 +1014,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clubEditButton => 'Edit Club';
 
   @override
+  String get clubManagementTitle => 'Trainer Management';
+
+  @override
+  String get clubManageSchedule => 'Weekly Schedule';
+
+  @override
+  String get clubManageRoster => 'Roster & Plans';
+
+  @override
   String get clubMembersTitle => 'Members';
 
   @override
@@ -1032,6 +1041,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String clubMemberRoleChangeError(String message) {
     return 'Could not update role: $message';
   }
+
+  @override
+  String get rosterTitle => 'Club Roster';
+
+  @override
+  String get scheduleTitle => 'Schedule Template';
+
+  @override
+  String get planTypeClub => 'Club';
+
+  @override
+  String get planTypePersonal => 'Personal';
 
   @override
   String get eventOpenOnMap => 'Open on map';

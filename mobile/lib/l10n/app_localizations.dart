@@ -1946,6 +1946,24 @@ abstract class AppLocalizations {
   /// **'Edit Club'**
   String get clubEditButton;
 
+  /// No description provided for @clubManagementTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Trainer Management'**
+  String get clubManagementTitle;
+
+  /// No description provided for @clubManageSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Schedule'**
+  String get clubManageSchedule;
+
+  /// No description provided for @clubManageRoster.
+  ///
+  /// In en, this message translates to:
+  /// **'Roster & Plans'**
+  String get clubManageRoster;
+
   /// No description provided for @clubMembersTitle.
   ///
   /// In en, this message translates to:
@@ -1981,6 +1999,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not update role: {message}'**
   String clubMemberRoleChangeError(String message);
+
+  /// No description provided for @rosterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Club Roster'**
+  String get rosterTitle;
+
+  /// No description provided for @scheduleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule Template'**
+  String get scheduleTitle;
+
+  /// No description provided for @planTypeClub.
+  ///
+  /// In en, this message translates to:
+  /// **'Club'**
+  String get planTypeClub;
+
+  /// No description provided for @planTypePersonal.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal'**
+  String get planTypePersonal;
 
   /// No description provided for @eventOpenOnMap.
   ///

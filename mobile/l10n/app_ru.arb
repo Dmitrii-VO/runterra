@@ -371,12 +371,19 @@
   "editClubSave": "Сохранить",
   "editClubError": "Не удалось обновить клуб",
   "clubEditButton": "Редактировать клуб",
+  "clubManagementTitle": "Управление тренера",
+  "clubManageSchedule": "Расписание (шаблоны)",
+  "clubManageRoster": "Состав и планы",
   "clubMembersTitle": "Участники",
   "clubMembersEmpty": "Пока нет участников",
   "clubMembersLoadError": "Не удалось загрузить участников",
   "clubMemberRoleChange": "Изменить роль",
   "clubMemberRoleChangeSuccess": "Роль обновлена",
   "clubMemberRoleChangeError": "Не удалось обновить роль: {message}",
+  "rosterTitle": "Состав клуба",
+  "scheduleTitle": "Шаблон расписания",
+  "planTypeClub": "Клубный",
+  "planTypePersonal": "Личный",
   "@clubMemberRoleChangeError": {
     "placeholders": {
       "message": {

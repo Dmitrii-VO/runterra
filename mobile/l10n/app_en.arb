@@ -545,12 +545,19 @@
   "editClubSave": "Save",
   "editClubError": "Failed to update club",
   "clubEditButton": "Edit Club",
+  "clubManagementTitle": "Trainer Management",
+  "clubManageSchedule": "Weekly Schedule",
+  "clubManageRoster": "Roster & Plans",
   "clubMembersTitle": "Members",
   "clubMembersEmpty": "No members yet",
   "clubMembersLoadError": "Could not load members",
   "clubMemberRoleChange": "Change role",
   "clubMemberRoleChangeSuccess": "Role updated",
   "clubMemberRoleChangeError": "Could not update role: {message}",
+  "rosterTitle": "Club Roster",
+  "scheduleTitle": "Schedule Template",
+  "planTypeClub": "Club",
+  "planTypePersonal": "Personal",
   "@clubMemberRoleChangeError": {
     "placeholders": {
       "message": {

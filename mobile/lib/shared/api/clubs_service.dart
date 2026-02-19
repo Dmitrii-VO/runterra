@@ -4,6 +4,7 @@ import 'users_service.dart' show ApiException;
 import '../models/club_model.dart';
 import '../models/club_member_model.dart';
 import '../models/my_club_model.dart';
+import '../models/schedule_model.dart';
 
 /// РЎРµСЂРІРёСЃ РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ РєР»СѓР±Р°РјРё
 /// 
@@ -14,6 +15,65 @@ class ClubsService {
 
   /// РЎРѕР·РґР°РµС‚ ClubsService СЃ СѓРєР°Р·Р°РЅРЅС‹Рј ApiClient
   ClubsService({required ApiClient apiClient}) : _apiClient = apiClient;
+
+  /// GET /api/clubs/:id/schedule — weekly schedule template.
+  Future<List<WeeklyScheduleItemModel>> getWeeklySchedule(String clubId) async {
+    final response = await _apiClient.get('/api/clubs/${Uri.encodeComponent(clubId)}/schedule');
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body) as List<dynamic>;
+      return jsonData
+          .map((item) => WeeklyScheduleItemModel.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+    throw ApiException('schedule_fetch_error', 'Failed to load schedule (${response.statusCode})');
+  }
+
+  /// POST /api/clubs/:id/schedule — create template item.
+  Future<WeeklyScheduleItemModel> createWeeklyItem(String clubId, Map<String, dynamic> data) async {
+    final response = await _apiClient.post('/api/clubs/${Uri.encodeComponent(clubId)}/schedule', body: data);
+    if (response.statusCode == 201) {
+      return WeeklyScheduleItemModel.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    }
+    throw ApiException('schedule_create_error', 'Failed to create item (${response.statusCode})');
+  }
+
+  /// PATCH /api/clubs/:id/schedule/:itemId — update template item.
+  Future<WeeklyScheduleItemModel> updateWeeklyItem(String clubId, String itemId, Map<String, dynamic> data) async {
+    final response = await _apiClient.patch('/api/clubs/${Uri.encodeComponent(clubId)}/schedule/${Uri.encodeComponent(itemId)}', body: data);
+    if (response.statusCode == 200) {
+      return WeeklyScheduleItemModel.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    }
+    throw ApiException('schedule_update_error', 'Failed to update item (${response.statusCode})');
+  }
+
+  /// DELETE /api/clubs/:id/schedule/:itemId — delete template item.
+  Future<void> deleteWeeklyItem(String clubId, String itemId) async {
+    final response = await _apiClient.delete('/api/clubs/${Uri.encodeComponent(clubId)}/schedule/${Uri.encodeComponent(itemId)}');
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    throw ApiException('schedule_delete_error', 'Failed to delete item (${response.statusCode})');
+  }
+
+  /// GET /api/clubs/:id/members/:userId/personal-schedule
+  Future<List<PersonalScheduleItemModel>> getMemberPersonalSchedule(String clubId, String userId) async {
+    final response = await _apiClient.get('/api/clubs/${Uri.encodeComponent(clubId)}/members/${Uri.encodeComponent(userId)}/personal-schedule');
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body) as List<dynamic>;
+      return jsonData
+          .map((item) => PersonalScheduleItemModel.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+    throw ApiException('personal_schedule_fetch_error', 'Failed to load personal schedule');
+  }
+
+  /// POST /api/clubs/:id/members/:userId/personal-schedule
+  Future<void> setMemberPersonalSchedule(String clubId, String userId, List<Map<String, dynamic>> items) async {
+    final response = await _apiClient.post(
+      '/api/clubs/${Uri.encodeComponent(clubId)}/members/${Uri.encodeComponent(userId)}/personal-schedule',
+      body: {'items': items},
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    throw ApiException('personal_schedule_update_error', 'Failed to update personal schedule');
+  }
 
   /// Р’С‹РїРѕР»РЅСЏРµС‚ GET /api/clubs Р·Р°РїСЂРѕСЃ Рє backend
   /// 

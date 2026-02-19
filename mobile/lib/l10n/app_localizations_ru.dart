@@ -1017,6 +1017,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get clubEditButton => 'Редактировать клуб';
 
   @override
+  String get clubManagementTitle => 'Управление тренера';
+
+  @override
+  String get clubManageSchedule => 'Расписание (шаблоны)';
+
+  @override
+  String get clubManageRoster => 'Состав и планы';
+
+  @override
   String get clubMembersTitle => 'Участники';
 
   @override
@@ -1035,6 +1044,18 @@ class AppLocalizationsRu extends AppLocalizations {
   String clubMemberRoleChangeError(String message) {
     return 'Не удалось обновить роль: $message';
   }
+
+  @override
+  String get rosterTitle => 'Состав клуба';
+
+  @override
+  String get scheduleTitle => 'Шаблон расписания';
+
+  @override
+  String get planTypeClub => 'Клубный';
+
+  @override
+  String get planTypePersonal => 'Личный';
 
   @override
   String get eventOpenOnMap => 'Открыть на карте';
