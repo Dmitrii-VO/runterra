@@ -79,9 +79,10 @@ class _PersonalScheduleScreenState extends State<PersonalScheduleScreen> {
           widget.userId,
           [
             {
-              'dayOfWeek': 1, // Monday
+              'dayOfWeek': 1, // Monday (Backend expects 1 for Monday if 0 is Sunday)
               'startTime': '09:00',
               'type': 'note',
+              'name': 'Personal Run: 5km easy', // Required by backend
               'noteText': 'Personal Run: 5km easy',
             }
           ],
@@ -131,11 +132,11 @@ class _PersonalScheduleScreenState extends State<PersonalScheduleScreen> {
                           itemCount: _schedule!.length,
                           itemBuilder: (context, index) {
                             final item = _schedule![index];
-                            final dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                            final dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
                             return ListTile(
-                              leading: CircleAvatar(child: Text(dayNames[item.dayOfWeek - 1][0])),
-                              title: Text("${dayNames[item.dayOfWeek - 1]} ${item.startTime}"),
-                              subtitle: Text(item.noteText ?? 'Training'),
+                              leading: CircleAvatar(child: Text(dayNames[item.dayOfWeek][0])),
+                              title: Text("${dayNames[item.dayOfWeek]} ${item.startTime}"),
+                              subtitle: Text(item.noteText ?? item.name),
                             );
                           },
                         ),

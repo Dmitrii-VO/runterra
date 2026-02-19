@@ -13,7 +13,7 @@ class ClubScheduleScreen extends StatefulWidget {
 }
 
 class _ClubScheduleScreenState extends State<ClubScheduleScreen> {
-  int _selectedDay = 1; // 1 (Mon) to 7 (Sun)
+  int _selectedDay = 1; // 1 (Mon) to 7 (Sun) in UI
   List<WeeklyScheduleItemModel>? _allSchedule;
   bool _loading = true;
 
@@ -21,6 +21,16 @@ class _ClubScheduleScreenState extends State<ClubScheduleScreen> {
   void initState() {
     super.initState();
     _loadSchedule();
+  }
+
+  // Convert UI day (1-7, Mon-Sun) to Backend day (0-6, Sun-Sat)
+  int _uiDayToBackend(int uiDay) {
+    return uiDay % 7;
+  }
+
+  // Convert Backend day (0-6, Sun-Sat) to UI day (1-7, Mon-Sun)
+  int _backendDayToUi(int backendDay) {
+    return backendDay == 0 ? 7 : backendDay;
   }
 
   Future<void> _loadSchedule() async {
@@ -45,7 +55,8 @@ class _ClubScheduleScreenState extends State<ClubScheduleScreen> {
 
   List<WeeklyScheduleItemModel> get _currentDayItems {
     if (_allSchedule == null) return [];
-    return _allSchedule!.where((item) => item.dayOfWeek == _selectedDay).toList();
+    final backendDay = _uiDayToBackend(_selectedDay);
+    return _allSchedule!.where((item) => item.dayOfWeek == backendDay).toList();
   }
 
   Future<void> _addItem() async {
@@ -108,9 +119,11 @@ class _ClubScheduleScreenState extends State<ClubScheduleScreen> {
       if (confirm == true && textController.text.isNotEmpty) {
         try {
           await ServiceLocator.clubsService.createWeeklyItem(widget.clubId, {
-            'dayOfWeek': _selectedDay,
+            'dayOfWeek': _uiDayToBackend(_selectedDay),
             'startTime': timeController.text,
             'type': 'note',
+            'activityType': 'note', // Required by backend
+            'name': textController.text, // Backend uses 'name' for title
             'noteText': textController.text,
           });
           _loadSchedule();
