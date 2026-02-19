@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
-import '../../shared/api/users_service.dart' show ApiException;
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/schedule_model.dart';
-import '../../shared/ui/error_display.dart';
 
 class ClubScheduleScreen extends StatefulWidget {
   final String clubId;

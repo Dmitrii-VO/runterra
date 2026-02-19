@@ -1,5 +1,5 @@
 import { BaseRepository } from './base.repository';
-import { WeeklyScheduleItemDto, PersonalScheduleItemDto } from '../modules/schedule/schedule.dto';
+import { WeeklyScheduleItemDto, PersonalScheduleItemDto } from '../../modules/schedule/schedule.dto';
 
 interface WeeklyScheduleItemRow {
   id: string;
@@ -67,7 +67,7 @@ function rowToPersonalItem(row: PersonalScheduleItemRow): PersonalScheduleItemDt
   };
 }
 
-function rowToPersonalNote(row: PersonalNoteRow): import('../modules/schedule/schedule.dto').PersonalNoteDto {
+function rowToPersonalNote(row: PersonalNoteRow): import('../../modules/schedule/schedule.dto').PersonalNoteDto {
   return {
     id: row.id,
     userId: row.user_id,
@@ -236,7 +236,7 @@ export class ScheduleRepository extends BaseRepository {
   /**
    * Получить заметки пользователя за месяц
    */
-  async findNotesByUserAndMonth(userId: string, yearMonth: string): Promise<import('../modules/schedule/schedule.dto').PersonalNoteDto[]> {
+  async findNotesByUserAndMonth(userId: string, yearMonth: string): Promise<import('../../modules/schedule/schedule.dto').PersonalNoteDto[]> {
     const startDate = `${yearMonth}-01`;
     // Last day of month logic simplified for query
     const rows = await this.queryMany<PersonalNoteRow>(
@@ -270,7 +270,7 @@ export class ScheduleRepository extends BaseRepository {
   /**
    * Найти личную заметку, сгенерированную из шаблона на дату
    */
-  async findNoteByTemplateAndDate(templateId: string, date: string): Promise<import('../modules/schedule/schedule.dto').PersonalNoteDto | null> {
+  async findNoteByTemplateAndDate(templateId: string, date: string): Promise<import('../../modules/schedule/schedule.dto').PersonalNoteDto | null> {
     const row = await this.queryOne<PersonalNoteRow>(
       `SELECT * FROM personal_notes 
        WHERE template_id = $1 AND date = $2::date AND deleted_at IS NULL`,
@@ -290,7 +290,7 @@ export class ScheduleRepository extends BaseRepository {
     description?: string;
     workoutId?: string;
     trainerId?: string;
-  }): Promise<import('../modules/schedule/schedule.dto').PersonalNoteDto> {
+  }): Promise<import('../../modules/schedule/schedule.dto').PersonalNoteDto> {
     const row = await this.queryOne<PersonalNoteRow>(
       `INSERT INTO personal_notes 
        (user_id, template_id, date, name, description, workout_id, trainer_id)
@@ -313,7 +313,7 @@ export class ScheduleRepository extends BaseRepository {
   /**
    * Обновить личную заметку
    */
-  async updateNote(noteId: string, data: Partial<Omit<import('../modules/schedule/schedule.dto').PersonalNoteDto, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>): Promise<import('../modules/schedule/schedule.dto').PersonalNoteDto | null> {
+  async updateNote(noteId: string, data: Partial<Omit<import('../../modules/schedule/schedule.dto').PersonalNoteDto, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>): Promise<import('../../modules/schedule/schedule.dto').PersonalNoteDto | null> {
     const fields: string[] = [];
     const values: any[] = [];
     let i = 1;
@@ -352,7 +352,7 @@ export class ScheduleRepository extends BaseRepository {
   /**
    * Найти будущие заметки, сгенерированные из шаблона
    */
-  async findFutureByTemplate(templateId: string): Promise<import('../modules/schedule/schedule.dto').PersonalNoteDto[]> {
+  async findFutureByTemplate(templateId: string): Promise<import('../../modules/schedule/schedule.dto').PersonalNoteDto[]> {
     const rows = await this.queryMany<PersonalNoteRow>(
       `SELECT * FROM personal_notes 
        WHERE template_id = $1 

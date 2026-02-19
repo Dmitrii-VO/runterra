@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/club_member_model.dart';
-import '../../shared/ui/error_display.dart';
 
 class ClubRosterScreen extends StatefulWidget {
   final String clubId;

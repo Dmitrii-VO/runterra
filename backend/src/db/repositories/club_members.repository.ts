@@ -10,6 +10,7 @@ interface ClubMemberRow {
   user_id: string;
   status: string;
   role: string;
+  plan_type: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -56,6 +57,7 @@ export interface ClubMembershipRow {
   userId: string;
   status: 'pending' | 'active' | 'inactive' | 'suspended';
   role: 'member' | 'trainer' | 'leader';
+  planType: 'club' | 'personal';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -77,6 +79,7 @@ function rowToMembership(row: ClubMemberRow): ClubMembershipRow {
     userId: row.user_id,
     status: row.status as ClubMembershipRow['status'],
     role: row.role as ClubMembershipRow['role'],
+    planType: (row.plan_type || 'club') as ClubMembershipRow['planType'],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

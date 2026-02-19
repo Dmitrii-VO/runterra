@@ -101,8 +101,17 @@ class _PersonalScheduleScreenState extends State<PersonalScheduleScreen> {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.member.displayName),
-        subtitle: Text(l10n.planTypePersonal),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(widget.member.displayName),
+            Text(
+              l10n.planTypePersonal,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())

@@ -1,4 +1,4 @@
-/// Models for weekly and personal schedule templates.
+// Models for weekly and personal schedule templates.
 
 enum ScheduleItemType { event, note }
 

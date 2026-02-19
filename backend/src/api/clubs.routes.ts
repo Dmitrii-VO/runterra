@@ -24,12 +24,13 @@ import {
 import { findCityById } from '../modules/cities/cities.config';
 import { getTerritoriesForCity } from '../modules/territories/territories.config';
 import { validateBody } from './validateBody';
-import { getUsersRepository, getClubMembersRepository, getClubsRepository, getClubChannelsRepository, getScheduleRepository } from '../db/repositories';
+import { getUsersRepository, getClubMembersRepository, getClubsRepository, getClubChannelsRepository, getScheduleRepository, getEventsRepository } from '../db/repositories';
 import { logger } from '../shared/logger';
 import { isValidClubId } from '../shared/clubId';
 import { CreateWeeklyScheduleItemSchema, CreateWeeklyScheduleItemDto, SetupPersonalPlanSchema, SetupPersonalPlanDto } from '../modules/schedule/schedule.dto';
 import { CalendarItemDto, GetCalendarQuerySchema } from '../modules/schedule/calendar.dto';
 import { scheduleGeneratorService } from '../modules/schedule/schedule-generator.service';
+import { Event } from '../modules/events/event.entity';
 
 
 const router = Router();
@@ -1501,7 +1502,7 @@ router.get('/:id/calendar', async (req: Request, res: Response) => {
     const items: CalendarItemDto[] = [];
 
     // Добавляем события
-    clubEvents.forEach(ev => {
+    clubEvents.forEach((ev: Event) => {
       items.push({
         id: ev.id,
         type: 'event',

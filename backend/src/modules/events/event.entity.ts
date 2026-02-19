@@ -109,4 +109,7 @@ export interface Event {
 
   /** Assigned trainer (optional) */
   trainerId?: string;
+
+  /** Whether event was manually edited after generation (skip sync from template) */
+  isManuallyEdited?: boolean;
 }

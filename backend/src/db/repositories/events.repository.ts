@@ -34,6 +34,7 @@ interface EventRow {
   trainer_id: string | null;
   template_id: string | null;
   generated_for_date: Date | null;
+  is_manually_edited: boolean;
 }
 
 /**
@@ -97,6 +98,7 @@ function rowToEvent(row: EventRow): Event {
     updatedAt: row.updated_at,
     workoutId: row.workout_id || undefined,
     trainerId: row.trainer_id || undefined,
+    isManuallyEdited: row.is_manually_edited ?? false,
   };
 }
 
@@ -292,14 +294,16 @@ export class EventsRepository extends BaseRepository {
     visibility?: 'public' | 'private';
     templateId?: string;
     generatedForDate?: string;
+    workoutId?: string;
+    trainerId?: string;
   }): Promise<Event> {
     const row = await this.queryOne<EventRow>(
       `INSERT INTO events (
         name, type, status, start_date_time, end_date_time, start_longitude, start_latitude,
         location_name, organizer_id, organizer_type, difficulty_level,
         description, participant_limit, territory_id, city_id, visibility,
-        template_id, generated_for_date
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+        template_id, generated_for_date, workout_id, trainer_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
       RETURNING *`,
       [
         data.name,
@@ -320,6 +324,8 @@ export class EventsRepository extends BaseRepository {
         data.visibility || 'public',
         data.templateId || null,
         data.generatedForDate || null,
+        data.workoutId || null,
+        data.trainerId || null,
       ]
     );
     return rowToEvent(row!);
