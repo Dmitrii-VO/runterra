@@ -18,6 +18,7 @@ interface ClubMemberDetailRow {
   user_id: string;
   display_name: string;
   role: string;
+  plan_type: string;
   joined_at: Date;
 }
 
@@ -25,6 +26,7 @@ export interface ClubMemberDetailDto {
   userId: string;
   displayName: string;
   role: 'member' | 'trainer' | 'leader';
+  planType: 'club' | 'personal';
   joinedAt: Date;
 }
 
@@ -33,6 +35,7 @@ function rowToClubMemberDetail(row: ClubMemberDetailRow): ClubMemberDetailDto {
     userId: row.user_id,
     displayName: row.display_name,
     role: row.role as ClubMemberDetailDto['role'],
+    planType: row.plan_type as ClubMemberDetailDto['planType'],
     joinedAt: row.joined_at,
   };
 }
@@ -197,6 +200,7 @@ export class ClubMembersRepository extends BaseRepository {
          cm.user_id,
          COALESCE(NULLIF(TRIM(CONCAT(u.first_name, ' ', u.last_name)), ''), u.name) AS display_name,
          cm.role,
+         cm.plan_type,
          cm.created_at AS joined_at
        FROM club_members cm
        JOIN users u ON u.id = cm.user_id
@@ -205,6 +209,21 @@ export class ClubMembersRepository extends BaseRepository {
       [clubId],
     );
     return rows.map(rowToClubMemberDetail);
+  }
+
+  /** Update plan type for a club member */
+  async setPlanType(
+    clubId: string,
+    userId: string,
+    planType: 'club' | 'personal',
+  ): Promise<boolean> {
+    const result = await this.query(
+      `UPDATE club_members
+       SET plan_type = $3, updated_at = NOW()
+       WHERE club_id = $1 AND user_id = $2 AND status = 'active'`,
+      [clubId, userId, planType],
+    );
+    return (result?.rowCount ?? 0) > 0;
   }
 
   /** Update role of a club member */

@@ -32,6 +32,8 @@ interface EventRow {
   updated_at: Date;
   workout_id: string | null;
   trainer_id: string | null;
+  template_id: string | null;
+  generated_for_date: Date | null;
 }
 
 /**
@@ -288,13 +290,16 @@ export class EventsRepository extends BaseRepository {
     territoryId?: string;
     cityId: string;
     visibility?: 'public' | 'private';
+    templateId?: string;
+    generatedForDate?: string;
   }): Promise<Event> {
     const row = await this.queryOne<EventRow>(
       `INSERT INTO events (
         name, type, status, start_date_time, end_date_time, start_longitude, start_latitude,
         location_name, organizer_id, organizer_type, difficulty_level,
-        description, participant_limit, territory_id, city_id, visibility
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        description, participant_limit, territory_id, city_id, visibility,
+        template_id, generated_for_date
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
       RETURNING *`,
       [
         data.name,
@@ -313,6 +318,8 @@ export class EventsRepository extends BaseRepository {
         data.territoryId || null,
         data.cityId,
         data.visibility || 'public',
+        data.templateId || null,
+        data.generatedForDate || null,
       ]
     );
     return rowToEvent(row!);
@@ -592,6 +599,8 @@ export class EventsRepository extends BaseRepository {
       difficultyLevel?: 'beginner' | 'intermediate' | 'advanced' | null;
       workoutId?: string | null;
       trainerId?: string | null;
+      isManuallyEdited?: boolean;
+      deletedAt?: Date | null;
     },
   ): Promise<Event | null> {
     const sets: string[] = [];
@@ -639,6 +648,14 @@ export class EventsRepository extends BaseRepository {
     if (data.trainerId !== undefined) {
       sets.push(`trainer_id = $${idx++}`);
       params.push(data.trainerId);
+    }
+    if (data.isManuallyEdited !== undefined) {
+      sets.push(`is_manually_edited = $${idx++}`);
+      params.push(data.isManuallyEdited);
+    }
+    if (data.deletedAt !== undefined) {
+      sets.push(`deleted_at = $${idx++}`);
+      params.push(data.deletedAt);
     }
 
     if (sets.length === 0) {
@@ -692,6 +709,50 @@ export class EventsRepository extends BaseRepository {
       [eventId]
     );
     return rows.map(rowToParticipant);
+  }
+
+  /**
+   * Получить события клуба за месяц
+   */
+  async findByClubAndMonth(clubId: string, yearMonth: string): Promise<Event[]> {
+    const startDate = `${yearMonth}-01`;
+    const rows = await this.queryMany<EventRow>(
+      `SELECT * FROM events 
+       WHERE organizer_id = $1 
+         AND organizer_type = 'club'
+         AND start_date_time >= $2::timestamp
+         AND start_date_time < ($2::timestamp + interval '1 month')
+         AND deleted_at IS NULL
+       ORDER BY start_date_time ASC`,
+      [clubId, startDate]
+    );
+    return rows.map(rowToEvent);
+  }
+
+  /**
+   * Найти событие, сгенерированное из конкретного шаблона на дату
+   */
+  async findByTemplateAndDate(templateId: string, date: string): Promise<Event | null> {
+    const row = await this.queryOne<EventRow>(
+      `SELECT * FROM events 
+       WHERE template_id = $1 AND generated_for_date = $2::date AND deleted_at IS NULL`,
+      [templateId, date]
+    );
+    return row ? rowToEvent(row) : null;
+  }
+
+  /**
+   * Найти будущие события клуба, сгенерированные из шаблона
+   */
+  async findFutureByTemplate(templateId: string): Promise<Event[]> {
+    const rows = await this.queryMany<EventRow>(
+      `SELECT * FROM events 
+       WHERE template_id = $1 
+         AND start_date_time >= NOW() 
+         AND deleted_at IS NULL`,
+      [templateId]
+    );
+    return rows.map(rowToEvent);
   }
 }
 

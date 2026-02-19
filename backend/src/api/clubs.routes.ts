@@ -24,9 +24,13 @@ import {
 import { findCityById } from '../modules/cities/cities.config';
 import { getTerritoriesForCity } from '../modules/territories/territories.config';
 import { validateBody } from './validateBody';
-import { getUsersRepository, getClubMembersRepository, getClubsRepository, getClubChannelsRepository } from '../db/repositories';
+import { getUsersRepository, getClubMembersRepository, getClubsRepository, getClubChannelsRepository, getScheduleRepository } from '../db/repositories';
 import { logger } from '../shared/logger';
 import { isValidClubId } from '../shared/clubId';
+import { CreateWeeklyScheduleItemSchema, CreateWeeklyScheduleItemDto, SetupPersonalPlanSchema, SetupPersonalPlanDto } from '../modules/schedule/schedule.dto';
+import { CalendarItemDto, GetCalendarQuerySchema } from '../modules/schedule/calendar.dto';
+import { scheduleGeneratorService } from '../modules/schedule/schedule-generator.service';
+
 
 const router = Router();
 
@@ -321,6 +325,20 @@ router.post('/', validateBody(CreateClubSchema), async (req: Request<{}, ClubVie
 
     // Create club — always PENDING until 2+ active members (auto-activation on approve)
     const clubsRepo = getClubsRepository();
+
+    // Check if user already in a club
+    const clubMembersRepo = getClubMembersRepository();
+    const activeMemberships = await clubMembersRepo.findActiveByUser(user.id);
+    if (activeMemberships.length > 0) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'You are already a member of another club',
+        details: {
+          fields: [{ field: 'userId', message: 'User already has an active club membership', code: 'already_in_another_club' }],
+        },
+      });
+    }
+
     const club = await clubsRepo.create(
       dto.name,
       dto.cityId,
@@ -330,7 +348,6 @@ router.post('/', validateBody(CreateClubSchema), async (req: Request<{}, ClubVie
     );
 
     // Auto-add creator as active leader
-    const clubMembersRepo = getClubMembersRepository();
     await clubMembersRepo.create(club.id, user.id, 'active', 'leader');
 
     // Create default channel for the club
@@ -406,6 +423,19 @@ router.post('/:id/join', async (req: Request, res: Response) => {
     }
 
     const clubMembersRepo = getClubMembersRepository();
+
+    // Check if user already in ANOTHER club
+    const activeMemberships = await clubMembersRepo.findActiveByUser(user.id);
+    const inAnotherClub = activeMemberships.find(m => m.clubId !== clubId);
+    if (inAnotherClub) {
+      res.status(400).json({
+        code: 'already_in_another_club',
+        message: 'You are already a member of another club',
+        details: { clubId: inAnotherClub.clubId },
+      });
+      return;
+    }
+
     const existing = await clubMembersRepo.findByClubAndUser(clubId, user.id);
     if (existing) {
       if (existing.status === 'active') {
@@ -1200,6 +1230,321 @@ router.post('/:id/membership-requests/:userId/reject', async (req: Request, res:
       message: 'Internal server error',
       details: undefined,
     });
+  }
+});
+
+/**
+ * GET /api/clubs/:id/schedule
+ *
+ * Получить недельный шаблон расписания клуба.
+ */
+router.get('/:id/schedule', async (req: Request, res: Response) => {
+  const { id: clubId } = req.params;
+  if (!isValidClubId(clubId)) {
+    return respondInvalidClubId(res);
+  }
+
+  try {
+    const scheduleRepo = getScheduleRepository();
+    const schedule = await scheduleRepo.findWeeklyByClub(clubId);
+    res.status(200).json(schedule);
+  } catch (error) {
+    logger.error('Error fetching club schedule', { clubId, error });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+    });
+  }
+});
+
+/**
+ * POST /api/clubs/:id/schedule
+ *
+ * Добавить элемент в недельный шаблон. Только для лидеров и тренеров.
+ */
+router.post('/:id/schedule', validateBody(CreateWeeklyScheduleItemSchema), async (req: Request, res: Response) => {
+  const { id: clubId } = req.params;
+  if (!isValidClubId(clubId)) {
+    return respondInvalidClubId(res);
+  }
+
+  const uid = req.authUser?.uid;
+  if (!uid) {
+    return res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+    });
+  }
+
+  const dto = req.body as CreateWeeklyScheduleItemDto;
+
+  try {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) {
+      return res.status(401).json({ code: 'unauthorized', message: 'User not found' });
+    }
+
+    const membersRepo = getClubMembersRepository();
+    const membership = await membersRepo.findByClubAndUser(clubId, user.id);
+    if (!membership || !['leader', 'trainer'].includes(membership.role) || membership.status !== 'active') {
+      return res.status(403).json({
+        code: 'forbidden',
+        message: 'Only club leaders and trainers can manage schedule',
+      });
+    }
+
+    const scheduleRepo = getScheduleRepository();
+    const newItem = await scheduleRepo.createWeeklyItem(clubId, dto);
+    res.status(201).json(newItem);
+  } catch (error) {
+    logger.error('Error creating schedule item', { clubId, error });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+    });
+  }
+});
+
+/**
+ * DELETE /api/clubs/:id/schedule/:itemId
+ *
+ * Удалить элемент из шаблона. Только для лидеров и тренеров.
+ */
+router.delete('/:id/schedule/:itemId', async (req: Request, res: Response) => {
+  const { id: clubId, itemId } = req.params;
+  if (!isValidClubId(clubId)) {
+    return respondInvalidClubId(res);
+  }
+
+  const uid = req.authUser?.uid;
+  if (!uid) {
+    return res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+    });
+  }
+
+  try {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) {
+      return res.status(401).json({ code: 'unauthorized', message: 'User not found' });
+    }
+
+    const membersRepo = getClubMembersRepository();
+    const membership = await membersRepo.findByClubAndUser(clubId, user.id);
+    if (!membership || !['leader', 'trainer'].includes(membership.role) || membership.status !== 'active') {
+      return res.status(403).json({
+        code: 'forbidden',
+        message: 'Only club leaders and trainers can manage schedule',
+      });
+    }
+
+    const scheduleRepo = getScheduleRepository();
+    const deleted = await scheduleRepo.deleteWeeklyItem(itemId);
+    if (!deleted) {
+      return res.status(404).json({
+        code: 'not_found',
+        message: 'Schedule item not found',
+      });
+    }
+
+    // Trigger sync to soft-delete future events
+    await scheduleGeneratorService.syncTemplateChanges(itemId, 'club');
+
+    res.status(204).send();
+  } catch (error) {
+    logger.error('Error deleting schedule item', { clubId, itemId, error });
+    res.status(500).json({
+      code: 'internal_error',
+      message: 'Internal server error',
+    });
+  }
+});
+
+/**
+ * PATCH /api/clubs/:id/schedule/:itemId
+ *
+ * Обновить элемент шаблона. Только для лидеров и тренеров.
+ */
+router.patch('/:id/schedule/:itemId', validateBody(CreateWeeklyScheduleItemSchema.partial()), async (req: Request, res: Response) => {
+  const { id: clubId, itemId } = req.params;
+  if (!isValidClubId(clubId)) {
+    return respondInvalidClubId(res);
+  }
+
+  const uid = req.authUser?.uid;
+  if (!uid) {
+    return res.status(401).json({ code: 'unauthorized', message: 'Authorization required' });
+  }
+
+  const dto = req.body as Partial<CreateWeeklyScheduleItemDto>;
+
+  try {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) return res.status(401).json({ code: 'unauthorized', message: 'User not found' });
+
+    const membersRepo = getClubMembersRepository();
+    const membership = await membersRepo.findByClubAndUser(clubId, user.id);
+    if (!membership || !['leader', 'trainer'].includes(membership.role) || membership.status !== 'active') {
+      return res.status(403).json({ code: 'forbidden', message: 'Access denied' });
+    }
+
+    const scheduleRepo = getScheduleRepository();
+    const updated = await scheduleRepo.updateWeeklyItem(itemId, dto);
+    if (!updated) {
+      return res.status(404).json({ code: 'not_found', message: 'Schedule item not found' });
+    }
+
+    // Trigger sync with future events
+    await scheduleGeneratorService.syncTemplateChanges(itemId, 'club');
+
+    res.status(200).json(updated);
+  } catch (error) {
+    logger.error('Error updating schedule item', { clubId, itemId, error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /api/clubs/:id/members/:userId/personal-schedule
+ *
+ * Настроить личный план для участника клуба. Только для лидеров и тренеров.
+ * Автоматически переключает plan_type в 'personal'.
+ */
+router.post('/:id/members/:userId/personal-schedule', validateBody(SetupPersonalPlanSchema), async (req: Request, res: Response) => {
+  const { id: clubId, userId: targetUserId } = req.params;
+  if (!isValidClubId(clubId)) {
+    return respondInvalidClubId(res);
+  }
+
+  const uid = req.authUser?.uid;
+  if (!uid) {
+    return res.status(401).json({ code: 'unauthorized', message: 'Authorization required' });
+  }
+
+  const { items } = req.body as SetupPersonalPlanDto;
+
+  try {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) return res.status(401).json({ code: 'unauthorized', message: 'User not found' });
+
+    // Проверка прав (только лидеры и тренеры могут менять планы участникам)
+    const membersRepo = getClubMembersRepository();
+    const requesterMembership = await membersRepo.findByClubAndUser(clubId, user.id);
+    if (!requesterMembership || !['leader', 'trainer'].includes(requesterMembership.role) || requesterMembership.status !== 'active') {
+      return res.status(403).json({ code: 'forbidden', message: 'Access denied' });
+    }
+
+    // Проверка, что целевой пользователь — участник клуба
+    const targetMembership = await membersRepo.findByClubAndUser(clubId, targetUserId);
+    if (!targetMembership || targetMembership.status !== 'active') {
+      return res.status(404).json({ code: 'not_found', message: 'Target member not found in this club' });
+    }
+
+    const scheduleRepo = getScheduleRepository();
+    
+    // 1. Заменяем личный шаблон
+    const createdItems = await scheduleRepo.replacePersonalSchedule(targetUserId, items);
+    
+    // 2. Переключаем тип плана на 'personal'
+    await membersRepo.setPlanType(clubId, targetUserId, 'personal');
+
+    res.status(200).json(createdItems);
+  } catch (error) {
+    logger.error('Error setting personal schedule', { clubId, targetUserId, error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/clubs/:id/calendar
+ *
+ * Календарь событий и заметок для участника клуба.
+ * Если у участника 'personal' план — видит свои заметки + события клуба.
+ * Если 'club' план — видит события клуба.
+ */
+router.get('/:id/calendar', async (req: Request, res: Response) => {
+  const { id: clubId } = req.params;
+  const { month } = GetCalendarQuerySchema.parse(req.query);
+  const uid = req.authUser?.uid;
+
+  if (!uid) return res.status(401).json({ code: 'unauthorized', message: 'Auth required' });
+
+  try {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) return res.status(401).json({ code: 'unauthorized', message: 'User not found' });
+
+    const membersRepo = getClubMembersRepository();
+    const membership = await membersRepo.findByClubAndUser(clubId, user.id);
+    if (!membership || membership.status !== 'active') {
+      return res.status(403).json({ code: 'forbidden', message: 'Only club members can view calendar' });
+    }
+
+    const eventsRepo = getEventsRepository();
+    const scheduleRepo = getScheduleRepository();
+
+    // 1. Получаем события клуба
+    const clubEvents = await eventsRepo.findByClubAndMonth(clubId, month);
+
+    // 2. Получаем личные заметки (если план персональный)
+    let personalNotes: import('../modules/schedule/schedule.dto').PersonalNoteDto[] = [];
+    if (membership.planType === 'personal') {
+      personalNotes = await scheduleRepo.findNotesByUserAndMonth(user.id, month);
+    }
+
+    // 3. Агрегируем в CalendarItemDto
+    const items: CalendarItemDto[] = [];
+
+    // Добавляем события
+    clubEvents.forEach(ev => {
+      items.push({
+        id: ev.id,
+        type: 'event',
+        date: ev.startDateTime.toISOString().split('T')[0],
+        startTime: ev.startDateTime.toISOString().split('T')[1].substring(0, 5),
+        name: ev.name,
+        description: ev.description,
+        activityType: ev.type,
+        workoutId: ev.workoutId,
+        trainerId: ev.trainerId,
+        status: ev.status,
+        isPersonal: false,
+      });
+    });
+
+    // Добавляем заметки
+    personalNotes.forEach(note => {
+      items.push({
+        id: note.id,
+        type: 'note',
+        date: note.date,
+        name: note.name,
+        description: note.description,
+        activityType: 'note',
+        workoutId: note.workoutId,
+        trainerId: note.trainerId,
+        isPersonal: true,
+      });
+    });
+
+    // Сортировка по дате и времени
+    items.sort((a, b) => {
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      return (a.startTime || '').localeCompare(b.startTime || '');
+    });
+
+    res.status(200).json(items);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ code: 'validation_error', details: error.errors });
+    }
+    logger.error('Error fetching calendar', { clubId, month, error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
   }
 });
 
