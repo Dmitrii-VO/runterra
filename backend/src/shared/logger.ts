@@ -50,10 +50,12 @@ function writeToFile(filename: string, line: string): void {
   try {
     ensureLogsDir();
     const filePath = path.join(LOGS_DIR, filename);
-    fs.appendFileSync(filePath, line + '\n', 'utf8');
+    fs.appendFile(filePath, line + '\n', 'utf8', (err) => {
+      if (err) console.error('Failed to write log to file:', err);
+    });
   } catch (err) {
-    // Fallback to console if file write fails
-    console.error('Failed to write log to file:', err);
+    // Fallback to console if ensureLogsDir() fails
+    console.error('Failed to initialize logs directory:', err);
   }
 }
 
