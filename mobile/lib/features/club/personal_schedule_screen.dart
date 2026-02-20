@@ -46,27 +46,23 @@ class _PersonalScheduleScreenState extends State<PersonalScheduleScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
-        // If 404/Empty, it's just no personal schedule yet
       }
     }
   }
 
   Future<void> _replaceSchedule() async {
     final l10n = AppLocalizations.of(context)!;
-    // For Stage 5 MVP, we implement a simple "Replace with template" or "Clear" logic.
-    // In a full implementation, this would be a complex editor.
-    // Let's add a "Quick Add Rest Day" as a proof of concept for Personal Notes.
     
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Set Personal Plan"),
-        content: const Text("This will replace the runner's current plan. For MVP, we will set a simple 'Run 5km' note for Monday."),
+        title: Text(l10n.navRun),
+        content: const Text("Это действие заменит текущий план бегуна. Для проверки мы установим 'Пробежка 5км' на понедельник."),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Set Plan"),
+            child: Text(l10n.editProfileSave),
           ),
         ],
       ),
@@ -79,16 +75,16 @@ class _PersonalScheduleScreenState extends State<PersonalScheduleScreen> {
           widget.userId,
           [
             {
-              'dayOfWeek': 1, // Monday (Backend expects 1 for Monday if 0 is Sunday)
+              'dayOfWeek': 1,
               'startTime': '09:00',
               'type': 'note',
-              'name': 'Personal Run: 5km easy', // Required by backend
-              'noteText': 'Personal Run: 5km easy',
+              'name': 'Персональная пробежка: 5км',
+              'noteText': 'Персональная пробежка: 5км',
             }
           ],
         );
         _loadSchedule();
-        if (mounted) Navigator.pop(context, true); // Signal change to roster
+        if (mounted) Navigator.pop(context, true);
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -121,18 +117,18 @@ class _PersonalScheduleScreenState extends State<PersonalScheduleScreen> {
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Text(
-                    "Current Personal Plan",
+                    "Текущий персональный план",
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
                 Expanded(
                   child: _schedule == null || _schedule!.isEmpty
-                      ? const Center(child: Text("Using Club Schedule (Default)"))
+                      ? const Center(child: Text("Используется клубное расписание"))
                       : ListView.builder(
                           itemCount: _schedule!.length,
                           itemBuilder: (context, index) {
                             final item = _schedule![index];
-                            final dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                            final dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
                             return ListTile(
                               leading: CircleAvatar(child: Text(dayNames[item.dayOfWeek][0])),
                               title: Text("${dayNames[item.dayOfWeek]} ${item.startTime}"),
@@ -147,7 +143,7 @@ class _PersonalScheduleScreenState extends State<PersonalScheduleScreen> {
                     width: double.infinity,
                     child: FilledButton(
                       onPressed: _replaceSchedule,
-                      child: const Text("Replace Personal Plan"),
+                      child: const Text("Заменить персональный план"),
                     ),
                   ),
                 ),

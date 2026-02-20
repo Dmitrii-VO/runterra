@@ -74,7 +74,7 @@ class _ClubScheduleScreenState extends State<ClubScheduleScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.note_alt),
-              title: Text(l10n.tabPersonal), // Using "Personal" as label for Note
+              title: Text(l10n.tabPersonal),
               onTap: () => Navigator.pop(context, ScheduleItemType.note),
             ),
           ],
@@ -97,11 +97,11 @@ class _ClubScheduleScreenState extends State<ClubScheduleScreen> {
             children: [
               TextField(
                 controller: timeController,
-                decoration: const InputDecoration(labelText: 'Time (HH:mm)'),
+                decoration: InputDecoration(labelText: '${l10n.eventCreateTime} (HH:mm)'),
               ),
               TextField(
                 controller: textController,
-                decoration: const InputDecoration(labelText: 'Note Text'),
+                decoration: InputDecoration(labelText: l10n.eventDescription),
                 maxLines: 3,
               ),
             ],
@@ -122,8 +122,8 @@ class _ClubScheduleScreenState extends State<ClubScheduleScreen> {
             'dayOfWeek': _uiDayToBackend(_selectedDay),
             'startTime': timeController.text,
             'type': 'note',
-            'activityType': 'note', // Required by backend
-            'name': textController.text, // Backend uses 'name' for title
+            'activityType': 'note',
+            'name': textController.text,
             'noteText': textController.text,
           });
           _loadSchedule();
@@ -134,10 +134,8 @@ class _ClubScheduleScreenState extends State<ClubScheduleScreen> {
         }
       }
     } else {
-      // Event selection (Simplified: just input text for now or pick from existing workouts)
-      // For Stage 5 MVP, we'll use a simple dialog.
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Event selection to be integrated with Workouts library")),
+        const SnackBar(content: Text("Выбор из библиотеки будет доступен в Этапе 7")),
       );
     }
   }
@@ -156,9 +154,7 @@ class _ClubScheduleScreenState extends State<ClubScheduleScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final dayNames = [
-      'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
-    ]; // TODO: l10n
+    final dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
     return Scaffold(
       appBar: AppBar(
@@ -169,7 +165,6 @@ class _ClubScheduleScreenState extends State<ClubScheduleScreen> {
       ),
       body: Column(
         children: [
-          // Day Selector
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -191,12 +186,11 @@ class _ClubScheduleScreenState extends State<ClubScheduleScreen> {
             ),
           ),
           const Divider(),
-          // Items List
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : _currentDayItems.isEmpty
-                    ? Center(child: Text(l10n.noData))
+                    ? const Center(child: Text("Нет данных"))
                     : ListView.builder(
                         itemCount: _currentDayItems.length,
                         itemBuilder: (context, index) {
@@ -208,7 +202,7 @@ class _ClubScheduleScreenState extends State<ClubScheduleScreen> {
                             ),
                             title: Text(item.startTime),
                             subtitle: Text(item.type == ScheduleItemType.event 
-                              ? (item.eventId ?? 'Workout') 
+                              ? (item.eventId ?? "Тренировка") 
                               : (item.noteText ?? '')),
                             trailing: IconButton(
                               icon: const Icon(Icons.delete_outline, color: Colors.red),

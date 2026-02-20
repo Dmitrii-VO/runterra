@@ -3,10 +3,11 @@ import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/event_list_item_model.dart';
+import '../../shared/models/calendar_model.dart';
+import '../../shared/models/my_club_model.dart';
 import 'widgets/event_card.dart';
-import '../../main.dart' show DevRemoteLogger;
+import 'package:intl/intl.dart';
 
-/// Экран списка событий.
 class EventsScreen extends StatefulWidget {
   const EventsScreen({super.key});
 
@@ -14,257 +15,283 @@ class EventsScreen extends StatefulWidget {
   State<EventsScreen> createState() => _EventsScreenState();
 }
 
-class _EventsScreenState extends State<EventsScreen> {
+class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  
+  // Tab 1: Training Plan
+  DateTime _selectedDate = DateTime.now();
+  late Future<String?> _trainingClubIdFuture;
+  late Future<List<CalendarItemModel>> _calendarFuture;
+  
+  // Tab 2: City Events
   late Future<List<EventListItemModel>> _eventsFuture;
-
-  // Filter state — proxied to EventsService.getEvents and then backend (where supported).
   String? _selectedDateFilter;
   String? _selectedClubId;
-  String? _selectedDifficultyLevel;
-  String? _selectedEventType;
   bool _onlyOpen = true;
-  bool _participantOnly = false;
 
   @override
   void initState() {
     super.initState();
-    _eventsFuture = _fetchEvents();
+    _tabController = TabController(length: 2, vsync: this);
+    _trainingClubIdFuture = _resolveTrainingClubId();
+    _calendarFuture = _fetchCalendar();
+    _eventsFuture = _fetchCityEvents();
   }
 
-  Future<List<EventListItemModel>> _fetchEvents() async {
-    final eventsService = ServiceLocator.eventsService;
-    final cityId = ServiceLocator.currentCityService.currentCityId;
-    if (cityId == null || cityId.isEmpty) {
-      throw Exception('Current city is not selected');
-    }
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
-    final events = await eventsService.getEvents(
+  Future<String?> _resolveTrainingClubId() async {
+    final cachedClubId = ServiceLocator.currentClubService.currentClubId;
+    if (cachedClubId != null && cachedClubId.isNotEmpty) return cachedClubId;
+
+    try {
+      final myClubs = await ServiceLocator.clubsService.getMyClubs();
+      if (myClubs.isEmpty) return null;
+
+      final List<MyClubModel> activeClubs = myClubs
+          .where((club) => club.status == 'active')
+          .toList();
+      final selectedClub = activeClubs.isNotEmpty ? activeClubs.first : myClubs.first;
+
+      await ServiceLocator.currentClubService.setCurrentClubId(selectedClub.id);
+      return selectedClub.id;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<List<CalendarItemModel>> _fetchCalendar() async {
+    final clubId = await _trainingClubIdFuture;
+    if (clubId == null || clubId.isEmpty) return [];
+    
+    final yearMonth = DateFormat('yyyy-MM').format(_selectedDate);
+    return ServiceLocator.clubsService.getCalendar(clubId, yearMonth);
+  }
+
+  Future<List<EventListItemModel>> _fetchCityEvents() async {
+    final cityId = ServiceLocator.currentCityService.currentCityId;
+    if (cityId == null || cityId.isEmpty) return [];
+
+    return ServiceLocator.eventsService.getEvents(
       cityId: cityId,
       dateFilter: _selectedDateFilter,
       clubId: _selectedClubId,
-      difficultyLevel: _selectedDifficultyLevel,
-      eventType: _selectedEventType,
       onlyOpen: _onlyOpen,
-      participantOnly: _participantOnly,
     );
-
-    // Client-side safety net: even if backend still marks past events as `open`,
-    // exclude them from "Only open" list.
-    if (!_onlyOpen) return events;
-    final now = DateTime.now();
-    return events
-        .where((e) => e.status == 'open' && !e.startDateTime.isBefore(now))
-        .toList();
   }
 
-  Future<void> _refreshEvents() async {
-    final future = _fetchEvents();
+  void _refresh() {
     setState(() {
-      _eventsFuture = future;
+      _trainingClubIdFuture = _resolveTrainingClubId();
+      _calendarFuture = _fetchCalendar();
+      _eventsFuture = _fetchCityEvents();
     });
-    await future;
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.eventsTitle),
+        title: Text(l10n.eventsTitle),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: [
+            Tab(text: l10n.statsTrainings), // "Тренировки"
+            Tab(text: l10n.eventsTitle),    // "События"
+          ],
+        ),
+        actions: [
+          IconButton(onPressed: _refresh, icon: const Icon(Icons.refresh)),
+        ],
       ),
-      body: Column(
+      body: TabBarView(
+        controller: _tabController,
         children: [
-          _buildFiltersPanel(),
-          Expanded(
-            child: FutureBuilder<List<EventListItemModel>>(
-              future: _eventsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (snapshot.hasError) {
-                  DevRemoteLogger.logError(
-                    'Error loading events list',
-                    error: snapshot.error ?? 'unknown',
-                    stackTrace: snapshot.stackTrace,
-                  );
-
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.error_outline,
-                            size: 48,
-                            color: Colors.red,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            AppLocalizations.of(context)!.eventsLoadError,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            snapshot.error.toString(),
-                            style: Theme.of(context).textTheme.bodySmall,
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: _refreshEvents,
-                            child: Text(AppLocalizations.of(context)!.retry),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.event_busy,
-                            size: 64,
-                            color: Colors.grey[400],
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            AppLocalizations.of(context)!.eventsEmpty,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            AppLocalizations.of(context)!.eventsEmptyHint,
-                            style: Theme.of(context).textTheme.bodySmall,
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                final events = snapshot.data!;
-
-                return RefreshIndicator(
-                  onRefresh: _refreshEvents,
-                  child: ListView.builder(
-                    itemCount: events.length,
-                    itemBuilder: (context, index) {
-                      return EventCard(event: events[index]);
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
+          _buildTrainingPlanTab(l10n),
+          _buildCityEventsTab(l10n),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          context.push('/event/create');
-        },
-        tooltip: AppLocalizations.of(context)!.eventsCreateTooltip,
+        onPressed: () => context.push('/event/create'),
         child: const Icon(Icons.add),
       ),
     );
   }
 
-  Widget _buildFiltersPanel() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        boxShadow: const [
-          BoxShadow(
-            color: Color.fromRGBO(0, 0, 0, 0.1),
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Row(
+  Widget _buildTrainingPlanTab(AppLocalizations l10n) {
+    return FutureBuilder<String?>(
+      future: _trainingClubIdFuture,
+      builder: (context, clubSnapshot) {
+        if (clubSnapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final clubId = clubSnapshot.data;
+        if (clubId == null || clubId.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.group_off, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  Text(
+                    l10n.noClubChats, // "Вы пока не состоите в клубе"
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => context.go('/map?showClubs=true'),
+                    child: Text(l10n.quickFindClub),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return Column(
           children: [
-            _buildDateFilterChip(
-              AppLocalizations.of(context)!.filterToday,
-              'today',
+            _buildCalendarStrip(),
+            Expanded(
+              child: FutureBuilder<List<CalendarItemModel>>(
+                future: _calendarFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text(snapshot.error.toString()));
+                  }
+                  
+                  final allItems = snapshot.data ?? [];
+                  final dayItems = allItems.where((item) => 
+                    item.date.year == _selectedDate.year &&
+                    item.date.month == _selectedDate.month &&
+                    item.date.day == _selectedDate.day
+                  ).toList();
+
+                  if (dayItems.isEmpty) {
+                    return Center(child: Text(l10n.noData));
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(8),
+                    itemCount: dayItems.length,
+                    itemBuilder: (context, index) {
+                      final item = dayItems[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        child: ListTile(
+                          leading: Icon(
+                            item.type == CalendarItemType.event ? Icons.event : Icons.note_alt,
+                            color: item.isPersonal ? Colors.purple : Colors.blue,
+                          ),
+                          title: Text(item.name),
+                          subtitle: Text("${item.startTime ?? ''} ${item.description ?? ''}"),
+                          trailing: item.isPersonal 
+                            ? Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(color: Colors.purple.shade50, borderRadius: BorderRadius.circular(4)),
+                                child: Text(l10n.planTypePersonal, style: const TextStyle(fontSize: 10, color: Colors.purple)),
+                              )
+                            : null,
+                          onTap: item.type == CalendarItemType.event 
+                            ? () => context.push('/event/${item.id}') 
+                            : null,
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-            const SizedBox(width: 8),
-            _buildDateFilterChip(
-              AppLocalizations.of(context)!.filterTomorrow,
-              'tomorrow',
-            ),
-            const SizedBox(width: 8),
-            _buildDateFilterChip(
-              AppLocalizations.of(context)!.filter7days,
-              'next7days',
-            ),
-            const SizedBox(width: 16),
-            FilterChip(
-              label: Text(AppLocalizations.of(context)!.filterOnlyOpen),
-              selected: _onlyOpen,
-              onSelected: (selected) {
-                setState(() {
-                  _onlyOpen = selected;
-                  _eventsFuture = _fetchEvents();
-                });
-              },
-            ),
-            const SizedBox(width: 16),
-            FilterChip(
-              label: Text(AppLocalizations.of(context)!.filtersMyClub),
-              selected:
-                  ServiceLocator.currentClubService.currentClubId != null &&
-                      _selectedClubId ==
-                          ServiceLocator.currentClubService.currentClubId,
-              onSelected: (selected) {
-                setState(() {
-                  _selectedClubId = selected
-                      ? ServiceLocator.currentClubService.currentClubId
-                      : null;
-                  _eventsFuture = _fetchEvents();
-                });
-              },
-            ),
-            const SizedBox(width: 16),
-            FilterChip(
-              label: Text(AppLocalizations.of(context)!.filterParticipantOnly),
-              selected: _participantOnly,
-              onSelected: (selected) {
-                setState(() {
-                  _participantOnly = selected;
-                  _eventsFuture = _fetchEvents();
-                });
-              },
-            ),
-            const SizedBox(width: 16),
           ],
-        ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCalendarStrip() {
+    return Container(
+      height: 90,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: 31, // Show a month
+        itemBuilder: (context, index) {
+          final day = DateTime.now().add(Duration(days: index - 3)); // Start from 3 days ago
+          final isSelected = day.year == _selectedDate.year && 
+                             day.month == _selectedDate.month && 
+                             day.day == _selectedDate.day;
+          
+          return GestureDetector(
+            onTap: () => setState(() {
+              _selectedDate = day;
+              // If month changed, reload calendar
+              _calendarFuture = _fetchCalendar();
+            }),
+            child: Container(
+              width: 60,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: BoxDecoration(
+                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: isSelected ? Colors.transparent : Colors.grey.shade300),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    DateFormat('E').format(day),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isSelected ? Colors.white : Colors.grey,
+                    ),
+                  ),
+                  Text(
+                    day.day.toString(),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected ? Colors.white : Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildDateFilterChip(String label, String value) {
-    return FilterChip(
-      label: Text(label),
-      selected: _selectedDateFilter == value,
-      onSelected: (selected) {
-        setState(() {
-          _selectedDateFilter = selected ? value : null;
-          _eventsFuture = _fetchEvents();
-        });
+  Widget _buildCityEventsTab(AppLocalizations l10n) {
+    return FutureBuilder<List<EventListItemModel>>(
+      future: _eventsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text(snapshot.error.toString()));
+        }
+        final events = snapshot.data ?? [];
+        if (events.isEmpty) return Center(child: Text(l10n.eventsEmpty));
+
+        return ListView.builder(
+          itemCount: events.length,
+          itemBuilder: (context, index) => EventCard(event: events[index]),
+        );
       },
     );
   }
 }
-

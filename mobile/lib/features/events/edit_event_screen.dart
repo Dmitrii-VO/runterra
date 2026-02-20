@@ -63,8 +63,8 @@ class _EditEventScreenState extends State<EditEventScreen> {
     _eventType = event.type;
     _selectedDate = event.startDateTime;
     _selectedTime = TimeOfDay.fromDateTime(event.startDateTime);
-    _selectedLat = event.startLocation.latitude;
-    _selectedLon = event.startLocation.longitude;
+    _selectedLat = event.startLocation?.latitude;
+    _selectedLon = event.startLocation?.longitude;
   }
 
   Future<void> _pickDate() async {

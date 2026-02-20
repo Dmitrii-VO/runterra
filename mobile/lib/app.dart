@@ -332,12 +332,7 @@ class RunterraApp extends StatelessWidget {
       ),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      localeResolutionCallback: (locale, supported) {
-        for (final l in supported) {
-          if (l.languageCode == locale?.languageCode) return l;
-        }
-        return const Locale('ru');
-      },
+      locale: const Locale('ru'), // Forced Russian locale
       routerConfig: _router,
     );
   }

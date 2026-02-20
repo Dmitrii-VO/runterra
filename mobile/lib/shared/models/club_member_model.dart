@@ -20,7 +20,7 @@ class ClubMemberModel {
       displayName: json['displayName'] as String,
       role: json['role'] as String,
       joinedAt: DateTime.parse(json['joinedAt'] as String),
-      planType: json['planType'] as String? ?? 'club',
+      planType: (json['planType'] ?? json['plan_type']) as String? ?? 'club',
     );
   }
 }

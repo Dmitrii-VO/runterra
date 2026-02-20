@@ -1,20 +1,28 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'api_client.dart';
 import 'users_service.dart' show ApiException;
 import '../models/club_model.dart';
 import '../models/club_member_model.dart';
 import '../models/my_club_model.dart';
 import '../models/schedule_model.dart';
+import '../models/calendar_model.dart';
 
-/// РЎРµСЂРІРёСЃ РґР»СЏ СЂР°Р±РѕС‚С‹ СЃ РєР»СѓР±Р°РјРё
-/// 
-/// РџСЂРµРґРѕСЃС‚Р°РІР»СЏРµС‚ РјРµС‚РѕРґС‹ РґР»СЏ РІС‹РїРѕР»РЅРµРЅРёСЏ Р·Р°РїСЂРѕСЃРѕРІ Рє API РєР»СѓР±РѕРІ.
-/// РСЃРїРѕР»СЊР·СѓРµС‚ ApiClient РґР»СЏ РІС‹РїРѕР»РЅРµРЅРёСЏ HTTP Р·Р°РїСЂРѕСЃРѕРІ.
 class ClubsService {
   final ApiClient _apiClient;
 
-  /// РЎРѕР·РґР°РµС‚ ClubsService СЃ СѓРєР°Р·Р°РЅРЅС‹Рј ApiClient
   ClubsService({required ApiClient apiClient}) : _apiClient = apiClient;
+
+  /// GET /api/clubs/:id/calendar — aggregated calendar.
+  Future<List<CalendarItemModel>> getCalendar(String clubId, String yearMonth) async {
+    final response = await _apiClient.get('/api/clubs/${Uri.encodeComponent(clubId)}/calendar?month=$yearMonth');
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body) as List<dynamic>;
+      return jsonData
+          .map((item) => CalendarItemModel.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+    throw ApiException('calendar_fetch_error', 'Failed to load calendar');
+  }
 
   /// GET /api/clubs/:id/schedule — weekly schedule template.
   Future<List<WeeklyScheduleItemModel>> getWeeklySchedule(String clubId) async {
@@ -75,10 +83,6 @@ class ClubsService {
     throw ApiException('personal_schedule_update_error', 'Failed to update personal schedule');
   }
 
-  /// Р’С‹РїРѕР»РЅСЏРµС‚ GET /api/clubs Р·Р°РїСЂРѕСЃ Рє backend
-  /// 
-  /// Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РєР»СѓР±РѕРІ (List<ClubModel>).
-  /// РџР°СЂСЃРёС‚ JSON РѕС‚РІРµС‚ Рё РїСЂРµРѕР±СЂР°Р·СѓРµС‚ РµРіРѕ РІ С‚РёРїРёР·РёСЂРѕРІР°РЅРЅС‹Рµ РјРѕРґРµР»Рё.
   /// GET /api/clubs — list of clubs by city.
   Future<List<ClubModel>> getClubs({required String cityId}) async {
     final uri = Uri(
@@ -96,9 +100,7 @@ class ClubsService {
           errorCode = (decoded['code'] as String?) ?? errorCode;
           errorMessage = (decoded['message'] as String?) ?? errorMessage;
         }
-      } on FormatException {
-        // Non-JSON response
-      }
+      } on FormatException { }
       throw ApiException(errorCode, errorMessage);
     }
 
@@ -129,18 +131,11 @@ class ClubsService {
         errorCode = (decoded['code'] as String?) ?? errorCode;
         errorMessage = (decoded['message'] as String?) ?? errorMessage;
       }
-    } on FormatException {
-      // Non-JSON response
-    }
+    } on FormatException { }
     throw ApiException(errorCode, errorMessage);
   }
 
-  /// Р’С‹РїРѕР»РЅСЏРµС‚ GET /api/clubs/:id Р·Р°РїСЂРѕСЃ Рє backend
-  /// 
-  /// Р’РѕР·РІСЂР°С‰Р°РµС‚ РєР»СѓР± РїРѕ СѓРєР°Р·Р°РЅРЅРѕРјСѓ id (ClubModel).
-  /// РџР°СЂСЃРёС‚ JSON РѕС‚РІРµС‚ Рё РїСЂРµРѕР±СЂР°Р·СѓРµС‚ РµРіРѕ РІ С‚РёРїРёР·РёСЂРѕРІР°РЅРЅСѓСЋ РјРѕРґРµР»СЊ.
-  /// 
-  /// [id] - СѓРЅРёРєР°Р»СЊРЅС‹Р№ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РєР»СѓР±Р°
+  /// GET /api/clubs/:id — club by ID.
   Future<ClubModel> getClubById(String id) async {
     final response = await _apiClient.get('/api/clubs/${Uri.encodeComponent(id)}');
 
@@ -153,9 +148,7 @@ class ClubsService {
           errorCode = (decoded['code'] as String?) ?? errorCode;
           errorMessage = (decoded['message'] as String?) ?? errorMessage;
         }
-      } on FormatException {
-        // Non-JSON response
-      }
+      } on FormatException { }
       throw ApiException(errorCode, errorMessage);
     }
 
@@ -185,13 +178,11 @@ class ClubsService {
         errorCode = (decoded['code'] as String?) ?? errorCode;
         errorMessage = (decoded['message'] as String?) ?? errorMessage;
       }
-    } on FormatException {
-      // Non-JSON response
-    }
+    } on FormatException { }
     throw ApiException(errorCode, errorMessage);
   }
 
-  /// PATCH /api/clubs/:id/members/:userId/role — update member role (leader only).
+  /// PATCH /api/clubs/:id/members/:userId/role
   Future<void> updateMemberRole(String clubId, String userId, String role) async {
     final response = await _apiClient.patch(
       '/api/clubs/${Uri.encodeComponent(clubId)}/members/${Uri.encodeComponent(userId)}/role',
@@ -206,16 +197,11 @@ class ClubsService {
         errorCode = (decoded['code'] as String?) ?? errorCode;
         errorMessage = (decoded['message'] as String?) ?? errorMessage;
       }
-    } on FormatException {
-      // Non-JSON response
-    }
+    } on FormatException { }
     throw ApiException(errorCode, errorMessage);
   }
 
-  /// Р'С‹РїРѕР»РЅСЏРµС‚ POST /api/clubs вЂ" СЃРѕР·РґР°РЅРёРµ РєР»СѓР±Р°.
-  ///
-  /// Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРѕР·РґР°РЅРЅС‹Р№ РєР»СѓР± (ClubModel).
-  /// Р‘СЂРѕСЃР°РµС‚ [ApiException] РїСЂРё 4xx/5xx РёР»Рё РЅРµ-JSON РѕС‚РІРµС‚Рµ.
+  /// POST /api/clubs — create club.
   Future<ClubModel> createClub({
     required String name,
     String? description,
@@ -239,30 +225,19 @@ class ClubsService {
           errorCode = (decoded['code'] as String?) ?? errorCode;
           errorMessage = (decoded['message'] as String?) ?? errorMessage;
         }
-      } on FormatException {
-        // Non-JSON response
-      }
+      } on FormatException { }
       throw ApiException(errorCode, errorMessage);
     }
 
     final contentType = response.headers['content-type'] ?? '';
     if (!contentType.contains('application/json')) {
-      throw ApiException(
-        'invalid_response',
-        'Server returned non-JSON. Status: ${response.statusCode}',
-      );
+      throw ApiException('invalid_response', 'Server returned non-JSON');
     }
-    try {
-      final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
-      return ClubModel.fromJson(jsonData);
-    } catch (e) {
-      if (e is ApiException) rethrow;
-      rethrow;
-    }
+    final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+    return ClubModel.fromJson(jsonData);
   }
 
-  /// Р’С‹РїРѕР»РЅСЏРµС‚ POST /api/clubs/:id/join вЂ” РїСЂРёСЃРѕРµРґРёРЅРµРЅРёРµ С‚РµРєСѓС‰РµРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ Рє РєР»СѓР±Сѓ.
-  /// Р‘СЂРѕСЃР°РµС‚ [ApiException] РїСЂРё 4xx/5xx СЃ code Рё message РёР· РѕС‚РІРµС‚Р°.
+  /// POST /api/clubs/:id/join
   Future<void> joinClub(String clubId) async {
     final response = await _apiClient.post('/api/clubs/${Uri.encodeComponent(clubId)}/join');
     if (response.statusCode >= 200 && response.statusCode < 300) return;
@@ -274,14 +249,11 @@ class ClubsService {
         errorCode = (decoded['code'] as String?) ?? errorCode;
         errorMessage = (decoded['message'] as String?) ?? errorMessage;
       }
-    } on FormatException {
-      // Non-JSON response
-    }
+    } on FormatException { }
     throw ApiException(errorCode, errorMessage);
   }
 
-  /// Р'С‹РїРѕР»РЅСЏРµС‚ POST /api/clubs/:id/leave вЂ" РІС‹С…РѕРґ РёР· РєР»СѓР±Р°.
-  /// Р'СЂРѕСЃР°РµС‚ [ApiException] РїСЂРё 4xx/5xx СЃ code Рё message РёР· РѕС‚РІРµС‚Р°.
+  /// POST /api/clubs/:id/leave
   Future<void> leaveClub(String clubId) async {
     final response = await _apiClient.post('/api/clubs/${Uri.encodeComponent(clubId)}/leave');
     if (response.statusCode >= 200 && response.statusCode < 300) return;
@@ -293,13 +265,11 @@ class ClubsService {
         errorCode = (decoded['code'] as String?) ?? errorCode;
         errorMessage = (decoded['message'] as String?) ?? errorMessage;
       }
-    } on FormatException {
-      // Non-JSON response
-    }
+    } on FormatException { }
     throw ApiException(errorCode, errorMessage);
   }
 
-  /// GET /api/clubs/:id/membership-requests — pending requests (leader/trainer).
+  /// GET /api/clubs/:id/membership-requests
   Future<List<ClubMemberModel>> getMembershipRequests(String clubId) async {
     final response = await _apiClient.get('/api/clubs/${Uri.encodeComponent(clubId)}/membership-requests');
     if (response.statusCode == 200) {
@@ -308,117 +278,39 @@ class ClubsService {
           .map((item) => ClubMemberModel.fromJson(item as Map<String, dynamic>))
           .toList();
     }
-    String errorCode = 'requests_fetch_error';
-    String errorMessage = 'Failed to load requests (${response.statusCode})';
-    try {
-      final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
-      if (decoded != null) {
-        errorCode = (decoded['code'] as String?) ?? errorCode;
-        errorMessage = (decoded['message'] as String?) ?? errorMessage;
-      }
-    } on FormatException {
-      // Non-JSON response
-    }
-    throw ApiException(errorCode, errorMessage);
+    throw ApiException('requests_fetch_error', 'Failed to load requests');
   }
 
   /// POST /api/clubs/:id/membership-requests/:userId/approve
   Future<void> approveMembership(String clubId, String userId) async {
-    final response = await _apiClient.post(
-      '/api/clubs/${Uri.encodeComponent(clubId)}/membership-requests/${Uri.encodeComponent(userId)}/approve',
-    );
+    final response = await _apiClient.post('/api/clubs/${Uri.encodeComponent(clubId)}/membership-requests/${Uri.encodeComponent(userId)}/approve');
     if (response.statusCode >= 200 && response.statusCode < 300) return;
-    String errorCode = 'approve_error';
-    String errorMessage = 'Failed to approve (${response.statusCode})';
-    try {
-      final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
-      if (decoded != null) {
-        errorCode = (decoded['code'] as String?) ?? errorCode;
-        errorMessage = (decoded['message'] as String?) ?? errorMessage;
-      }
-    } on FormatException {
-      // Non-JSON response
-    }
-    throw ApiException(errorCode, errorMessage);
+    throw ApiException('approve_error', 'Failed to approve');
   }
 
   /// POST /api/clubs/:id/membership-requests/:userId/reject
   Future<void> rejectMembership(String clubId, String userId) async {
-    final response = await _apiClient.post(
-      '/api/clubs/${Uri.encodeComponent(clubId)}/membership-requests/${Uri.encodeComponent(userId)}/reject',
-    );
+    final response = await _apiClient.post('/api/clubs/${Uri.encodeComponent(clubId)}/membership-requests/${Uri.encodeComponent(userId)}/reject');
     if (response.statusCode >= 200 && response.statusCode < 300) return;
-    String errorCode = 'reject_error';
-    String errorMessage = 'Failed to reject (${response.statusCode})';
-    try {
-      final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
-      if (decoded != null) {
-        errorCode = (decoded['code'] as String?) ?? errorCode;
-        errorMessage = (decoded['message'] as String?) ?? errorMessage;
-      }
-    } on FormatException {
-      // Non-JSON response
-    }
-    throw ApiException(errorCode, errorMessage);
+    throw ApiException('reject_error', 'Failed to reject');
   }
 
-  /// DELETE /api/clubs/:id — disband club (leader only).
+  /// DELETE /api/clubs/:id — disband club.
   Future<void> disbandClub(String clubId) async {
     final response = await _apiClient.delete('/api/clubs/${Uri.encodeComponent(clubId)}');
     if (response.statusCode >= 200 && response.statusCode < 300) return;
-    String errorCode = 'disband_club_error';
-    String errorMessage = 'Failed to disband club (${response.statusCode})';
-    try {
-      final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
-      if (decoded != null) {
-        errorCode = (decoded['code'] as String?) ?? errorCode;
-        errorMessage = (decoded['message'] as String?) ?? errorMessage;
-      }
-    } on FormatException {
-      // Non-JSON response
-    }
-    throw ApiException(errorCode, errorMessage);
+    throw ApiException('disband_club_error', 'Failed to disband club');
   }
 
-  /// Р'С‹РїРѕР»РЅСЏРµС‚ PATCH /api/clubs/:id вЂ" СЂРµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ РєР»СѓР±Р°.
-  ///
-  /// Р'РѕР·РІСЂР°С‰Р°РµС‚ РѕР±РЅРѕРІР»РµРЅРЅС‹Р№ РєР»СѓР± (ClubModel).
-  /// Р'СЂРѕСЃР°РµС‚ [ApiException] РїСЂРё 4xx/5xx РёР»Рё РЅРµ-JSON РѕС‚РІРµС‚Рµ.
-  ///
-  /// [clubId] - СѓРЅРёРєР°Р»СЊРЅС‹Р№ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РєР»СѓР±Р°
-  /// [name] - РЅРѕРІРѕРµ РЅР°Р·РІР°РЅРёРµ РєР»СѓР±Р° (РѕРїС†РёРѕРЅР°Р»СЊРЅРѕ)
-  /// [description] - РЅРѕРІРѕРµ РѕРїРёСЃР°РЅРёРµ РєР»СѓР±Р° (РѕРїС†РёРѕРЅР°Р»СЊРЅРѕ)
-  Future<ClubModel> updateClub(
-    String clubId, {
-    String? name,
-    String? description,
-  }) async {
+  /// PATCH /api/clubs/:id — update club.
+  Future<ClubModel> updateClub(String clubId, {String? name, String? description}) async {
     final body = <String, dynamic>{};
     if (name != null) body['name'] = name;
     if (description != null) body['description'] = description;
-
     final response = await _apiClient.patch('/api/clubs/${Uri.encodeComponent(clubId)}', body: body);
-
     if (response.statusCode == 200) {
-      final contentType = response.headers['content-type'] ?? '';
-      if (!contentType.contains('application/json')) {
-        throw ApiException('invalid_response', 'Server returned non-JSON response');
-      }
-      final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
-      return ClubModel.fromJson(jsonData);
-    } else {
-      String errorCode = 'update_club_error';
-      String errorMessage = 'Failed to update club (${response.statusCode})';
-      try {
-        final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
-        if (decoded != null) {
-          errorCode = (decoded['code'] as String?) ?? errorCode;
-          errorMessage = (decoded['message'] as String?) ?? errorMessage;
-        }
-      } on FormatException {
-        // Non-JSON response
-      }
-      throw ApiException(errorCode, errorMessage);
+      return ClubModel.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
     }
+    throw ApiException('update_club_error', 'Failed to update club');
   }
 }

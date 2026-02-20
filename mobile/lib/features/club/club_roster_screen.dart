@@ -51,57 +51,76 @@ class _ClubRosterScreenState extends State<ClubRosterScreen> {
       appBar: AppBar(
         title: Text(l10n.rosterTitle),
         actions: [
-          IconButton(onPressed: _loadMembers, icon: const Icon(Icons.refresh)),
+          IconButton(
+            onPressed: _loadMembers, 
+            icon: const Icon(Icons.refresh),
+            tooltip: l10n.retry,
+          ),
         ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _members == null || _members!.isEmpty
               ? Center(child: Text(l10n.noData))
-              : ListView.builder(
-                  itemCount: _members!.length,
-                  itemBuilder: (context, index) {
-                    final member = _members![index];
-                    final isPersonal = member.planType == 'personal';
+              : RefreshIndicator(
+                  onRefresh: _loadMembers,
+                  child: ListView.builder(
+                    itemCount: _members!.length,
+                    itemBuilder: (context, index) {
+                      final member = _members![index];
+                      final isPersonal = member.planType == 'personal';
 
-                    return ListTile(
-                      leading: CircleAvatar(
-                        child: Text(member.displayName.isNotEmpty
-                            ? member.displayName[0].toUpperCase()
-                            : '?'),
-                      ),
-                      title: Text(member.displayName),
-                      subtitle: Text(member.role),
-                      trailing: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isPersonal ? Colors.purple.shade50 : Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isPersonal ? Colors.purple.shade200 : Colors.blue.shade200,
+                      return ListTile(
+                        leading: CircleAvatar(
+                          child: Text(member.displayName.isNotEmpty
+                              ? member.displayName[0].toUpperCase()
+                              : '?'),
+                        ),
+                        title: Text(member.displayName),
+                        subtitle: Text(_roleLabel(l10n, member.role)),
+                        trailing: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: isPersonal ? Colors.purple.shade100 : Colors.blue.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isPersonal ? Colors.purple.shade400 : Colors.blue.shade400,
+                            ),
+                          ),
+                          child: Text(
+                            isPersonal ? l10n.planTypePersonal : l10n.planTypeClub,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isPersonal ? Colors.purple.shade900 : Colors.blue.shade900,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                        child: Text(
-                          isPersonal ? l10n.planTypePersonal : l10n.planTypeClub,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isPersonal ? Colors.purple.shade700 : Colors.blue.shade700,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      onTap: () async {
-                        final changed = await context.push<bool>(
-                          '/club/${widget.clubId}/members/${member.userId}/plan',
-                          extra: member,
-                        );
-                        if (changed == true) {
-                          _loadMembers();
-                        }
-                      },
-                    );
-                  },
+                        onTap: () async {
+                          final changed = await context.push<bool>(
+                            '/club/${widget.clubId}/members/${member.userId}/plan',
+                            extra: member,
+                          );
+                          // If we return from personal plan screen, always reload to get updated planType
+                          if (changed == true || mounted) {
+                            _loadMembers();
+                          }
+                        },
+                      );
+                    },
+                  ),
                 ),
     );
+  }
+
+  String _roleLabel(AppLocalizations l10n, String role) {
+    switch (role) {
+      case 'leader':
+        return l10n.roleLeader;
+      case 'trainer':
+        return l10n.roleTrainer;
+      default:
+        return l10n.roleMember;
+    }
   }
 }

@@ -539,11 +539,14 @@ class _MapScreenState extends State<MapScreen> {
 
     final markers = <PlacemarkMapObject>[];
     for (final event in _mapData!.events) {
+      final startLocation = event.startLocation;
+      if (startLocation == null) continue;
+
       markers.add(PlacemarkMapObject(
         mapId: MapObjectId('event_${event.id}'),
         point: Point(
-          latitude: event.startLocation.latitude,
-          longitude: event.startLocation.longitude,
+          latitude: startLocation.latitude,
+          longitude: startLocation.longitude,
         ),
         icon: PlacemarkIcon.single(PlacemarkIconStyle(
           image: _eventMarkerIcon!,

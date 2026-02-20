@@ -38,9 +38,18 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
   void _refresh() {
     setState(() {
       _personalFuture = ServiceLocator.workoutsService.getWorkouts();
-      _currentClubId = ServiceLocator.currentClubService.currentClubId;
-      _clubFuture = _loadClubWorkouts();
+      _loadClubWithRefresh();
     });
+  }
+
+  Future<void> _loadClubWithRefresh() async {
+    await ServiceLocator.currentClubService.init();
+    if (mounted) {
+      setState(() {
+        _currentClubId = ServiceLocator.currentClubService.currentClubId;
+        _clubFuture = _loadClubWorkouts();
+      });
+    }
   }
 
   Future<List<Workout>> _loadClubWorkouts() {

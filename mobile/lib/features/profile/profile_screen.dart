@@ -44,6 +44,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // Keep local currentClubId in sync with backend profile contract:
     // if backend does not return club object, user is considered not in a club.
     final currentClubId = ServiceLocator.currentClubService.currentClubId;
+    if (profile.club != null &&
+        (currentClubId == null || currentClubId != profile.club!.id)) {
+      await ServiceLocator.currentClubService.setCurrentClubId(profile.club!.id);
+    }
     if (profile.club == null &&
         currentClubId != null &&
         currentClubId.isNotEmpty) {
@@ -149,10 +153,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     final profile = snapshot.data!;
+    final activeClubId = profile.club?.id ?? ServiceLocator.currentClubService.currentClubId;
+    final activeClubName = profile.club?.name;
+    final myClubLabel = l10n.filtersMyClub.replaceAll('🏃', '').trim();
+
     return ListView(
       children: [
         ProfileHeaderSection(user: profile.user),
         ProfilePersonalInfoSection(user: profile.user),
+        if (activeClubId != null && activeClubId.isNotEmpty)
+          Card(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: ListTile(
+              leading: const Icon(Icons.groups),
+              title: Text(myClubLabel),
+              subtitle: activeClubName != null && activeClubName.isNotEmpty
+                  ? Text(activeClubName)
+                  : null,
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/club/$activeClubId'),
+            ),
+          ),
         ProfileStatsSection(stats: profile.stats),
         _CitySection(
           currentCityId: profile.user.cityId,
@@ -192,15 +213,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: () => context.push('/workouts'),
               ),
             ],
-          ),
-        ),
-        Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: ListTile(
-            leading: const Icon(Icons.groups),
-            title: Text(l10n.profileMyClubsButton),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push('/profile/clubs'),
           ),
         ),
         ProfileNotificationsSection(notifications: profile.notifications),

@@ -33,14 +33,14 @@ class EventListItemModel {
   final DateTime startDateTime;
   
   /// Координаты точки старта (для отображения на карте)
-  final EventStartLocation startLocation;
-  
+  final EventStartLocation? startLocation;
+
   /// Краткое название локации (парк / район)
   final String? locationName;
-  
+
   /// Идентификатор организатора (клуб или тренер)
   final String organizerId;
-  
+
   /// Тип организатора
   /// 
   /// Возможные значения: 'club', 'trainer'
@@ -69,7 +69,7 @@ class EventListItemModel {
     required this.type,
     required this.status,
     required this.startDateTime,
-    required this.startLocation,
+    this.startLocation,
     this.locationName,
     required this.organizerId,
     required this.organizerType,
@@ -94,9 +94,9 @@ class EventListItemModel {
       type: json['type'] as String,
       status: json['status'] as String,
       startDateTime: DateTime.parse(json['startDateTime'] as String),
-      startLocation: EventStartLocation.fromJson(
-        json['startLocation'] as Map<String, dynamic>,
-      ),
+      startLocation: json['startLocation'] != null
+          ? EventStartLocation.fromJson(json['startLocation'] as Map<String, dynamic>)
+          : null,
       locationName: json['locationName'] as String?,
       organizerId: json['organizerId'] as String,
       organizerType: json['organizerType'] as String,
@@ -118,7 +118,7 @@ class EventListItemModel {
       'type': type,
       'status': status,
       'startDateTime': startDateTime.toIso8601String(),
-      'startLocation': startLocation.toJson(),
+      if (startLocation != null) 'startLocation': startLocation!.toJson(),
       if (locationName != null) 'locationName': locationName,
       'organizerId': organizerId,
       'organizerType': organizerType,

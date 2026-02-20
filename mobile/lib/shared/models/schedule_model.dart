@@ -50,6 +50,7 @@ class PersonalScheduleItemModel {
   final int dayOfWeek;
   final String startTime;
   final ScheduleItemType type;
+  final String name; // Added name field
   final String? eventId;
   final String? noteText;
 
@@ -59,6 +60,7 @@ class PersonalScheduleItemModel {
     required this.dayOfWeek,
     required this.startTime,
     required this.type,
+    required this.name,
     this.eventId,
     this.noteText,
   });
@@ -70,6 +72,7 @@ class PersonalScheduleItemModel {
       dayOfWeek: json['dayOfWeek'] as int,
       startTime: json['startTime'] as String,
       type: json['type'] == 'event' ? ScheduleItemType.event : ScheduleItemType.note,
+      name: json['name'] as String? ?? 'Training',
       eventId: json['eventId'] as String?,
       noteText: json['noteText'] as String?,
     );
@@ -80,6 +83,7 @@ class PersonalScheduleItemModel {
       'dayOfWeek': dayOfWeek,
       'startTime': startTime,
       'type': type == ScheduleItemType.event ? 'event' : 'note',
+      'name': name,
       'eventId': eventId,
       'noteText': noteText,
     };

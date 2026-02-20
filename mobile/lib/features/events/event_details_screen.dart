@@ -404,17 +404,18 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                             },
                     ),
 
-                  const SizedBox(height: 24),
-
-                  Text(
-                    AppLocalizations.of(context)!.eventStartPoint,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  EventMiniMap(
-                    latitude: event.startLocation.latitude,
-                    longitude: event.startLocation.longitude,
-                  ),
+                  if (event.startLocation != null) ...[
+                    const SizedBox(height: 24),
+                    Text(
+                      AppLocalizations.of(context)!.eventStartPoint,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    EventMiniMap(
+                      latitude: event.startLocation!.latitude,
+                      longitude: event.startLocation!.longitude,
+                    ),
+                  ],
 
                   const SizedBox(height: 24),
 

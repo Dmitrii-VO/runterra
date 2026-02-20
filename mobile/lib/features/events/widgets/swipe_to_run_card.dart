@@ -52,12 +52,20 @@ class _SwipeToRunCardState extends State<SwipeToRunCard> {
       _inGeozone = null;
       _loadError = null;
     });
+    final startLocation = widget.event.startLocation;
+    if (startLocation == null) {
+      setState(() {
+        _inGeozone = false;
+        _loadError = 'missing_start_location';
+      });
+      return;
+    }
     try {
       final loc = ServiceLocator.locationService;
       final pos = await loc.getCurrentPosition();
       final dist = Geolocator.distanceBetween(
-        widget.event.startLocation.latitude,
-        widget.event.startLocation.longitude,
+        startLocation.latitude,
+        startLocation.longitude,
         pos.latitude,
         pos.longitude,
       );
@@ -74,6 +82,7 @@ class _SwipeToRunCardState extends State<SwipeToRunCard> {
 
   bool get _canSwipe {
     if (widget.event.participantStatus == 'checked_in') return false;
+    if (widget.event.startLocation == null) return false;
     return _inTimeWindow() && (_inGeozone == true);
   }
 
@@ -81,6 +90,9 @@ class _SwipeToRunCardState extends State<SwipeToRunCard> {
     final l10n = AppLocalizations.of(context)!;
     if (widget.event.participantStatus == 'checked_in') {
       return l10n.eventSwipeToRunAlreadyCheckedIn;
+    }
+    if (widget.event.startLocation == null) {
+      return l10n.eventSwipeToRunLocationError;
     }
     if (!_inTimeWindow()) {
       final now = DateTime.now();
