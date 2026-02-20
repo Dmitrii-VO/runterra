@@ -232,6 +232,24 @@ export const getTrainerProfilesRepository = jest.fn(() => mockTrainerProfilesRep
 export const getWorkoutsRepository = jest.fn(() => mockWorkoutsRepository);
 export const getTerritoriesRepository = jest.fn(() => mockTerritoriesRepository);
 
+// Mock ActivitiesRepository (GET /api/activities uses findByUserId)
+export const mockActivitiesRepository = {
+  findById: jest.fn().mockResolvedValue(null),
+  findByUserId: jest.fn().mockResolvedValue([]),
+  create: jest.fn().mockResolvedValue({
+    id: 'activity-1',
+    userId: 'test-user-id',
+    type: 'running',
+    status: 'completed',
+    name: 'Test Activity',
+    description: undefined,
+    scheduledItemId: undefined,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }),
+};
+export const getActivitiesRepository = jest.fn(() => mockActivitiesRepository);
+
 // Re-export classes (not used in mocks but needed for type compatibility)
 export class BaseRepository {}
 export class UsersRepository {}
@@ -244,6 +262,7 @@ export class ClubChannelsRepository {}
 export class TrainerProfilesRepository {}
 export class WorkoutsRepository {}
 export class TerritoriesRepository {}
+export class ActivitiesRepository {}
 export type EventParticipant = { id: string };
 export type RunValidationResult = { valid: boolean };
 export type ClubMembershipRow = { id: string; clubId: string; userId: string; status: string };
