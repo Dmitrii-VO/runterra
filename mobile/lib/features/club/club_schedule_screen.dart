@@ -29,11 +29,6 @@ class _ClubScheduleScreenState extends State<ClubScheduleScreen> {
     return uiDay % 7;
   }
 
-  // Convert Backend day (0-6, Sun-Sat) to UI day (1-7, Mon-Sun)
-  int _backendDayToUi(int backendDay) {
-    return backendDay == 0 ? 7 : backendDay;
-  }
-
   Future<void> _loadSchedule() async {
     setState(() => _loading = true);
     try {

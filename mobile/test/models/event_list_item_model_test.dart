@@ -31,8 +31,8 @@ void main() {
       expect(event.type, 'training');
       expect(event.status, 'open');
       expect(event.startDateTime, DateTime.utc(2026, 2, 1, 8, 0, 0));
-      expect(event.startLocation.latitude, 55.7558);
-      expect(event.startLocation.longitude, 37.6173);
+      expect(event.startLocation!.latitude, 55.7558);
+      expect(event.startLocation!.longitude, 37.6173);
       expect(event.locationName, 'Central Park');
       expect(event.organizerId, 'club-1');
       expect(event.organizerType, 'club');
