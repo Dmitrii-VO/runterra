@@ -8,11 +8,11 @@ import 'tabs/coach_tab.dart';
 ///
 /// Экран сообщений с тремя вкладками:
 /// - Личные (заглушка)
-/// - Клуб (список клубов → чат выбранного)
+/// - Клуб (сразу открывается чат клуба)
 /// - Тренер (заглушка)
 ///
 /// [initialTabIndex] — индекс вкладки при открытии (0 — Личные, 1 — Клуб, 2 — Тренер).
-/// [initialClubId] — при открытии вкладки Клуб открыть чат этого клуба сразу (deep-link из ClubDetailsScreen).
+/// [initialClubId] — при открытии вкладки Клуб открыть чат этого клуба с приоритетом (deep-link из ClubDetailsScreen).
 class MessagesScreen extends StatelessWidget {
   /// Индекс начальной вкладки (0/1/2). По умолчанию 0.
   final int initialTabIndex;

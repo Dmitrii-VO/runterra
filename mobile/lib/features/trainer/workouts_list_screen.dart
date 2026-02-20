@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/workout.dart';
+import '../../shared/models/my_club_model.dart';
 import '../../shared/api/users_service.dart' show ApiException;
 import 'package:go_router/go_router.dart';
 
@@ -24,9 +25,10 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _personalFuture = _loadPersonalWorkouts();
     _currentClubId = ServiceLocator.currentClubService.currentClubId;
-    _personalFuture = ServiceLocator.workoutsService.getWorkouts();
-    _clubFuture = _loadClubWorkouts();
+    _clubFuture = Future.value(<Workout>[]);
+    _loadClubWithRefresh();
   }
 
   @override
@@ -37,27 +39,94 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
 
   void _refresh() {
     setState(() {
-      _personalFuture = ServiceLocator.workoutsService.getWorkouts();
-      _loadClubWithRefresh();
+      _personalFuture = _loadPersonalWorkouts();
     });
+    _loadClubWithRefresh();
   }
 
   Future<void> _loadClubWithRefresh() async {
-    await ServiceLocator.currentClubService.init();
+    final clubId = await _resolveClubId();
     if (mounted) {
       setState(() {
-        _currentClubId = ServiceLocator.currentClubService.currentClubId;
+        _currentClubId = clubId;
         _clubFuture = _loadClubWorkouts();
       });
     }
   }
 
-  Future<List<Workout>> _loadClubWorkouts() {
-    final clubId = _currentClubId;
-    if (clubId == null || clubId.isEmpty) {
-      return Future.value(<Workout>[]);
+  Future<String?> _resolveClubId() async {
+    final cachedClubId = ServiceLocator.currentClubService.currentClubId;
+
+    try {
+      final myClubs = await ServiceLocator.clubsService.getMyClubs();
+      if (myClubs.isEmpty) {
+        return (cachedClubId != null && cachedClubId.isNotEmpty) ? cachedClubId : null;
+      }
+
+      final myClubIds = myClubs.map((club) => club.id).toSet();
+      if (cachedClubId != null &&
+          cachedClubId.isNotEmpty &&
+          myClubIds.contains(cachedClubId)) {
+        return cachedClubId;
+      }
+
+      final List<MyClubModel> activeClubs = myClubs
+          .where((club) => club.status == 'active')
+          .toList();
+      final selectedClub = activeClubs.isNotEmpty ? activeClubs.first : myClubs.first;
+      await ServiceLocator.currentClubService.setCurrentClubId(selectedClub.id);
+      return selectedClub.id;
+    } catch (_) {
+      return (cachedClubId != null && cachedClubId.isNotEmpty) ? cachedClubId : null;
     }
-    return ServiceLocator.workoutsService.getWorkouts(clubId: clubId);
+  }
+
+  Future<List<Workout>> _loadClubWorkouts() async {
+    final myClubIds = await _loadMyClubIds();
+    final effectiveClubId = (_currentClubId != null && _currentClubId!.isNotEmpty)
+        ? _currentClubId!
+        : (myClubIds.isNotEmpty ? myClubIds.first : null);
+
+    if (effectiveClubId == null || effectiveClubId.isEmpty) {
+      return <Workout>[];
+    }
+
+    final filtered = await ServiceLocator.workoutsService.getWorkouts(clubId: effectiveClubId);
+    if (filtered.isNotEmpty) return filtered;
+
+    // Fallback for environments where server-side clubId filtering may lag/misbehave.
+    final all = await ServiceLocator.workoutsService.getWorkouts();
+    final clubScoped = all
+        .where((workout) => workout.clubId != null && workout.clubId!.isNotEmpty)
+        .toList();
+
+    if (myClubIds.isNotEmpty) {
+      final myClubWorkouts = clubScoped
+          .where((workout) => myClubIds.contains(workout.clubId))
+          .toList();
+      if (myClubWorkouts.isNotEmpty) return myClubWorkouts;
+    }
+
+    final exactClubWorkouts =
+        clubScoped.where((workout) => workout.clubId == effectiveClubId).toList();
+    if (exactClubWorkouts.isNotEmpty) return exactClubWorkouts;
+
+    // Last-resort fallback: show any club-scoped templates authored/visible to user.
+    return clubScoped;
+  }
+
+  Future<List<Workout>> _loadPersonalWorkouts() async {
+    final all = await ServiceLocator.workoutsService.getWorkouts();
+    return all.where((workout) => workout.clubId == null || workout.clubId!.isEmpty).toList();
+  }
+
+  Future<Set<String>> _loadMyClubIds() async {
+    try {
+      final myClubs = await ServiceLocator.clubsService.getMyClubs();
+      return myClubs.map((club) => club.id).toSet();
+    } catch (_) {
+      return <String>{};
+    }
   }
 
   Future<void> _deleteWorkout(Workout workout) async {
@@ -119,9 +188,7 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
           // Personal workouts tab
           _buildWorkoutsList(_personalFuture, l10n),
           // Club workouts tab
-          (_currentClubId == null || _currentClubId!.isEmpty)
-              ? Center(child: Text(l10n.profileMyClubsEmpty))
-              : _buildWorkoutsList(_clubFuture, l10n),
+          _buildWorkoutsList(_clubFuture, l10n),
         ],
       ),
       floatingActionButton: FloatingActionButton(

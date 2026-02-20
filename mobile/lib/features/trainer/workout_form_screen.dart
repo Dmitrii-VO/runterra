@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/workout.dart';
+import '../../shared/models/my_club_model.dart';
 import '../../shared/api/users_service.dart' show ApiException;
 
 /// Screen to create or edit a workout template
@@ -51,6 +52,7 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
     } else {
       _clubId = null;
     }
+    _resolveClubIdIfNeeded();
   }
 
   @override
@@ -105,6 +107,31 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
       }
     } finally {
       if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _resolveClubIdIfNeeded() async {
+    final cachedClubId = _currentClubId;
+    try {
+      final myClubs = await ServiceLocator.clubsService.getMyClubs();
+      if (myClubs.isEmpty) return;
+
+      final myClubIds = myClubs.map((club) => club.id).toSet();
+      if (cachedClubId != null &&
+          cachedClubId.isNotEmpty &&
+          myClubIds.contains(cachedClubId)) {
+        return;
+      }
+
+      final List<MyClubModel> activeClubs = myClubs
+          .where((club) => club.status == 'active')
+          .toList();
+      final selectedClub = activeClubs.isNotEmpty ? activeClubs.first : myClubs.first;
+      await ServiceLocator.currentClubService.setCurrentClubId(selectedClub.id);
+      if (!mounted) return;
+      setState(() => _currentClubId = selectedClub.id);
+    } catch (_) {
+      // Keep form usable in personal mode if clubs cannot be resolved.
     }
   }
 

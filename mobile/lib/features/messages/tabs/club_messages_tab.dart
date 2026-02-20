@@ -13,9 +13,8 @@ import '../../../shared/services/chat_websocket_service.dart';
 
 /// Club tab in messages screen.
 ///
-/// First step: list of user's clubs (from GET /api/messages/clubs).
-/// Second step: chat of selected club (history + composer). Back returns to list.
-/// [initialClubId] — when set (e.g. from route /messages?tab=club&clubId=...), open that club's chat directly.
+/// Opens club chat directly after loading user's clubs.
+/// [initialClubId] — when set (e.g. from route /messages?tab=club&clubId=...), it has priority.
 class ClubMessagesTab extends StatefulWidget {
   /// If set, open chat for this club immediately (e.g. deep-link from ClubDetailsScreen).
   final String? initialClubId;
@@ -59,7 +58,7 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
   void initState() {
     super.initState();
     _loadClubList();
-    
+
     // Listen for WebSocket status changes to manage polling fallback
     _wsStatusSubscription = ChatWebSocketService.instance.statusStream.listen((status) {
       if (!mounted || _clubId == null) return;
@@ -75,17 +74,33 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
   void didUpdateWidget(ClubMessagesTab oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.initialClubId != oldWidget.initialClubId &&
-        widget.initialClubId != null &&
         _clubChats != null &&
         _clubId == null) {
-      _tryOpenInitialClub();
+      _openPreferredClubIfNeeded();
     }
   }
 
-  void _tryOpenInitialClub() {
+  String? _resolvePreferredClubId() {
+    final chats = _clubChats;
+    if (chats == null || chats.isEmpty) return null;
     final id = widget.initialClubId;
-    if (id == null || _clubChats == null) return;
-    if (_clubChats!.any((c) => c.clubId == id)) {
+    if (id != null && chats.any((c) => c.clubId == id)) {
+      return id;
+    }
+    return chats.first.clubId;
+  }
+
+  String _resolvePreferredChannelId(List<ClubChannelModel> channels) {
+    for (final channel in channels) {
+      if (channel.isDefault) return channel.id;
+    }
+    return channels.first.id;
+  }
+
+  void _openPreferredClubIfNeeded() {
+    if (_clubId != null) return;
+    final id = _resolvePreferredClubId();
+    if (id != null) {
       _openClubChat(id);
     }
   }
@@ -114,7 +129,7 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
         _clubChats = chats;
         _isListLoading = false;
       });
-      _tryOpenInitialClub();
+      _openPreferredClubIfNeeded();
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -140,14 +155,7 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
       final channels = await ServiceLocator.messagesService.getClubChannels(clubId);
       if (!mounted || _clubId != clubId) return;
 
-      if (channels.length == 1) {
-        // Single channel — go directly to chat
-        setState(() {
-          _channels = channels;
-          _isChannelsLoading = false;
-        });
-        _openChannel(clubId, channels.first.id);
-      } else if (channels.isEmpty) {
+      if (channels.isEmpty) {
         // No channels yet — backend will create default on first message fetch
         setState(() {
           _channels = [];
@@ -155,10 +163,12 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
         });
         _openChannelChat(clubId, null);
       } else {
+        final preferredChannelId = _resolvePreferredChannelId(channels);
         setState(() {
           _channels = channels;
           _isChannelsLoading = false;
         });
+        _openChannel(clubId, preferredChannelId);
       }
     } catch (error) {
       if (!mounted || _clubId != clubId) return;
@@ -224,19 +234,6 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
         _isLoading = false;
       });
     }
-  }
-
-  void _backToClubList() {
-    _stopPolling();
-    _disconnectWebSocket();
-    setState(() {
-      _clubId = null;
-      _channelId = null;
-      _channels = null;
-      _messages = <MessageModel>[];
-      _historyOffset = 0;
-      _hasMoreHistory = false;
-    });
   }
 
   void _backToChannelList() {
@@ -524,37 +521,6 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
     );
   }
 
-  Widget _buildClubList(AppLocalizations l10n, ThemeData theme) {
-    final chats = _clubChats!;
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      itemCount: chats.length,
-      itemBuilder: (context, index) {
-        final chat = chats[index];
-        final name = chat.clubName?.trim().isNotEmpty == true
-            ? chat.clubName!
-            : chat.clubId;
-        return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ListTile(
-            leading: const CircleAvatar(
-              child: Icon(Icons.group),
-            ),
-            title: Text(name),
-            subtitle: chat.lastMessageText?.trim().isNotEmpty == true
-                ? Text(
-                    chat.lastMessageText!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  )
-                : null,
-            onTap: () => _openClubChat(chat.clubId),
-          ),
-        );
-      },
-    );
-  }
-
   Widget _buildChatLoadError(AppLocalizations l10n, ThemeData theme) {
     final msg = _messagesLoadError != null
         ? _errorMessage(_messagesLoadError!)
@@ -703,7 +669,7 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
     );
   }
 
-  Widget _buildChannelList(AppLocalizations l10n, ThemeData theme) {
+  Widget _buildChannelList(ThemeData theme) {
     final channels = _channels!;
     final chat = _clubChats?.firstWhere(
       (c) => c.clubId == _clubId,
@@ -731,8 +697,13 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back),
-                    onPressed: _backToClubList,
-                    tooltip: l10n.messagesBackToClubs,
+                    onPressed: _clubId == null
+                        ? null
+                        : () => _openChannel(
+                              _clubId!,
+                              _resolvePreferredChannelId(channels),
+                            ),
+                    tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                   ),
                   Expanded(
                     child: Text(
@@ -769,7 +740,7 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
     );
   }
 
-  /// Chat view: back button + club name + messages + composer.
+  /// Chat view: club name + messages + composer.
   Widget _buildChatView(AppLocalizations l10n, ThemeData theme) {
     final chat = _clubChats?.firstWhere(
       (c) => c.clubId == _clubId,
@@ -795,13 +766,15 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: (_channels != null && _channels!.length > 1)
-                        ? _backToChannelList
-                        : _backToClubList,
-                    tooltip: l10n.messagesBackToClubs,
-                  ),
+                  if (_channels != null && _channels!.length > 1)
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: _backToChannelList,
+                      tooltip: MaterialLocalizations.of(context)
+                          .backButtonTooltip,
+                    )
+                  else
+                    const SizedBox(width: 48),
                   Expanded(
                     child: Text(
                       title,
@@ -837,7 +810,7 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
       }
       // Show channel list if multiple channels and no channel selected yet
       if (_channels != null && _channels!.length > 1 && _channelId == null) {
-        return _buildChannelList(l10n, theme);
+        return _buildChannelList(theme);
       }
       // Loading chat messages
       if (_isLoading) {
@@ -863,6 +836,6 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
     if (_clubChats == null || _clubChats!.isEmpty) {
       return _buildNoClubs(l10n, theme);
     }
-    return _buildClubList(l10n, theme);
+    return _buildListLoading();
   }
 }

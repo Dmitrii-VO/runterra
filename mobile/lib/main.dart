@@ -56,62 +56,62 @@ class DevRemoteLogger {
   }
 }
 
-void main() async {
-  // Инициализация Flutter binding
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  // Инициализация Firebase
-  await Firebase.initializeApp();
-  
-  // Инициализация Yandex MapKit
-  // useAndroidViewSurface = false лучше работает на эмуляторах
-  AndroidYandexMap.useAndroidViewSurface = false;
-
-  // Single ApiClient and shared services (DI) — created once at app start
-  ServiceLocator.init();
-
-  // Инициализация сервисов текущего города и клуба (кеш + профиль).
-  await ServiceLocator.currentCityService.init();
-  await ServiceLocator.currentClubService.init();
-
-  // Слушаем изменения состояния авторизации
-  // При логине/логауте обновляем токен и уведомляем роутер
-  AuthService.instance.authStateChanges.listen((user) async {
-    if (user != null) {
-      // Пользователь залогинился — обновляем токен
-      await ServiceLocator.refreshAuthToken();
-    } else {
-      // Пользователь вышел — очищаем токен
-      ServiceLocator.updateAuthToken(null);
-    }
-    // Уведомляем роутер о смене состояния
-    authRefreshNotifier.refresh();
-  });
-
-  // Настройка обработчика ошибок Flutter
-  FlutterError.onError = (FlutterErrorDetails details) {
-    // Логируем в консоль для локальной разработки
-    FlutterError.presentError(details);
-
-    // Отправляем техническую информацию на backend (dev-only)
-    DevRemoteLogger.logError(
-      'Flutter framework error',
-      error: details.exception,
-      stackTrace: details.stack,
-      extra: {'details': details.toString()},
-    );
-  };
-  
-  // Запуск приложения с обработкой необработанных асинхронных ошибок
+void main() {
+  // Все инициализации и runApp должны быть в одной зоне.
   runZonedGuarded(
     () async {
+      // Инициализация Flutter binding
+      WidgetsFlutterBinding.ensureInitialized();
+
+      // Инициализация Firebase
+      await Firebase.initializeApp();
+
+      // Инициализация Yandex MapKit
+      // useAndroidViewSurface = false лучше работает на эмуляторах
+      AndroidYandexMap.useAndroidViewSurface = false;
+
+      // Single ApiClient and shared services (DI) — created once at app start
+      ServiceLocator.init();
+
+      // Инициализация сервисов текущего города и клуба (кеш + профиль).
+      await ServiceLocator.currentCityService.init();
+      await ServiceLocator.currentClubService.init();
+
+      // Слушаем изменения состояния авторизации
+      // При логине/логауте обновляем токен и уведомляем роутер
+      AuthService.instance.authStateChanges.listen((user) async {
+        if (user != null) {
+          // Пользователь залогинился — обновляем токен
+          await ServiceLocator.refreshAuthToken();
+        } else {
+          // Пользователь вышел — очищаем токен
+          ServiceLocator.updateAuthToken(null);
+        }
+        // Уведомляем роутер о смене состояния
+        authRefreshNotifier.refresh();
+      });
+
+      // Настройка обработчика ошибок Flutter
+      FlutterError.onError = (FlutterErrorDetails details) {
+        // Логируем в консоль для локальной разработки
+        FlutterError.presentError(details);
+
+        // Отправляем техническую информацию на backend (dev-only)
+        DevRemoteLogger.logError(
+          'Flutter framework error',
+          error: details.exception,
+          stackTrace: details.stack,
+          extra: {'details': details.toString()},
+        );
+      };
+
       runApp(const RunterraApp());
     },
     (error, stackTrace) {
       // Обработка необработанных асинхронных ошибок
       debugPrint('Uncaught error: $error');
       debugPrint('Stack trace: $stackTrace');
-      
+
       DevRemoteLogger.logError(
         'Uncaught async error',
         error: error,

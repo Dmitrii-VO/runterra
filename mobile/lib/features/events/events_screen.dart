@@ -28,6 +28,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
   String? _selectedDateFilter;
   String? _selectedClubId;
   bool _onlyOpen = true;
+  bool _participantOnly = false;
 
   @override
   void initState() {
@@ -76,12 +77,20 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
     final cityId = ServiceLocator.currentCityService.currentCityId;
     if (cityId == null || cityId.isEmpty) return [];
 
-    return ServiceLocator.eventsService.getEvents(
+    final events = await ServiceLocator.eventsService.getEvents(
       cityId: cityId,
       dateFilter: _selectedDateFilter,
       clubId: _selectedClubId,
       onlyOpen: _onlyOpen,
+      participantOnly: _participantOnly,
     );
+
+    // Safety net: if backend still returns stale open events in the past.
+    if (!_onlyOpen) return events;
+    final now = DateTime.now();
+    return events
+        .where((event) => event.status == 'open' && !event.startDateTime.isBefore(now))
+        .toList();
   }
 
   void _refresh() {
@@ -275,22 +284,142 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
   }
 
   Widget _buildCityEventsTab(AppLocalizations l10n) {
-    return FutureBuilder<List<EventListItemModel>>(
-      future: _eventsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(child: Text(snapshot.error.toString()));
-        }
-        final events = snapshot.data ?? [];
-        if (events.isEmpty) return Center(child: Text(l10n.eventsEmpty));
+    return Column(
+      children: [
+        _buildEventsFiltersPanel(l10n),
+        Expanded(
+          child: FutureBuilder<List<EventListItemModel>>(
+            future: _eventsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(child: Text(snapshot.error.toString()));
+              }
 
-        return ListView.builder(
-          itemCount: events.length,
-          itemBuilder: (context, index) => EventCard(event: events[index]),
-        );
+              final events = snapshot.data ?? [];
+              if (events.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.event_busy, size: 64, color: Colors.grey[400]),
+                        const SizedBox(height: 16),
+                        Text(
+                          l10n.eventsEmpty,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          l10n.eventsEmptyHint,
+                          style: Theme.of(context).textTheme.bodySmall,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              return RefreshIndicator(
+                onRefresh: () async => _refresh(),
+                child: ListView.builder(
+                  itemCount: events.length,
+                  itemBuilder: (context, index) => EventCard(event: events[index]),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEventsFiltersPanel(AppLocalizations l10n) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        boxShadow: const [
+          BoxShadow(
+            color: Color.fromRGBO(0, 0, 0, 0.1),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Row(
+          children: [
+            _buildDateFilterChip(l10n.filterToday, 'today'),
+            const SizedBox(width: 8),
+            _buildDateFilterChip(l10n.filterTomorrow, 'tomorrow'),
+            const SizedBox(width: 8),
+            _buildDateFilterChip(l10n.filter7days, 'next7days'),
+            const SizedBox(width: 16),
+            FilterChip(
+              label: Text(l10n.filterOnlyOpen),
+              selected: _onlyOpen,
+              onSelected: (selected) {
+                setState(() {
+                  _onlyOpen = selected;
+                  _eventsFuture = _fetchCityEvents();
+                });
+              },
+            ),
+            const SizedBox(width: 16),
+            FilterChip(
+              label: Text(l10n.filtersMyClub),
+              selected: _selectedClubId != null && _selectedClubId!.isNotEmpty,
+              onSelected: (selected) async {
+                if (!selected) {
+                  setState(() {
+                    _selectedClubId = null;
+                    _eventsFuture = _fetchCityEvents();
+                  });
+                  return;
+                }
+
+                final clubId = await _resolveTrainingClubId();
+                if (!mounted) return;
+                setState(() {
+                  _selectedClubId = clubId;
+                  _eventsFuture = _fetchCityEvents();
+                });
+              },
+            ),
+            const SizedBox(width: 16),
+            FilterChip(
+              label: Text(l10n.filterParticipantOnly),
+              selected: _participantOnly,
+              onSelected: (selected) {
+                setState(() {
+                  _participantOnly = selected;
+                  _eventsFuture = _fetchCityEvents();
+                });
+              },
+            ),
+            const SizedBox(width: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateFilterChip(String label, String value) {
+    return FilterChip(
+      label: Text(label),
+      selected: _selectedDateFilter == value,
+      onSelected: (selected) {
+        setState(() {
+          _selectedDateFilter = selected ? value : null;
+          _eventsFuture = _fetchCityEvents();
+        });
       },
     );
   }
