@@ -90,15 +90,35 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       city = null;
     }
 
-    if (city != null) {
-      setState(() {
-        _cityName = city!.name;
-        _selectedLat = city.center.latitude;
-        _selectedLon = city.center.longitude;
-      });
+    if (city == null) {
+      // Profile/local city can be stale. Fallback to first city from backend.
+      try {
+        final cities = await ServiceLocator.citiesService.getCities();
+        if (cities.isNotEmpty) {
+          city = cities.first;
+          await ServiceLocator.currentCityService.setCurrentCityId(city.id);
+        }
+      } catch (e) {
+        debugPrint('Error loading fallback city: $e');
+      }
     }
 
     if (!mounted) return;
+    if (city != null) {
+      setState(() {
+        _cityId = city!.id;
+        _cityName = city.name;
+        _selectedLat = city.center.latitude;
+        _selectedLon = city.center.longitude;
+      });
+    } else {
+      // Prevent sending an invalid cityId that backend cannot validate.
+      setState(() {
+        _cityId = null;
+        _cityName = null;
+      });
+    }
+
     await _loadEventIntegrationOptions();
   }
 

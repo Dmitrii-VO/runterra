@@ -8,6 +8,7 @@ class WeeklyScheduleItemModel {
   final int dayOfWeek; // 1 (Mon) - 7 (Sun)
   final String startTime; // HH:mm
   final ScheduleItemType type;
+  final String? name;
   final String? eventId;
   final String? noteText;
 
@@ -17,6 +18,7 @@ class WeeklyScheduleItemModel {
     required this.dayOfWeek,
     required this.startTime,
     required this.type,
+    this.name,
     this.eventId,
     this.noteText,
   });
@@ -28,6 +30,7 @@ class WeeklyScheduleItemModel {
       dayOfWeek: json['dayOfWeek'] as int,
       startTime: json['startTime'] as String,
       type: json['type'] == 'event' ? ScheduleItemType.event : ScheduleItemType.note,
+      name: json['name'] as String?,
       eventId: json['eventId'] as String?,
       noteText: json['noteText'] as String?,
     );
@@ -38,6 +41,7 @@ class WeeklyScheduleItemModel {
       'dayOfWeek': dayOfWeek,
       'startTime': startTime,
       'type': type == ScheduleItemType.event ? 'event' : 'note',
+      'name': name,
       'eventId': eventId,
       'noteText': noteText,
     };

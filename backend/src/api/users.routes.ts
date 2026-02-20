@@ -185,7 +185,7 @@ router.patch('/me/profile', validateBody(UpdateProfileSchema), async (req: Reque
       profileVisible?: boolean;
     };
     const updates: {
-      cityId?: string;
+      cityId?: string | null;
       name?: string;
       firstName?: string;
       lastName?: string;
@@ -195,7 +195,26 @@ router.patch('/me/profile', validateBody(UpdateProfileSchema), async (req: Reque
       avatarUrl?: string;
       profileVisible?: boolean;
     } = {};
-    if (body.currentCityId !== undefined) updates.cityId = body.currentCityId;
+    if (body.currentCityId !== undefined) {
+      const cityId = body.currentCityId.trim();
+      if (cityId && !findCityById(cityId)) {
+        res.status(400).json({
+          code: 'validation_error',
+          message: 'Request body validation failed',
+          details: {
+            fields: [
+              {
+                field: 'currentCityId',
+                message: 'Unknown cityId',
+                code: 'unknown_city',
+              },
+            ],
+          },
+        });
+        return;
+      }
+      updates.cityId = cityId || null;
+    }
     if (body.name !== undefined) updates.name = body.name;
     if (body.firstName !== undefined) updates.firstName = body.firstName;
     if (body.lastName !== undefined) updates.lastName = body.lastName;
@@ -256,6 +275,24 @@ router.post('/', validateBody(CreateUserSchema), async (req: Request<{}, User, C
   const dto = req.body;
 
   try {
+    const cityId = dto.cityId?.trim();
+    if (cityId && !findCityById(cityId)) {
+      res.status(400).json({
+        code: 'validation_error',
+        message: 'Request body validation failed',
+        details: {
+          fields: [
+            {
+              field: 'cityId',
+              message: 'Unknown cityId',
+              code: 'unknown_city',
+            },
+          ],
+        },
+      });
+      return;
+    }
+
     const repo = getUsersRepository();
     
     // Проверяем уникальность firebaseUid
@@ -270,7 +307,7 @@ router.post('/', validateBody(CreateUserSchema), async (req: Request<{}, User, C
       email: dto.email,
       name: dto.name,
       avatarUrl: dto.avatarUrl,
-      cityId: dto.cityId,
+      cityId: cityId || undefined,
       isMercenary: dto.isMercenary,
     });
 

@@ -280,7 +280,7 @@ class _ClubScheduleScreenState extends State<ClubScheduleScreen> {
                             ),
                             title: Text(item.startTime),
                             subtitle: Text(item.type == ScheduleItemType.event 
-                              ? (item.name) 
+                              ? (item.name ?? item.eventId ?? '') 
                               : (item.noteText ?? '')),
                             trailing: IconButton(
                               icon: const Icon(Icons.delete_outline, color: Colors.red),

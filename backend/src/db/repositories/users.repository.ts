@@ -134,7 +134,7 @@ export class UsersRepository extends BaseRepository {
     country: string;
     gender: User['gender'];
     avatarUrl: string;
-    cityId: string;
+    cityId: string | null;
     isMercenary: boolean;
     profileVisible: boolean;
     status: UserStatus;

@@ -147,7 +147,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
             child: Padding(
               padding: const EdgeInsets.all(32.0),
               child: Column(
-                mainAxisSize: MainAxisSize.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(Icons.group_off, size: 64, color: Colors.grey),
                   const SizedBox(height: 16),
