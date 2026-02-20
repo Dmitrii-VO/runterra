@@ -607,8 +607,8 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
               child: TextField(
                 controller: _messageController,
                 focusNode: _focusNode,
-                enabled: !_isSending,
                 textInputAction: TextInputAction.send,
+                onEditingComplete: () {},
                 onSubmitted: (_) => _sendMessage(),
                 decoration: InputDecoration(
                   hintText: l10n.messageHint,

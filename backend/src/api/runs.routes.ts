@@ -13,7 +13,7 @@
 import { Router, Request, Response } from 'express';
 import { RunStatus, RunViewDto, CreateRunDto, CreateRunSchema, RunHistoryItemDto, RunDetailDto, UserRunStatsDto } from '../modules/runs';
 import { validateBody } from './validateBody';
-import { getRunsRepository, getUsersRepository, getClubMembersRepository, getTerritoriesRepository } from '../db/repositories';
+import { getRunsRepository, getUsersRepository, getClubMembersRepository, getTerritoriesRepository, getActivitiesRepository } from '../db/repositories';
 import { logger } from '../shared/logger';
 import { calculateRunContribution } from '../modules/territories/utils/geo';
 import { getTerritoriesForCity } from '../modules/territories/territories.config';
@@ -288,12 +288,27 @@ router.post('/', validateBody(CreateRunSchema), async (req: Request<{}, RunViewD
     // --- Transaction Execution ---
     const runsRepo = getRunsRepository();
     const territoriesRepo = getTerritoriesRepository();
+    const activitiesRepo = getActivitiesRepository();
 
     const { run, validation } = await runsRepo.transaction(async (client) => {
+      let activityId = dto.activityId;
+
+      // Create Activity if scheduledItemId is provided but no activityId
+      if (!activityId && dto.scheduledItemId) {
+        const activity = await activitiesRepo.create({
+          userId: user.id,
+          type: 'RUNNING' as any,
+          status: 'completed' as any,
+          scheduledItemId: dto.scheduledItemId,
+          name: dto.distance >= 1000 ? `Run ${Math.round(dto.distance/1000)}km` : 'Run',
+        }, client);
+        activityId = activity.id;
+      }
+
       // 1. Create Run
       const result = await runsRepo.create({
         userId: user.id,
-        activityId: dto.activityId,
+        activityId, // Link to activity (new or provided)
         scoringClubId, // Pass the resolved scoringClubId
         startedAt,
         endedAt,

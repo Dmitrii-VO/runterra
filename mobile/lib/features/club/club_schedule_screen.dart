@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/schedule_model.dart';
+import '../../shared/models/workout.dart';
 
 class ClubScheduleScreen extends StatefulWidget {
   final String clubId;
@@ -84,9 +85,10 @@ class _ClubScheduleScreenState extends State<ClubScheduleScreen> {
 
     if (type == null || !mounted) return;
 
+    final timeController = TextEditingController(text: "10:00");
+
     if (type == ScheduleItemType.note) {
       final textController = TextEditingController();
-      final timeController = TextEditingController(text: "10:00");
       
       final confirm = await showDialog<bool>(
         context: context,
@@ -134,9 +136,85 @@ class _ClubScheduleScreenState extends State<ClubScheduleScreen> {
         }
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Выбор из библиотеки будет доступен в Этапе 7")),
+      // Pick from library
+      final workout = await showDialog<Workout>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.quickFindTraining),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 400,
+            child: FutureBuilder<List<Workout>>(
+              future: ServiceLocator.workoutsService.getWorkouts(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text(snapshot.error.toString()));
+                }
+                final workouts = snapshot.data ?? [];
+                if (workouts.isEmpty) {
+                  return Center(child: Text(l10n.workoutEmpty));
+                }
+                return ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: workouts.length,
+                  itemBuilder: (context, index) {
+                    final w = workouts[index];
+                    return ListTile(
+                      title: Text(w.name),
+                      subtitle: Text(w.type),
+                      onTap: () => Navigator.pop(context, w),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+          ],
+        ),
       );
+
+      if (workout != null && mounted) {
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(workout.name),
+            content: TextField(
+              controller: timeController,
+              decoration: InputDecoration(labelText: '${l10n.eventCreateTime} (HH:mm)'),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(l10n.editProfileSave),
+              ),
+            ],
+          ),
+        );
+
+        if (confirm == true) {
+          try {
+            await ServiceLocator.clubsService.createWeeklyItem(widget.clubId, {
+              'dayOfWeek': _uiDayToBackend(_selectedDay),
+              'startTime': timeController.text,
+              'type': 'event',
+              'activityType': workout.type,
+              'name': workout.name,
+              'workoutId': workout.id,
+            });
+            _loadSchedule();
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+            }
+          }
+        }
+      }
     }
   }
 
@@ -202,7 +280,7 @@ class _ClubScheduleScreenState extends State<ClubScheduleScreen> {
                             ),
                             title: Text(item.startTime),
                             subtitle: Text(item.type == ScheduleItemType.event 
-                              ? (item.eventId ?? "Тренировка") 
+                              ? (item.name) 
                               : (item.noteText ?? '')),
                             trailing: IconButton(
                               icon: const Icon(Icons.delete_outline, color: Colors.red),

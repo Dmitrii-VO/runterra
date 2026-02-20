@@ -10,8 +10,9 @@ import 'run_history_screen.dart';
 /// otherwise shows RunHistoryScreen (training journal).
 class RunScreen extends StatefulWidget {
   final String? activityId;
+  final String? scheduledItemId;
 
-  const RunScreen({super.key, this.activityId});
+  const RunScreen({super.key, this.activityId, this.scheduledItemId});
 
   @override
   State<RunScreen> createState() => _RunScreenState();
@@ -19,6 +20,7 @@ class RunScreen extends StatefulWidget {
 
 class _RunScreenState extends State<RunScreen> {
   bool _forceTracking = false;
+  String? _selectedScheduledItemId;
 
   bool get _hasActiveSession {
     final session = ServiceLocator.runService.currentSession;
@@ -27,20 +29,27 @@ class _RunScreenState extends State<RunScreen> {
          session.status == RunSessionStatus.completed);
   }
 
-  void _openTracking() {
-    setState(() => _forceTracking = true);
+  void _openTracking([String? scheduledItemId]) {
+    setState(() {
+      _selectedScheduledItemId = scheduledItemId;
+      _forceTracking = true;
+    });
   }
 
   void _onRunCompleted() {
-    setState(() => _forceTracking = false);
+    setState(() {
+      _selectedScheduledItemId = null;
+      _forceTracking = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     // If activityId is provided or there's an active session or user tapped "Start run" — show tracking
-    if (widget.activityId != null || _hasActiveSession || _forceTracking) {
+    if (widget.activityId != null || widget.scheduledItemId != null || _hasActiveSession || _forceTracking) {
       return RunTrackingScreen(
         activityId: widget.activityId,
+        scheduledItemId: widget.scheduledItemId ?? _selectedScheduledItemId,
         onRunCompleted: _onRunCompleted,
       );
     }

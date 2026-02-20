@@ -12,6 +12,8 @@ class CalendarItemModel {
   final String? trainerId;
   final String? status;
   final bool isPersonal;
+  final bool isCompleted;
+  final String? activityId;
 
   CalendarItemModel({
     required this.id,
@@ -25,6 +27,8 @@ class CalendarItemModel {
     this.trainerId,
     this.status,
     required this.isPersonal,
+    this.isCompleted = false,
+    this.activityId,
   });
 
   factory CalendarItemModel.fromJson(Map<String, dynamic> json) {
@@ -40,6 +44,8 @@ class CalendarItemModel {
       trainerId: json['trainerId'] as String?,
       status: json['status'] as String?,
       isPersonal: json['isPersonal'] as bool? ?? false,
+      isCompleted: json['isCompleted'] as bool? ?? false,
+      activityId: json['activityId'] as String?,
     );
   }
 }

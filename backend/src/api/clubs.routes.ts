@@ -24,12 +24,13 @@ import {
 import { findCityById } from '../modules/cities/cities.config';
 import { getTerritoriesForCity } from '../modules/territories/territories.config';
 import { validateBody } from './validateBody';
-import { getUsersRepository, getClubMembersRepository, getClubsRepository, getClubChannelsRepository, getScheduleRepository, getEventsRepository } from '../db/repositories';
+import { getUsersRepository, getClubMembersRepository, getClubsRepository, getClubChannelsRepository, getScheduleRepository, getEventsRepository, getActivitiesRepository } from '../db/repositories';
 import { logger } from '../shared/logger';
 import { isValidClubId } from '../shared/clubId';
 import { CreateWeeklyScheduleItemSchema, CreateWeeklyScheduleItemDto, SetupPersonalPlanSchema, SetupPersonalPlanDto } from '../modules/schedule/schedule.dto';
 import { CalendarItemDto, GetCalendarQuerySchema } from '../modules/schedule/calendar.dto';
 import { scheduleGeneratorService } from '../modules/schedule/schedule-generator.service';
+import { notificationsService } from '../modules/notifications/notifications.service';
 import { Event } from '../modules/events/event.entity';
 
 
@@ -1354,6 +1355,14 @@ router.delete('/:id/schedule/:itemId', async (req: Request, res: Response) => {
     // Trigger sync to soft-delete future events
     await scheduleGeneratorService.syncTemplateChanges(itemId, 'club');
 
+    // Notify club members about cancellation
+    await notificationsService.notifyClubMembers(
+      clubId,
+      'Тренировка отменена',
+      'В расписании клуба произошли изменения: одна из тренировок была отменена.',
+      { clubId, type: 'schedule_item_deleted' }
+    );
+
     res.status(204).send();
   } catch (error) {
     logger.error('Error deleting schedule item', { clubId, itemId, error });
@@ -1401,6 +1410,14 @@ router.patch('/:id/schedule/:itemId', validateBody(CreateWeeklyScheduleItemSchem
 
     // Trigger sync with future events
     await scheduleGeneratorService.syncTemplateChanges(itemId, 'club');
+
+    // Notify club members about changes
+    await notificationsService.notifyClubMembers(
+      clubId,
+      'Изменение в расписании',
+      'В расписании клуба произошли изменения. Проверьте актуальное время тренировок.',
+      { clubId, type: 'schedule_item_updated' }
+    );
 
     res.status(200).json(updated);
   } catch (error) {
@@ -1454,6 +1471,14 @@ router.post('/:id/members/:userId/personal-schedule', validateBody(SetupPersonal
     // 2. Переключаем тип плана на 'personal'
     await membersRepo.setPlanType(clubId, targetUserId, 'personal');
 
+    // 3. Отправляем уведомление пользователю
+    await notificationsService.sendPush(
+      targetUserId,
+      'Обновление плана',
+      'Тренер обновил ваш персональный тренировочный план.',
+      { clubId, type: 'personal_plan_updated' }
+    );
+
     res.status(200).json(createdItems);
   } catch (error) {
     logger.error('Error setting personal schedule', { clubId, targetUserId, error });
@@ -1488,6 +1513,7 @@ router.get('/:id/calendar', async (req: Request, res: Response) => {
 
     const eventsRepo = getEventsRepository();
     const scheduleRepo = getScheduleRepository();
+    const activitiesRepo = getActivitiesRepository();
 
     // 1. Получаем события клуба
     const clubEvents = await eventsRepo.findByClubAndMonth(clubId, month);
@@ -1498,11 +1524,22 @@ router.get('/:id/calendar', async (req: Request, res: Response) => {
       personalNotes = await scheduleRepo.findNotesByUserAndMonth(user.id, month);
     }
 
-    // 3. Агрегируем в CalendarItemDto
+    // 3. Получаем активности пользователя за этот месяц, чтобы пометить выполненные
+    // Для простоты берем последние 100 активностей (в реальном приложении лучше фильтровать по дате)
+    const userActivities = await activitiesRepo.findByUserId(user.id, 100);
+    const activityByScheduledItem = new Map<string, string>();
+    userActivities.forEach(a => {
+      if (a.scheduledItemId) {
+        activityByScheduledItem.set(a.scheduledItemId, a.id);
+      }
+    });
+
+    // 4. Агрегируем в CalendarItemDto
     const items: CalendarItemDto[] = [];
 
     // Добавляем события
     clubEvents.forEach((ev: Event) => {
+      const activityId = activityByScheduledItem.get(ev.id);
       items.push({
         id: ev.id,
         type: 'event',
@@ -1515,11 +1552,14 @@ router.get('/:id/calendar', async (req: Request, res: Response) => {
         trainerId: ev.trainerId,
         status: ev.status,
         isPersonal: false,
+        isCompleted: !!activityId,
+        activityId: activityId,
       });
     });
 
     // Добавляем заметки
     personalNotes.forEach(note => {
+      const activityId = activityByScheduledItem.get(note.id);
       items.push({
         id: note.id,
         type: 'note',
@@ -1530,6 +1570,8 @@ router.get('/:id/calendar', async (req: Request, res: Response) => {
         workoutId: note.workoutId,
         trainerId: note.trainerId,
         isPersonal: true,
+        isCompleted: !!activityId,
+        activityId: activityId,
       });
     });
 

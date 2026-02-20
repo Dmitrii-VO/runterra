@@ -20,6 +20,9 @@ import { RunStatus } from './run.type';
 export interface CreateRunDto {
   /** Идентификатор тренировки, к которой привязана пробежка (опционально) */
   activityId?: string;
+
+  /** Идентификатор задания из календаря (event_id или personal_note_id) (опционально) */
+  scheduledItemId?: string;
   
   /** Идентификатор клуба, в который идет зачет очков (опционально) */
   scoringClubId?: string;
@@ -54,7 +57,8 @@ export const GpsPointSchema = GeoCoordinatesSchema.extend({
 });
 
 export const CreateRunSchema = z.object({
-  activityId: z.string().optional(),
+  activityId: z.string().uuid().optional(),
+  scheduledItemId: z.string().uuid().optional(),
   scoringClubId: z.string().uuid().optional(),
   startedAt: z.string().datetime(),
   endedAt: z.string().datetime(),

@@ -147,12 +147,12 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
             child: Padding(
               padding: const EdgeInsets.all(32.0),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.center,
                 children: [
                   const Icon(Icons.group_off, size: 64, color: Colors.grey),
                   const SizedBox(height: 16),
                   Text(
-                    l10n.noClubChats, // "Вы пока не состоите в клубе"
+                    l10n.noClubChats,
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: Colors.grey),
                   ),
@@ -189,33 +189,121 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                   ).toList();
 
                   if (dayItems.isEmpty) {
-                    return Center(child: Text(l10n.noData));
+                    return Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.weekend_outlined, size: 48, color: Colors.grey.shade300),
+                          const SizedBox(height: 8),
+                          Text(l10n.noData, style: TextStyle(color: Colors.grey.shade400)),
+                        ],
+                      ),
+                    );
                   }
 
                   return ListView.builder(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     itemCount: dayItems.length,
                     itemBuilder: (context, index) {
                       final item = dayItems[index];
+                      final isEvent = item.type == CalendarItemType.event;
+
                       return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        child: ListTile(
-                          leading: Icon(
-                            item.type == CalendarItemType.event ? Icons.event : Icons.note_alt,
-                            color: item.isPersonal ? Colors.purple : Colors.blue,
+                        elevation: 0,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: isEvent ? () => context.push('/event/${item.id}') : null,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: item.isPersonal 
+                                        ? Colors.purple.shade50 
+                                        : (isEvent ? Colors.blue.shade50 : Colors.orange.shade50),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    isEvent ? Icons.directions_run : Icons.note_alt_outlined,
+                                    color: item.isPersonal 
+                                        ? Colors.purple 
+                                        : (isEvent ? Colors.blue : Colors.orange),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          if (item.startTime != null)
+                                            Padding(
+                                              padding: const EdgeInsets.only(right: 8),
+                                              child: Text(
+                                                item.startTime!,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ),
+                                          if (item.isPersonal)
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: Colors.purple.shade100,
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                l10n.tabPersonal.toUpperCase(),
+                                                style: const TextStyle(
+                                                  fontSize: 9,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.purple,
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        item.name,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      if (item.description != null && item.description!.isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 4),
+                                          child: Text(
+                                            item.description!,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                if (item.isCompleted)
+                                  const Icon(Icons.check_circle, color: Colors.green)
+                                else if (isEvent)
+                                  const Icon(Icons.chevron_right, color: Colors.grey),
+                              ],
+                            ),
                           ),
-                          title: Text(item.name),
-                          subtitle: Text("${item.startTime ?? ''} ${item.description ?? ''}"),
-                          trailing: item.isPersonal 
-                            ? Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(color: Colors.purple.shade50, borderRadius: BorderRadius.circular(4)),
-                                child: Text(l10n.planTypePersonal, style: const TextStyle(fontSize: 10, color: Colors.purple)),
-                              )
-                            : null,
-                          onTap: item.type == CalendarItemType.event 
-                            ? () => context.push('/event/${item.id}') 
-                            : null,
                         ),
                       );
                     },
@@ -235,26 +323,42 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: 31, // Show a month
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        // Range: 14 days back, 30 days forward
+        itemCount: 45,
         itemBuilder: (context, index) {
-          final day = DateTime.now().add(Duration(days: index - 3)); // Start from 3 days ago
+          final day = DateTime.now().subtract(const Duration(days: 14)).add(Duration(days: index));
           final isSelected = day.year == _selectedDate.year && 
                              day.month == _selectedDate.month && 
                              day.day == _selectedDate.day;
+          final isToday = day.year == DateTime.now().year && 
+                          day.month == DateTime.now().month && 
+                          day.day == DateTime.now().day;
           
           return GestureDetector(
-            onTap: () => setState(() {
-              _selectedDate = day;
-              // If month changed, reload calendar
-              _calendarFuture = _fetchCalendar();
-            }),
+            onTap: () {
+              final oldMonth = _selectedDate.month;
+              final oldYear = _selectedDate.year;
+              setState(() {
+                _selectedDate = day;
+                if (day.month != oldMonth || day.year != oldYear) {
+                  _calendarFuture = _fetchCalendar();
+                }
+              });
+            },
             child: Container(
-              width: 60,
+              width: 55,
               margin: const EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(
-                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: isSelected ? Colors.transparent : Colors.grey.shade300),
+                color: isSelected 
+                    ? Theme.of(context).colorScheme.primary 
+                    : (isToday ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3) : Colors.transparent),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isSelected 
+                      ? Colors.transparent 
+                      : (isToday ? Theme.of(context).colorScheme.primary.withOpacity(0.5) : Colors.grey.shade200),
+                ),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -262,10 +366,12 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                   Text(
                     DateFormat('E').format(day),
                     style: TextStyle(
-                      fontSize: 12,
-                      color: isSelected ? Colors.white : Colors.grey,
+                      fontSize: 11,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected ? Colors.white : Colors.grey.shade600,
                     ),
                   ),
+                  const SizedBox(height: 4),
                   Text(
                     day.day.toString(),
                     style: TextStyle(

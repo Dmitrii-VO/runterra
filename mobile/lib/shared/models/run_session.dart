@@ -11,6 +11,7 @@ import 'package:geolocator/geolocator.dart';
 class RunSession {
   final String id;
   final String? activityId;
+  final String? scheduledItemId;
   final DateTime startedAt;
   final RunSessionStatus status;
   final Duration duration;
@@ -25,6 +26,7 @@ class RunSession {
   RunSession({
     required this.id,
     this.activityId,
+    this.scheduledItemId,
     required this.startedAt,
     required this.status,
     Duration? duration,

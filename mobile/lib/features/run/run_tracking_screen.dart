@@ -14,9 +14,10 @@ typedef OnRunCompleted = void Function();
 /// Extracted from the original RunScreen to separate tracking from history.
 class RunTrackingScreen extends StatefulWidget {
   final String? activityId;
+  final String? scheduledItemId;
   final OnRunCompleted? onRunCompleted;
 
-  const RunTrackingScreen({super.key, this.activityId, this.onRunCompleted});
+  const RunTrackingScreen({super.key, this.activityId, this.scheduledItemId, this.onRunCompleted});
 
   @override
   State<RunTrackingScreen> createState() => _RunTrackingScreenState();
@@ -105,7 +106,10 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
 
   Future<void> _startRun() async {
     try {
-      final session = await _runService.startRun(activityId: widget.activityId);
+      final session = await _runService.startRun(
+        activityId: widget.activityId,
+        scheduledItemId: widget.scheduledItemId,
+      );
 
       setState(() {
         _session = session;

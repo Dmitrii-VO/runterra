@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/run_history_item.dart';
 import '../../shared/models/run_stats.dart';
+import '../../shared/models/calendar_model.dart';
 
 /// Training journal — run history with stats summary.
 class RunHistoryScreen extends StatefulWidget {
-  final VoidCallback onStartRun;
+  final Function(String? scheduledItemId) onStartRun;
 
   const RunHistoryScreen({super.key, required this.onStartRun});
 
@@ -36,6 +38,87 @@ class _RunHistoryScreenState extends State<RunHistoryScreen> {
     setState(() {
       _loadData();
     });
+  }
+
+  Future<String?> _resolveClubId() async {
+    final cachedClubId = ServiceLocator.currentClubService.currentClubId;
+    if (cachedClubId != null && cachedClubId.isNotEmpty) return cachedClubId;
+
+    try {
+      final myClubs = await ServiceLocator.clubsService.getMyClubs();
+      if (myClubs.isEmpty) return null;
+      final selectedClub = myClubs.first;
+      await ServiceLocator.currentClubService.setCurrentClubId(selectedClub.id);
+      return selectedClub.id;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _handleStartRun() async {
+    final clubId = await _resolveClubId();
+    
+    if (clubId == null) {
+      widget.onStartRun(null);
+      return;
+    }
+
+    try {
+      final now = DateTime.now();
+      final monthStr = DateFormat('yyyy-MM').format(now);
+      final calendar = await ServiceLocator.clubsService.getCalendar(clubId, monthStr);
+      
+      final todayTasks = calendar.where((item) => 
+        item.date.year == now.year && 
+        item.date.month == now.month && 
+        item.date.day == now.day &&
+        !item.isCompleted
+      ).toList();
+
+      if (todayTasks.isEmpty || !mounted) {
+        widget.onStartRun(null);
+        return;
+      }
+
+      final selectedTask = await showModalBottomSheet<CalendarItemModel>(
+        context: context,
+        builder: (ctx) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text(
+                  "Выберите задание на сегодня",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+              ...todayTasks.map((task) => ListTile(
+                leading: Icon(
+                  task.type == CalendarItemType.event ? Icons.directions_run : Icons.note_alt_outlined,
+                  color: task.isPersonal ? Colors.purple : Colors.blue,
+                ),
+                title: Text(task.name),
+                subtitle: Text(task.startTime ?? ''),
+                onTap: () => Navigator.pop(ctx, task),
+              )),
+              ListTile(
+                leading: const Icon(Icons.close),
+                title: const Text("Просто пробежка (без задания)"),
+                onTap: () => Navigator.pop(ctx),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      );
+
+      if (mounted) {
+        widget.onStartRun(selectedTask?.id);
+      }
+    } catch (e) {
+      widget.onStartRun(null);
+    }
   }
 
   String _formatPace(int paceSecondsPerKm) {
@@ -87,7 +170,7 @@ class _RunHistoryScreenState extends State<RunHistoryScreen> {
         title: Text(l10n.runHistoryTitle),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: widget.onStartRun,
+        onPressed: _handleStartRun,
         icon: const Icon(Icons.play_arrow),
         label: Text(l10n.quickStartRun),
       ),
