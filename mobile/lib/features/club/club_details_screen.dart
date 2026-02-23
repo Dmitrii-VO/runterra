@@ -297,6 +297,131 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
     );
   }
 
+  void _showTerritoriesSheet(ClubModel club) {
+    final l10n = AppLocalizations.of(context)!;
+    final future = ServiceLocator.territoriesService.getTerritories(
+      cityId: club.cityId ?? 'spb',
+      clubId: club.id,
+    );
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) {
+        return FractionallySizedBox(
+          heightFactor: 0.7,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        l10n.clubTerritoriesLabel,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: FutureBuilder<List<dynamic>>(
+                  future: future,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Center(child: Text(l10n.errorGeneric(snapshot.error.toString())));
+                    }
+                    final territories = snapshot.data ?? [];
+                    if (territories.isEmpty) {
+                      return Center(
+                        child: Text(
+                          l10n.noData,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                        ),
+                      );
+                    }
+                    return ListView.builder(
+                      itemCount: territories.length,
+                      itemBuilder: (context, index) {
+                        final t = territories[index];
+                        return ListTile(
+                          leading: const CircleAvatar(
+                            child: Icon(Icons.map),
+                          ),
+                          title: Text(t.name),
+                          subtitle: Text(l10n.territoryCaptured),
+                          onTap: () {
+                            Navigator.pop(context);
+                            context.push('/territory/${t.id}');
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showLeaderboardSheet(ClubModel club) {
+    final l10n = AppLocalizations.of(context)!;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) {
+        return FractionallySizedBox(
+          heightFactor: 0.5,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        l10n.clubCityRankLabel,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    'Рейтинг клубов в разработке', // TODO: i18n
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   /// Join club and refresh on success; show SnackBar on error.
   Future<void> _onJoinClub() async {
     if (_isJoining) return;
@@ -663,7 +788,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                             context,
                             l10n.clubTerritoriesLabel,
                             club.territoriesCount != null ? '${club.territoriesCount}' : l10n.clubMetricPlaceholder,
-                            onTap: () => context.go('/map?showClubs=true'),
+                            onTap: () => _showTerritoriesSheet(club),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -672,7 +797,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                             context,
                             l10n.clubCityRankLabel,
                             club.cityRank != null ? '${club.cityRank}' : l10n.clubMetricPlaceholder,
-                            onTap: () {}, // Future: show leaderboard
+                            onTap: () => _showLeaderboardSheet(club),
                           ),
                         ),
                       ],
