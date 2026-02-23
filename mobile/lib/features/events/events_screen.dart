@@ -396,7 +396,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                     color: isSelected
                         ? Theme.of(context).colorScheme.primary
                         : (isToday
-                            ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.1)
+                            ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.1)
                             : Colors.transparent),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
