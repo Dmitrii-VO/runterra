@@ -752,6 +752,12 @@ abstract class AppLocalizations {
   /// **'Participating'**
   String get filterParticipantOnly;
 
+  /// No description provided for @filterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filterAll;
+
   /// No description provided for @eventTypeTraining.
   ///
   /// In en, this message translates to:

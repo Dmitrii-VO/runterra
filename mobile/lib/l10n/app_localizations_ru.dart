@@ -354,6 +354,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get filterParticipantOnly => 'Участвую';
 
   @override
+  String get filterAll => 'Все';
+
+  @override
   String get eventTypeTraining => 'Тренировка';
 
   @override

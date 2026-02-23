@@ -144,6 +144,7 @@
   "filter7days": "7 days",
   "filterOnlyOpen": "Open only",
   "filterParticipantOnly": "Participating",
+  "filterAll": "All",
   "eventTypeTraining": "Workout",
   "eventTypeGroupRun": "Group run",
   "eventTypeClubEvent": "Club event",

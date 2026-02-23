@@ -53,7 +53,7 @@ class _TrainersListScreenState extends State<TrainersListScreen> {
             child: Row(
               children: [
                 FilterChip(
-                  label: Text(l10n.specGeneral.isEmpty ? 'All' : 'All'),
+                  label: Text(l10n.filterAll),
                   selected: _selectedSpec == null,
                   onSelected: (_) {
                     setState(() {

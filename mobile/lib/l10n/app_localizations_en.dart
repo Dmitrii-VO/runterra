@@ -353,6 +353,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get filterParticipantOnly => 'Participating';
 
   @override
+  String get filterAll => 'All';
+
+  @override
   String get eventTypeTraining => 'Workout';
 
   @override
