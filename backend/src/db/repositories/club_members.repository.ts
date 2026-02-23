@@ -211,7 +211,7 @@ export class ClubMembersRepository extends BaseRepository {
          COALESCE(SUM(r.distance), 0) AS total_distance
        FROM club_members cm
        JOIN users u ON u.id = cm.user_id
-       LEFT JOIN runs r ON r.user_id = cm.user_id AND r.status = 'completed' AND r.scoring_club_id = cm.club_id
+       LEFT JOIN runs r ON r.user_id = cm.user_id AND r.status = 'completed' AND (r.scoring_club_id = cm.club_id OR r.scoring_club_id IS NULL)
        WHERE cm.club_id = $1 AND cm.status = 'active'
        GROUP BY cm.user_id, u.first_name, u.last_name, u.name, cm.role, cm.plan_type, cm.created_at
        ORDER BY total_distance DESC, cm.created_at ASC`,
