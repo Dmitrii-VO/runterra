@@ -176,32 +176,124 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
     }
   }
 
-  Widget _buildMetricChip(BuildContext context, String label, String value) {
+  Widget _buildMetricChip(BuildContext context, String label, String value, {VoidCallback? onTap}) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              value,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                value,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  void _showMembersSheet(ClubModel club) {
+    final l10n = AppLocalizations.of(context)!;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) {
+        return FractionallySizedBox(
+          heightFactor: 0.7,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        l10n.clubMembersTitle,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: _membersLoading && _members == null
+                    ? const Center(child: CircularProgressIndicator())
+                    : (_members != null && _members!.isNotEmpty)
+                        ? ListView.builder(
+                            itemCount: _members!.length,
+                            itemBuilder: (context, index) {
+                              final member = _members![index];
+                              return ListTile(
+                                leading: CircleAvatar(
+                                  child: Text(
+                                    member.displayName.isNotEmpty
+                                        ? member.displayName[0].toUpperCase()
+                                        : '?',
+                                  ),
+                                ),
+                                title: Text(member.displayName),
+                                subtitle: Text(_roleLabel(l10n, member.role)),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '${(member.totalDistance / 1000).toStringAsFixed(1)} км',
+                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                    if (club.userRole == 'leader') ...[
+                                      const SizedBox(width: 8),
+                                      const Icon(Icons.more_vert, size: 20),
+                                    ],
+                                  ],
+                                ),
+                                onTap: club.userRole == 'leader'
+                                    ? () {
+                                        Navigator.pop(context);
+                                        _showRoleChangeDialog(member);
+                                      }
+                                    : null,
+                              );
+                            },
+                          )
+                        : Center(
+                            child: Text(
+                              l10n.clubMembersEmpty,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.grey,
+                                  ),
+                            ),
+                          ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -554,7 +646,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                       ),
                     ],
                     const SizedBox(height: 16),
-                    // MVP metrics (СѓС‡Р°СЃС‚РЅРёРєРё, С‚РµСЂСЂРёС‚РѕСЂРёРё, СЂРµР№С‚РёРЅРі)
+                    // MVP metrics (участники, территории, рейтинг)
                     Row(
                       children: [
                         Expanded(
@@ -562,6 +654,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                             context,
                             l10n.clubMembersLabel,
                             club.membersCount != null ? '${club.membersCount}' : l10n.clubMetricPlaceholder,
+                            onTap: () => _showMembersSheet(club),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -570,6 +663,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                             context,
                             l10n.clubTerritoriesLabel,
                             club.territoriesCount != null ? '${club.territoriesCount}' : l10n.clubMetricPlaceholder,
+                            onTap: () => context.go('/map?showClubs=true'),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -578,6 +672,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                             context,
                             l10n.clubCityRankLabel,
                             club.cityRank != null ? '${club.cityRank}' : l10n.clubMetricPlaceholder,
+                            onTap: () {}, // Future: show leaderboard
                           ),
                         ),
                       ],
@@ -636,48 +731,6 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                       ),
                       const SizedBox(height: 24),
                     ],
-                    // Founder
-                    if (club.creatorName != null && club.creatorName!.isNotEmpty) ...[
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: const Icon(Icons.star),
-                        title: Text(club.creatorName!),
-                        subtitle: Text(l10n.clubFounder),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                    // Members section
-                    Text(
-                      l10n.clubMembersTitle,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    if (_membersLoading && _members == null)
-                      const Center(child: CircularProgressIndicator())
-                    else if (_members != null && _members!.isNotEmpty)
-                      ..._members!.map((member) => ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: CircleAvatar(
-                              child: Text(
-                                member.displayName.isNotEmpty
-                                    ? member.displayName[0].toUpperCase()
-                                    : '?',
-                              ),
-                            ),
-                            title: Text(member.displayName),
-                            subtitle: Text(_roleLabel(l10n, member.role)),
-                            onTap: club.userRole == 'leader'
-                                ? () => _showRoleChangeDialog(member)
-                                : null,
-                          ))
-                    else
-                      Text(
-                        l10n.clubMembersEmpty,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey,
-                            ),
-                      ),
-                    const SizedBox(height: 24),
                     // Club events section
                     Builder(
                       builder: (context) {

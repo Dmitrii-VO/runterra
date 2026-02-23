@@ -5,6 +5,7 @@ class ClubMemberModel {
   final String role;
   final DateTime joinedAt;
   final String planType; // 'club' or 'personal'
+  final int totalDistance; // in meters
 
   ClubMemberModel({
     required this.userId,
@@ -12,6 +13,7 @@ class ClubMemberModel {
     required this.role,
     required this.joinedAt,
     required this.planType,
+    this.totalDistance = 0,
   });
 
   factory ClubMemberModel.fromJson(Map<String, dynamic> json) {
@@ -21,6 +23,7 @@ class ClubMemberModel {
       role: json['role'] as String,
       joinedAt: DateTime.parse(json['joinedAt'] as String),
       planType: (json['planType'] ?? json['plan_type']) as String? ?? 'club',
+      totalDistance: (json['totalDistance'] ?? json['total_distance']) as int? ?? 0,
     );
   }
 }

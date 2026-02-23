@@ -21,6 +21,7 @@ interface ClubMemberDetailRow {
   role: string;
   plan_type: string;
   joined_at: Date;
+  total_distance?: string | number;
 }
 
 export interface ClubMemberDetailDto {
@@ -29,6 +30,7 @@ export interface ClubMemberDetailDto {
   role: 'member' | 'trainer' | 'leader';
   planType: 'club' | 'personal';
   joinedAt: Date;
+  totalDistance?: number;
 }
 
 function rowToClubMemberDetail(row: ClubMemberDetailRow): ClubMemberDetailDto {
@@ -38,6 +40,7 @@ function rowToClubMemberDetail(row: ClubMemberDetailRow): ClubMemberDetailDto {
     role: row.role as ClubMemberDetailDto['role'],
     planType: row.plan_type as ClubMemberDetailDto['planType'],
     joinedAt: row.joined_at,
+    totalDistance: row.total_distance !== undefined ? parseInt(String(row.total_distance), 10) : 0,
   };
 }
 
@@ -204,11 +207,14 @@ export class ClubMembersRepository extends BaseRepository {
          COALESCE(NULLIF(TRIM(CONCAT(u.first_name, ' ', u.last_name)), ''), u.name) AS display_name,
          cm.role,
          cm.plan_type,
-         cm.created_at AS joined_at
+         cm.created_at AS joined_at,
+         COALESCE(SUM(r.distance), 0) AS total_distance
        FROM club_members cm
        JOIN users u ON u.id = cm.user_id
+       LEFT JOIN runs r ON r.user_id = cm.user_id AND r.status = 'completed' AND r.scoring_club_id = cm.club_id
        WHERE cm.club_id = $1 AND cm.status = 'active'
-       ORDER BY cm.created_at ASC`,
+       GROUP BY cm.user_id, u.first_name, u.last_name, u.name, cm.role, cm.plan_type, cm.created_at
+       ORDER BY total_distance DESC, cm.created_at ASC`,
       [clubId],
     );
     return rows.map(rowToClubMemberDetail);
