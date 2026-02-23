@@ -17,12 +17,18 @@ class EventsScreen extends StatefulWidget {
 
 class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  
+  // Today is at index 14 (14 days back), each cell is 58px wide (52 + 6 margin).
+  // initialScrollOffset centers today approximately on a ~360dp wide screen.
+  final ScrollController _calendarScrollController = ScrollController(
+    initialScrollOffset: 14 * 58.0 - 150.0,
+  );
+
   // Tab 1: Training Plan
   DateTime _selectedDate = DateTime.now();
   late Future<String?> _trainingClubIdFuture;
   late Future<List<CalendarItemModel>> _calendarFuture;
-  
+  List<CalendarItemModel> _loadedCalendarItems = [];
+
   // Tab 2: City Events
   late Future<List<EventListItemModel>> _eventsFuture;
   String? _selectedDateFilter;
@@ -42,6 +48,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
   @override
   void dispose() {
     _tabController.dispose();
+    _calendarScrollController.dispose();
     super.dispose();
   }
 
@@ -68,9 +75,11 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
   Future<List<CalendarItemModel>> _fetchCalendar() async {
     final clubId = await _trainingClubIdFuture;
     if (clubId == null || clubId.isEmpty) return [];
-    
+
     final yearMonth = DateFormat('yyyy-MM').format(_selectedDate);
-    return ServiceLocator.clubsService.getCalendar(clubId, yearMonth);
+    final result = await ServiceLocator.clubsService.getCalendar(clubId, yearMonth);
+    if (mounted) setState(() => _loadedCalendarItems = result);
+    return result;
   }
 
   Future<List<EventListItemModel>> _fetchCityEvents() async {
@@ -193,7 +202,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.weekend_outlined, size: 48, color: Colors.grey.shade300),
+                          Icon(Icons.calendar_today_outlined, size: 48, color: Colors.grey.shade300),
                           const SizedBox(height: 8),
                           Text(l10n.noData, style: TextStyle(color: Colors.grey.shade400)),
                         ],
@@ -318,76 +327,146 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
   }
 
   Widget _buildCalendarStrip() {
-    return Container(
-      height: 90,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        // Range: 14 days back, 30 days forward
-        itemCount: 45,
-        itemBuilder: (context, index) {
-          final day = DateTime.now().subtract(const Duration(days: 14)).add(Duration(days: index));
-          final isSelected = day.year == _selectedDate.year && 
-                             day.month == _selectedDate.month && 
-                             day.day == _selectedDate.day;
-          final isToday = day.year == DateTime.now().year && 
-                          day.month == DateTime.now().month && 
-                          day.day == DateTime.now().day;
-          
-          return GestureDetector(
-            onTap: () {
-              final oldMonth = _selectedDate.month;
-              final oldYear = _selectedDate.year;
-              setState(() {
-                _selectedDate = day;
-                if (day.month != oldMonth || day.year != oldYear) {
-                  _calendarFuture = _fetchCalendar();
-                }
-              });
-            },
-            child: Container(
-              width: 55,
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                color: isSelected 
-                    ? Theme.of(context).colorScheme.primary 
-                    : (isToday ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3) : Colors.transparent),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isSelected 
-                      ? Colors.transparent 
-                      : (isToday ? Theme.of(context).colorScheme.primary.withOpacity(0.5) : Colors.grey.shade200),
-                ),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    DateFormat('E').format(day),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isSelected ? Colors.white : Colors.grey.shade600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    day.day.toString(),
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected ? Colors.white : Colors.black,
-                    ),
-                  ),
-                ],
-              ),
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+          child: Text(
+            DateFormat('MMMM yyyy').format(_selectedDate),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade700,
             ),
-          );
-        },
-      ),
+          ),
+        ),
+        SizedBox(
+          height: 80,
+          child: ListView.builder(
+            controller: _calendarScrollController,
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            // Range: 14 days back, 30 days forward
+            itemCount: 45,
+            itemBuilder: (context, index) {
+              final day = today.subtract(const Duration(days: 14)).add(Duration(days: index));
+              final isSelected = day.year == _selectedDate.year &&
+                  day.month == _selectedDate.month &&
+                  day.day == _selectedDate.day;
+              final isToday = day == today;
+              final isPast = day.isBefore(today);
+
+              // Determine text color
+              Color dayNumColor;
+              Color dayNameColor;
+              if (isSelected) {
+                dayNumColor = Colors.white;
+                dayNameColor = Colors.white;
+              } else if (isPast) {
+                dayNumColor = Colors.grey.shade400;
+                dayNameColor = Colors.grey.shade400;
+              } else if (isToday) {
+                dayNumColor = Theme.of(context).colorScheme.primary;
+                dayNameColor = Theme.of(context).colorScheme.primary;
+              } else {
+                dayNumColor = Colors.black;
+                dayNameColor = Colors.grey.shade600;
+              }
+
+              return GestureDetector(
+                onTap: () {
+                  final oldMonth = _selectedDate.month;
+                  final oldYear = _selectedDate.year;
+                  setState(() {
+                    _selectedDate = day;
+                    if (day.month != oldMonth || day.year != oldYear) {
+                      _loadedCalendarItems = [];
+                      _calendarFuture = _fetchCalendar();
+                    }
+                  });
+                },
+                child: Container(
+                  width: 52,
+                  margin: const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : (isToday
+                            ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.1)
+                            : Colors.transparent),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      width: isToday && !isSelected ? 1.5 : 1.0,
+                      color: isSelected
+                          ? Colors.transparent
+                          : (isToday
+                              ? Theme.of(context).colorScheme.primary
+                              : (isPast ? Colors.grey.shade100 : Colors.grey.shade200)),
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        DateFormat('E').format(day),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: (isSelected || isToday) ? FontWeight.bold : FontWeight.normal,
+                          color: dayNameColor,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        day.day.toString(),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: dayNumColor,
+                        ),
+                      ),
+                      _buildDots(day),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
+
+  Widget _buildDots(DateTime day) {
+    final items = _loadedCalendarItems.where((i) =>
+        i.date.year == day.year &&
+        i.date.month == day.month &&
+        i.date.day == day.day).toList();
+
+    final hasEvent = items.any((i) => i.type == CalendarItemType.event);
+    final hasNote = items.any((i) => i.type == CalendarItemType.note);
+
+    if (!hasEvent && !hasNote) return const SizedBox(height: 6);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (hasEvent) _dot(Colors.blue),
+        if (hasEvent && hasNote) const SizedBox(width: 3),
+        if (hasNote) _dot(Colors.orange),
+      ],
+    );
+  }
+
+  Widget _dot(Color color) => Container(
+        width: 5,
+        height: 5,
+        margin: const EdgeInsets.only(top: 2),
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      );
 
   Widget _buildCityEventsTab(AppLocalizations l10n) {
     return Column(

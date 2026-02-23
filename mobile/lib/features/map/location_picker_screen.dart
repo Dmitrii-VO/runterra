@@ -52,6 +52,9 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
       setState(() {
         _selectedLat = position.target.latitude;
         _selectedLon = position.target.longitude;
+        if (reason == CameraUpdateReason.gestures) {
+          _selectedAddress = null; // pin moved manually — address no longer valid
+        }
       });
     }
   }
@@ -128,30 +131,26 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
 
   void _onSuggestItemSelected(SuggestItem item) {
     final center = item.center;
+    if (center == null) return; // ignore suggestions without coordinates
 
     setState(() {
       _selectedAddress = item.displayText;
+      _selectedLat = center.latitude;
+      _selectedLon = center.longitude;
       _searchResults = [];
       _searchController.clear();
       _searchError = null;
-      if (center != null) {
-        _selectedLat = center.latitude;
-        _selectedLon = center.longitude;
-      }
-      // If center is null — coordinates stay at current pin position
     });
 
-    if (center != null) {
-      _mapController?.moveCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(
-            target: Point(latitude: center.latitude, longitude: center.longitude),
-            zoom: 16.0,
-          ),
+    _mapController?.moveCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: Point(latitude: center.latitude, longitude: center.longitude),
+          zoom: 16.0,
         ),
-        animation: const MapAnimation(type: MapAnimationType.smooth, duration: 0.5),
-      );
-    }
+      ),
+      animation: const MapAnimation(type: MapAnimationType.smooth, duration: 0.5),
+    );
   }
 
   @override
@@ -296,7 +295,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
               ],
             ),
           ),
-          // Coordinates display at bottom
+          // Coordinates (and optional address) display at bottom
           Positioned(
             bottom: 16,
             left: 16,
@@ -304,15 +303,30 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
             child: Card(
               child: Padding(
                 padding: const EdgeInsets.all(12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.location_on, size: 18, color: Colors.deepOrange),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${_selectedLat.toStringAsFixed(5)}, ${_selectedLon.toStringAsFixed(5)}',
-                      style: Theme.of(context).textTheme.bodyMedium,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.location_on, size: 18, color: Colors.deepOrange),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${_selectedLat.toStringAsFixed(5)}, ${_selectedLon.toStringAsFixed(5)}',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ],
                     ),
+                    if (_selectedAddress != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        _selectedAddress!,
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ],
                 ),
               ),

@@ -106,8 +106,9 @@ class _EditEventScreenState extends State<EditEventScreen> {
         _selectedLat = (result['lat'] as num?)?.toDouble();
         _selectedLon = (result['lon'] as num?)?.toDouble();
       });
+      // Always update location name when picker returns an address
       final address = result['address'] as String?;
-      if (address != null && _locationNameController.text.trim().isEmpty) {
+      if (address != null) {
         _locationNameController.text = address;
       }
     }

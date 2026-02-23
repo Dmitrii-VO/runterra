@@ -6,6 +6,7 @@ import '../../shared/models/club_member_model.dart';
 import '../../shared/models/event_start_location.dart';
 import '../../shared/models/workout.dart';
 import '../../shared/models/city_model.dart';
+import '../../shared/api/users_service.dart' show ApiException;
 
 class CreateEventScreen extends StatefulWidget {
   const CreateEventScreen({super.key});
@@ -237,9 +238,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         _selectedLat = (result['lat'] as num?)?.toDouble();
         _selectedLon = (result['lon'] as num?)?.toDouble();
       });
-      // Auto-fill location name from address search if empty
+      // Always update location name when picker returns an address
       final address = result['address'] as String?;
-      if (address != null && _locationNameController.text.trim().isEmpty) {
+      if (address != null) {
         _locationNameController.text = address;
       }
     }
@@ -316,6 +317,13 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         SnackBar(content: Text(l10n.eventCreateSuccess)),
       );
       context.go('/event/${event.id}');
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      final message = e.code == 'coordinates_out_of_city'
+          ? l10n.eventCreateLocationOutOfCity
+          : l10n.eventCreateError(e.message);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      setState(() => _saving = false);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
