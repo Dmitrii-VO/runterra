@@ -598,6 +598,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get territoryUnknown => 'Unknown';
 
   @override
+  String territoryLeading(String km) {
+    return 'Contested (You are leading: $km km)';
+  }
+
+  @override
   String territoryOwnerLabel(String id) {
     return 'Owner club: $id';
   }

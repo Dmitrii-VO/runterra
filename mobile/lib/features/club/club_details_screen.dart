@@ -366,26 +366,33 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                       itemCount: territories.length,
                       itemBuilder: (context, index) {
                         final t = territories[index];
-                        final isOwner = t.clubId == club.id;
+                        final isCapturedByUs = t.clubId == club.id && t.status == 'captured';
+                        final isLeading = t.clubId == club.id && t.status != 'captured';
                         final progress = t.myClubProgress;
                         
-                        String subtitle = isOwner ? l10n.territoryCaptured : l10n.zoneContested;
+                        String subtitle = l10n.zoneContested;
                         if (progress != null) {
                           final km = progress['totalKm'];
                           final gap = progress['gapToLeader'];
-                          if (isOwner) {
+                          if (isCapturedByUs) {
                             subtitle = '${l10n.territoryCaptured} ($km км)';
+                          } else if (isLeading) {
+                            subtitle = l10n.territoryLeading(km.toString());
                           } else if (gap != null) {
                             subtitle = '${l10n.zoneContested} ($km км, ${gap.abs()} км до лидера)';
+                          } else {
+                            subtitle = '${l10n.zoneContested} ($km км)';
                           }
+                        } else if (isCapturedByUs) {
+                          subtitle = l10n.territoryCaptured;
                         }
 
                         return ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: isOwner ? Colors.green.withOpacity(0.2) : Colors.orange.withOpacity(0.2),
+                            backgroundColor: isCapturedByUs ? Colors.green.withOpacity(0.2) : Colors.orange.withOpacity(0.2),
                             child: Icon(
-                              isOwner ? Icons.emoji_events : Icons.map,
-                              color: isOwner ? Colors.green : Colors.orange,
+                              isCapturedByUs ? Icons.emoji_events : Icons.map,
+                              color: isCapturedByUs ? Colors.green : Colors.orange,
                             ),
                           ),
                           title: Text(t.name),

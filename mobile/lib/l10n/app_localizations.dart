@@ -1196,6 +1196,12 @@ abstract class AppLocalizations {
   /// **'Unknown'**
   String get territoryUnknown;
 
+  /// No description provided for @territoryLeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Contested (You are leading: {km} km)'**
+  String territoryLeading(String km);
+
   /// No description provided for @territoryOwnerLabel.
   ///
   /// In en, this message translates to:

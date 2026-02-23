@@ -295,6 +295,14 @@
   "territoryContested": "Contested",
   "territoryLocked": "Locked",
   "territoryUnknown": "Unknown",
+  "territoryLeading": "Contested (You are leading: {km} km)",
+  "@territoryLeading": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
   "territoryOwnerLabel": "Owner club: {id}",
   "@territoryOwnerLabel": {
     "placeholders": {

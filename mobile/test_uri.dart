@@ -1,0 +1,1 @@
+void main() { final uri = Uri(path: '/api/territories', queryParameters: {'cityId': 'spb', 'clubId': 'abc'}); print(uri.toString()); }

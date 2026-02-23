@@ -601,6 +601,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get territoryUnknown => 'Неизвестно';
 
   @override
+  String territoryLeading(String km) {
+    return 'Оспаривается (Вы лидируете: $km км)';
+  }
+
+  @override
   String territoryOwnerLabel(String id) {
     return 'Клуб-владелец: $id';
   }

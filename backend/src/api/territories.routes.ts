@@ -81,6 +81,7 @@ router.get('/', async (req: Request, res: Response) => {
           ...t,
           status: TerritoryStatus.FREE,
           clubId: undefined,
+          myClubProgress: null,
           leaderboard: [],
         };
       }
@@ -103,14 +104,14 @@ router.get('/', async (req: Request, res: Response) => {
       
       return {
         ...t,
-        status: TerritoryStatus.CAPTURED, // For MVP, any score = captured
-        clubId: leader.club_id, // Owner
+        status: TerritoryStatus.CONTESTED, // MVP: ongoing season means contested
+        clubId: leader.club_id, // Current leader
         myClubProgress,
       };
     });
 
     if (clubId) {
-      mergedTerritories = mergedTerritories.filter(t => t.clubId === clubId || t.myClubProgress !== null);
+      mergedTerritories = mergedTerritories.filter(t => t.clubId === clubId || t.myClubProgress != null);
     }
 
     res.status(200).json(mergedTerritories);

@@ -218,6 +218,14 @@
   "territoryContested": "Оспариваемая",
   "territoryLocked": "Заблокирована",
   "territoryUnknown": "Неизвестно",
+  "territoryLeading": "Оспаривается (Вы лидируете: {km} км)",
+  "@territoryLeading": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
   "territoryOwnerLabel": "Клуб-владелец: {id}",
   "territoryHoldTodo": "До удержания: TODO",
   "territoryViewTrainings": "Посмотреть тренировки",
