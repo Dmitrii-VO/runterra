@@ -9,6 +9,27 @@ class TrainerService {
 
   TrainerService({required ApiClient apiClient}) : _apiClient = apiClient;
 
+  /// GET /api/trainer — public trainer discovery (accepts_private_clients=true)
+  Future<List<PublicTrainerEntry>> getTrainers({
+    String? cityId,
+    String? specialization,
+  }) async {
+    final params = <String, String>{};
+    if (cityId != null) params['cityId'] = cityId;
+    if (specialization != null) params['specialization'] = specialization;
+    final query = params.isNotEmpty
+        ? '?${params.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&')}'
+        : '';
+    final response = await _apiClient.get('/api/trainer$query');
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final list = jsonDecode(response.body) as List<dynamic>;
+      return list
+          .map((e) => PublicTrainerEntry.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+    _throwApiException(response, 'get_trainers_error');
+  }
+
   /// GET /api/trainer/profile — own profile
   Future<TrainerProfile?> getMyProfile() async {
     final response = await _apiClient.get('/api/trainer/profile');
@@ -37,6 +58,7 @@ class TrainerService {
     required List<String> specialization,
     required int experienceYears,
     List<Map<String, dynamic>>? certificates,
+    bool acceptsPrivateClients = false,
   }) async {
     final response = await _apiClient.post(
       '/api/trainer/profile',
@@ -45,6 +67,7 @@ class TrainerService {
         'specialization': specialization,
         'experienceYears': experienceYears,
         if (certificates != null) 'certificates': certificates,
+        'acceptsPrivateClients': acceptsPrivateClients,
       },
     );
     if (response.statusCode >= 200 && response.statusCode < 300) {

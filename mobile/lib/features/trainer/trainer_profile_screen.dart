@@ -93,6 +93,17 @@ class _TrainerProfileScreenState extends State<TrainerProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Private trainer badge
+                if (profile.acceptsPrivateClients) ...[
+                  Chip(
+                    avatar: const Icon(Icons.person, size: 16),
+                    label: Text(l10n.trainerPrivateBadge),
+                    backgroundColor:
+                        Theme.of(context).colorScheme.primaryContainer,
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
                 // Bio
                 if (profile.bio != null && profile.bio!.isNotEmpty) ...[
                   Text(l10n.trainerBio,

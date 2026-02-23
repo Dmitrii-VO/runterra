@@ -100,6 +100,41 @@ Runs on push/PR to `main`: backend typecheck + tests + build; mobile analyze + t
 - **DB:** PostgreSQL on server (localhost:5432, database `runterra`)
 - **Mobile distribution:** Firebase App Distribution
 
+## Core Principles
+
+- **Simplicity first:** Make every change as simple as possible. Minimal code impact.
+- **No laziness:** Find root causes — no temporary fixes, no workarounds. Senior engineer standards.
+- **Minimal impact:** Touch only what's necessary. Avoid introducing unrelated changes or side effects.
+
+## Workflow
+
+### Planning
+- Use plan mode (EnterPlanMode) for any non-trivial task: 3+ steps, multiple files, or architectural decisions
+- If something goes sideways mid-task — stop and re-plan, don't keep pushing
+- For complex tasks use TodoWrite to track subtasks; mark items complete as you go
+
+### Subagents
+- Use subagents (Task tool) to keep main context clean: offload file exploration, parallel searches, research
+- One focused objective per subagent
+
+### Self-improvement
+- After any correction from the user: update `memory/MEMORY.md` with the pattern to avoid repeating the mistake
+- Review `memory/MEMORY.md` at the start of each session for relevant context
+
+### Verification
+- Never consider a task done without proving it works: run `flutter analyze` / `npm test` / check logs
+- When fixing a bug: confirm the fix actually resolves the symptom, not just compiles
+- Ask yourself: "Would a staff engineer approve this PR?"
+
+### Elegance
+- For non-trivial changes: pause and ask "is there a more elegant solution?"
+- If a fix feels hacky, implement the clean version instead
+- Skip for simple one-liners — don't over-engineer
+
+### Bugs
+- When given a bug report: just fix it autonomously. Read logs, run tests, resolve
+- Don't ask for hand-holding on CI failures — investigate and fix directly
+
 ## Mandatory Rules
 
 ### Before any task

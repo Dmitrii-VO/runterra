@@ -578,6 +578,7 @@
   "eventCreatePickLocation": "Pick on map",
   "eventCreateLocationSelected": "Location selected",
   "eventCreateLocationRequired": "Select a start point",
+  "eventCreateLocationOutOfCity": "Selected location is outside the city bounds. Pick a point closer to the city.",
   "locationPickerTitle": "Pick location",
   "locationPickerConfirm": "Confirm",
   "locationPickerSearchHint": "Search address...",
@@ -782,5 +783,14 @@
   "runSelectClubTitle": "Select Club for Scoring",
   "runNoClubs": "No active clubs found",
   "runSkipScoring": "Skip Scoring (Not Saved)",
-  "runClubRequired": "Please select a club to contribute points."
+  "runClubRequired": "Please select a club to contribute points.",
+  "trainerSection": "Trainer",
+  "trainerAcceptsClients": "Accept private clients",
+  "trainerAcceptsClientsHint": "Your profile will appear in trainer discovery",
+  "trainerSetupProfile": "Configure trainer profile",
+  "trainerPrivateBadge": "Private trainer",
+  "findTrainers": "Find Trainers",
+  "trainersList": "Trainers",
+  "trainersEmpty": "No trainers found",
+  "trainersLoadError": "Could not load trainers"
 }

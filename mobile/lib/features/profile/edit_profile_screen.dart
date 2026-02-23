@@ -6,6 +6,7 @@ import '../../shared/api/users_service.dart';
 import '../../shared/auth/auth_service.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/profile_model.dart';
+import '../../shared/models/trainer_profile.dart';
 import '../city/city_picker_dialog.dart';
 import '../../app.dart';
 
@@ -34,6 +35,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _locationPermissionGranted = false;
   bool? _profileVisibleOverride;
   bool _savingProfileVisible = false;
+  TrainerProfile? _trainerProfile;
+  bool _trainerProfileLoaded = false;
+  bool _savingAcceptsPrivateClients = false;
 
   ProfileUserData get _user => widget.profile.user;
 
@@ -49,6 +53,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _cityId = _user.cityId;
     _cityName = _user.cityName;
     _checkLocationPermission();
+    _loadTrainerProfile();
+  }
+
+  Future<void> _loadTrainerProfile() async {
+    try {
+      final profile = await ServiceLocator.trainerService.getMyProfile();
+      if (!mounted) return;
+      setState(() {
+        _trainerProfile = profile;
+        _trainerProfileLoaded = true;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _trainerProfileLoaded = true);
+    }
   }
 
   Future<void> _checkLocationPermission() async {
@@ -242,12 +261,91 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     )
                   : Text(l10n.editProfileSave),
             ),
+            const SizedBox(height: 24),
+            _buildTrainerSection(l10n),
             const SizedBox(height: 32),
             _buildSettingsSection(l10n),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildTrainerSection(AppLocalizations l10n) {
+    final profile = _trainerProfile;
+    final acceptsClients = profile?.acceptsPrivateClients ?? false;
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Text(
+              l10n.trainerSection,
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+          ),
+          if (_trainerProfileLoaded)
+            SwitchListTile(
+              title: Text(l10n.trainerAcceptsClients),
+              subtitle: Text(l10n.trainerAcceptsClientsHint,
+                  style: Theme.of(context).textTheme.bodySmall),
+              value: acceptsClients,
+              onChanged: _savingAcceptsPrivateClients || !_trainerProfileLoaded || profile == null
+                  ? null
+                  : (value) => _onAcceptsPrivateClientsChanged(value, l10n),
+            )
+          else
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+            ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.sports),
+            title: Text(l10n.trainerSetupProfile),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () async {
+              final result = await context.push<bool>(
+                '/trainer/edit',
+                extra: profile,
+              );
+              if (result == true && mounted) _loadTrainerProfile();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _onAcceptsPrivateClientsChanged(bool value, AppLocalizations l10n) async {
+    setState(() => _savingAcceptsPrivateClients = true);
+    try {
+      await ServiceLocator.trainerService.updateProfile({'acceptsPrivateClients': value});
+      if (mounted) {
+        setState(() {
+          _trainerProfile = TrainerProfile(
+            userId: _trainerProfile!.userId,
+            bio: _trainerProfile!.bio,
+            specialization: _trainerProfile!.specialization,
+            experienceYears: _trainerProfile!.experienceYears,
+            certificates: _trainerProfile!.certificates,
+            acceptsPrivateClients: value,
+            createdAt: _trainerProfile!.createdAt,
+          );
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e is ApiException ? e.message : l10n.errorGeneric(e.toString()))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _savingAcceptsPrivateClients = false);
+    }
   }
 
   Widget _buildSettingsSection(AppLocalizations l10n) {

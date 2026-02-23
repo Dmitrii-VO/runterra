@@ -415,7 +415,6 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
     setState(() => _isSending = true);
 
     try {
-      final wasNearBottom = _isNearBottom();
       final MessageModel sent;
       if (_channelId != null) {
         sent = await ServiceLocator.messagesService.sendChannelMessage(clubId, _channelId!, text);
@@ -432,9 +431,7 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
         _messages = <MessageModel>[..._messages, sent];
         _historyOffset += 1;
       });
-      if (wasNearBottom) {
-        _scrollToBottomDeferred(animated: true);
-      }
+      _scrollToBottomDeferred(animated: true); // own message — always scroll to show it
     } catch (error) {
       if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;

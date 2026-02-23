@@ -2102,6 +2102,12 @@ abstract class AppLocalizations {
   /// **'Select a start point'**
   String get eventCreateLocationRequired;
 
+  /// No description provided for @eventCreateLocationOutOfCity.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected location is outside the city bounds. Pick a point closer to the city.'**
+  String get eventCreateLocationOutOfCity;
+
   /// No description provided for @locationPickerTitle.
   ///
   /// In en, this message translates to:
@@ -2791,6 +2797,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Please select a club to contribute points.'**
   String get runClubRequired;
+
+  /// No description provided for @trainerSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Trainer'**
+  String get trainerSection;
+
+  /// No description provided for @trainerAcceptsClients.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept private clients'**
+  String get trainerAcceptsClients;
+
+  /// No description provided for @trainerAcceptsClientsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile will appear in trainer discovery'**
+  String get trainerAcceptsClientsHint;
+
+  /// No description provided for @trainerSetupProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure trainer profile'**
+  String get trainerSetupProfile;
+
+  /// No description provided for @trainerPrivateBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Private trainer'**
+  String get trainerPrivateBadge;
+
+  /// No description provided for @findTrainers.
+  ///
+  /// In en, this message translates to:
+  /// **'Find Trainers'**
+  String get findTrainers;
+
+  /// No description provided for @trainersList.
+  ///
+  /// In en, this message translates to:
+  /// **'Trainers'**
+  String get trainersList;
+
+  /// No description provided for @trainersEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No trainers found'**
+  String get trainersEmpty;
+
+  /// No description provided for @trainersLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load trainers'**
+  String get trainersLoadError;
 }
 
 class _AppLocalizationsDelegate

@@ -14,6 +14,7 @@ export const mockTrainerProfilesRepository = {
     specialization: ['GENERAL'],
     experienceYears: 5,
     certificates: [],
+    acceptsPrivateClients: false,
     createdAt: new Date(),
   }),
   update: jest.fn().mockResolvedValue({
@@ -22,8 +23,10 @@ export const mockTrainerProfilesRepository = {
     specialization: ['GENERAL'],
     experienceYears: 5,
     certificates: [],
+    acceptsPrivateClients: false,
     createdAt: new Date(),
   }),
+  findPublicTrainers: jest.fn().mockResolvedValue([]),
 };
 
 export const getTrainerProfilesRepository = jest.fn(() => mockTrainerProfilesRepository);

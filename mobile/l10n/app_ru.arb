@@ -404,6 +404,7 @@
   "eventCreatePickLocation": "Выбрать на карте",
   "eventCreateLocationSelected": "Точка выбрана",
   "eventCreateLocationRequired": "Выберите точку старта",
+  "eventCreateLocationOutOfCity": "Выбранная точка находится за пределами города. Выберите место ближе к городу.",
   "locationPickerTitle": "Выбор точки",
   "locationPickerConfirm": "Подтвердить",
   "locationPickerSearchHint": "Поиск адреса...",
@@ -608,5 +609,14 @@
   "runSelectClubTitle": "Выберите клуб для зачета",
   "runNoClubs": "Нет активных клубов",
   "runSkipScoring": "Пропустить (не сохранять)",
-  "runClubRequired": "Выберите клуб, чтобы начислить баллы."
+  "runClubRequired": "Выберите клуб, чтобы начислить баллы.",
+  "trainerSection": "Тренер",
+  "trainerAcceptsClients": "Принимаю частных клиентов",
+  "trainerAcceptsClientsHint": "Ваш профиль появится в каталоге тренеров",
+  "trainerSetupProfile": "Настроить тренерский профиль",
+  "trainerPrivateBadge": "Приватный тренер",
+  "findTrainers": "Найти тренера",
+  "trainersList": "Тренеры",
+  "trainersEmpty": "Тренеры не найдены",
+  "trainersLoadError": "Не удалось загрузить тренеров"
 }

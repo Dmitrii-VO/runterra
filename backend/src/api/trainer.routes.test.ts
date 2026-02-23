@@ -10,10 +10,11 @@ const app = createApp();
  * Trainer profile CRUD tests
  *
  * Tests trainer profile endpoints:
- * - GET /api/trainer/profile — own profile
+ * - GET /api/trainer             — public trainer discovery
+ * - GET /api/trainer/profile     — own profile
  * - GET /api/trainer/profile/:userId — public view
- * - POST /api/trainer/profile — create
- * - PATCH /api/trainer/profile — update
+ * - POST /api/trainer/profile    — create (any auth user with bio+specialization)
+ * - PATCH /api/trainer/profile   — update own profile
  */
 describe('Trainer Routes', () => {
   const originalEnv = process.env.NODE_ENV;
@@ -31,7 +32,6 @@ describe('Trainer Routes', () => {
   const {
     mockUsersRepository,
     mockTrainerProfilesRepository,
-    mockClubMembersRepository,
   } = require('../db/repositories');
 
   const mockProfile = {
@@ -40,6 +40,7 @@ describe('Trainer Routes', () => {
     specialization: ['GENERAL'],
     experienceYears: 5,
     certificates: [],
+    acceptsPrivateClients: false,
     createdAt: new Date(),
   };
 
@@ -48,8 +49,7 @@ describe('Trainer Routes', () => {
     mockTrainerProfilesRepository.findByUserId.mockClear();
     mockTrainerProfilesRepository.create.mockClear();
     mockTrainerProfilesRepository.update.mockClear();
-    mockClubMembersRepository.findActiveClubsByUser.mockClear();
-    mockClubMembersRepository.findByClubAndUser.mockClear();
+    mockTrainerProfilesRepository.findPublicTrainers.mockClear();
 
     // Default: user exists
     mockUsersRepository.findByFirebaseUid.mockResolvedValue({
@@ -57,6 +57,40 @@ describe('Trainer Routes', () => {
       firebaseUid: 'uid-1',
       email: 'test@example.com',
       name: 'Test User',
+    });
+  });
+
+  describe('GET /api/trainer', () => {
+    it('returns 200 with array of public trainers', async () => {
+      const publicTrainer = {
+        userId,
+        name: 'Test User',
+        bio: 'Coach bio',
+        specialization: ['GENERAL'],
+        experienceYears: 5,
+        acceptsPrivateClients: true,
+      };
+      mockTrainerProfilesRepository.findPublicTrainers.mockResolvedValueOnce([publicTrainer]);
+
+      const res = await request(app)
+        .get('/api/trainer')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body[0]).toHaveProperty('userId', userId);
+      expect(res.body[0]).toHaveProperty('acceptsPrivateClients', true);
+    });
+
+    it('returns 200 with empty array when no public trainers', async () => {
+      mockTrainerProfilesRepository.findPublicTrainers.mockResolvedValueOnce([]);
+
+      const res = await request(app)
+        .get('/api/trainer')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
     });
   });
 
@@ -73,6 +107,7 @@ describe('Trainer Routes', () => {
       expect(res.body).toHaveProperty('bio', 'Experienced running coach');
       expect(res.body).toHaveProperty('specialization');
       expect(res.body).toHaveProperty('experienceYears', 5);
+      expect(res.body).toHaveProperty('acceptsPrivateClients', false);
     });
 
     it('returns 404 when no trainer profile exists', async () => {
@@ -130,18 +165,7 @@ describe('Trainer Routes', () => {
       bio: 'Coach bio',
     };
 
-    it('returns 201 when trainer profile is created (user is trainer in a club)', async () => {
-      // User is a trainer in at least one club
-      mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([
-        {
-          clubId: 'club-1',
-          clubName: 'Club A',
-          clubCityId: 'spb',
-          clubStatus: 'active',
-          role: 'trainer',
-          joinedAt: new Date(),
-        },
-      ]);
+    it('returns 201 when trainer profile is created', async () => {
       mockTrainerProfilesRepository.findByUserId.mockResolvedValueOnce(null);
       mockTrainerProfilesRepository.create.mockResolvedValueOnce(mockProfile);
 
@@ -161,40 +185,23 @@ describe('Trainer Routes', () => {
       );
     });
 
-    it('returns 403 when user is not a trainer or leader in any club', async () => {
-      // User has only member role
-      mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([
-        {
-          clubId: 'club-1',
-          clubName: 'Club A',
-          clubCityId: 'spb',
-          clubStatus: 'active',
-          role: 'member',
-          joinedAt: new Date(),
-        },
-      ]);
+    it('returns 201 with acceptsPrivateClients when specified', async () => {
+      const profileWithPrivate = { ...mockProfile, acceptsPrivateClients: true };
+      mockTrainerProfilesRepository.findByUserId.mockResolvedValueOnce(null);
+      mockTrainerProfilesRepository.create.mockResolvedValueOnce(profileWithPrivate);
 
       const res = await request(app)
         .post('/api/trainer/profile')
         .set('Authorization', 'Bearer test-token')
-        .send(validBody);
+        .send({ ...validBody, acceptsPrivateClients: true });
 
-      expect(res.status).toBe(403);
-      expect(res.body).toHaveProperty('code', 'forbidden');
-      expect(mockTrainerProfilesRepository.create).not.toHaveBeenCalled();
+      expect(res.status).toBe(201);
+      expect(mockTrainerProfilesRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ acceptsPrivateClients: true }),
+      );
     });
 
     it('returns 409 when trainer profile already exists', async () => {
-      mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([
-        {
-          clubId: 'club-1',
-          clubName: 'Club A',
-          clubCityId: 'spb',
-          clubStatus: 'active',
-          role: 'trainer',
-          joinedAt: new Date(),
-        },
-      ]);
       mockTrainerProfilesRepository.findByUserId.mockResolvedValueOnce(mockProfile);
 
       const res = await request(app)
@@ -220,16 +227,6 @@ describe('Trainer Routes', () => {
 
   describe('PATCH /api/trainer/profile', () => {
     it('returns 200 with updated profile', async () => {
-      mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([
-        {
-          clubId: 'club-1',
-          clubName: 'Club A',
-          clubCityId: 'spb',
-          clubStatus: 'active',
-          role: 'trainer',
-          joinedAt: new Date(),
-        },
-      ]);
       const updatedProfile = { ...mockProfile, bio: 'Updated bio' };
       mockTrainerProfilesRepository.update.mockResolvedValueOnce(updatedProfile);
 
@@ -246,38 +243,20 @@ describe('Trainer Routes', () => {
       );
     });
 
-    it('returns 403 when user is not trainer or leader', async () => {
-      mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([
-        {
-          clubId: 'club-1',
-          clubName: 'Club A',
-          clubCityId: 'spb',
-          clubStatus: 'active',
-          role: 'member',
-          joinedAt: new Date(),
-        },
-      ]);
+    it('returns 200 when updating acceptsPrivateClients', async () => {
+      const updatedProfile = { ...mockProfile, acceptsPrivateClients: true };
+      mockTrainerProfilesRepository.update.mockResolvedValueOnce(updatedProfile);
 
       const res = await request(app)
         .patch('/api/trainer/profile')
         .set('Authorization', 'Bearer test-token')
-        .send({ bio: 'Updated bio' });
+        .send({ acceptsPrivateClients: true });
 
-      expect(res.status).toBe(403);
-      expect(res.body).toHaveProperty('code', 'forbidden');
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('acceptsPrivateClients', true);
     });
 
     it('returns 404 when profile does not exist for update', async () => {
-      mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([
-        {
-          clubId: 'club-1',
-          clubName: 'Club A',
-          clubCityId: 'spb',
-          clubStatus: 'active',
-          role: 'trainer',
-          joinedAt: new Date(),
-        },
-      ]);
       mockTrainerProfilesRepository.update.mockResolvedValueOnce(null);
 
       const res = await request(app)
@@ -290,4 +269,3 @@ describe('Trainer Routes', () => {
     });
   });
 });
-

@@ -1097,6 +1097,10 @@ class AppLocalizationsRu extends AppLocalizations {
   String get eventCreateLocationRequired => 'Выберите точку старта';
 
   @override
+  String get eventCreateLocationOutOfCity =>
+      'Выбранная точка находится за пределами города. Выберите место ближе к городу.';
+
+  @override
   String get locationPickerTitle => 'Выбор точки';
 
   @override
@@ -1468,4 +1472,32 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get runClubRequired => 'Выберите клуб, чтобы начислить баллы.';
+
+  @override
+  String get trainerSection => 'Тренер';
+
+  @override
+  String get trainerAcceptsClients => 'Принимаю частных клиентов';
+
+  @override
+  String get trainerAcceptsClientsHint =>
+      'Ваш профиль появится в каталоге тренеров';
+
+  @override
+  String get trainerSetupProfile => 'Настроить тренерский профиль';
+
+  @override
+  String get trainerPrivateBadge => 'Приватный тренер';
+
+  @override
+  String get findTrainers => 'Найти тренера';
+
+  @override
+  String get trainersList => 'Тренеры';
+
+  @override
+  String get trainersEmpty => 'Тренеры не найдены';
+
+  @override
+  String get trainersLoadError => 'Не удалось загрузить тренеров';
 }

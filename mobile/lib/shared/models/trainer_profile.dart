@@ -33,6 +33,7 @@ class TrainerProfile {
   final List<String> specialization;
   final int experienceYears;
   final List<Certificate> certificates;
+  final bool acceptsPrivateClients;
   final DateTime createdAt;
 
   TrainerProfile({
@@ -41,6 +42,7 @@ class TrainerProfile {
     required this.specialization,
     required this.experienceYears,
     required this.certificates,
+    this.acceptsPrivateClients = false,
     required this.createdAt,
   });
 
@@ -55,6 +57,7 @@ class TrainerProfile {
       certificates: (json['certificates'] as List<dynamic>? ?? [])
           .map((e) => Certificate.fromJson(e as Map<String, dynamic>))
           .toList(),
+      acceptsPrivateClients: json['acceptsPrivateClients'] as bool? ?? false,
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
@@ -66,7 +69,37 @@ class TrainerProfile {
       'specialization': specialization,
       'experienceYears': experienceYears,
       'certificates': certificates.map((c) => c.toJson()).toList(),
+      'acceptsPrivateClients': acceptsPrivateClients,
       'createdAt': createdAt.toIso8601String(),
     };
+  }
+}
+
+/// Public trainer entry for discovery (accepts_private_clients = true)
+class PublicTrainerEntry {
+  final String userId;
+  final String name;
+  final String? bio;
+  final List<String> specialization;
+  final int experienceYears;
+
+  PublicTrainerEntry({
+    required this.userId,
+    required this.name,
+    this.bio,
+    required this.specialization,
+    required this.experienceYears,
+  });
+
+  factory PublicTrainerEntry.fromJson(Map<String, dynamic> json) {
+    return PublicTrainerEntry(
+      userId: json['userId'] as String,
+      name: json['name'] as String,
+      bio: json['bio'] as String?,
+      specialization: (json['specialization'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
+      experienceYears: (json['experienceYears'] as num).toInt(),
+    );
   }
 }

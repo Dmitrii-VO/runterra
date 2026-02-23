@@ -14,5 +14,6 @@ export interface TrainerProfile {
   specialization: string[];
   experienceYears: number;
   certificates: Certificate[];
+  acceptsPrivateClients: boolean;
   createdAt: Date;
 }

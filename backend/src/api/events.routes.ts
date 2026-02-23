@@ -23,7 +23,7 @@ import {
   UpdateEventSchema,
 } from '../modules/events';
 import { validateBody } from './validateBody';
-import { getEventsRepository, getUsersRepository, getWorkoutsRepository } from '../db/repositories';
+import { getEventsRepository, getUsersRepository, getWorkoutsRepository, getTrainerProfilesRepository } from '../db/repositories';
 import { logger } from '../shared/logger';
 import { isPointWithinCityBounds } from '../modules/cities/city.utils';
 import { getOrganizerDisplayName, getOrganizerDisplayNamesBatch } from './helpers/organizer-display';
@@ -413,7 +413,40 @@ router.post('/', validateBody(CreateEventSchema), async (req: Request<{}, EventD
     });
   }
 
+  // Resolve authenticated user for organizer authorization
+  const uid = req.authUser?.uid;
+  if (!uid) {
+    return res.status(401).json({ code: 'unauthorized', message: 'Authorization required' });
+  }
+
   try {
+    const usersRepo = getUsersRepository();
+    const authUser = await usersRepo.findByFirebaseUid(uid);
+    if (!authUser) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'User not found',
+        details: { fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }] },
+      });
+    }
+
+    // Authorization: club events require trainer/leader role; trainer events require accepts_private_clients
+    if (dto.organizerType === 'club') {
+      const hasRole = await isTrainerOrLeaderInClub(authUser.id, dto.organizerId);
+      if (!hasRole) {
+        return res.status(403).json({ code: 'forbidden', message: 'Trainer or leader role required in organizing club' });
+      }
+    } else {
+      // organizerType === 'trainer': organizerId must be the auth user, and they must accept private clients
+      if (dto.organizerId !== authUser.id) {
+        return res.status(403).json({ code: 'forbidden', message: 'Trainer event organizerId must match authenticated user' });
+      }
+      const trainerProfile = await getTrainerProfilesRepository().findByUserId(authUser.id);
+      if (!trainerProfile || !trainerProfile.acceptsPrivateClients) {
+        return res.status(403).json({ code: 'forbidden', message: 'Trainer profile with accepts_private_clients required to create trainer events' });
+      }
+    }
+
     const repo = getEventsRepository();
     const event = await repo.create({
       name: dto.name,

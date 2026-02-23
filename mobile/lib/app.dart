@@ -27,6 +27,7 @@ import 'features/profile/edit_profile_screen.dart';
 import 'features/profile/my_clubs_screen.dart';
 import 'features/trainer/trainer_profile_screen.dart';
 import 'features/trainer/trainer_edit_profile_screen.dart';
+import 'features/trainer/trainers_list_screen.dart';
 import 'features/trainer/workouts_list_screen.dart';
 import 'features/trainer/workout_form_screen.dart';
 import 'shared/models/profile_model.dart' show ProfileModel;
@@ -288,6 +289,10 @@ class RunterraApp extends StatelessWidget {
           final eventId = state.pathParameters['id'] ?? '';
           return EditEventScreen(eventId: eventId);
         },
+      ),
+      GoRoute(
+        path: '/trainers',
+        builder: (context, state) => const TrainersListScreen(),
       ),
       GoRoute(
         path: '/trainer/edit',

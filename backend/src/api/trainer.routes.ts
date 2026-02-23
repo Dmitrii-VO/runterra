@@ -1,17 +1,17 @@
 /**
  * API routes for trainer profile
  *
+ * GET    /api/trainers                — public trainer discovery (accepts_private_clients=true)
  * GET    /api/trainer/profile         — own profile
  * GET    /api/trainer/profile/:userId — public view
- * POST   /api/trainer/profile         — create profile (requires trainer/leader role)
- * PATCH  /api/trainer/profile         — update profile (requires trainer/leader role)
+ * POST   /api/trainer/profile         — create profile (bio + ≥1 specialization required)
+ * PATCH  /api/trainer/profile         — update own profile
  */
 
 import { Router, Request, Response } from 'express';
 import { validateBody } from './validateBody';
 import { getUsersRepository, getTrainerProfilesRepository } from '../db/repositories';
 import { CreateTrainerProfileSchema, UpdateTrainerProfileSchema } from '../modules/trainer';
-import { isTrainerInAnyClub } from './helpers/trainer-role';
 import { logger } from '../shared/logger';
 import { isValidUuid } from '../shared/validation';
 
@@ -35,6 +35,19 @@ async function resolveUserId(req: Request, res: Response): Promise<string | null
   }
   return user.id;
 }
+
+// GET /api/trainers — public trainer discovery
+router.get('/', async (req: Request, res: Response) => {
+  try {
+    const { cityId, specialization } = req.query as Record<string, string | undefined>;
+    const repo = getTrainerProfilesRepository();
+    const trainers = await repo.findPublicTrainers({ cityId, specialization });
+    res.status(200).json(trainers);
+  } catch (error) {
+    logger.error('Error fetching public trainers', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
 
 // GET /api/trainer/profile — own profile
 router.get('/profile', async (req: Request, res: Response) => {
@@ -77,16 +90,11 @@ router.get('/profile/:userId', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/trainer/profile — create
+// POST /api/trainer/profile — create (any authenticated user with bio + specialization)
 router.post('/profile', validateBody(CreateTrainerProfileSchema), async (req: Request, res: Response) => {
   try {
     const userId = await resolveUserId(req, res);
     if (!userId) return;
-
-    const hasRole = await isTrainerInAnyClub(userId);
-    if (!hasRole) {
-      return res.status(403).json({ code: 'forbidden', message: 'Trainer or leader role required in any club' });
-    }
 
     const repo = getTrainerProfilesRepository();
     const existing = await repo.findByUserId(userId);
@@ -100,6 +108,7 @@ router.post('/profile', validateBody(CreateTrainerProfileSchema), async (req: Re
       specialization: req.body.specialization,
       experienceYears: req.body.experienceYears,
       certificates: req.body.certificates,
+      acceptsPrivateClients: req.body.acceptsPrivateClients ?? false,
     });
     res.status(201).json(profile);
   } catch (error) {
@@ -108,16 +117,11 @@ router.post('/profile', validateBody(CreateTrainerProfileSchema), async (req: Re
   }
 });
 
-// PATCH /api/trainer/profile — update
+// PATCH /api/trainer/profile — update own profile
 router.patch('/profile', validateBody(UpdateTrainerProfileSchema), async (req: Request, res: Response) => {
   try {
     const userId = await resolveUserId(req, res);
     if (!userId) return;
-
-    const hasRole = await isTrainerInAnyClub(userId);
-    if (!hasRole) {
-      return res.status(403).json({ code: 'forbidden', message: 'Trainer or leader role required in any club' });
-    }
 
     const repo = getTrainerProfilesRepository();
     const profile = await repo.update(userId, req.body);

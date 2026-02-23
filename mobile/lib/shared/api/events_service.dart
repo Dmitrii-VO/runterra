@@ -202,6 +202,14 @@ class EventsService {
         if (decoded != null) {
           errorCode = (decoded['code'] as String?) ?? errorCode;
           errorMessage = (decoded['message'] as String?) ?? errorMessage;
+          // Propagate specific field-level code (e.g. coordinates_out_of_city)
+          final details = decoded['details'] as Map<String, dynamic>?;
+          final fields = details?['fields'] as List<dynamic>?;
+          if (fields != null && fields.isNotEmpty) {
+            final firstField = fields.first as Map<String, dynamic>?;
+            final fieldCode = firstField?['code'] as String?;
+            if (fieldCode != null) errorCode = fieldCode;
+          }
         }
       } on FormatException {
         // Non-JSON response

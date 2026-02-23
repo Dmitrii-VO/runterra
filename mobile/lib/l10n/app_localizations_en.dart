@@ -1094,6 +1094,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventCreateLocationRequired => 'Select a start point';
 
   @override
+  String get eventCreateLocationOutOfCity =>
+      'Selected location is outside the city bounds. Pick a point closer to the city.';
+
+  @override
   String get locationPickerTitle => 'Pick location';
 
   @override
@@ -1463,4 +1467,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get runClubRequired => 'Please select a club to contribute points.';
+
+  @override
+  String get trainerSection => 'Trainer';
+
+  @override
+  String get trainerAcceptsClients => 'Accept private clients';
+
+  @override
+  String get trainerAcceptsClientsHint =>
+      'Your profile will appear in trainer discovery';
+
+  @override
+  String get trainerSetupProfile => 'Configure trainer profile';
+
+  @override
+  String get trainerPrivateBadge => 'Private trainer';
+
+  @override
+  String get findTrainers => 'Find Trainers';
+
+  @override
+  String get trainersList => 'Trainers';
+
+  @override
+  String get trainersEmpty => 'No trainers found';
+
+  @override
+  String get trainersLoadError => 'Could not load trainers';
 }

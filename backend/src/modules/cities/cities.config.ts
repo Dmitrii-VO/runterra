@@ -10,12 +10,12 @@ const SPB_CENTER: CityCoordinates = {
 
 const SPB_BOUNDS: CityBounds = {
   ne: {
-    longitude: 30.6,
-    latitude: 60.1,
+    longitude: 31.0,
+    latitude: 60.3,
   },
   sw: {
-    longitude: 29.6,
-    latitude: 59.7,
+    longitude: 29.0,
+    latitude: 59.4,
   },
 };
 

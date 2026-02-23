@@ -17,6 +17,7 @@ export const CreateTrainerProfileSchema = z.object({
   specialization: z.array(z.enum(specializations)).min(1),
   experienceYears: z.number().int().min(0).max(50),
   certificates: z.array(CertificateSchema).max(20).optional(),
+  acceptsPrivateClients: z.boolean().optional(),
 });
 
 export const UpdateTrainerProfileSchema = CreateTrainerProfileSchema.partial();

@@ -30,11 +30,22 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late Future<ProfileModel> _profileFuture;
+  bool? _hasTrainerProfile;
 
   @override
   void initState() {
     super.initState();
     _profileFuture = _fetchProfile();
+    _loadTrainerProfile();
+  }
+
+  Future<void> _loadTrainerProfile() async {
+    try {
+      final p = await ServiceLocator.trainerService.getMyProfile();
+      if (mounted) setState(() => _hasTrainerProfile = p != null);
+    } catch (_) {
+      if (mounted) setState(() => _hasTrainerProfile = false);
+    }
   }
 
   /// Создает Future для получения данных профиля
@@ -62,6 +73,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() {
       _profileFuture = _fetchProfile();
     });
+    _loadTrainerProfile();
   }
 
   @override
@@ -188,31 +200,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
           hasClub: profile.club != null,
           isMercenary: profile.user.isMercenary,
         ),
+        if (_hasTrainerProfile == true)
+          Card(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.sports),
+                  title: Text(l10n.trainerProfile),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/trainer/${profile.user.id}'),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.edit_note),
+                  title: Text(l10n.trainerEditProfile),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/trainer/edit'),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.fitness_center),
+                  title: Text(l10n.workouts),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/workouts'),
+                ),
+              ],
+            ),
+          ),
+        // Find Trainers entry
         Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Column(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.sports),
-                title: Text(l10n.trainerProfile),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.push('/trainer/${profile.user.id}'),
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.edit_note),
-                title: Text(l10n.trainerEditProfile),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.push('/trainer/edit'),
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.fitness_center),
-                title: Text(l10n.workouts),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.push('/workouts'),
-              ),
-            ],
+          child: ListTile(
+            leading: const Icon(Icons.search),
+            title: Text(l10n.findTrainers),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/trainers'),
           ),
         ),
         ProfileNotificationsSection(notifications: profile.notifications),

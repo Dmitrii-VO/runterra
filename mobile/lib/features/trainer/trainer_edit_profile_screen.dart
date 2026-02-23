@@ -22,6 +22,7 @@ class _TrainerEditProfileScreenState extends State<TrainerEditProfileScreen> {
   final List<String> _selectedSpecs = [];
   final List<_CertificateEntry> _certificates = [];
   bool _saving = false;
+  bool _acceptsPrivateClients = false;
 
   static const _allSpecs = [
     'MARATHON',
@@ -40,6 +41,7 @@ class _TrainerEditProfileScreenState extends State<TrainerEditProfileScreen> {
         TextEditingController(text: p?.experienceYears.toString() ?? '0');
     if (p != null) {
       _selectedSpecs.addAll(p.specialization);
+      _acceptsPrivateClients = p.acceptsPrivateClients;
       for (final c in p.certificates) {
         _certificates.add(_CertificateEntry(
           nameController: TextEditingController(text: c.name),
@@ -90,6 +92,7 @@ class _TrainerEditProfileScreenState extends State<TrainerEditProfileScreen> {
         'specialization': _selectedSpecs,
         'experienceYears': int.tryParse(_experienceController.text) ?? 0,
         'certificates': certs,
+        'acceptsPrivateClients': _acceptsPrivateClients,
       };
 
       if (widget.existingProfile != null) {
@@ -101,6 +104,7 @@ class _TrainerEditProfileScreenState extends State<TrainerEditProfileScreen> {
           experienceYears: data['experienceYears'] as int,
           certificates:
               List<Map<String, dynamic>>.from(data['certificates'] as List),
+          acceptsPrivateClients: _acceptsPrivateClients,
         );
       }
 
@@ -146,7 +150,18 @@ class _TrainerEditProfileScreenState extends State<TrainerEditProfileScreen> {
               maxLines: 4,
               maxLength: 2000,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
+
+            // Accept private clients toggle
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(l10n.trainerAcceptsClients),
+              subtitle: Text(l10n.trainerAcceptsClientsHint,
+                  style: Theme.of(context).textTheme.bodySmall),
+              value: _acceptsPrivateClients,
+              onChanged: (v) => setState(() => _acceptsPrivateClients = v),
+            ),
+            const SizedBox(height: 8),
 
             // Specialization chips
             Text(l10n.trainerSpecialization,
