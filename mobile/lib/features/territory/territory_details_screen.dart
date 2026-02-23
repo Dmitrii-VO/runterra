@@ -96,7 +96,7 @@ class _TerritoryDetailsScreenState extends State<TerritoryDetailsScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      territory.status,
+                      _localizeStatus(AppLocalizations.of(context)!, territory.status),
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                     const SizedBox(height: 16),
@@ -120,7 +120,7 @@ class _TerritoryDetailsScreenState extends State<TerritoryDetailsScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      territory.cityId,
+                      territory.cityId == 'spb' ? 'Санкт-Петербург' : territory.cityId,
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                     // Захвативший игрок (если есть)
@@ -149,5 +149,20 @@ class _TerritoryDetailsScreenState extends State<TerritoryDetailsScreen> {
         },
       ),
     );
+  }
+
+  String _localizeStatus(AppLocalizations l10n, String status) {
+    switch (status) {
+      case 'captured':
+        return l10n.territoryCaptured;
+      case 'free':
+        return l10n.territoryFree;
+      case 'contested':
+        return l10n.territoryContested;
+      case 'locked':
+        return l10n.territoryLocked;
+      default:
+        return l10n.territoryUnknown;
+    }
   }
 }

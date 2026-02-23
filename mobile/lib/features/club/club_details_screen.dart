@@ -342,7 +342,18 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                     if (snapshot.hasError) {
                       return Center(child: Text(l10n.errorGeneric(snapshot.error.toString())));
                     }
-                    final territories = snapshot.data ?? [];
+                    final rawData = snapshot.data ?? [];
+                    final territories = rawData.cast<TerritoryModel>().toList();
+                    territories.sort((a, b) {
+                      final aOwner = a.clubId == club.id;
+                      final bOwner = b.clubId == club.id;
+                      if (aOwner && !bOwner) return -1;
+                      if (!aOwner && bOwner) return 1;
+                      final aProg = a.myClubProgress?['totalKm'] as num? ?? 0;
+                      final bProg = b.myClubProgress?['totalKm'] as num? ?? 0;
+                      return bProg.compareTo(aProg);
+                    });
+                    
                     if (territories.isEmpty) {
                       return Center(
                         child: Text(
@@ -354,7 +365,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                     return ListView.builder(
                       itemCount: territories.length,
                       itemBuilder: (context, index) {
-                        final t = territories[index] as TerritoryModel;
+                        final t = territories[index];
                         final isOwner = t.clubId == club.id;
                         final progress = t.myClubProgress;
                         
