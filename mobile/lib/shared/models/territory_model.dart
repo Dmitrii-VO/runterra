@@ -25,6 +25,9 @@ class TerritoryModel {
   
   /// Идентификатор клуба-владельца территории (если захвачена клубом)
   final String? clubId;
+
+  /// Прогресс текущего клуба пользователя (при запросе с фильтром clubId)
+  final Map<String, dynamic>? myClubProgress;
   
   /// Дата создания записи
   final DateTime createdAt;
@@ -40,6 +43,7 @@ class TerritoryModel {
     required this.cityId,
     this.capturedByUserId,
     this.clubId,
+    this.myClubProgress,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -57,6 +61,7 @@ class TerritoryModel {
       cityId: json['cityId'] as String,
       capturedByUserId: json['capturedByUserId'] as String?,
       clubId: json['clubId'] as String?,
+      myClubProgress: json['myClubProgress'] as Map<String, dynamic>?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -74,6 +79,7 @@ class TerritoryModel {
       'cityId': cityId,
       if (capturedByUserId != null) 'capturedByUserId': capturedByUserId,
       if (clubId != null) 'clubId': clubId,
+      if (myClubProgress != null) 'myClubProgress': myClubProgress,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };

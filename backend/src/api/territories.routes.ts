@@ -56,7 +56,7 @@ router.get('/', async (req: Request, res: Response) => {
 
   try {
     // 1. Get static config (base territories)
-    const territories = getTerritoriesForCity(cityId, clubId);
+    const territories = getTerritoriesForCity(cityId);
 
     // 2. Get real scores from DB
     const territoriesRepo = getTerritoriesRepository();
@@ -72,7 +72,7 @@ router.get('/', async (req: Request, res: Response) => {
       scoresMap.set(score.territory_id, list);
     }
 
-    const mergedTerritories = territories.map(t => {
+    let mergedTerritories = territories.map(t => {
       const territoryScores = scoresMap.get(t.id);
       
       if (!territoryScores || territoryScores.length === 0) {
@@ -80,6 +80,7 @@ router.get('/', async (req: Request, res: Response) => {
         return {
           ...t,
           status: TerritoryStatus.FREE,
+          clubId: undefined,
           leaderboard: [],
         };
       }
@@ -87,11 +88,6 @@ router.get('/', async (req: Request, res: Response) => {
       // Has scores -> Determine leader and status
       // Scores are already sorted by total_meters DESC in SQL
       const leader = territoryScores[0];
-      const leaderMeters = parseInt(leader.total_meters, 10);
-      
-      // Determine status (Simplified: if leader exists, it's captured or contested)
-      // Spec: "If leader -> Captured". "If gap < X% -> Contested".
-      // For MVP let's say: if leaders > 0 meters -> Captured by leader.
       
       const leaderboard: LeaderboardEntryDto[] = territoryScores.map((s, index) => ({
         clubId: s.club_id,
@@ -100,19 +96,22 @@ router.get('/', async (req: Request, res: Response) => {
         position: index + 1,
       }));
 
-      // Find my club progress if clubId filter is present (though GET / usually returns light objects)
-      // GET / is light, usually NO leaderboard. But spec says "Merge config ... geometry ... with DB".
-      // Let's return light object but with updated status and owner (clubId).
+      let myClubProgress = null;
+      if (clubId && leaderboard.length > 0) {
+        myClubProgress = resolveMyClubProgress(leaderboard, [clubId]);
+      }
       
       return {
         ...t,
         status: TerritoryStatus.CAPTURED, // For MVP, any score = captured
         clubId: leader.club_id, // Owner
-        // We don't necessarily return full leaderboard in list view to save bandwidth,
-        // unless requested. But for now let's stick to base implementation which returns Light DTO.
-        // Light DTO doesn't have leaderboard.
+        myClubProgress,
       };
     });
+
+    if (clubId) {
+      mergedTerritories = mergedTerritories.filter(t => t.clubId === clubId || t.myClubProgress !== null);
+    }
 
     res.status(200).json(mergedTerritories);
   } catch (error) {

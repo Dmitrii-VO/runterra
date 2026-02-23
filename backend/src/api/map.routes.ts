@@ -68,7 +68,10 @@ router.get('/data', async (req: Request, res: Response) => {
   
   try {
     // Territories: static config (SPB popular running parks) until DB is introduced
-    let territories: TerritoryViewDto[] = getTerritoriesForCity(cityId, clubId);
+    let territories: TerritoryViewDto[] = getTerritoriesForCity(cityId);
+    if (clubId) {
+      territories = territories.filter(t => t.clubId === clubId);
+    }
     
     // Фильтр территорий: только активные
     if (onlyActive === 'true') {

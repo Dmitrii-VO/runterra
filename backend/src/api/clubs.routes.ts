@@ -203,7 +203,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     const membersCount = await clubMembersRepo.countActiveMembers(id);
 
     // Territories count (static config: territories with clubId matching this club)
-    const territoriesForClub = getTerritoriesForCity(club.cityId, id);
+    const territoriesForClub = getTerritoriesForCity(club.cityId).filter(t => t.clubId === id);
     const territoriesCount = territoriesForClub.length;
 
     // City rank: membersCount * 1 + territoriesCount * 10 (MVP formula from audit)

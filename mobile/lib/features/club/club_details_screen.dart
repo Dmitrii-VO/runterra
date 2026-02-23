@@ -6,6 +6,7 @@ import '../../shared/di/service_locator.dart';
 import '../../shared/models/club_model.dart';
 import '../../shared/models/club_member_model.dart';
 import '../../shared/models/event_list_item_model.dart';
+import '../../shared/models/territory_model.dart';
 import '../../shared/ui/details_scaffold.dart';
 import '../../shared/ui/error_display.dart';
 import '../events/widgets/event_card.dart';
@@ -353,13 +354,31 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                     return ListView.builder(
                       itemCount: territories.length,
                       itemBuilder: (context, index) {
-                        final t = territories[index];
+                        final t = territories[index] as TerritoryModel;
+                        final isOwner = t.clubId == club.id;
+                        final progress = t.myClubProgress;
+                        
+                        String subtitle = isOwner ? l10n.territoryCaptured : l10n.zoneContested;
+                        if (progress != null) {
+                          final km = progress['totalKm'];
+                          final gap = progress['gapToLeader'];
+                          if (isOwner) {
+                            subtitle = '${l10n.territoryCaptured} ($km км)';
+                          } else if (gap != null) {
+                            subtitle = '${l10n.zoneContested} ($km км, ${gap.abs()} км до лидера)';
+                          }
+                        }
+
                         return ListTile(
-                          leading: const CircleAvatar(
-                            child: Icon(Icons.map),
+                          leading: CircleAvatar(
+                            backgroundColor: isOwner ? Colors.green.withOpacity(0.2) : Colors.orange.withOpacity(0.2),
+                            child: Icon(
+                              isOwner ? Icons.emoji_events : Icons.map,
+                              color: isOwner ? Colors.green : Colors.orange,
+                            ),
                           ),
                           title: Text(t.name),
-                          subtitle: Text(l10n.territoryCaptured),
+                          subtitle: Text(subtitle),
                           onTap: () {
                             Navigator.pop(context);
                             context.push('/territory/${t.id}');

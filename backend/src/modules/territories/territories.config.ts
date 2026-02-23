@@ -292,18 +292,13 @@ function materializeFull(config: StaticTerritoryConfig): TerritoryViewDto {
 
 export function getTerritoriesForCity(
   cityId: string,
-  clubId?: string,
 ): TerritoryViewDto[] {
   const source =
     cityId === 'spb'
       ? SPB_TERRITORIES_CONFIG
       : [];
 
-  const filtered = clubId
-    ? source.filter((t) => t.clubId === clubId)
-    : source;
-
-  return filtered.map(materializeLight);
+  return source.map(materializeLight);
 }
 
 export function getTerritoryById(id: string): TerritoryViewDto | null {
