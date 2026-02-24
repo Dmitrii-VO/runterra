@@ -7,6 +7,7 @@ import '../../shared/models/club_model.dart';
 import '../../shared/models/club_member_model.dart';
 import '../../shared/models/event_list_item_model.dart';
 import '../../shared/models/territory_model.dart';
+import '../../shared/models/city_leaderboard_entry.dart';
 import '../../shared/ui/details_scaffold.dart';
 import '../../shared/ui/error_display.dart';
 import '../events/widgets/event_card.dart';
@@ -416,13 +417,14 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
 
   void _showLeaderboardSheet(ClubModel club) {
     final l10n = AppLocalizations.of(context)!;
+    final future = ServiceLocator.clubsService.getCityLeaderboard(club.cityId ?? 'spb', clubId: club.id);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       builder: (context) {
         return FractionallySizedBox(
-          heightFactor: 0.5,
+          heightFactor: 0.7,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -445,11 +447,57 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
               ),
               const Divider(height: 1),
               Expanded(
-                child: Center(
-                  child: Text(
-                    'Рейтинг клубов в разработке', // TODO: i18n
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-                  ),
+                child: FutureBuilder<CityLeaderboardResponse>(
+                  future: future,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Center(child: Text(l10n.errorGeneric(snapshot.error.toString())));
+                    }
+                    final data = snapshot.data;
+                    if (data == null || data.leaderboard.isEmpty) {
+                      return Center(
+                        child: Text(
+                          l10n.noData,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                        ),
+                      );
+                    }
+                    
+                    return ListView.builder(
+                      itemCount: data.leaderboard.length,
+                      itemBuilder: (context, index) {
+                        final entry = data.leaderboard[index];
+                        final isMyClub = entry.id == club.id;
+                        
+                        return ListTile(
+                          tileColor: isMyClub ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3) : null,
+                          leading: CircleAvatar(
+                            backgroundColor: isMyClub ? Theme.of(context).colorScheme.primary : Colors.grey.shade300,
+                            foregroundColor: isMyClub ? Theme.of(context).colorScheme.onPrimary : Colors.black87,
+                            child: Text(entry.rank.toString()),
+                          ),
+                          title: Text(
+                            entry.name, 
+                            style: TextStyle(fontWeight: isMyClub ? FontWeight.bold : FontWeight.normal),
+                          ),
+                          subtitle: Text(l10n.clubLeaderboardSubtitle(entry.membersCount, entry.territoriesCount)),
+                          trailing: Text(
+                            l10n.clubLeaderboardPoints(entry.points),
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          onTap: () {
+                            if (!isMyClub) {
+                              Navigator.pop(context);
+                              context.push('/club/${entry.id}');
+                            }
+                          },
+                        );
+                      },
+                    );
+                  },
                 ),
               ),
             ],

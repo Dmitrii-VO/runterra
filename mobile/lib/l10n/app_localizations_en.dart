@@ -827,6 +827,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clubMetricPlaceholder => '—';
 
   @override
+  String clubLeaderboardSubtitle(int members, int territories) {
+    return 'Members: $members, Territories: $territories';
+  }
+
+  @override
+  String clubLeaderboardPoints(int points) {
+    return '$points pts';
+  }
+
+  @override
   String get clubActivationHint =>
       'Add 1 more member to activate the club and participate in territory capture.';
 

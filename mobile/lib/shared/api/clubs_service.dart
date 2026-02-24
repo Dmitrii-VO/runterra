@@ -6,11 +6,23 @@ import '../models/club_member_model.dart';
 import '../models/my_club_model.dart';
 import '../models/schedule_model.dart';
 import '../models/calendar_model.dart';
+import '../models/city_leaderboard_entry.dart';
 
 class ClubsService {
   final ApiClient _apiClient;
 
   ClubsService({required ApiClient apiClient}) : _apiClient = apiClient;
+
+  /// GET /api/clubs/leaderboard/:cityId
+  Future<CityLeaderboardResponse> getCityLeaderboard(String cityId, {String? clubId}) async {
+    final query = clubId != null ? '?clubId=${Uri.encodeComponent(clubId)}' : '';
+    final response = await _apiClient.get('/api/clubs/leaderboard/${Uri.encodeComponent(cityId)}$query');
+    if (response.statusCode == 200) {
+      final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+      return CityLeaderboardResponse.fromJson(jsonData);
+    }
+    throw ApiException('leaderboard_fetch_error', 'Failed to load leaderboard (${response.statusCode})');
+  }
 
   /// GET /api/clubs/:id/calendar — aggregated calendar.
   Future<List<CalendarItemModel>> getCalendar(String clubId, String yearMonth) async {

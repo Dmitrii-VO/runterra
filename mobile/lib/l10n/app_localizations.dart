@@ -1592,6 +1592,18 @@ abstract class AppLocalizations {
   /// **'—'**
   String get clubMetricPlaceholder;
 
+  /// No description provided for @clubLeaderboardSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Members: {members}, Territories: {territories}'**
+  String clubLeaderboardSubtitle(int members, int territories);
+
+  /// No description provided for @clubLeaderboardPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'{points} pts'**
+  String clubLeaderboardPoints(int points);
+
   /// No description provided for @clubActivationHint.
   ///
   /// In en, this message translates to:

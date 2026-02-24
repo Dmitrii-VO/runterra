@@ -291,6 +291,19 @@
   "clubTerritoriesLabel": "Территории",
   "clubCityRankLabel": "Рейтинг в городе",
   "clubMetricPlaceholder": "—",
+  "clubLeaderboardSubtitle": "Участников: {members}, Территорий: {territories}",
+  "@clubLeaderboardSubtitle": {
+    "placeholders": {
+      "members": { "type": "int" },
+      "territories": { "type": "int" }
+    }
+  },
+  "clubLeaderboardPoints": "{points} очков",
+  "@clubLeaderboardPoints": {
+    "placeholders": {
+      "points": { "type": "int" }
+    }
+  },
   "clubActivationHint": "Наберите ещё 1 участника, чтобы активировать клуб и участвовать в захвате территорий.",
   "@clubJoinError": {
     "placeholders": {

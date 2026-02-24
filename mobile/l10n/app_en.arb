@@ -445,6 +445,19 @@
   "clubTerritoriesLabel": "Territories",
   "clubCityRankLabel": "City rank",
   "clubMetricPlaceholder": "—",
+  "clubLeaderboardSubtitle": "Members: {members}, Territories: {territories}",
+  "@clubLeaderboardSubtitle": {
+    "placeholders": {
+      "members": { "type": "int" },
+      "territories": { "type": "int" }
+    }
+  },
+  "clubLeaderboardPoints": "{points} pts",
+  "@clubLeaderboardPoints": {
+    "placeholders": {
+      "points": { "type": "int" }
+    }
+  },
   "clubActivationHint": "Add 1 more member to activate the club and participate in territory capture.",
   "@clubJoinError": {
     "placeholders": {

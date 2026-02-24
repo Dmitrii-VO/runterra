@@ -32,7 +32,7 @@ import { CalendarItemDto, GetCalendarQuerySchema } from '../modules/schedule/cal
 import { scheduleGeneratorService } from '../modules/schedule/schedule-generator.service';
 import { notificationsService } from '../modules/notifications/notifications.service';
 import { Event } from '../modules/events/event.entity';
-
+import { getTerritoriesRepository } from '../db/repositories';
 
 const router = Router();
 
@@ -51,6 +51,108 @@ function respondInvalidClubId(res: Response): Response {
     },
   });
 }
+
+/**
+ * Helper to compute city leaderboard
+ */
+async function getCityLeaderboard(cityId: string) {
+  const clubsRepo = getClubsRepository();
+  const clubMembersRepo = getClubMembersRepository();
+  const territoriesRepo = getTerritoriesRepository();
+
+  const activeClubs = await clubsRepo.findByCityId(cityId);
+  const seasonStart = territoriesRepo.getSeasonStart();
+  const scores = await territoriesRepo.getTerritoryScores(seasonStart);
+
+  // Group scores by territory to find leaders
+  const scoresMap = new Map<string, typeof scores>();
+  for (const score of scores) {
+    const list = scoresMap.get(score.territory_id) || [];
+    list.push(score);
+    scoresMap.set(score.territory_id, list);
+  }
+
+  const clubTerritoriesCount = new Map<string, number>();
+  for (const territoryScores of scoresMap.values()) {
+    if (territoryScores.length > 0) {
+      const leaderId = territoryScores[0].club_id;
+      clubTerritoriesCount.set(leaderId, (clubTerritoriesCount.get(leaderId) || 0) + 1);
+    }
+  }
+
+  // Calculate points for each club
+  const leaderboard = await Promise.all(
+    activeClubs.map(async (c) => {
+      const membersCount = await clubMembersRepo.countActiveMembers(c.id);
+      const territoriesCount = clubTerritoriesCount.get(c.id) || 0;
+      
+      // MVP Formula: 1 pt per member, 10 pts per territory
+      const points = membersCount * 1 + territoriesCount * 10;
+      
+      return {
+        id: c.id,
+        name: c.name,
+        membersCount,
+        territoriesCount,
+        points,
+      };
+    })
+  );
+
+  // Sort by points DESC, then by name
+  leaderboard.sort((a, b) => b.points - a.points || a.name.localeCompare(b.name));
+
+  // Assign ranks
+  let rank = 1;
+  for (let i = 0; i < leaderboard.length; i++) {
+    if (i > 0 && leaderboard[i].points < leaderboard[i - 1].points) {
+      rank = i + 1;
+    }
+    (leaderboard[i] as any).rank = rank;
+  }
+
+  return leaderboard as Array<{
+    id: string;
+    name: string;
+    membersCount: number;
+    territoriesCount: number;
+    points: number;
+    rank: number;
+  }>;
+}
+
+/**
+ * GET /api/clubs/leaderboard/:cityId
+ *
+ * Returns city leaderboard (top 10 + current club if provided)
+ */
+router.get('/leaderboard/:cityId', async (req: Request, res: Response) => {
+  const { cityId } = req.params;
+  const { clubId } = req.query as { clubId?: string };
+
+  try {
+    const leaderboard = await getCityLeaderboard(cityId);
+
+    // Filter top 10
+    const top10 = leaderboard.slice(0, 10);
+    
+    let myClub = null;
+    if (clubId) {
+      myClub = leaderboard.find(c => c.id === clubId);
+      if (myClub && !top10.some(c => c.id === clubId)) {
+        top10.push(myClub);
+      }
+    }
+
+    res.status(200).json({
+      leaderboard: top10,
+      myClub: myClub || null,
+    });
+  } catch (error) {
+    logger.error('Error fetching city leaderboard', { cityId, error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
 
 /**
  * GET /api/clubs
@@ -198,16 +300,13 @@ router.get('/:id', async (req: Request, res: Response) => {
 
     const city = findCityById(club.cityId);
 
-    // Count active members
-    const clubMembersRepo = getClubMembersRepository();
-    const membersCount = await clubMembersRepo.countActiveMembers(id);
-
-    // Territories count (static config: territories with clubId matching this club)
-    const territoriesForClub = getTerritoriesForCity(club.cityId).filter(t => t.clubId === id);
-    const territoriesCount = territoriesForClub.length;
-
-    // City rank: membersCount * 1 + territoriesCount * 10 (MVP formula from audit)
-    const cityRank = membersCount * 1 + territoriesCount * 10;
+    // Calculate rank, members and territories using the leaderboard helper
+    const leaderboard = await getCityLeaderboard(club.cityId);
+    const clubStats = leaderboard.find(c => c.id === id);
+    
+    const membersCount = clubStats?.membersCount ?? 0;
+    const territoriesCount = clubStats?.territoriesCount ?? 0;
+    const cityRank = clubStats?.rank ?? 0;
 
     // Resolve creator name
     const usersRepo = getUsersRepository();
@@ -250,6 +349,7 @@ router.get('/:id', async (req: Request, res: Response) => {
         const usersRepo = getUsersRepository();
         const user = await usersRepo.findByFirebaseUid(uid);
         if (user) {
+          const clubMembersRepo = getClubMembersRepository();
           const membership = await clubMembersRepo.findByClubAndUser(id, user.id);
           clubDto.isMember = membership?.status === 'active';
           if (membership) {
