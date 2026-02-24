@@ -1551,4 +1551,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get trainersLoadError => 'Не удалось загрузить тренеров';
+
+  @override
+  String get watchNotPaired => 'Часы не подключены';
 }

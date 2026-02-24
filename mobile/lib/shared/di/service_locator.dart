@@ -15,6 +15,7 @@ import '../config/api_config.dart';
 import '../location/location_service.dart';
 import '../services/current_city_service.dart';
 import '../services/current_club_service.dart';
+import '../services/watch_service.dart';
 
 /// Simple service locator: single ApiClient and shared services created once at app start.
 ///
@@ -41,6 +42,7 @@ class ServiceLocator {
   static late final WorkoutsService _workoutsService;
   static late final CurrentCityService _currentCityService;
   static late final CurrentClubService _currentClubService;
+  static late final WatchService _watchService;
 
   /// Initialize shared ApiClient and all services. Call once from main() before runApp.
   static void init() {
@@ -67,6 +69,8 @@ class ServiceLocator {
       citiesService: _citiesService,
     );
     _currentClubService = CurrentClubService(usersService: _usersService);
+    _watchService = WatchService(runService: _runService);
+    _watchService.init();
     _initialized = true;
   }
 
@@ -85,6 +89,7 @@ class ServiceLocator {
   static WorkoutsService get workoutsService => _workoutsService;
   static CurrentCityService get currentCityService => _currentCityService;
   static CurrentClubService get currentClubService => _currentClubService;
+  static WatchService get watchService => _watchService;
 
   /// Обновить токен авторизации в ApiClient
   /// Вызывать после логина (с токеном) или логаута (с null)

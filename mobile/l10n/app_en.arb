@@ -825,5 +825,6 @@
   "findTrainers": "Find Trainers",
   "trainersList": "Trainers",
   "trainersEmpty": "No trainers found",
-  "trainersLoadError": "Could not load trainers"
+  "trainersLoadError": "Could not load trainers",
+  "watchNotPaired": "Watch not connected"
 }

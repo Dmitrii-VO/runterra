@@ -2941,6 +2941,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not load trainers'**
   String get trainersLoadError;
+
+  /// No description provided for @watchNotPaired.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch not connected'**
+  String get watchNotPaired;
 }
 
 class _AppLocalizationsDelegate

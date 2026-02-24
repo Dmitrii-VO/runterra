@@ -1546,4 +1546,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trainersLoadError => 'Could not load trainers';
+
+  @override
+  String get watchNotPaired => 'Watch not connected';
 }

@@ -22,6 +22,8 @@ class RunSession {
   final Duration accumulatedDuration;
   /// Timestamp of last resume (used to calculate active time since last resume)
   final DateTime? lastResumedAt;
+  /// Heart rate in BPM from watch sensor (null if watch not connected)
+  final int? heartRate;
 
   RunSession({
     required this.id,
@@ -35,6 +37,7 @@ class RunSession {
     List<Position>? gpsPoints,
     Duration? accumulatedDuration,
     this.lastResumedAt,
+    this.heartRate,
   })  : duration = duration ?? Duration.zero,
         distance = distance ?? 0.0,
         gpsStatus = gpsStatus ?? GpsStatus.searching,

@@ -570,6 +570,20 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
                       color: paceStr != null ? null : Colors.grey,
                     ),
               ),
+              if (_session?.heartRate != null) ...[
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.favorite, size: 16, color: Colors.red),
+                    const SizedBox(width: 4),
+                    Text(
+                      l10n.runHeartRateValue(_session!.heartRate!),
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -632,7 +646,7 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
     final avgSpeed = _calcAvgSpeedKmh(duration, distance);
     final calories = _calcCalories(distance);
 
-    const int? heartRateBpm = null;
+    final int? heartRateBpm = _session?.heartRate;
 
     return SingleChildScrollView(
       child: Padding(

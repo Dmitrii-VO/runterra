@@ -46,6 +46,11 @@ public final class GeneratedPluginRegistrant {
       Log.e(TAG, "Error registering plugin shared_preferences_android, io.flutter.plugins.sharedpreferences.SharedPreferencesPlugin", e);
     }
     try {
+      flutterEngine.getPlugins().add(new dev.rexios.watch_connectivity.WatchConnectivityPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin watch_connectivity, dev.rexios.watch_connectivity.WatchConnectivityPlugin", e);
+    }
+    try {
       flutterEngine.getPlugins().add(new com.unact.yandexmapkit.YandexMapkitPlugin());
     } catch (Exception e) {
       Log.e(TAG, "Error registering plugin yandex_mapkit, com.unact.yandexmapkit.YandexMapkitPlugin", e);

@@ -651,5 +651,6 @@
   "findTrainers": "Найти тренера",
   "trainersList": "Тренеры",
   "trainersEmpty": "Тренеры не найдены",
-  "trainersLoadError": "Не удалось загрузить тренеров"
+  "trainersLoadError": "Не удалось загрузить тренеров",
+  "watchNotPaired": "Часы не подключены"
 }

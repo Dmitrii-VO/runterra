@@ -110,6 +110,7 @@ class RunService {
             gpsPoints: List.from(_gpsPoints),
             accumulatedDuration: _currentSession!.accumulatedDuration,
             lastResumedAt: _currentSession!.lastResumedAt,
+            heartRate: _currentSession!.heartRate,
           );
         }
       },
@@ -160,6 +161,7 @@ class RunService {
       gpsPoints: List.from(_currentSession!.gpsPoints),
       accumulatedDuration: totalAccumulated,
       lastResumedAt: null,
+      heartRate: _currentSession!.heartRate,
     );
   }
 
@@ -203,6 +205,7 @@ class RunService {
             gpsPoints: List.from(_gpsPoints),
             accumulatedDuration: _currentSession!.accumulatedDuration,
             lastResumedAt: _currentSession!.lastResumedAt,
+            heartRate: _currentSession!.heartRate,
           );
         }
       },
@@ -224,6 +227,7 @@ class RunService {
       gpsPoints: List.from(_currentSession!.gpsPoints),
       accumulatedDuration: _currentSession!.accumulatedDuration,
       lastResumedAt: now,
+      heartRate: _currentSession!.heartRate,
     );
   }
 
@@ -244,6 +248,7 @@ class RunService {
         gpsPoints: List.from(_currentSession!.gpsPoints),
         accumulatedDuration: _currentSession!.accumulatedDuration,
         lastResumedAt: _currentSession!.lastResumedAt,
+        heartRate: _currentSession!.heartRate,
       );
     }
   }
@@ -268,6 +273,29 @@ class RunService {
         gpsPoints: List.from(_currentSession!.gpsPoints),
         accumulatedDuration: _currentSession!.accumulatedDuration,
         lastResumedAt: _currentSession!.lastResumedAt,
+        heartRate: _currentSession!.heartRate,
+      );
+    }
+  }
+
+  /// Update heart rate from watch sensor.
+  ///
+  /// Called by WatchService when a heart rate message is received from the watch.
+  void updateHeartRate(int bpm) {
+    if (_currentSession != null) {
+      _currentSession = RunSession(
+        id: _currentSession!.id,
+        activityId: _currentSession!.activityId,
+        scheduledItemId: _currentSession!.scheduledItemId,
+        startedAt: _currentSession!.startedAt,
+        status: _currentSession!.status,
+        duration: _currentSession!.duration,
+        distance: _currentSession!.distance,
+        gpsStatus: _currentSession!.gpsStatus,
+        gpsPoints: List.from(_currentSession!.gpsPoints),
+        accumulatedDuration: _currentSession!.accumulatedDuration,
+        lastResumedAt: _currentSession!.lastResumedAt,
+        heartRate: bpm,
       );
     }
   }
@@ -327,6 +355,7 @@ class RunService {
       gpsStatus: _currentSession!.gpsStatus,
       gpsPoints: List.from(_gpsPoints),
       accumulatedDuration: finalDuration,
+      heartRate: _currentSession!.heartRate,
     );
 
     return _currentSession!;
