@@ -1392,6 +1392,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get workoutDeleteConfirm => 'Удалить тренировку?';
 
   @override
+  String get workoutDeleteAction => 'Удалить';
+
+  @override
   String get workoutInUse => 'Нельзя удалить: привязана к будущим событиям';
 
   @override

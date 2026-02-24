@@ -2630,6 +2630,12 @@ abstract class AppLocalizations {
   /// **'Delete this workout?'**
   String get workoutDeleteConfirm;
 
+  /// No description provided for @workoutDeleteAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get workoutDeleteAction;
+
   /// No description provided for @workoutInUse.
   ///
   /// In en, this message translates to:

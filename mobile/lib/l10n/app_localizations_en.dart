@@ -1387,6 +1387,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workoutDeleteConfirm => 'Delete this workout?';
 
   @override
+  String get workoutDeleteAction => 'Delete';
+
+  @override
   String get workoutInUse => 'Cannot delete: linked to upcoming events';
 
   @override

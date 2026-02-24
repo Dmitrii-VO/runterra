@@ -760,6 +760,7 @@
   "workoutSaved": "Workout saved",
   "workoutDeleted": "Workout deleted",
   "workoutDeleteConfirm": "Delete this workout?",
+  "workoutDeleteAction": "Delete",
   "workoutInUse": "Cannot delete: linked to upcoming events",
   "workoutEmpty": "No workouts yet",
   "typeRecovery": "Recovery",

@@ -121,6 +121,51 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
     }
   }
 
+  Future<void> _delete() async {
+    final workout = widget.existing;
+    if (workout == null || _saving) return;
+
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.workoutDeleteConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text(l10n.workoutDeleteAction),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    setState(() => _saving = true);
+    try {
+      await ServiceLocator.workoutsService.deleteWorkout(workout.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.workoutDeleted)),
+        );
+        Navigator.of(context).pop(true);
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        final msg = e.code == 'workout_in_use' ? l10n.workoutInUse : e.message;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   Future<void> _resolveClubIdIfNeeded() async {
     final cachedClubId = _currentClubId;
     try {
@@ -314,6 +359,21 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
                     : Text(l10n.editProfileSave),
               ),
             ),
+
+            if (isEdit) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: _saving ? null : _delete,
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  label: Text(
+                    l10n.workoutDeleteAction,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),

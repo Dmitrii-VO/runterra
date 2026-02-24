@@ -586,6 +586,7 @@
   "workoutSaved": "Тренировка сохранена",
   "workoutDeleted": "Тренировка удалена",
   "workoutDeleteConfirm": "Удалить тренировку?",
+  "workoutDeleteAction": "Удалить",
   "workoutInUse": "Нельзя удалить: привязана к будущим событиям",
   "workoutEmpty": "Тренировок пока нет",
   "typeRecovery": "Восстановительная",
