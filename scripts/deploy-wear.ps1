@@ -24,7 +24,12 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 
 $ConfigPath  = Join-Path $ProjectRoot "scripts\app-distribution.config.json"
 $WearDir     = Join-Path $ProjectRoot "wear"
-$GradlePath  = Join-Path $WearDir "android\app\build.gradle"
+# Support both Groovy (build.gradle) and Kotlin DSL (build.gradle.kts)
+$GradlePath  = if (Test-Path (Join-Path $WearDir "android\app\build.gradle.kts")) {
+    Join-Path $WearDir "android\app\build.gradle.kts"
+} else {
+    Join-Path $WearDir "android\app\build.gradle"
+}
 $ApkPath     = Join-Path $WearDir "build\app\outputs\flutter-apk\app-debug.apk"
 
 Set-Location $ProjectRoot
@@ -80,12 +85,12 @@ Write-Host "  Version: $buildName+$buildNumber" -ForegroundColor White
 # --- Verify wear/ is a Flutter project ---
 if (-not (Test-Path $GradlePath)) {
     Write-Host ""
-    Write-Host "ERROR: wear/ does not appear to be a Flutter project (missing android/app/build.gradle)." -ForegroundColor Red
+    Write-Host "ERROR: wear/ does not appear to be a Flutter project (missing android/app/build.gradle[.kts])." -ForegroundColor Red
     Write-Host ""
     Write-Host "To scaffold the Wear OS Flutter project:" -ForegroundColor Yellow
     Write-Host "  1. cd $ProjectRoot" -ForegroundColor White
     Write-Host "  2. flutter create --platforms android --org com.runterra wear" -ForegroundColor White
-    Write-Host "  3. Adjust wear/android/app/build.gradle: set applicationId to com.runterra.mobile" -ForegroundColor White
+    Write-Host "  3. Adjust wear/android/app/build.gradle.kts: set applicationId to com.runterra.mobile" -ForegroundColor White
     Write-Host "  4. Commit wear/ and re-run deploy." -ForegroundColor White
     exit 1
 }
