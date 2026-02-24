@@ -52,6 +52,15 @@ if ($SkipFirebase) { $mobileArgs += "-SkipFirebase" }
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host ""
+Write-Host ">>> WEAR OS <<<" -ForegroundColor Magenta
+
+$wearArgs = @()
+if ($SkipFirebase) { $wearArgs += "-SkipFirebase" }
+
+& "$ScriptDir\deploy-wear.ps1" @wearArgs
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+Write-Host ""
 Write-Host "========================================" -ForegroundColor Magenta
 Write-Host "        ALL DEPLOYED SUCCESSFULLY!     " -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Magenta
