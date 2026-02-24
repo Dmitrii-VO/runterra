@@ -116,7 +116,7 @@ router.post('/', validateBody(CreateWorkoutSchema), async (req: Request, res: Re
       return res.status(403).json({ code: 'forbidden', message: 'Trainer or leader role required' });
     }
 
-    const { clubId, name, description, type, difficulty, targetMetric } = req.body;
+    const { clubId, name, description, type, difficulty, targetMetric, targetValue, targetZone } = req.body;
 
     // If clubId provided, verify user is trainer/leader in that specific club
     if (clubId) {
@@ -135,6 +135,8 @@ router.post('/', validateBody(CreateWorkoutSchema), async (req: Request, res: Re
       type,
       difficulty,
       targetMetric,
+      targetValue,
+      targetZone,
     });
     res.status(201).json(workout);
   } catch (error) {

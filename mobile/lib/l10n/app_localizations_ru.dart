@@ -1434,6 +1434,36 @@ class AppLocalizationsRu extends AppLocalizations {
   String get metricPace => 'Темп';
 
   @override
+  String get workoutTargetValueDistance => 'Дистанция (метры)';
+
+  @override
+  String get workoutTargetValueTime => 'Длительность (минуты)';
+
+  @override
+  String get workoutTargetValuePace => 'Темп (сек/км)';
+
+  @override
+  String get workoutTargetZone => 'Пульсовая зона';
+
+  @override
+  String get zoneNone => 'Не указана';
+
+  @override
+  String get zoneZ1 => 'Z1 Восстановление';
+
+  @override
+  String get zoneZ2 => 'Z2 Легкая';
+
+  @override
+  String get zoneZ3 => 'Z3 Аэробная';
+
+  @override
+  String get zoneZ4 => 'Z4 Порог';
+
+  @override
+  String get zoneZ5 => 'Z5 Максимум';
+
+  @override
   String get eventWorkout => 'Тренировка';
 
   @override

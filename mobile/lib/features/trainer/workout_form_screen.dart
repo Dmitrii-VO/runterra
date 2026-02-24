@@ -22,6 +22,8 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
   String _type = 'RECOVERY';
   String _difficulty = 'BEGINNER';
   String _targetMetric = 'DISTANCE';
+  final _targetValueController = TextEditingController();
+  String? _targetZone;
   String? _clubId;
   String? _currentClubId;
   bool _saving = false;
@@ -48,6 +50,8 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
       _type = w.type;
       _difficulty = w.difficulty;
       _targetMetric = w.targetMetric;
+      _targetValueController.text = w.targetValue?.toString() ?? '';
+      _targetZone = w.targetZone;
       _clubId = w.clubId;
     } else {
       _clubId = null;
@@ -59,11 +63,14 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
+    _targetValueController.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+
+    final targetValue = int.tryParse(_targetValueController.text.trim());
 
     setState(() => _saving = true);
     try {
@@ -77,6 +84,8 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
             'type': _type,
             'difficulty': _difficulty,
             'targetMetric': _targetMetric,
+            'targetValue': targetValue,
+            'targetZone': _targetZone,
           },
         );
       } else {
@@ -89,6 +98,8 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
           type: _type,
           difficulty: _difficulty,
           targetMetric: _targetMetric,
+          targetValue: targetValue,
+          targetZone: _targetZone,
         );
       }
 
@@ -247,7 +258,46 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
                         child: Text(_localizeMetric(l10n, m)),
                       ))
                   .toList(),
-              onChanged: (v) => setState(() => _targetMetric = v!),
+              onChanged: (v) {
+                setState(() {
+                  _targetMetric = v!;
+                  _targetValueController.clear();
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // Target value input
+            TextFormField(
+              controller: _targetValueController,
+              decoration: InputDecoration(
+                labelText: _getTargetValueLabel(l10n, _targetMetric),
+              ),
+              keyboardType: TextInputType.number,
+              validator: (v) {
+                if (v != null && v.trim().isNotEmpty) {
+                  final n = int.tryParse(v);
+                  if (n == null || n <= 0) return 'Invalid value';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // Target zone dropdown
+            DropdownButtonFormField<String?>(
+              // ignore: deprecated_member_use
+              value: _targetZone,
+              decoration: InputDecoration(labelText: l10n.workoutTargetZone),
+              items: [
+                DropdownMenuItem(value: null, child: Text(l10n.zoneNone)),
+                DropdownMenuItem(value: 'Z1', child: Text(l10n.zoneZ1)),
+                DropdownMenuItem(value: 'Z2', child: Text(l10n.zoneZ2)),
+                DropdownMenuItem(value: 'Z3', child: Text(l10n.zoneZ3)),
+                DropdownMenuItem(value: 'Z4', child: Text(l10n.zoneZ4)),
+                DropdownMenuItem(value: 'Z5', child: Text(l10n.zoneZ5)),
+              ],
+              onChanged: (v) => setState(() => _targetZone = v),
             ),
             const SizedBox(height: 24),
 
@@ -312,6 +362,19 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
         return l10n.metricPace;
       default:
         return metric;
+    }
+  }
+
+  String _getTargetValueLabel(AppLocalizations l10n, String metric) {
+    switch (metric) {
+      case 'DISTANCE':
+        return l10n.workoutTargetValueDistance;
+      case 'TIME':
+        return l10n.workoutTargetValueTime;
+      case 'PACE':
+        return l10n.workoutTargetValuePace;
+      default:
+        return 'Value';
     }
   }
 }

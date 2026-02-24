@@ -15,6 +15,8 @@ export const CreateWorkoutSchema = z.object({
   type: z.enum(workoutTypes),
   difficulty: z.enum(difficulties),
   targetMetric: z.enum(targetMetrics),
+  targetValue: z.number().int().min(1).optional(),
+  targetZone: z.string().max(50).optional(),
 });
 
 export const UpdateWorkoutSchema = CreateWorkoutSchema.partial().omit({ clubId: true });

@@ -11,5 +11,7 @@ export interface Workout {
   type: string;
   difficulty: string;
   targetMetric: string;
+  targetValue?: number;
+  targetZone?: string;
   createdAt: Date;
 }

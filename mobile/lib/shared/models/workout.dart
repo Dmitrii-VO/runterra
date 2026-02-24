@@ -8,6 +8,8 @@ class Workout {
   final String type;
   final String difficulty;
   final String targetMetric;
+  final int? targetValue;
+  final String? targetZone;
   final DateTime createdAt;
 
   Workout({
@@ -19,6 +21,8 @@ class Workout {
     required this.type,
     required this.difficulty,
     required this.targetMetric,
+    this.targetValue,
+    this.targetZone,
     required this.createdAt,
   });
 
@@ -32,6 +36,8 @@ class Workout {
       type: json['type'] as String,
       difficulty: json['difficulty'] as String,
       targetMetric: json['targetMetric'] as String,
+      targetValue: json['targetValue'] as int?,
+      targetZone: json['targetZone'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
@@ -46,6 +52,8 @@ class Workout {
       'type': type,
       'difficulty': difficulty,
       'targetMetric': targetMetric,
+      if (targetValue != null) 'targetValue': targetValue,
+      if (targetZone != null) 'targetZone': targetZone,
       'createdAt': createdAt.toIso8601String(),
     };
   }

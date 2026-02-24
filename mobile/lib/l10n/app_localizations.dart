@@ -2714,6 +2714,66 @@ abstract class AppLocalizations {
   /// **'Pace'**
   String get metricPace;
 
+  /// No description provided for @workoutTargetValueDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance (meters)'**
+  String get workoutTargetValueDistance;
+
+  /// No description provided for @workoutTargetValueTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration (minutes)'**
+  String get workoutTargetValueTime;
+
+  /// No description provided for @workoutTargetValuePace.
+  ///
+  /// In en, this message translates to:
+  /// **'Pace (sec/km)'**
+  String get workoutTargetValuePace;
+
+  /// No description provided for @workoutTargetZone.
+  ///
+  /// In en, this message translates to:
+  /// **'Target Zone'**
+  String get workoutTargetZone;
+
+  /// No description provided for @zoneNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get zoneNone;
+
+  /// No description provided for @zoneZ1.
+  ///
+  /// In en, this message translates to:
+  /// **'Z1 Recovery'**
+  String get zoneZ1;
+
+  /// No description provided for @zoneZ2.
+  ///
+  /// In en, this message translates to:
+  /// **'Z2 Easy'**
+  String get zoneZ2;
+
+  /// No description provided for @zoneZ3.
+  ///
+  /// In en, this message translates to:
+  /// **'Z3 Aerobic'**
+  String get zoneZ3;
+
+  /// No description provided for @zoneZ4.
+  ///
+  /// In en, this message translates to:
+  /// **'Z4 Threshold'**
+  String get zoneZ4;
+
+  /// No description provided for @zoneZ5.
+  ///
+  /// In en, this message translates to:
+  /// **'Z5 Maximum'**
+  String get zoneZ5;
+
   /// No description provided for @eventWorkout.
   ///
   /// In en, this message translates to:

@@ -46,6 +46,8 @@ class WorkoutsService {
     required String type,
     required String difficulty,
     required String targetMetric,
+    int? targetValue,
+    String? targetZone,
   }) async {
     final response = await _apiClient.post(
       '/api/workouts',
@@ -56,6 +58,8 @@ class WorkoutsService {
         'type': type,
         'difficulty': difficulty,
         'targetMetric': targetMetric,
+        if (targetValue != null) 'targetValue': targetValue,
+        if (targetZone != null) 'targetZone': targetZone,
       },
     );
     if (response.statusCode >= 200 && response.statusCode < 300) {

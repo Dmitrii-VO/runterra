@@ -14,6 +14,8 @@ interface WorkoutRow {
   type: string;
   difficulty: string;
   target_metric: string;
+  target_value: number | null;
+  target_zone: string | null;
   created_at: Date;
 }
 
@@ -27,6 +29,8 @@ function rowToWorkout(row: WorkoutRow): Workout {
     type: row.type,
     difficulty: row.difficulty,
     targetMetric: row.target_metric,
+    targetValue: row.target_value ?? undefined,
+    targetZone: row.target_zone ?? undefined,
     createdAt: row.created_at,
   };
 }
@@ -64,10 +68,12 @@ export class WorkoutsRepository extends BaseRepository {
     type: string;
     difficulty: string;
     targetMetric: string;
+    targetValue?: number;
+    targetZone?: string;
   }): Promise<Workout> {
     const row = await this.queryOne<WorkoutRow>(
-      `INSERT INTO workouts (author_id, club_id, name, description, type, difficulty, target_metric)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO workouts (author_id, club_id, name, description, type, difficulty, target_metric, target_value, target_zone)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
       [
         data.authorId,
@@ -77,6 +83,8 @@ export class WorkoutsRepository extends BaseRepository {
         data.type,
         data.difficulty,
         data.targetMetric,
+        data.targetValue || null,
+        data.targetZone || null,
       ],
     );
     if (!row) throw new Error('Insert workouts failed');
@@ -89,6 +97,8 @@ export class WorkoutsRepository extends BaseRepository {
     type?: string;
     difficulty?: string;
     targetMetric?: string;
+    targetValue?: number;
+    targetZone?: string;
   }): Promise<Workout | null> {
     const sets: string[] = [];
     const params: unknown[] = [];
@@ -113,6 +123,14 @@ export class WorkoutsRepository extends BaseRepository {
     if (data.targetMetric !== undefined) {
       sets.push(`target_metric = $${idx++}`);
       params.push(data.targetMetric);
+    }
+    if (data.targetValue !== undefined) {
+      sets.push(`target_value = $${idx++}`);
+      params.push(data.targetValue);
+    }
+    if (data.targetZone !== undefined) {
+      sets.push(`target_zone = $${idx++}`);
+      params.push(data.targetZone);
     }
 
     if (sets.length === 0) {
