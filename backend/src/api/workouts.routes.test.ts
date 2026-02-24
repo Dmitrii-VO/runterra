@@ -229,15 +229,19 @@ describe('Workouts Routes', () => {
       mockWorkoutsRepository.create.mockResolvedValueOnce({
         ...mockWorkout,
         name: 'New Workout',
+        targetValue: 5000,
+        targetZone: 'Z2',
       });
 
       const res = await request(app)
         .post('/api/workouts')
         .set('Authorization', 'Bearer test-token')
-        .send(validBody);
+        .send({ ...validBody, targetValue: 5000, targetZone: 'Z2' });
 
       expect(res.status).toBe(201);
       expect(res.body).toHaveProperty('name', 'New Workout');
+      expect(res.body).toHaveProperty('targetValue', 5000);
+      expect(res.body).toHaveProperty('targetZone', 'Z2');
       expect(mockWorkoutsRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           authorId: 'user-1',
@@ -245,6 +249,8 @@ describe('Workouts Routes', () => {
           type: 'TEMPO',
           difficulty: 'INTERMEDIATE',
           targetMetric: 'DISTANCE',
+          targetValue: 5000,
+          targetZone: 'Z2',
         }),
       );
     });
@@ -281,18 +287,20 @@ describe('Workouts Routes', () => {
       mockWorkoutsRepository.update.mockResolvedValueOnce({
         ...mockWorkout,
         name: 'Updated Name',
+        targetValue: 6000,
       });
 
       const res = await request(app)
         .patch('/api/workouts/workout-1')
         .set('Authorization', 'Bearer test-token')
-        .send({ name: 'Updated Name' });
+        .send({ name: 'Updated Name', targetValue: 6000 });
 
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('name', 'Updated Name');
+      expect(res.body).toHaveProperty('targetValue', 6000);
       expect(mockWorkoutsRepository.update).toHaveBeenCalledWith(
         'workout-1',
-        expect.objectContaining({ name: 'Updated Name' }),
+        expect.objectContaining({ name: 'Updated Name', targetValue: 6000 }),
       );
     });
 

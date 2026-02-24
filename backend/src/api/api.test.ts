@@ -159,6 +159,41 @@ describe('API Routes', () => {
     });
   });
 
+  describe('GET /api/clubs/leaderboard/:cityId', () => {
+    const { 
+      mockClubsRepository, 
+      mockTerritoriesRepository, 
+      mockClubMembersRepository 
+    } = require('../db/repositories');
+
+    beforeEach(() => {
+      mockClubsRepository.findByCityId.mockClear();
+      mockTerritoriesRepository.getTerritoryScores.mockClear();
+      mockClubMembersRepository.countActiveMembers.mockClear();
+    });
+
+    it('returns 200 with leaderboard array and optional myClub', async () => {
+      mockClubsRepository.findByCityId.mockResolvedValueOnce([
+        { id: 'club-1', name: 'Club 1', cityId: 'spb' },
+        { id: 'club-2', name: 'Club 2', cityId: 'spb' },
+      ]);
+      mockTerritoriesRepository.getTerritoryScores.mockResolvedValueOnce([
+        { territory_id: 't-1', club_id: 'club-1', club_name: 'Club 1', total_meters: '1000' }
+      ]);
+      mockClubMembersRepository.countActiveMembers.mockResolvedValue(5);
+
+      const res = await request(app)
+        .get('/api/clubs/leaderboard/spb?clubId=club-1')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('leaderboard');
+      expect(Array.isArray(res.body.leaderboard)).toBe(true);
+      expect(res.body).toHaveProperty('myClub');
+      expect(res.body.myClub).toMatchObject({ id: 'club-1', points: 15 }); // 5 members + 10 pts for territory
+    });
+  });
+
   describe('GET /api/territories', () => {
     it('returns 200 with array', async () => {
       const res = await request(app)
