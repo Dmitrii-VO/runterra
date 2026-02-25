@@ -11,6 +11,9 @@
 !.env*.example
 .gh/
 
+# Secrets (SSH keys, credentials — never commit)
+.secrets/
+
 # Firebase / Google credentials (service account keys — never commit)
 firebase-service-account.json
 firebase-sa.json

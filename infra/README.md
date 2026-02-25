@@ -5,10 +5,30 @@
 ## Сервер backend (Cloud.ru)
 
 - **SSH алиас:** `runterra` (настроен в `~/.ssh/config`)
-- **IP:** `85.208.85.13`
+- **IP:** `<SERVER_IP>`
 - **Порт backend:** `3000`
-- **Путь к репо:** `/home/user1/runterra`
-- **Путь к backend:** `/home/user1/runterra/backend`
+- **Путь к репо:** `/home/<SSH_USER>/runterra`
+- **Путь к backend:** `/home/<SSH_USER>/runterra/backend`
+
+### SSH подключение к backend
+
+Рекомендуемый способ (без зависимости от `~/.ssh/config`):
+
+```powershell
+ssh -i <PATH_TO_SSH_KEY> <SSH_USER>@<SERVER_IP>
+```
+
+Проверка подключения:
+
+```powershell
+ssh -i <PATH_TO_SSH_KEY> <SSH_USER>@<SERVER_IP> "echo ok"
+```
+
+Если настроен алиас `runterra` в `~/.ssh/config`, можно так:
+
+```bash
+ssh runterra
+```
 
 ### Systemd сервис
 

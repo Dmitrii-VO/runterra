@@ -72,6 +72,12 @@ npm run deploy:mobile
 - **Firebase auth** (для mobile): предпочтительно `GOOGLE_APPLICATION_CREDENTIALS` — путь к JSON ключу service account (Firebase Console → Project settings → Service accounts → Generate new private key). Пример: `$env:GOOGLE_APPLICATION_CREDENTIALS = "D:\myprojects\Runterra\firebase-service-account.json"`. Альтернатива: `firebase login` или `FIREBASE_TOKEN` (deprecated).
 - SSH ключ должен быть настроен для хоста `runterra`
 
+Проверка SSH (рабочий прямой вариант для текущего проекта):
+
+```powershell
+ssh -i <PATH_TO_SSH_KEY> <SSH_USER>@<SERVER_IP> "echo ok"
+```
+
 ---
 
 ## Сборка APK файла
