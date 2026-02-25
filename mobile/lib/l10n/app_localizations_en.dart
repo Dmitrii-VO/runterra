@@ -1551,13 +1551,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get watchNotPaired => 'Watch not connected';
 
   @override
-  String mapActiveClub(String name) => 'Club: $name';
+  String mapActiveClub(String name) {
+    return 'Club: $name';
+  }
 
   @override
   String get mapNoActiveClub => 'No club';
 
   @override
-  String mapCurrentTerritory(String name) => 'Territory: $name';
+  String mapCurrentTerritory(String name) {
+    return 'Territory: $name';
+  }
 
   @override
   String get mapNoTerritory => 'No territory';

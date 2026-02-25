@@ -652,5 +652,25 @@
   "trainersList": "Тренеры",
   "trainersEmpty": "Тренеры не найдены",
   "trainersLoadError": "Не удалось загрузить тренеров",
-  "watchNotPaired": "Часы не подключены"
+  "watchNotPaired": "Часы не подключены",
+  "mapActiveClub": "Клуб: {name}",
+  "@mapActiveClub": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mapNoActiveClub": "Нет клуба",
+  "mapCurrentTerritory": "Территория: {name}",
+  "@mapCurrentTerritory": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mapNoTerritory": "Нет территории",
+  "selectClub": "Выбрать клуб",
+  "messagesScrollToBottom": "В конец"
 }

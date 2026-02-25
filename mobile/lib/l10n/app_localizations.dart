@@ -2948,22 +2948,40 @@ abstract class AppLocalizations {
   /// **'Watch not connected'**
   String get watchNotPaired;
 
-  /// Active club banner label with club name.
+  /// No description provided for @mapActiveClub.
+  ///
+  /// In en, this message translates to:
+  /// **'Club: {name}'**
   String mapActiveClub(String name);
 
-  /// Active club banner: no club selected.
+  /// No description provided for @mapNoActiveClub.
+  ///
+  /// In en, this message translates to:
+  /// **'No club'**
   String get mapNoActiveClub;
 
-  /// Current territory banner label with territory name.
+  /// No description provided for @mapCurrentTerritory.
+  ///
+  /// In en, this message translates to:
+  /// **'Territory: {name}'**
   String mapCurrentTerritory(String name);
 
-  /// Current territory banner: not inside any territory.
+  /// No description provided for @mapNoTerritory.
+  ///
+  /// In en, this message translates to:
+  /// **'No territory'**
   String get mapNoTerritory;
 
-  /// Title for club selection bottom sheet.
+  /// No description provided for @selectClub.
+  ///
+  /// In en, this message translates to:
+  /// **'Select club'**
   String get selectClub;
 
-  /// Tooltip for scroll-to-bottom button in chat.
+  /// No description provided for @messagesScrollToBottom.
+  ///
+  /// In en, this message translates to:
+  /// **'Scroll to bottom'**
   String get messagesScrollToBottom;
 }
 

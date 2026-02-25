@@ -826,5 +826,25 @@
   "trainersList": "Trainers",
   "trainersEmpty": "No trainers found",
   "trainersLoadError": "Could not load trainers",
-  "watchNotPaired": "Watch not connected"
+  "watchNotPaired": "Watch not connected",
+  "mapActiveClub": "Club: {name}",
+  "@mapActiveClub": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mapNoActiveClub": "No club",
+  "mapCurrentTerritory": "Territory: {name}",
+  "@mapCurrentTerritory": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mapNoTerritory": "No territory",
+  "selectClub": "Select club",
+  "messagesScrollToBottom": "Scroll to bottom"
 }
