@@ -54,6 +54,10 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
   StreamSubscription? _wsStatusSubscription;
   List<MessageModel> _messages = <MessageModel>[];
 
+  // Scroll state: track whether user scrolled up away from bottom
+  bool _userScrolledAway = false;
+  bool _showScrollToBottom = false;
+
   @override
   void initState() {
     super.initState();
@@ -292,8 +296,22 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
 
   bool _isNearBottom() {
     if (!_scrollController.hasClients) return true;
+    if (_userScrolledAway) return false;
     final position = _scrollController.position;
     return (position.maxScrollExtent - position.pixels) <= 80;
+  }
+
+  void _onScrollNotification(ScrollNotification notification) {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    final distFromBottom = position.maxScrollExtent - position.pixels;
+    final scrolledAway = distFromBottom > 200;
+    if (_userScrolledAway != scrolledAway || _showScrollToBottom != scrolledAway) {
+      setState(() {
+        _userScrolledAway = scrolledAway;
+        _showScrollToBottom = scrolledAway;
+      });
+    }
   }
 
   Future<void> _refreshLatestMessages() async {
@@ -430,6 +448,8 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
       setState(() {
         _messages = <MessageModel>[..._messages, sent];
         _historyOffset += 1;
+        _userScrolledAway = false; // own message — always scroll down
+        _showScrollToBottom = false;
       });
       _scrollToBottomDeferred(animated: true); // own message — always scroll to show it
     } catch (error) {
@@ -635,34 +655,56 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
 
   Widget _buildMessagesList() {
     final topLoaderItems = _isLoadingMoreHistory ? 1 : 0;
-    return NotificationListener<ScrollNotification>(
-      onNotification: (notification) {
-        if (notification.metrics.pixels <= 24) {
-          _loadOlderMessages();
-        }
-        return false;
-      },
-      child: ListView.builder(
-        controller: _scrollController,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        itemCount: _messages.length + topLoaderItems,
-        itemBuilder: (context, index) {
-          if (_isLoadingMoreHistory && index == 0) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: Center(
-                child: SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ),
-            );
-          }
-          final messageIndex = index - topLoaderItems;
-          return _buildMessageTile(context, _messages[messageIndex]);
-        },
-      ),
+    final l10n = AppLocalizations.of(context)!;
+    return Stack(
+      children: [
+        NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            if (notification.metrics.pixels <= 24) {
+              _loadOlderMessages();
+            }
+            _onScrollNotification(notification);
+            return false;
+          },
+          child: ListView.builder(
+            controller: _scrollController,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            itemCount: _messages.length + topLoaderItems,
+            itemBuilder: (context, index) {
+              if (_isLoadingMoreHistory && index == 0) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Center(
+                    child: SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                );
+              }
+              final messageIndex = index - topLoaderItems;
+              return _buildMessageTile(context, _messages[messageIndex]);
+            },
+          ),
+        ),
+        if (_showScrollToBottom)
+          Positioned(
+            bottom: 8,
+            right: 8,
+            child: FloatingActionButton.small(
+              onPressed: () {
+                setState(() {
+                  _userScrolledAway = false;
+                  _showScrollToBottom = false;
+                });
+                _scrollToBottomDeferred(animated: true);
+              },
+              tooltip: l10n.messagesScrollToBottom,
+              child: const Icon(Icons.keyboard_arrow_down),
+            ),
+          ),
+      ],
     );
   }
 

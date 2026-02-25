@@ -1554,4 +1554,22 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get watchNotPaired => 'Часы не подключены';
+
+  @override
+  String mapActiveClub(String name) => 'Клуб: $name';
+
+  @override
+  String get mapNoActiveClub => 'Нет клуба';
+
+  @override
+  String mapCurrentTerritory(String name) => 'Территория: $name';
+
+  @override
+  String get mapNoTerritory => 'Нет территории';
+
+  @override
+  String get selectClub => 'Выбрать клуб';
+
+  @override
+  String get messagesScrollToBottom => 'В конец';
 }

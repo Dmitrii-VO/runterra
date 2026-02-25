@@ -383,8 +383,6 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 ),
                 items: [
                   DropdownMenuItem(value: 'training', child: Text(l10n.eventTypeTraining)),
-                  DropdownMenuItem(value: 'group_run', child: Text(l10n.eventTypeGroupRun)),
-                  DropdownMenuItem(value: 'club_event', child: Text(l10n.eventTypeClubEvent)),
                   DropdownMenuItem(value: 'open_event', child: Text(l10n.eventTypeOpenEvent)),
                 ],
                 onChanged: _saving ? null : (value) => setState(() => _eventType = value ?? _eventType),

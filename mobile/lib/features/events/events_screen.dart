@@ -28,6 +28,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
   late Future<String?> _trainingClubIdFuture;
   late Future<List<CalendarItemModel>> _calendarFuture;
   List<CalendarItemModel> _loadedCalendarItems = [];
+  String? _myRoleInClub; // role of current user in the training club
 
   // Tab 2: City Events
   late Future<List<EventListItemModel>> _eventsFuture;
@@ -40,6 +41,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() => setState(() {})); // rebuild FAB on tab change
     _trainingClubIdFuture = _resolveTrainingClubId();
     _calendarFuture = _fetchCalendar();
     _eventsFuture = _fetchCityEvents();
@@ -53,21 +55,28 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
   }
 
   Future<String?> _resolveTrainingClubId() async {
-    final cachedClubId = ServiceLocator.currentClubService.currentClubId;
-    if (cachedClubId != null && cachedClubId.isNotEmpty) return cachedClubId;
-
     try {
       final myClubs = await ServiceLocator.clubsService.getMyClubs();
-      if (myClubs.isEmpty) return null;
+      if (myClubs.isEmpty) {
+        if (mounted) setState(() => _myRoleInClub = null);
+        return null;
+      }
 
-      final List<MyClubModel> activeClubs = myClubs
-          .where((club) => club.status == 'active')
-          .toList();
-      final selectedClub = activeClubs.isNotEmpty ? activeClubs.first : myClubs.first;
+      final cachedClubId = ServiceLocator.currentClubService.currentClubId;
+      MyClubModel? selectedClub;
+      if (cachedClubId != null && cachedClubId.isNotEmpty) {
+        for (final c in myClubs) {
+          if (c.id == cachedClubId) { selectedClub = c; break; }
+        }
+      }
+      selectedClub ??= myClubs.where((c) => c.status == 'active').cast<MyClubModel?>().firstOrNull
+          ?? myClubs.first;
 
       await ServiceLocator.currentClubService.setCurrentClubId(selectedClub.id);
+      if (mounted) setState(() => _myRoleInClub = selectedClub!.role);
       return selectedClub.id;
     } catch (_) {
+      if (mounted) setState(() => _myRoleInClub = null);
       return null;
     }
   }
@@ -94,10 +103,13 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
       participantOnly: _participantOnly,
     );
 
+    // City Events tab shows only open_event type events
+    var filtered = events.where((event) => event.type == 'open_event').toList();
+
     // Safety net: if backend still returns stale open events in the past.
-    if (!_onlyOpen) return events;
+    if (!_onlyOpen) return filtered;
     final now = DateTime.now();
-    return events
+    return filtered
         .where((event) => event.status == 'open' && !event.startDateTime.isBefore(now))
         .toList();
   }
@@ -135,10 +147,20 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
           _buildCityEventsTab(l10n),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/event/create'),
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: _buildFab(),
+    );
+  }
+
+  Widget? _buildFab() {
+    final isTrainingTab = _tabController.index == 0;
+    if (isTrainingTab) {
+      // Only trainer/leader can create training events
+      final canCreate = _myRoleInClub == 'trainer' || _myRoleInClub == 'leader';
+      if (!canCreate) return null;
+    }
+    return FloatingActionButton(
+      onPressed: () => context.push('/event/create'),
+      child: const Icon(Icons.add),
     );
   }
 

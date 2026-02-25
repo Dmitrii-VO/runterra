@@ -466,6 +466,12 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.runTitle),
+        leading: _state == _TrackingState.idle && widget.onRunCompleted != null
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: widget.onRunCompleted,
+              )
+            : null,
       ),
       body: switch (_state) {
         _TrackingState.idle => _buildIdleContent(),

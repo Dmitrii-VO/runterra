@@ -2947,6 +2947,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Watch not connected'**
   String get watchNotPaired;
+
+  /// Active club banner label with club name.
+  String mapActiveClub(String name);
+
+  /// Active club banner: no club selected.
+  String get mapNoActiveClub;
+
+  /// Current territory banner label with territory name.
+  String mapCurrentTerritory(String name);
+
+  /// Current territory banner: not inside any territory.
+  String get mapNoTerritory;
+
+  /// Title for club selection bottom sheet.
+  String get selectClub;
+
+  /// Tooltip for scroll-to-bottom button in chat.
+  String get messagesScrollToBottom;
 }
 
 class _AppLocalizationsDelegate

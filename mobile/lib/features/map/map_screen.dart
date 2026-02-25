@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -10,7 +11,9 @@ import '../../shared/di/service_locator.dart';
 import '../../main.dart' show DevRemoteLogger;
 import '../../shared/models/map_data_model.dart';
 import '../../shared/models/territory_map_model.dart';
+import '../../shared/models/territory_model.dart' show TerritoryCoordinates;
 import '../../shared/models/city_model.dart';
+import '../../shared/models/my_club_model.dart';
 import '../city/city_picker_dialog.dart';
 import 'widgets/territory_bottom_sheet.dart';
 import '../../shared/models/club_model.dart';
@@ -61,9 +64,14 @@ class _MapScreenState extends State<MapScreen> {
   static const double _minZoom = 9.0;
   static const double _maxZoom = 19.0;
   bool _isAdjustingCamera = false;
-  bool _hasFocusPoint = false;
   bool _isAnimatingToFocus = false;
   
+  // Active club and current territory (for banner)
+  MyClubModel? _activeClub;
+  TerritoryMapModel? _currentTerritory;
+  List<MyClubModel> _myClubs = [];
+  Timer? _territoryCheckTimer;
+
   // Map objects: territories (polygons/circles), capture labels, event markers
   List<MapObject> _territoryMapObjects = [];
   List<PlacemarkMapObject> _captureLabels = [];
@@ -75,6 +83,13 @@ class _MapScreenState extends State<MapScreen> {
     super.initState();
     _createEventMarkerIcon();
     _ensureCityAndLoad();
+    _loadActiveClub();
+  }
+
+  @override
+  void dispose() {
+    _territoryCheckTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -94,7 +109,6 @@ class _MapScreenState extends State<MapScreen> {
     final lat = widget.focusLatitude;
     final lon = widget.focusLongitude;
     if (lat != null && lon != null && _mapController != null) {
-      _hasFocusPoint = true;
       _isAnimatingToFocus = true;
 
       // Small delay to ensure native map view is fully laid out
@@ -187,6 +201,135 @@ class _MapScreenState extends State<MapScreen> {
     await _loadMapData();
   }
 
+  /// Loads the active club for the banner.
+  Future<void> _loadActiveClub() async {
+    try {
+      final clubs = await ServiceLocator.clubsService.getMyClubs();
+      if (!mounted) return;
+      final currentId = ServiceLocator.currentClubService.currentClubId;
+      MyClubModel? active;
+      if (currentId != null) {
+        for (final c in clubs) {
+          if (c.id == currentId) { active = c; break; }
+        }
+      }
+      active ??= clubs.where((c) => c.status == 'active').cast<MyClubModel?>().firstOrNull
+          ?? clubs.cast<MyClubModel?>().firstOrNull;
+      if (mounted) {
+        setState(() {
+          _myClubs = clubs;
+          _activeClub = active;
+        });
+      }
+    } catch (_) {}
+  }
+
+  /// Starts the periodic timer that checks user location against territories.
+  void _startTerritoryCheckTimer() {
+    _territoryCheckTimer?.cancel();
+    _territoryCheckTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      _checkCurrentTerritory();
+    });
+    _checkCurrentTerritory();
+  }
+
+  /// Gets user GPS position and finds which territory (if any) they are in.
+  Future<void> _checkCurrentTerritory() async {
+    if (_mapData == null) return;
+    try {
+      final locationService = ServiceLocator.locationService;
+      final permission = await locationService.checkPermission();
+      if (permission == geo.LocationPermission.denied ||
+          permission == geo.LocationPermission.deniedForever) { return; }
+      final position = await locationService.getCurrentPosition();
+      if (!mounted) return;
+      final territory = _findTerritoryAtPoint(position.latitude, position.longitude);
+      if (mounted) {
+        setState(() => _currentTerritory = territory);
+      }
+    } catch (_) {}
+  }
+
+  /// Finds the territory containing the given point (lat/lon).
+  TerritoryMapModel? _findTerritoryAtPoint(double lat, double lon) {
+    if (_mapData == null) return null;
+    for (final territory in _mapData!.territories) {
+      if (territory.geometry != null && territory.geometry!.length >= 3) {
+        if (_isPointInPolygon(lat, lon, territory.geometry!)) return territory;
+      } else {
+        final dist = _haversineMeters(
+          lat, lon,
+          territory.coordinates.latitude,
+          territory.coordinates.longitude,
+        );
+        if (dist <= _territoryRadiusMeters) return territory;
+      }
+    }
+    return null;
+  }
+
+  /// Point-in-polygon test using ray casting algorithm.
+  bool _isPointInPolygon(double lat, double lon, List<TerritoryCoordinates> polygon) {
+    bool inside = false;
+    final n = polygon.length;
+    for (int i = 0, j = n - 1; i < n; j = i++) {
+      final xi = polygon[i].longitude, yi = polygon[i].latitude;
+      final xj = polygon[j].longitude, yj = polygon[j].latitude;
+      if (((yi > lat) != (yj > lat)) &&
+          (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi)) {
+        inside = !inside;
+      }
+    }
+    return inside;
+  }
+
+  /// Approximate distance in meters between two lat/lon points (Haversine).
+  double _haversineMeters(double lat1, double lon1, double lat2, double lon2) {
+    const r = 6371000.0;
+    final dLat = (lat2 - lat1) * math.pi / 180;
+    final dLon = (lon2 - lon1) * math.pi / 180;
+    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1 * math.pi / 180) *
+            math.cos(lat2 * math.pi / 180) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
+    return r * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+  }
+
+  /// Shows a bottom sheet to select the active club.
+  void _showClubSelectionSheet() {
+    if (_myClubs.isEmpty) return;
+    final l10n = AppLocalizations.of(context)!;
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(
+              l10n.selectClub,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+          ),
+          ..._myClubs.map((club) => ListTile(
+            title: Text(club.name),
+            selected: club.id == _activeClub?.id,
+            trailing: club.id == _activeClub?.id
+                ? const Icon(Icons.check, color: Colors.green)
+                : null,
+            onTap: () async {
+              Navigator.pop(ctx);
+              await ServiceLocator.currentClubService.setCurrentClubId(club.id);
+              if (mounted) setState(() => _activeClub = club);
+            },
+          )),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
   /// Гарантирует, что выбран город, и затем загружает данные карты.
   Future<void> _ensureCityAndLoad() async {
     final currentCityService = ServiceLocator.currentCityService;
@@ -268,9 +411,8 @@ class _MapScreenState extends State<MapScreen> {
         });
         if (_isMapReady) {
           _updateMapObjects();
-          if (!_hasFocusPoint) {
-            await _centerMapOnStartPosition();
-          }
+          // Territory check now that data is loaded
+          _startTerritoryCheckTimer();
         }
       }
     } on ApiException catch (e) {
@@ -287,9 +429,7 @@ class _MapScreenState extends State<MapScreen> {
             });
             if (_isMapReady) {
               _updateMapObjects();
-              if (!_hasFocusPoint) {
-                await _centerMapOnStartPosition();
-              }
+              _startTerritoryCheckTimer();
             }
           }
           return;
@@ -808,7 +948,7 @@ class _MapScreenState extends State<MapScreen> {
       ),
       animation: const MapAnimation(
         type: MapAnimationType.smooth,
-        duration: 0.5,
+        duration: 0.0,
       ),
     );
   }
@@ -872,6 +1012,69 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
+  Widget _buildClubTerritoryBanner(AppLocalizations l10n) {
+    final clubLabel = _activeClub != null
+        ? l10n.mapActiveClub(_activeClub!.name)
+        : l10n.mapNoActiveClub;
+    final territoryLabel = _currentTerritory != null
+        ? l10n.mapCurrentTerritory(_currentTerritory!.name)
+        : l10n.mapNoTerritory;
+
+    return Row(
+      children: [
+        GestureDetector(
+          onTap: _myClubs.length > 1 ? _showClubSelectionSheet : null,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  clubLabel,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (_myClubs.length > 1) ...[
+                  const SizedBox(width: 2),
+                  Icon(
+                    Icons.arrow_drop_down,
+                    size: 14,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: _currentTerritory != null
+                ? Theme.of(context).colorScheme.secondaryContainer
+                : Colors.grey.shade200,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            territoryLabel,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: _currentTerritory != null
+                  ? Theme.of(context).colorScheme.onSecondaryContainer
+                  : Colors.grey.shade600,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Always show the map, errors are displayed as snackbars
@@ -914,14 +1117,23 @@ class _MapScreenState extends State<MapScreen> {
               ),
               child: SafeArea(
                 bottom: false,
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        AppLocalizations.of(context)!.mapTitle,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            AppLocalizations.of(context)!.mapTitle,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ),
+                      ],
                     ),
+                    if (_myClubs.isNotEmpty || _activeClub != null) ...[
+                      const SizedBox(height: 6),
+                      _buildClubTerritoryBanner(AppLocalizations.of(context)!),
+                    ],
                   ],
                 ),
               ),
