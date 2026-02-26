@@ -456,7 +456,7 @@ class _EventsScreenState extends State<EventsScreen>
                             ? Theme.of(context)
                                 .colorScheme
                                 .primaryContainer
-                                .withValues(alpha: 0.1)
+                                .withOpacity(0.1)
                             : Colors.transparent),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(

@@ -234,13 +234,12 @@ class _EditEventScreenState extends State<EditEventScreen> {
                     enabled: !_saving,
                   ),
                   const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    initialValue: _eventType,
-                    decoration: InputDecoration(
-                      labelText: l10n.eventCreateType,
-                      border: const OutlineInputBorder(),
-                    ),
-                    items: [
+                              DropdownButtonFormField<String>(
+                                value: _eventType,
+                                decoration: InputDecoration(
+                                  labelText: l10n.eventCreateType,
+                                  border: const OutlineInputBorder(),
+                                ),                    items: [
                       DropdownMenuItem(
                           value: 'training',
                           child: Text(l10n.eventTypeTraining)),

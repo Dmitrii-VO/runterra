@@ -240,7 +240,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                initialValue: _eventType,
+                value: _eventType,
                 decoration: InputDecoration(
                   labelText: l10n.eventCreateType,
                   border: const OutlineInputBorder(),
@@ -285,7 +285,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
               // Organizer type: only show if user has a club (to choose between club/personal event)
               if (_hasClub) ...[
                 DropdownButtonFormField<String>(
-                  initialValue: _organizerType,
+                  value: _organizerType,
                   decoration: InputDecoration(
                     labelText: l10n.eventCreateOrganizerType,
                     border: const OutlineInputBorder(),
