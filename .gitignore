@@ -42,20 +42,27 @@ logs/
 # Test coverage
 coverage/
 
-# Claude/Cursor local settings
+# Claude/Cursor/Gemini settings
 .claude/
+.cursor/
+.gemini/
+
+# Service and temp directories
+.gh-cli/
+.npm-cache/
+.tmp/
+.xdg/
+imageslogs/
+Microsoft/
+ai/
 
 # Temp files
 123.md
-imageslogs/
 _write_test_root.txt
 mobile_acl.txt
-
-# AI workspace
-ai/
-
-# PowerShell cache (can appear in restricted/non-profile environments)
-Microsoft/
+analyze_output.txt
+fix_encoding.py
+fix_encoding_v2.py
 
 # Codex helper file (local only)
 .gitconfig.codex

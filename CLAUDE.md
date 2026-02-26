@@ -56,6 +56,11 @@ npm run deploy:mobile    # Build APK + upload to Firebase App Distribution
 ### CI
 Runs on push/PR to `main`: backend typecheck + tests + build; mobile analyze + tests + build APK.
 
+## Project Rules
+- **Encoding:** Always use UTF-8 for files and output.
+- **PowerShell:** Use **PowerShell 7 (pwsh)** for all commands. It supports UTF-8 by default and is installed at version 7.5.4.
+- **Russian Language:** Documentation (progress.md, changes/*.md) MUST be in Russian.
+
 ## Architecture
 
 ### Backend

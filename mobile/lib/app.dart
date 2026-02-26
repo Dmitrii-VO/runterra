@@ -30,7 +30,7 @@ import 'features/trainer/trainer_edit_profile_screen.dart';
 import 'features/trainer/trainers_list_screen.dart';
 import 'features/trainer/workouts_list_screen.dart';
 import 'features/trainer/workout_form_screen.dart';
-import 'shared/models/profile_model.dart' show ProfileModel;
+import 'shared/models/profile_model.dart' show ProfileUserData;
 import 'shared/models/club_model.dart';
 import 'shared/models/club_member_model.dart';
 import 'shared/models/workout.dart';
@@ -164,8 +164,8 @@ class RunterraApp extends StatelessWidget {
       GoRoute(
         path: '/profile/edit',
         builder: (context, state) {
-          final profile = state.extra as ProfileModel;
-          return EditProfileScreen(profile: profile);
+          final user = state.extra as ProfileUserData;
+          return EditProfileScreen(user: user);
         },
       ),
       GoRoute(
