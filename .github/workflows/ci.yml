@@ -74,6 +74,10 @@ jobs:
       - name: Run tests
         run: flutter test
 
+      - name: Cleanup gradle.properties
+        run: |
+          find . -name "gradle.properties" -exec sed -i '/org.gradle.java.home/d' {} \;
+
       - name: Setup Java 21
         uses: actions/setup-java@v4
         with:
