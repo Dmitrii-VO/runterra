@@ -48,7 +48,8 @@ class _EditEventScreenState extends State<EditEventScreen> {
   }
 
   Future<EventDetailsModel> _loadEvent() async {
-    final event = await ServiceLocator.eventsService.getEventById(widget.eventId);
+    final event =
+        await ServiceLocator.eventsService.getEventById(widget.eventId);
     _populateForm(event);
     return event;
   }
@@ -145,7 +146,8 @@ class _EditEventScreenState extends State<EditEventScreen> {
         type: _eventType,
         startDateTime: _composeDateTime(),
         startLocation: (_selectedLat != null && _selectedLon != null)
-            ? EventStartLocation(longitude: _selectedLon!, latitude: _selectedLat!)
+            ? EventStartLocation(
+                longitude: _selectedLon!, latitude: _selectedLat!)
             : null,
         locationName: _locationNameController.text.trim().isEmpty
             ? null
@@ -203,12 +205,10 @@ class _EditEventScreenState extends State<EditEventScreen> {
             return Center(child: Text(l10n.noData));
           }
 
-          final dateText =
-              '${_selectedDate.day.toString().padLeft(2, '0')}.'
+          final dateText = '${_selectedDate.day.toString().padLeft(2, '0')}.'
               '${_selectedDate.month.toString().padLeft(2, '0')}.'
               '${_selectedDate.year}';
-          final timeText =
-              '${_selectedTime.hour.toString().padLeft(2, '0')}:'
+          final timeText = '${_selectedTime.hour.toString().padLeft(2, '0')}:'
               '${_selectedTime.minute.toString().padLeft(2, '0')}';
 
           return Form(
@@ -235,20 +235,29 @@ class _EditEventScreenState extends State<EditEventScreen> {
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    value: _eventType,
+                    initialValue: _eventType,
                     decoration: InputDecoration(
                       labelText: l10n.eventCreateType,
                       border: const OutlineInputBorder(),
                     ),
                     items: [
-                      DropdownMenuItem(value: 'training', child: Text(l10n.eventTypeTraining)),
-                      DropdownMenuItem(value: 'group_run', child: Text(l10n.eventTypeGroupRun)),
-                      DropdownMenuItem(value: 'club_event', child: Text(l10n.eventTypeClubEvent)),
-                      DropdownMenuItem(value: 'open_event', child: Text(l10n.eventTypeOpenEvent)),
+                      DropdownMenuItem(
+                          value: 'training',
+                          child: Text(l10n.eventTypeTraining)),
+                      DropdownMenuItem(
+                          value: 'group_run',
+                          child: Text(l10n.eventTypeGroupRun)),
+                      DropdownMenuItem(
+                          value: 'club_event',
+                          child: Text(l10n.eventTypeClubEvent)),
+                      DropdownMenuItem(
+                          value: 'open_event',
+                          child: Text(l10n.eventTypeOpenEvent)),
                     ],
                     onChanged: _saving
                         ? null
-                        : (value) => setState(() => _eventType = value ?? _eventType),
+                        : (value) =>
+                            setState(() => _eventType = value ?? _eventType),
                   ),
                   const SizedBox(height: 16),
                   InkWell(

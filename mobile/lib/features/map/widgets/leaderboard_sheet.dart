@@ -51,8 +51,10 @@ class LeaderboardSheet extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: TierColors.gradientForTier(tier)),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              gradient:
+                  LinearGradient(colors: TierColors.gradientForTier(tier)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: Text(
               l10n.leaderboardTitle(zoneName),
@@ -85,7 +87,8 @@ class LeaderboardSheet extends StatelessWidget {
                         final entry = visibleEntries[index];
                         final isMyClub = myClubProgress != null &&
                             entry.clubId == myClubProgress!.clubId;
-                        return _buildRow(context, l10n, entry, isMyClub, tierColor);
+                        return _buildRow(
+                            context, l10n, entry, isMyClub, tierColor);
                       }
 
                       // Ellipsis separator
@@ -142,7 +145,7 @@ class LeaderboardSheet extends StatelessWidget {
     Color tierColor,
   ) {
     return Container(
-      color: isMyClub ? tierColor.withOpacity(0.08) : null,
+      color: isMyClub ? tierColor.withValues(alpha: 0.08) : null,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
@@ -161,7 +164,7 @@ class LeaderboardSheet extends StatelessWidget {
           // Club initial circle
           CircleAvatar(
             radius: 16,
-            backgroundColor: tierColor.withOpacity(0.15),
+            backgroundColor: tierColor.withValues(alpha: 0.15),
             child: Text(
               entry.clubName.isNotEmpty ? entry.clubName[0].toUpperCase() : '?',
               style: TextStyle(

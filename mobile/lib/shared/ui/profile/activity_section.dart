@@ -7,11 +7,11 @@ import '../../navigation/user_action.dart';
 import 'package:go_router/go_router.dart';
 
 /// Секция активностей
-/// 
+///
 /// Отображает:
 /// - Ближайшую активность (тренировку)
 /// - Последнюю активность
-/// 
+///
 class ProfileActivitySection extends StatelessWidget {
   final ProfileActivityModel? nextActivity;
   final ProfileActivityModel? lastActivity;
@@ -41,7 +41,8 @@ class ProfileActivitySection extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    nextActivity!.name ?? AppLocalizations.of(context)!.activityDefaultName,
+                    nextActivity!.name ??
+                        AppLocalizations.of(context)!.activityDefaultName,
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                   if (nextActivity!.dateTime != null) ...[
@@ -90,7 +91,8 @@ class ProfileActivitySection extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    lastActivity!.name ?? AppLocalizations.of(context)!.activityDefaultActivity,
+                    lastActivity!.name ??
+                        AppLocalizations.of(context)!.activityDefaultActivity,
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                   if (lastActivity!.result != null) ...[
@@ -158,7 +160,7 @@ class _StatusChip extends StatelessWidget {
 
     return Chip(
       label: Text(label),
-      backgroundColor: Color.fromRGBO(color.red, color.green, color.blue, 0.1),
+      backgroundColor: color.withValues(alpha: 0.1),
       labelStyle: TextStyle(color: color, fontSize: 12),
     );
   }
@@ -174,7 +176,9 @@ class _ResultChip extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final isCounted = result == 'counted';
     return Chip(
-      label: Text(isCounted ? l10n.activityResultCounted : l10n.activityResultNotCounted),
+      label: Text(isCounted
+          ? l10n.activityResultCounted
+          : l10n.activityResultNotCounted),
       backgroundColor: isCounted
           ? const Color.fromRGBO(76, 175, 80, 0.1) // Colors.green
           : const Color.fromRGBO(244, 67, 54, 0.1), // Colors.red

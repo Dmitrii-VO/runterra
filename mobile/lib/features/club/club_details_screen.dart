@@ -16,7 +16,7 @@ import '../events/widgets/event_card.dart';
 ///
 /// РћС‚РѕР±СЂР°Р¶Р°РµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РєР»СѓР±Рµ, Р·Р°РіСЂСѓР¶Р°СЏ РґР°РЅРЅС‹Рµ С‡РµСЂРµР· ClubsService.
 /// РСЃРїРѕР»СЊР·СѓРµС‚ FutureBuilder РґР»СЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ СЃРѕСЃС‚РѕСЏРЅРёР№ loading/error/success.
-/// 
+///
 /// РџСЂРёРЅРёРјР°РµС‚ clubId С‡РµСЂРµР· РїР°СЂР°РјРµС‚СЂ РјР°СЂС€СЂСѓС‚Р° Рё Р·Р°РіСЂСѓР¶Р°РµС‚ РґР°РЅРЅС‹Рµ РєР»СѓР±Р°.
 class ClubDetailsScreen extends StatefulWidget {
   /// ID РєР»СѓР±Р° (РїРµСЂРµРґР°РµС‚СЃСЏ С‡РµСЂРµР· РїР°СЂР°РјРµС‚СЂ РјР°СЂС€СЂСѓС‚Р°)
@@ -28,9 +28,9 @@ class ClubDetailsScreen extends StatefulWidget {
   });
 
   /// РЎРѕР·РґР°РµС‚ Future РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РґР°РЅРЅС‹С… Рѕ РєР»СѓР±Рµ
-  /// 
+  ///
   /// TODO: Backend URL РІС‹РЅРµСЃС‚Рё РІ РєРѕРЅС„РёРіСѓСЂР°С†РёСЋ
-  /// 
+  ///
   /// РџСЂРёРјРµС‡Р°РЅРёРµ: Р”Р»СЏ Android СЌРјСѓР»СЏС‚РѕСЂР° РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ 10.0.2.2 РІРјРµСЃС‚Рѕ localhost.
   /// Р”Р»СЏ С„РёР·РёС‡РµСЃРєРѕРіРѕ СѓСЃС‚СЂРѕР№СЃС‚РІР° РёСЃРїРѕР»СЊР·СѓР№С‚Рµ IP Р°РґСЂРµСЃ С…РѕСЃС‚-РјР°С€РёРЅС‹ РІ Р»РѕРєР°Р»СЊРЅРѕР№ СЃРµС‚Рё.
   @override
@@ -40,15 +40,20 @@ class ClubDetailsScreen extends StatefulWidget {
 class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
   /// Future for club details.
   late Future<ClubModel> _clubFuture;
+
   /// Members list
   List<ClubMemberModel>? _members;
   bool _membersLoading = false;
+
   /// True while join request is in progress.
   bool _isJoining = false;
+
   /// True while leave request is in progress.
   bool _isLeaving = false;
+
   /// Club events
   Future<List<EventListItemModel>>? _eventsFuture;
+
   /// Pending membership requests
   List<ClubMemberModel>? _pendingRequests;
   bool _pendingLoading = false;
@@ -82,7 +87,8 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
   Future<void> _loadMembers() async {
     setState(() => _membersLoading = true);
     try {
-      final members = await ServiceLocator.clubsService.getClubMembers(widget.clubId);
+      final members =
+          await ServiceLocator.clubsService.getClubMembers(widget.clubId);
       if (mounted) setState(() => _members = members);
     } catch (_) {
       // Silently fail — members section will show error state
@@ -178,7 +184,8 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
     }
   }
 
-  Widget _buildMetricChip(BuildContext context, String label, String value, {VoidCallback? onTap}) {
+  Widget _buildMetricChip(BuildContext context, String label, String value,
+      {VoidCallback? onTap}) {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -264,7 +271,10 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                                   children: [
                                     Text(
                                       '${(member.totalDistance / 1000).toStringAsFixed(1)} км',
-                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
                                             fontWeight: FontWeight.bold,
                                           ),
                                     ),
@@ -286,7 +296,10 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                         : Center(
                             child: Text(
                               l10n.clubMembersEmpty,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
                                     color: Colors.grey,
                                   ),
                             ),
@@ -341,7 +354,9 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                       return const Center(child: CircularProgressIndicator());
                     }
                     if (snapshot.hasError) {
-                      return Center(child: Text(l10n.errorGeneric(snapshot.error.toString())));
+                      return Center(
+                          child: Text(
+                              l10n.errorGeneric(snapshot.error.toString())));
                     }
                     final rawData = snapshot.data ?? [];
                     final territories = rawData.cast<TerritoryModel>().toList();
@@ -354,12 +369,15 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                       final bProg = b.myClubProgress?['totalKm'] as num? ?? 0;
                       return bProg.compareTo(aProg);
                     });
-                    
+
                     if (territories.isEmpty) {
                       return Center(
                         child: Text(
                           l10n.noData,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: Colors.grey),
                         ),
                       );
                     }
@@ -367,10 +385,12 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                       itemCount: territories.length,
                       itemBuilder: (context, index) {
                         final t = territories[index];
-                        final isCapturedByUs = t.clubId == club.id && t.status == 'captured';
-                        final isLeading = t.clubId == club.id && t.status != 'captured';
+                        final isCapturedByUs =
+                            t.clubId == club.id && t.status == 'captured';
+                        final isLeading =
+                            t.clubId == club.id && t.status != 'captured';
                         final progress = t.myClubProgress;
-                        
+
                         String subtitle = l10n.zoneContested;
                         if (progress != null) {
                           final km = progress['totalKm'];
@@ -380,7 +400,8 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                           } else if (isLeading) {
                             subtitle = l10n.territoryLeading(km.toString());
                           } else if (gap != null) {
-                            subtitle = '${l10n.zoneContested} ($km км, ${gap.abs()} км до лидера)';
+                            subtitle =
+                                '${l10n.zoneContested} ($km км, ${gap.abs()} км до лидера)';
                           } else {
                             subtitle = '${l10n.zoneContested} ($km км)';
                           }
@@ -390,10 +411,13 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
 
                         return ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: isCapturedByUs ? Colors.green.withOpacity(0.2) : Colors.orange.withOpacity(0.2),
+                            backgroundColor: isCapturedByUs
+                                ? Colors.green.withValues(alpha: 0.2)
+                                : Colors.orange.withValues(alpha: 0.2),
                             child: Icon(
                               isCapturedByUs ? Icons.emoji_events : Icons.map,
-                              color: isCapturedByUs ? Colors.green : Colors.orange,
+                              color:
+                                  isCapturedByUs ? Colors.green : Colors.orange,
                             ),
                           ),
                           title: Text(t.name),
@@ -417,7 +441,8 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
 
   void _showLeaderboardSheet(ClubModel club) {
     final l10n = AppLocalizations.of(context)!;
-    final future = ServiceLocator.clubsService.getCityLeaderboard(club.cityId ?? 'spb', clubId: club.id);
+    final future = ServiceLocator.clubsService
+        .getCityLeaderboard(club.cityId ?? 'spb', clubId: club.id);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -454,39 +479,60 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                       return const Center(child: CircularProgressIndicator());
                     }
                     if (snapshot.hasError) {
-                      return Center(child: Text(l10n.errorGeneric(snapshot.error.toString())));
+                      return Center(
+                          child: Text(
+                              l10n.errorGeneric(snapshot.error.toString())));
                     }
                     final data = snapshot.data;
                     if (data == null || data.leaderboard.isEmpty) {
                       return Center(
                         child: Text(
                           l10n.noData,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: Colors.grey),
                         ),
                       );
                     }
-                    
+
                     return ListView.builder(
                       itemCount: data.leaderboard.length,
                       itemBuilder: (context, index) {
                         final entry = data.leaderboard[index];
                         final isMyClub = entry.id == club.id;
-                        
+
                         return ListTile(
-                          tileColor: isMyClub ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3) : null,
+                          tileColor: isMyClub
+                              ? Theme.of(context)
+                                  .colorScheme
+                                  .primaryContainer
+                                  .withValues(alpha: 0.3)
+                              : null,
                           leading: CircleAvatar(
-                            backgroundColor: isMyClub ? Theme.of(context).colorScheme.primary : Colors.grey.shade300,
-                            foregroundColor: isMyClub ? Theme.of(context).colorScheme.onPrimary : Colors.black87,
+                            backgroundColor: isMyClub
+                                ? Theme.of(context).colorScheme.primary
+                                : Colors.grey.shade300,
+                            foregroundColor: isMyClub
+                                ? Theme.of(context).colorScheme.onPrimary
+                                : Colors.black87,
                             child: Text(entry.rank.toString()),
                           ),
                           title: Text(
-                            entry.name, 
-                            style: TextStyle(fontWeight: isMyClub ? FontWeight.bold : FontWeight.normal),
+                            entry.name,
+                            style: TextStyle(
+                                fontWeight: isMyClub
+                                    ? FontWeight.bold
+                                    : FontWeight.normal),
                           ),
-                          subtitle: Text(l10n.clubLeaderboardSubtitle(entry.membersCount, entry.territoriesCount)),
+                          subtitle: Text(l10n.clubLeaderboardSubtitle(
+                              entry.membersCount, entry.territoriesCount)),
                           trailing: Text(
                             l10n.clubLeaderboardPoints(entry.points),
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           onTap: () {
                             if (!isMyClub) {
@@ -555,7 +601,8 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, 'disband'),
-                child: Text(l10n.disbandClub, style: const TextStyle(color: Colors.red)),
+                child: Text(l10n.disbandClub,
+                    style: const TextStyle(color: Colors.red)),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -589,7 +636,8 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
               ),
               TextButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: Text(l10n.disbandClub, style: const TextStyle(color: Colors.red)),
+                child: Text(l10n.disbandClub,
+                    style: const TextStyle(color: Colors.red)),
               ),
             ],
           ),
@@ -653,7 +701,8 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
   Future<void> _loadPendingRequests() async {
     setState(() => _pendingLoading = true);
     try {
-      final requests = await ServiceLocator.clubsService.getMembershipRequests(widget.clubId);
+      final requests = await ServiceLocator.clubsService
+          .getMembershipRequests(widget.clubId);
       if (mounted) setState(() => _pendingRequests = requests);
     } catch (_) {
       // Silently fail — section will show empty state
@@ -665,7 +714,8 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
   Future<void> _approveRequest(String userId) async {
     final l10n = AppLocalizations.of(context)!;
     try {
-      await ServiceLocator.clubsService.approveMembership(widget.clubId, userId);
+      await ServiceLocator.clubsService
+          .approveMembership(widget.clubId, userId);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.clubRequestApprove)),
@@ -754,7 +804,8 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
 
   /// Navigate to edit club screen and refresh data on success
   Future<void> _onEditClub(ClubModel club) async {
-    final result = await context.push<bool>('/club/${club.id}/edit', extra: club);
+    final result =
+        await context.push<bool>('/club/${club.id}/edit', extra: club);
 
     // If edit was successful, refresh club data
     if (result == true && mounted) {
@@ -797,7 +848,9 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
           // РЎРѕСЃС‚РѕСЏРЅРёРµ РѕС€РёР±РєРё
           if (snapshot.hasError) {
             return ErrorDisplay(
-              errorMessage: snapshot.error is ApiException ? (snapshot.error as ApiException).message : snapshot.error.toString(),
+              errorMessage: snapshot.error is ApiException
+                  ? (snapshot.error as ApiException).message
+                  : snapshot.error.toString(),
               onRetry: _retry,
             );
           }
@@ -806,7 +859,8 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
           if (snapshot.hasData) {
             final club = snapshot.data!;
             final l10n = AppLocalizations.of(context)!;
-            final cityDisplay = club.cityName ?? club.cityId ?? l10n.clubMetricPlaceholder;
+            final cityDisplay =
+                club.cityName ?? club.cityId ?? l10n.clubMetricPlaceholder;
             return SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -822,13 +876,19 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                     // City
                     Row(
                       children: [
-                        Icon(Icons.location_city, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        Icon(Icons.location_city,
+                            size: 18,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant),
                         const SizedBox(width: 6),
                         Text(
                           cityDisplay,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
                         ),
                       ],
                     ),
@@ -838,12 +898,19 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.5),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primaryContainer
+                              .withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.info_outline, size: 20, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                            Icon(Icons.info_outline,
+                                size: 20,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
@@ -863,7 +930,9 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                           child: _buildMetricChip(
                             context,
                             l10n.clubMembersLabel,
-                            club.membersCount != null ? '${club.membersCount}' : l10n.clubMetricPlaceholder,
+                            club.membersCount != null
+                                ? '${club.membersCount}'
+                                : l10n.clubMetricPlaceholder,
                             onTap: () => _showMembersSheet(club),
                           ),
                         ),
@@ -872,7 +941,9 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                           child: _buildMetricChip(
                             context,
                             l10n.clubTerritoriesLabel,
-                            club.territoriesCount != null ? '${club.territoriesCount}' : l10n.clubMetricPlaceholder,
+                            club.territoriesCount != null
+                                ? '${club.territoriesCount}'
+                                : l10n.clubMetricPlaceholder,
                             onTap: () => _showTerritoriesSheet(club),
                           ),
                         ),
@@ -881,7 +952,9 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                           child: _buildMetricChip(
                             context,
                             l10n.clubCityRankLabel,
-                            club.cityRank != null ? '${club.cityRank}' : l10n.clubMetricPlaceholder,
+                            club.cityRank != null
+                                ? '${club.cityRank}'
+                                : l10n.clubMetricPlaceholder,
                             onTap: () => _showLeaderboardSheet(club),
                           ),
                         ),
@@ -890,7 +963,8 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                     const SizedBox(height: 24),
 
                     // Trainer Management Section (Leader/Trainer only)
-                    if (club.userRole == 'leader' || club.userRole == 'trainer') ...[
+                    if (club.userRole == 'leader' ||
+                        club.userRole == 'trainer') ...[
                       Text(
                         l10n.clubManagementTitle,
                         style: Theme.of(context).textTheme.titleMedium,
@@ -900,7 +974,8 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                         children: [
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed: () => context.push('/club/${club.id}/schedule'),
+                              onPressed: () =>
+                                  context.push('/club/${club.id}/schedule'),
                               icon: const Icon(Icons.calendar_month),
                               label: Text(l10n.clubManageSchedule),
                             ),
@@ -908,7 +983,8 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: ElevatedButton.icon(
-                              onPressed: () => context.push('/club/${club.id}/roster'),
+                              onPressed: () =>
+                                  context.push('/club/${club.id}/roster'),
                               icon: const Icon(Icons.people_outline),
                               label: Text(l10n.clubManageRoster),
                             ),
@@ -922,14 +998,16 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
-                        onPressed: () => context.go('/messages?tab=club&clubId=${club.id}'),
+                        onPressed: () =>
+                            context.go('/messages?tab=club&clubId=${club.id}'),
                         icon: const Icon(Icons.chat),
                         label: Text(l10n.clubChatButton),
                       ),
                     ),
                     const SizedBox(height: 24),
                     // РћРїРёСЃР°РЅРёРµ РєР»СѓР±Р° (РµСЃР»Рё РµСЃС‚СЊ)
-                    if (club.description != null && club.description!.isNotEmpty) ...[
+                    if (club.description != null &&
+                        club.description!.isNotEmpty) ...[
                       Text(
                         l10n.detailDescription,
                         style: Theme.of(context).textTheme.titleMedium,
@@ -962,24 +1040,31 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                               FutureBuilder<List<EventListItemModel>>(
                                 future: _eventsFuture,
                                 builder: (context, snapshot) {
-                                  if (snapshot.connectionState == ConnectionState.waiting) {
-                                    return const Center(child: Padding(
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const Center(
+                                        child: Padding(
                                       padding: EdgeInsets.all(16),
                                       child: CircularProgressIndicator(),
                                     ));
                                   }
                                   if (snapshot.hasError) {
                                     return Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 8),
                                       child: Row(
                                         children: [
                                           Text(
                                             l10n.clubEventsError,
-                                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyMedium
+                                                ?.copyWith(color: Colors.red),
                                           ),
                                           const SizedBox(width: 8),
                                           TextButton(
-                                            onPressed: () => _loadEvents(club.cityId),
+                                            onPressed: () =>
+                                                _loadEvents(club.cityId),
                                             child: Text(l10n.retry),
                                           ),
                                         ],
@@ -989,23 +1074,31 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                                   final events = snapshot.data ?? [];
                                   if (events.isEmpty) {
                                     return Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 8),
                                       child: Text(
                                         l10n.clubEventsEmpty,
-                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(color: Colors.grey),
                                       ),
                                     );
                                   }
                                   final displayEvents = events.take(3).toList();
                                   return Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      ...displayEvents.map((event) => EventCard(event: event)),
+                                      ...displayEvents.map(
+                                          (event) => EventCard(event: event)),
                                       if (events.length > 3)
                                         Padding(
-                                          padding: const EdgeInsets.only(top: 8),
+                                          padding:
+                                              const EdgeInsets.only(top: 8),
                                           child: TextButton(
-                                            onPressed: () => context.push('/events?clubId=${widget.clubId}'),
+                                            onPressed: () => context.push(
+                                                '/events?clubId=${widget.clubId}'),
                                             child: Text(l10n.clubEventsViewAll),
                                           ),
                                         ),
@@ -1046,7 +1139,8 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                                 ? const SizedBox(
                                     width: 20,
                                     height: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
                                   )
                                 : const Icon(Icons.exit_to_app),
                             label: Text(l10n.clubLeave),
@@ -1070,14 +1164,16 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                               ? const SizedBox(
                                   width: 20,
                                   height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
                                 )
                               : const Icon(Icons.person_add),
                           label: Text(l10n.clubRequestJoin),
                         ),
                       ),
                     // Membership requests section (leader/trainer only)
-                    if (club.userRole == 'leader' || club.userRole == 'trainer') ...[
+                    if (club.userRole == 'leader' ||
+                        club.userRole == 'trainer') ...[
                       const SizedBox(height: 24),
                       _buildMembershipRequestsSection(l10n),
                     ],

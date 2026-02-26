@@ -15,7 +15,8 @@ class EventsScreen extends StatefulWidget {
   State<EventsScreen> createState() => _EventsScreenState();
 }
 
-class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderStateMixin {
+class _EventsScreenState extends State<EventsScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   // Today is at index 14 (14 days back), each cell is 58px wide (52 + 6 margin).
   // initialScrollOffset centers today approximately on a ~360dp wide screen.
@@ -41,7 +42,8 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(() => setState(() {})); // rebuild FAB on tab change
+    _tabController
+        .addListener(() => setState(() {})); // rebuild FAB on tab change
     _trainingClubIdFuture = _resolveTrainingClubId();
     _calendarFuture = _fetchCalendar();
     _eventsFuture = _fetchCityEvents();
@@ -66,11 +68,17 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
       MyClubModel? selectedClub;
       if (cachedClubId != null && cachedClubId.isNotEmpty) {
         for (final c in myClubs) {
-          if (c.id == cachedClubId) { selectedClub = c; break; }
+          if (c.id == cachedClubId) {
+            selectedClub = c;
+            break;
+          }
         }
       }
-      selectedClub ??= myClubs.where((c) => c.status == 'active').cast<MyClubModel?>().firstOrNull
-          ?? myClubs.first;
+      selectedClub ??= myClubs
+              .where((c) => c.status == 'active')
+              .cast<MyClubModel?>()
+              .firstOrNull ??
+          myClubs.first;
 
       await ServiceLocator.currentClubService.setCurrentClubId(selectedClub.id);
       if (mounted) setState(() => _myRoleInClub = selectedClub!.role);
@@ -86,7 +94,8 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
     if (clubId == null || clubId.isEmpty) return [];
 
     final yearMonth = DateFormat('yyyy-MM').format(_selectedDate);
-    final result = await ServiceLocator.clubsService.getCalendar(clubId, yearMonth);
+    final result =
+        await ServiceLocator.clubsService.getCalendar(clubId, yearMonth);
     if (mounted) setState(() => _loadedCalendarItems = result);
     return result;
   }
@@ -110,7 +119,8 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
     if (!_onlyOpen) return filtered;
     final now = DateTime.now();
     return filtered
-        .where((event) => event.status == 'open' && !event.startDateTime.isBefore(now))
+        .where((event) =>
+            event.status == 'open' && !event.startDateTime.isBefore(now))
         .toList();
   }
 
@@ -133,7 +143,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
           controller: _tabController,
           tabs: [
             Tab(text: l10n.statsTrainings), // "Тренировки"
-            Tab(text: l10n.eventsTitle),    // "События"
+            Tab(text: l10n.eventsTitle), // "События"
           ],
         ),
         actions: [
@@ -211,29 +221,33 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                   if (snapshot.hasError) {
                     return Center(child: Text(snapshot.error.toString()));
                   }
-                  
+
                   final allItems = snapshot.data ?? [];
-                  final dayItems = allItems.where((item) => 
-                    item.date.year == _selectedDate.year &&
-                    item.date.month == _selectedDate.month &&
-                    item.date.day == _selectedDate.day
-                  ).toList();
+                  final dayItems = allItems
+                      .where((item) =>
+                          item.date.year == _selectedDate.year &&
+                          item.date.month == _selectedDate.month &&
+                          item.date.day == _selectedDate.day)
+                      .toList();
 
                   if (dayItems.isEmpty) {
                     return Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.calendar_today_outlined, size: 48, color: Colors.grey.shade300),
+                          Icon(Icons.calendar_today_outlined,
+                              size: 48, color: Colors.grey.shade300),
                           const SizedBox(height: 8),
-                          Text(l10n.noData, style: TextStyle(color: Colors.grey.shade400)),
+                          Text(l10n.noData,
+                              style: TextStyle(color: Colors.grey.shade400)),
                         ],
                       ),
                     );
                   }
 
                   return ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     itemCount: dayItems.length,
                     itemBuilder: (context, index) {
                       final item = dayItems[index];
@@ -248,7 +262,9 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                         ),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
-                          onTap: isEvent ? () => context.push('/event/${item.id}') : null,
+                          onTap: isEvent
+                              ? () => context.push('/event/${item.id}')
+                              : null,
                           child: Padding(
                             padding: const EdgeInsets.all(16),
                             child: Row(
@@ -256,28 +272,36 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                                 Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: item.isPersonal 
-                                        ? Colors.purple.shade50 
-                                        : (isEvent ? Colors.blue.shade50 : Colors.orange.shade50),
+                                    color: item.isPersonal
+                                        ? Colors.purple.shade50
+                                        : (isEvent
+                                            ? Colors.blue.shade50
+                                            : Colors.orange.shade50),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Icon(
-                                    isEvent ? Icons.directions_run : Icons.note_alt_outlined,
-                                    color: item.isPersonal 
-                                        ? Colors.purple 
-                                        : (isEvent ? Colors.blue : Colors.orange),
+                                    isEvent
+                                        ? Icons.directions_run
+                                        : Icons.note_alt_outlined,
+                                    color: item.isPersonal
+                                        ? Colors.purple
+                                        : (isEvent
+                                            ? Colors.blue
+                                            : Colors.orange),
                                   ),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         children: [
                                           if (item.startTime != null)
                                             Padding(
-                                              padding: const EdgeInsets.only(right: 8),
+                                              padding: const EdgeInsets.only(
+                                                  right: 8),
                                               child: Text(
                                                 item.startTime!,
                                                 style: const TextStyle(
@@ -288,10 +312,14 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                                             ),
                                           if (item.isPersonal)
                                             Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 6,
+                                                      vertical: 2),
                                               decoration: BoxDecoration(
                                                 color: Colors.purple.shade100,
-                                                borderRadius: BorderRadius.circular(4),
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
                                               ),
                                               child: Text(
                                                 l10n.tabPersonal.toUpperCase(),
@@ -312,9 +340,11 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                                           fontSize: 16,
                                         ),
                                       ),
-                                      if (item.description != null && item.description!.isNotEmpty)
+                                      if (item.description != null &&
+                                          item.description!.isNotEmpty)
                                         Padding(
-                                          padding: const EdgeInsets.only(top: 4),
+                                          padding:
+                                              const EdgeInsets.only(top: 4),
                                           child: Text(
                                             item.description!,
                                             style: TextStyle(
@@ -329,9 +359,11 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                                   ),
                                 ),
                                 if (item.isCompleted)
-                                  const Icon(Icons.check_circle, color: Colors.green)
+                                  const Icon(Icons.check_circle,
+                                      color: Colors.green)
                                 else if (isEvent)
-                                  const Icon(Icons.chevron_right, color: Colors.grey),
+                                  const Icon(Icons.chevron_right,
+                                      color: Colors.grey),
                               ],
                             ),
                           ),
@@ -375,7 +407,9 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
             // Range: 14 days back, 30 days forward
             itemCount: 45,
             itemBuilder: (context, index) {
-              final day = today.subtract(const Duration(days: 14)).add(Duration(days: index));
+              final day = today
+                  .subtract(const Duration(days: 14))
+                  .add(Duration(days: index));
               final isSelected = day.year == _selectedDate.year &&
                   day.month == _selectedDate.month &&
                   day.day == _selectedDate.day;
@@ -413,12 +447,16 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                 },
                 child: Container(
                   width: 52,
-                  margin: const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? Theme.of(context).colorScheme.primary
                         : (isToday
-                            ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.1)
+                            ? Theme.of(context)
+                                .colorScheme
+                                .primaryContainer
+                                .withValues(alpha: 0.1)
                             : Colors.transparent),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
@@ -427,7 +465,9 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                           ? Colors.transparent
                           : (isToday
                               ? Theme.of(context).colorScheme.primary
-                              : (isPast ? Colors.grey.shade100 : Colors.grey.shade200)),
+                              : (isPast
+                                  ? Colors.grey.shade100
+                                  : Colors.grey.shade200)),
                     ),
                   ),
                   child: Column(
@@ -437,7 +477,9 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                         DateFormat('E').format(day),
                         style: TextStyle(
                           fontSize: 11,
-                          fontWeight: (isSelected || isToday) ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: (isSelected || isToday)
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                           color: dayNameColor,
                         ),
                       ),
@@ -463,10 +505,12 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
   }
 
   Widget _buildDots(DateTime day) {
-    final items = _loadedCalendarItems.where((i) =>
-        i.date.year == day.year &&
-        i.date.month == day.month &&
-        i.date.day == day.day).toList();
+    final items = _loadedCalendarItems
+        .where((i) =>
+            i.date.year == day.year &&
+            i.date.month == day.month &&
+            i.date.day == day.day)
+        .toList();
 
     final hasEvent = items.any((i) => i.type == CalendarItemType.event);
     final hasNote = items.any((i) => i.type == CalendarItemType.note);
@@ -513,7 +557,8 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.event_busy, size: 64, color: Colors.grey[400]),
+                        Icon(Icons.event_busy,
+                            size: 64, color: Colors.grey[400]),
                         const SizedBox(height: 16),
                         Text(
                           l10n.eventsEmpty,
@@ -535,7 +580,8 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                 onRefresh: () async => _refresh(),
                 child: ListView.builder(
                   itemCount: events.length,
-                  itemBuilder: (context, index) => EventCard(event: events[index]),
+                  itemBuilder: (context, index) =>
+                      EventCard(event: events[index]),
                 ),
               );
             },

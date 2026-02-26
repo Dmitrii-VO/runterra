@@ -121,12 +121,7 @@ class EventCard extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Color.fromRGBO(
-                        statusColor.red,
-                        statusColor.green,
-                        statusColor.blue,
-                        0.2,
-                      ),
+                      color: statusColor.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -154,8 +149,7 @@ class EventCard extends StatelessWidget {
               const SizedBox(height: 4),
               Row(
                 children: [
-                  const Icon(Icons.access_time,
-                      size: 16, color: Colors.grey),
+                  const Icon(Icons.access_time, size: 16, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
                     _formatDateTime(event.startDateTime),
@@ -167,8 +161,7 @@ class EventCard extends StatelessWidget {
               if (event.locationName != null)
                 Row(
                   children: [
-                    const Icon(Icons.location_on,
-                        size: 16, color: Colors.grey),
+                    const Icon(Icons.location_on, size: 16, color: Colors.grey),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
@@ -206,8 +199,7 @@ class EventCard extends StatelessWidget {
               if (event.difficultyLevel != null)
                 Row(
                   children: [
-                    const Icon(Icons.trending_up,
-                        size: 16, color: Colors.grey),
+                    const Icon(Icons.trending_up, size: 16, color: Colors.grey),
                     const SizedBox(width: 4),
                     Text(
                       _getDifficultyText(context, event.difficultyLevel)!,
@@ -249,4 +241,3 @@ class EventCard extends StatelessWidget {
     );
   }
 }
-

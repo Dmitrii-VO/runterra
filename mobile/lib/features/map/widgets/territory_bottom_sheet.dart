@@ -203,9 +203,10 @@ class _TerritoryBottomSheetState extends State<TerritoryBottomSheet> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -237,13 +238,13 @@ class _TerritoryBottomSheetState extends State<TerritoryBottomSheet> {
 
     if (info.leaderboard.isEmpty) {
       statusText = l10n.zoneOpenSeason;
-      bgColor = Colors.white.withOpacity(0.15);
+      bgColor = Colors.white.withValues(alpha: 0.15);
     } else if (info.leaderboard.length >= 2) {
       statusText = '${l10n.zoneContested} (${info.leaderboard.length})';
-      bgColor = Colors.orange.withOpacity(0.3);
+      bgColor = Colors.orange.withValues(alpha: 0.3);
     } else {
       statusText = l10n.zoneCaptured(info.leaderboard.first.clubName);
-      bgColor = Colors.white.withOpacity(0.15);
+      bgColor = Colors.white.withValues(alpha: 0.15);
     }
 
     return Container(
@@ -272,7 +273,8 @@ class _TerritoryBottomSheetState extends State<TerritoryBottomSheet> {
         Expanded(
           child: _RuleCard(
             icon: Icons.timer_outlined,
-            text: l10n.paceBonus(info.paceThreshold, info.pointMultiplier.toString()),
+            text: l10n.paceBonus(
+                info.paceThreshold, info.pointMultiplier.toString()),
           ),
         ),
         const SizedBox(width: 8),
@@ -455,7 +457,8 @@ class _TerritoryBottomSheetState extends State<TerritoryBottomSheet> {
                 : const Icon(Icons.flag),
             tooltip: l10n.captureButton,
             style: IconButton.styleFrom(
-              backgroundColor: TierColors.forTier(info.tier).withOpacity(0.15),
+              backgroundColor:
+                  TierColors.forTier(info.tier).withValues(alpha: 0.15),
               foregroundColor: TierColors.forTier(info.tier),
             ),
           ),

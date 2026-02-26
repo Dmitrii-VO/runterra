@@ -217,7 +217,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
               if (event == null) return const SizedBox.shrink();
               final effectiveStatus = _effectiveStatus(event);
               if (event.isOrganizer != true) return const SizedBox.shrink();
-              if (effectiveStatus == 'completed' || effectiveStatus == 'cancelled') {
+              if (effectiveStatus == 'completed' ||
+                  effectiveStatus == 'cancelled') {
                 return const SizedBox.shrink();
               }
               return IconButton(
@@ -270,19 +271,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: 8),
-
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Color.fromRGBO(
-                        statusColor.red,
-                        statusColor.green,
-                        statusColor.blue,
-                        0.2,
-                      ),
+                      color: statusColor.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -294,7 +289,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-
                   if (event.description != null) ...[
                     Text(
                       AppLocalizations.of(context)!.eventDescription,
@@ -307,7 +301,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     ),
                     const SizedBox(height: 16),
                   ],
-
                   Text(
                     AppLocalizations.of(context)!.eventInfo,
                     style: Theme.of(context).textTheme.titleMedium,
@@ -367,7 +360,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       context,
                       Icons.fitness_center,
                       AppLocalizations.of(context)!.eventWorkout,
-                      event.workoutName ?? AppLocalizations.of(context)!.eventNoWorkout,
+                      event.workoutName ??
+                          AppLocalizations.of(context)!.eventNoWorkout,
                     ),
                   if (event.workoutType != null)
                     _buildInfoRow(
@@ -381,7 +375,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       context,
                       Icons.speed,
                       AppLocalizations.of(context)!.workoutDifficulty,
-                      _getWorkoutDifficultyText(context, event.workoutDifficulty!),
+                      _getWorkoutDifficultyText(
+                          context, event.workoutDifficulty!),
                     ),
                   if (event.workoutDescription != null &&
                       event.workoutDescription!.trim().isNotEmpty)
@@ -403,7 +398,6 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                               context.push('/trainer/${event.trainerId}');
                             },
                     ),
-
                   if (event.startLocation != null) ...[
                     const SizedBox(height: 24),
                     Text(
@@ -416,9 +410,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       longitude: event.startLocation!.longitude,
                     ),
                   ],
-
                   const SizedBox(height: 24),
-
                   Text(
                     AppLocalizations.of(context)!.eventParticipation,
                     style: Theme.of(context).textTheme.titleMedium,
@@ -429,8 +421,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: null,
-                        child:
-                            Text(AppLocalizations.of(context)!.eventYouParticipate),
+                        child: Text(
+                            AppLocalizations.of(context)!.eventYouParticipate),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -447,7 +439,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Icon(Icons.close),
                         label: Text(AppLocalizations.of(context)!.eventLeave),
@@ -462,12 +455,14 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Icon(Icons.person_add),
                         label: Text(
                           _isJoining
-                              ? AppLocalizations.of(context)!.eventJoinInProgress
+                              ? AppLocalizations.of(context)!
+                                  .eventJoinInProgress
                               : AppLocalizations.of(context)!.eventJoin,
                         ),
                       ),
@@ -477,7 +472,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       width: double.infinity,
                       child: OutlinedButton(
                         onPressed: null,
-                        child: Text(AppLocalizations.of(context)!.eventNoPlaces),
+                        child:
+                            Text(AppLocalizations.of(context)!.eventNoPlaces),
                       ),
                     ),
                   ] else if (effectiveStatus == 'cancelled') ...[
@@ -485,7 +481,8 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       width: double.infinity,
                       child: OutlinedButton(
                         onPressed: null,
-                        child: Text(AppLocalizations.of(context)!.eventCancelled),
+                        child:
+                            Text(AppLocalizations.of(context)!.eventCancelled),
                       ),
                     ),
                   ] else if (effectiveStatus == 'completed') ...[
@@ -493,14 +490,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       width: double.infinity,
                       child: OutlinedButton(
                         onPressed: null,
-                        child:
-                            Text(AppLocalizations.of(context)!.eventStatusCompleted),
+                        child: Text(
+                            AppLocalizations.of(context)!.eventStatusCompleted),
                       ),
                     ),
                   ],
-
                   const SizedBox(height: 24),
-
                   ParticipantsList(
                     eventId: widget.eventId,
                     participantCount: event.participantCount,

@@ -21,7 +21,7 @@ import '../../shared/models/event_list_item_model.dart';
 import 'package:intl/intl.dart';
 
 /// Экран карты (MVP)
-/// 
+///
 /// Отображает карту с территориями и событиями.
 /// Реализует:
 /// - Стартовая позиция: центр города (fallback: СПб)
@@ -53,19 +53,19 @@ class _MapScreenState extends State<MapScreen> {
   bool _isMapReady = false;
   CityModel? _currentCity;
   bool _clubsSheetShown = false;
-  
+
   // Дефолтные координаты СПб (fallback)
   static const double _defaultLongitude = 30.3351;
   static const double _defaultLatitude = 59.9343;
   static const double _defaultZoom = 12.0;
-  
+
   // Радиус территории в метрах
   static const double _territoryRadiusMeters = 500.0;
   static const double _minZoom = 9.0;
   static const double _maxZoom = 19.0;
   bool _isAdjustingCamera = false;
   bool _isAnimatingToFocus = false;
-  
+
   // Active club and current territory (for banner)
   MyClubModel? _activeClub;
   TerritoryMapModel? _currentTerritory;
@@ -152,7 +152,8 @@ class _MapScreenState extends State<MapScreen> {
       ..color = Colors.white
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3;
-    canvas.drawCircle(const Offset(size / 2, size / 2), size / 2 - 1.5, borderPaint);
+    canvas.drawCircle(
+        const Offset(size / 2, size / 2), size / 2 - 1.5, borderPaint);
 
     // White inner icon (simple calendar-like shape)
     final iconPaint = Paint()..color = Colors.white;
@@ -183,7 +184,8 @@ class _MapScreenState extends State<MapScreen> {
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     if (byteData != null && mounted) {
       setState(() {
-        _eventMarkerIcon = BitmapDescriptor.fromBytes(byteData.buffer.asUint8List());
+        _eventMarkerIcon =
+            BitmapDescriptor.fromBytes(byteData.buffer.asUint8List());
       });
       // Re-update markers if data already loaded
       if (_mapData != null && _isMapReady) {
@@ -196,7 +198,7 @@ class _MapScreenState extends State<MapScreen> {
   Future<void> _loadMapDataInBackground() async {
     // Check GPS permission (non-blocking, just for snackbar notification)
     _checkGpsPermission();
-    
+
     // Load map data
     await _loadMapData();
   }
@@ -210,11 +212,17 @@ class _MapScreenState extends State<MapScreen> {
       MyClubModel? active;
       if (currentId != null) {
         for (final c in clubs) {
-          if (c.id == currentId) { active = c; break; }
+          if (c.id == currentId) {
+            active = c;
+            break;
+          }
         }
       }
-      active ??= clubs.where((c) => c.status == 'active').cast<MyClubModel?>().firstOrNull
-          ?? clubs.cast<MyClubModel?>().firstOrNull;
+      active ??= clubs
+              .where((c) => c.status == 'active')
+              .cast<MyClubModel?>()
+              .firstOrNull ??
+          clubs.cast<MyClubModel?>().firstOrNull;
       if (mounted) {
         setState(() {
           _myClubs = clubs;
@@ -240,10 +248,13 @@ class _MapScreenState extends State<MapScreen> {
       final locationService = ServiceLocator.locationService;
       final permission = await locationService.checkPermission();
       if (permission == geo.LocationPermission.denied ||
-          permission == geo.LocationPermission.deniedForever) { return; }
+          permission == geo.LocationPermission.deniedForever) {
+        return;
+      }
       final position = await locationService.getCurrentPosition();
       if (!mounted) return;
-      final territory = _findTerritoryAtPoint(position.latitude, position.longitude);
+      final territory =
+          _findTerritoryAtPoint(position.latitude, position.longitude);
       if (mounted) {
         setState(() => _currentTerritory = territory);
       }
@@ -258,7 +269,8 @@ class _MapScreenState extends State<MapScreen> {
         if (_isPointInPolygon(lat, lon, territory.geometry!)) return territory;
       } else {
         final dist = _haversineMeters(
-          lat, lon,
+          lat,
+          lon,
           territory.coordinates.latitude,
           territory.coordinates.longitude,
         );
@@ -269,7 +281,8 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   /// Point-in-polygon test using ray casting algorithm.
-  bool _isPointInPolygon(double lat, double lon, List<TerritoryCoordinates> polygon) {
+  bool _isPointInPolygon(
+      double lat, double lon, List<TerritoryCoordinates> polygon) {
     bool inside = false;
     final n = polygon.length;
     for (int i = 0, j = n - 1; i < n; j = i++) {
@@ -313,17 +326,18 @@ class _MapScreenState extends State<MapScreen> {
             ),
           ),
           ..._myClubs.map((club) => ListTile(
-            title: Text(club.name),
-            selected: club.id == _activeClub?.id,
-            trailing: club.id == _activeClub?.id
-                ? const Icon(Icons.check, color: Colors.green)
-                : null,
-            onTap: () async {
-              Navigator.pop(ctx);
-              await ServiceLocator.currentClubService.setCurrentClubId(club.id);
-              if (mounted) setState(() => _activeClub = club);
-            },
-          )),
+                title: Text(club.name),
+                selected: club.id == _activeClub?.id,
+                trailing: club.id == _activeClub?.id
+                    ? const Icon(Icons.check, color: Colors.green)
+                    : null,
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await ServiceLocator.currentClubService
+                      .setCurrentClubId(club.id);
+                  if (mounted) setState(() => _activeClub = club);
+                },
+              )),
           const SizedBox(height: 16),
         ],
       ),
@@ -361,23 +375,24 @@ class _MapScreenState extends State<MapScreen> {
 
     await _loadMapDataInBackground();
   }
-  
+
   /// Проверяет разрешения GPS (не блокирует)
   Future<void> _checkGpsPermission() async {
     try {
       final locationService = ServiceLocator.locationService;
       var permission = await locationService.checkPermission();
-      
+
       if (permission == geo.LocationPermission.denied) {
         permission = await locationService.requestPermission();
       }
-      
+
       if (permission == geo.LocationPermission.denied ||
           permission == geo.LocationPermission.deniedForever) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(AppLocalizations.of(context)!.mapLocationDeniedSnackbar),
+              content:
+                  Text(AppLocalizations.of(context)!.mapLocationDeniedSnackbar),
               duration: const Duration(seconds: 3),
             ),
           );
@@ -447,7 +462,8 @@ class _MapScreenState extends State<MapScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)!.mapLoadErrorSnackbar(e.toString())),
+            content: Text(AppLocalizations.of(context)!
+                .mapLoadErrorSnackbar(e.toString())),
             duration: const Duration(seconds: 3),
             action: SnackBarAction(
               label: AppLocalizations.of(context)!.retry,
@@ -462,7 +478,8 @@ class _MapScreenState extends State<MapScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)!.mapLoadErrorSnackbar(e.toString())),
+            content: Text(AppLocalizations.of(context)!
+                .mapLoadErrorSnackbar(e.toString())),
             duration: const Duration(seconds: 3),
             action: SnackBarAction(
               label: AppLocalizations.of(context)!.retry,
@@ -473,7 +490,7 @@ class _MapScreenState extends State<MapScreen> {
       }
     }
   }
-  
+
   /// Обновляет объекты на карте (территории и события)
   void _updateMapObjects() {
     if (_mapController == null || _mapData == null) return;
@@ -490,7 +507,7 @@ class _MapScreenState extends State<MapScreen> {
       );
     }
   }
-  
+
   /// Обновляет объекты территорий (полигоны при наличии geometry, иначе круги)
   void _updateTerritoryMapObjects() {
     if (_mapData == null) return;
@@ -498,7 +515,7 @@ class _MapScreenState extends State<MapScreen> {
     final objects = <MapObject>[];
     for (var i = 0; i < _mapData!.territories.length; i++) {
       final territory = _mapData!.territories[i];
-      
+
       // Determine colors
       final parsedColor = _parseColor(territory.color);
       final statusStrokeColor = _getTerritoryStrokeColor(territory.status);
@@ -506,12 +523,12 @@ class _MapScreenState extends State<MapScreen> {
 
       // Prefer explicit territory color for stroke, fallback to status color
       final strokeColor = parsedColor != null
-          ? parsedColor.withOpacity(0.8)
+          ? parsedColor.withValues(alpha: 0.8)
           : statusStrokeColor;
 
       // Use semi-transparent territory color for fill if available, fallback to status fill
       final fillColor = parsedColor != null
-          ? parsedColor.withOpacity(0.3)
+          ? parsedColor.withValues(alpha: 0.3)
           : statusFillColor;
 
       void onTerritoryTap(_, __) => _showTerritoryBottomSheet(territory);
@@ -521,11 +538,11 @@ class _MapScreenState extends State<MapScreen> {
         final points = territory.geometry!
             .map((c) => Point(latitude: c.latitude, longitude: c.longitude))
             .toList();
-        
+
         // Only add first point as last if it's not already there
-        if (points.isNotEmpty && 
-            (points.first.latitude != points.last.latitude || 
-             points.first.longitude != points.last.longitude)) {
+        if (points.isNotEmpty &&
+            (points.first.latitude != points.last.latitude ||
+                points.first.longitude != points.last.longitude)) {
           points.add(points.first);
         }
 
@@ -631,7 +648,8 @@ class _MapScreenState extends State<MapScreen> {
       ..color = Colors.black54
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
-    canvas.drawCircle(const Offset(size / 2, size / 2), size / 2 - 1, borderPaint);
+    canvas.drawCircle(
+        const Offset(size / 2, size / 2), size / 2 - 1, borderPaint);
 
     // Text
     final textPainter = TextPainter(
@@ -755,7 +773,8 @@ class _MapScreenState extends State<MapScreen> {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                      const Icon(Icons.location_on,
+                          size: 16, color: Colors.grey),
                       const SizedBox(width: 4),
                       Expanded(child: Text(event.locationName!)),
                     ],
@@ -781,7 +800,10 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _handleCameraPositionChanged(CameraPosition position) {
-    if (_isAdjustingCamera || _isAnimatingToFocus || _mapController == null || _currentCity == null) {
+    if (_isAdjustingCamera ||
+        _isAnimatingToFocus ||
+        _mapController == null ||
+        _currentCity == null) {
       return;
     }
 
@@ -811,22 +833,22 @@ class _MapScreenState extends State<MapScreen> {
     _isAdjustingCamera = true;
     _mapController!
         .moveCamera(
-          CameraUpdate.newCameraPosition(
-            CameraPosition(
-              target: Point(latitude: latitude, longitude: longitude),
-              zoom: zoom,
-            ),
-          ),
-          animation: const MapAnimation(
-            type: MapAnimationType.smooth,
-            duration: 0.2,
-          ),
-        )
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: Point(latitude: latitude, longitude: longitude),
+          zoom: zoom,
+        ),
+      ),
+      animation: const MapAnimation(
+        type: MapAnimationType.smooth,
+        duration: 0.2,
+      ),
+    )
         .whenComplete(() {
-          _isAdjustingCamera = false;
-        });
+      _isAdjustingCamera = false;
+    });
   }
-  
+
   /// Получает цвет заливки территории по статусу
   Color _getTerritoryColor(String status) {
     switch (status) {
@@ -842,7 +864,7 @@ class _MapScreenState extends State<MapScreen> {
         return const Color.fromRGBO(158, 158, 158, 0.2);
     }
   }
-  
+
   /// Получает цвет границы территории по статусу
   Color _getTerritoryStrokeColor(String status) {
     switch (status) {
@@ -858,7 +880,7 @@ class _MapScreenState extends State<MapScreen> {
         return Colors.grey;
     }
   }
-  
+
   /// Показывает bottom sheet для территории
   void _showTerritoryBottomSheet(TerritoryMapModel territory) {
     showModalBottomSheet(
@@ -872,7 +894,7 @@ class _MapScreenState extends State<MapScreen> {
     debugPrint('MapScreen: onMapCreated called');
 
     _mapController = controller;
-    
+
     if (mounted) {
       setState(() {
         _isMapReady = true;
@@ -888,7 +910,10 @@ class _MapScreenState extends State<MapScreen> {
       if (_mapData != null) {
         _updateMapObjects();
       }
-      if (widget.showClubs && _currentCity != null && !_clubsSheetShown && mounted) {
+      if (widget.showClubs &&
+          _currentCity != null &&
+          !_clubsSheetShown &&
+          mounted) {
         _clubsSheetShown = true;
         _showClubsBottomSheet();
       }
@@ -952,14 +977,14 @@ class _MapScreenState extends State<MapScreen> {
       ),
     );
   }
-  
+
   /// Центрирует карту на текущей позиции пользователя
   Future<void> _centerOnMyLocation() async {
     if (_mapController == null) return;
 
     try {
       final locationService = ServiceLocator.locationService;
-      
+
       var permission = await locationService.checkPermission();
       if (permission == geo.LocationPermission.denied) {
         permission = await locationService.requestPermission();
@@ -970,7 +995,8 @@ class _MapScreenState extends State<MapScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(AppLocalizations.of(context)!.mapNoLocationSnackbar),
+              content:
+                  Text(AppLocalizations.of(context)!.mapNoLocationSnackbar),
               duration: const Duration(seconds: 2),
             ),
           );
@@ -1004,7 +1030,8 @@ class _MapScreenState extends State<MapScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)!.mapLocationErrorSnackbar(e.toString())),
+            content: Text(AppLocalizations.of(context)!
+                .mapLocationErrorSnackbar(e.toString())),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -1036,9 +1063,9 @@ class _MapScreenState extends State<MapScreen> {
                 Text(
                   clubLabel,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    fontWeight: FontWeight.w600,
-                  ),
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
                 if (_myClubs.length > 1) ...[
                   const SizedBox(width: 2),
@@ -1064,11 +1091,11 @@ class _MapScreenState extends State<MapScreen> {
           child: Text(
             territoryLabel,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: _currentTerritory != null
-                  ? Theme.of(context).colorScheme.onSecondaryContainer
-                  : Colors.grey.shade600,
-              fontWeight: FontWeight.w600,
-            ),
+                  color: _currentTerritory != null
+                      ? Theme.of(context).colorScheme.onSecondaryContainer
+                      : Colors.grey.shade600,
+                  fontWeight: FontWeight.w600,
+                ),
           ),
         ),
       ],
@@ -1090,7 +1117,11 @@ class _MapScreenState extends State<MapScreen> {
                 onCameraPositionChanged: (position, reason, finished) {
                   _handleCameraPositionChanged(position);
                 },
-                mapObjects: [..._territoryMapObjects, ..._captureLabels, ..._eventMarkers],
+                mapObjects: [
+                  ..._territoryMapObjects,
+                  ..._captureLabels,
+                  ..._eventMarkers
+                ],
               );
             },
           ),
@@ -1152,7 +1183,6 @@ class _MapScreenState extends State<MapScreen> {
                 child: const Icon(Icons.my_location),
               ),
             ),
-
         ],
       ),
     );
@@ -1255,7 +1285,8 @@ class _ClubsBottomSheetState extends State<_ClubsBottomSheet> {
                             final club = clubs[index];
                             return ListTile(
                               title: Text(club.name),
-                              subtitle: club.description != null && club.description!.isNotEmpty
+                              subtitle: club.description != null &&
+                                      club.description!.isNotEmpty
                                   ? Text(club.description!)
                                   : null,
                               onTap: () {

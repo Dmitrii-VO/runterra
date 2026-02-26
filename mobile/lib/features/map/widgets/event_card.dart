@@ -5,7 +5,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../shared/models/event_list_item_model.dart';
 
 /// Карточка события для отображения на карте
-/// 
+///
 /// Показывается при тапе на маркер события.
 /// Содержит: когда, где, организатор, кнопка "Присоединиться".
 class EventCard extends StatelessWidget {
@@ -51,7 +51,7 @@ class EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('d MMM, HH:mm');
-    
+
     return Container(
       margin: const EdgeInsets.all(16.0),
       padding: const EdgeInsets.all(16.0),
@@ -76,12 +76,7 @@ class EventCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Color.fromRGBO(
-                    _getEventColor(event.type).red,
-                    _getEventColor(event.type).green,
-                    _getEventColor(event.type).blue,
-                    0.1,
-                  ),
+                  color: _getEventColor(event.type).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -102,7 +97,7 @@ class EventCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // Когда
           Row(
             children: [
@@ -115,7 +110,7 @@ class EventCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          
+
           // Где
           if (event.locationName != null)
             Row(
@@ -131,7 +126,7 @@ class EventCard extends StatelessWidget {
               ],
             ),
           const SizedBox(height: 8),
-          
+
           // Организатор
           Row(
             children: [
@@ -142,8 +137,10 @@ class EventCard extends StatelessWidget {
                   (event.organizerDisplayName?.trim().isNotEmpty == true)
                       ? event.organizerDisplayName!.trim()
                       : (event.organizerType == 'club'
-                          ? AppLocalizations.of(context)!.clubLabel(event.organizerId)
-                          : AppLocalizations.of(context)!.trainerLabel(event.organizerId)),
+                          ? AppLocalizations.of(context)!
+                              .clubLabel(event.organizerId)
+                          : AppLocalizations.of(context)!
+                              .trainerLabel(event.organizerId)),
                   style: Theme.of(context).textTheme.bodyMedium,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
