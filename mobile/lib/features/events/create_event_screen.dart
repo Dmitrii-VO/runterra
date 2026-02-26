@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
-import '../../shared/models/club_member_model.dart';
 import '../../shared/models/event_start_location.dart';
-import '../../shared/models/workout.dart';
 import '../../shared/models/city_model.dart';
-import '../../shared/api/users_service.dart' show ApiException;
 
 class CreateEventScreen extends StatefulWidget {
   const CreateEventScreen({super.key});
@@ -31,13 +28,6 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   String? _cityId;
   String? _cityName;
   bool _hasClub = false;
-  bool _loadingIntegrationOptions = false;
-  bool _canAssignTrainer = false;
-  String? _selectedWorkoutId;
-  String? _selectedTrainerId;
-  List<Workout> _availableWorkouts = [];
-  List<ClubMemberModel> _availableTrainers = [];
-  bool _isPrivate = false; // New state for visibility
 
   // Location picker state (replaces lat/lon controllers)
   double? _selectedLat;
@@ -80,7 +70,6 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       } catch (e) {
         debugPrint('Error loading profile for organizer: $e');
       }
-      _resetEventIntegrationSelection();
     }
 
     CityModel? city;
@@ -91,111 +80,12 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       city = null;
     }
 
-    if (city == null) {
-      // Profile/local city can be stale. Fallback to first city from backend.
-      try {
-        final cities = await ServiceLocator.citiesService.getCities();
-        if (cities.isNotEmpty) {
-          city = cities.first;
-          await ServiceLocator.currentCityService.setCurrentCityId(city.id);
-        }
-      } catch (e) {
-        debugPrint('Error loading fallback city: $e');
-      }
-    }
-
-    if (!mounted) return;
     if (city != null) {
       setState(() {
-        _cityId = city!.id;
-        _cityName = city.name;
+        _cityName = city!.name;
         _selectedLat = city.center.latitude;
         _selectedLon = city.center.longitude;
       });
-    } else {
-      // Prevent sending an invalid cityId that backend cannot validate.
-      setState(() {
-        _cityId = null;
-        _cityName = null;
-      });
-    }
-
-    await _loadEventIntegrationOptions();
-  }
-
-  void _resetEventIntegrationSelection() {
-    if (!mounted) return;
-    setState(() {
-      _availableWorkouts = [];
-      _availableTrainers = [];
-      _selectedWorkoutId = null;
-      _selectedTrainerId = null;
-      _canAssignTrainer = false;
-      _loadingIntegrationOptions = false;
-    });
-  }
-
-  Future<void> _loadEventIntegrationOptions() async {
-    if (!mounted) return;
-    if (_organizerType != 'club') {
-      _resetEventIntegrationSelection();
-      return;
-    }
-
-    final clubId = _organizerIdController.text.trim();
-    if (clubId.isEmpty) {
-      _resetEventIntegrationSelection();
-      return;
-    }
-
-    setState(() => _loadingIntegrationOptions = true);
-    try {
-      final personalWorkouts = await ServiceLocator.workoutsService.getWorkouts();
-      final clubWorkouts = await ServiceLocator.workoutsService.getWorkouts(clubId: clubId);
-      final members = await ServiceLocator.clubsService.getClubMembers(clubId);
-      final profile = await ServiceLocator.usersService.getProfile();
-
-      final byId = <String, Workout>{};
-      for (final workout in [...clubWorkouts, ...personalWorkouts]) {
-        byId[workout.id] = workout;
-      }
-      final trainers = members
-          .where((member) => member.role == 'trainer' || member.role == 'leader')
-          .toList();
-      final myMembership = members.where((member) => member.userId == profile.user.id);
-      final canAssignTrainer = myMembership.any((member) => member.role == 'leader');
-
-      if (!mounted) return;
-      setState(() {
-        _availableWorkouts = byId.values.toList();
-        _availableTrainers = trainers;
-        _canAssignTrainer = canAssignTrainer;
-        if (_selectedWorkoutId != null &&
-            !_availableWorkouts.any((workout) => workout.id == _selectedWorkoutId)) {
-          _selectedWorkoutId = null;
-        }
-        if (_selectedTrainerId != null &&
-            !_availableTrainers.any((trainer) => trainer.userId == _selectedTrainerId)) {
-          _selectedTrainerId = null;
-        }
-        if (!_canAssignTrainer) {
-          _selectedTrainerId = null;
-        }
-      });
-    } catch (e) {
-      debugPrint('Error loading event integration options: $e');
-      if (!mounted) return;
-      setState(() {
-        _availableWorkouts = [];
-        _availableTrainers = [];
-        _selectedWorkoutId = null;
-        _selectedTrainerId = null;
-        _canAssignTrainer = false;
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _loadingIntegrationOptions = false);
-      }
     }
   }
 
@@ -230,19 +120,14 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   }
 
   Future<void> _pickLocation() async {
-    final result = await context.push<Map<String, dynamic>>(
+    final result = await context.push<Map<String, double>>(
       '/map/pick?lat=${_selectedLat ?? 59.93}&lon=${_selectedLon ?? 30.33}',
     );
     if (result != null && mounted) {
       setState(() {
-        _selectedLat = (result['lat'] as num?)?.toDouble();
-        _selectedLon = (result['lon'] as num?)?.toDouble();
+        _selectedLat = result['lat'];
+        _selectedLon = result['lon'];
       });
-      // Always update location name when picker returns an address
-      final address = result['address'] as String?;
-      if (address != null) {
-        _locationNameController.text = address;
-      }
     }
   }
 
@@ -297,33 +182,13 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             ? null
             : _descriptionController.text.trim(),
         participantLimit: participantLimit,
-        visibility: _isPrivate ? 'private' : 'public',
       );
-
-      if (_organizerType == 'club') {
-        final hasWorkout = _selectedWorkoutId != null;
-        final hasTrainer = _canAssignTrainer && _selectedTrainerId != null;
-        if (hasWorkout || hasTrainer) {
-          await ServiceLocator.eventsService.updateEventTrainerFields(
-            event.id,
-            workoutId: _selectedWorkoutId,
-            trainerId: hasTrainer ? _selectedTrainerId : null,
-          );
-        }
-      }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.eventCreateSuccess)),
       );
       context.go('/event/${event.id}');
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      final message = e.code == 'coordinates_out_of_city'
-          ? l10n.eventCreateLocationOutOfCity
-          : l10n.eventCreateError(e.message);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-      setState(() => _saving = false);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -375,14 +240,15 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                // ignore: deprecated_member_use
-                value: _eventType,
+                initialValue: _eventType,
                 decoration: InputDecoration(
                   labelText: l10n.eventCreateType,
                   border: const OutlineInputBorder(),
                 ),
                 items: [
                   DropdownMenuItem(value: 'training', child: Text(l10n.eventTypeTraining)),
+                  DropdownMenuItem(value: 'group_run', child: Text(l10n.eventTypeGroupRun)),
+                  DropdownMenuItem(value: 'club_event', child: Text(l10n.eventTypeClubEvent)),
                   DropdownMenuItem(value: 'open_event', child: Text(l10n.eventTypeOpenEvent)),
                 ],
                 onChanged: _saving ? null : (value) => setState(() => _eventType = value ?? _eventType),
@@ -421,8 +287,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
               // Organizer type: only show if user has a club (to choose between club/personal event)
               if (_hasClub) ...[
                 DropdownButtonFormField<String>(
-                  // ignore: deprecated_member_use
-                  value: _organizerType,
+                  initialValue: _organizerType,
                   decoration: InputDecoration(
                     labelText: l10n.eventCreateOrganizerType,
                     border: const OutlineInputBorder(),
@@ -447,77 +312,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                               _organizerIdController.text = profile.user.id;
                             } catch (_) {}
                           }
-                          await _loadEventIntegrationOptions();
                         },
                 ),
                 const SizedBox(height: 16),
-              ],
-              if (_organizerType == 'club') ...[
-                if (_loadingIntegrationOptions)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8),
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                DropdownButtonFormField<String>(
-                  // ignore: deprecated_member_use
-                  value: _selectedWorkoutId ?? '__none_workout__',
-                  decoration: InputDecoration(
-                    labelText: l10n.eventWorkout,
-                    border: const OutlineInputBorder(),
-                  ),
-                  items: [
-                    DropdownMenuItem(
-                      value: '__none_workout__',
-                      child: Text(l10n.eventNoWorkout),
-                    ),
-                    ..._availableWorkouts.map(
-                      (workout) => DropdownMenuItem(
-                        value: workout.id,
-                        child: Text(workout.name),
-                      ),
-                    ),
-                  ],
-                  onChanged: (_saving || _loadingIntegrationOptions)
-                      ? null
-                      : (value) {
-                          setState(() {
-                            _selectedWorkoutId =
-                                value == '__none_workout__' ? null : value;
-                          });
-                        },
-                ),
-                const SizedBox(height: 16),
-                if (_canAssignTrainer) ...[
-                  DropdownButtonFormField<String>(
-                    // ignore: deprecated_member_use
-                    value: _selectedTrainerId ?? '__none_trainer__',
-                    decoration: InputDecoration(
-                      labelText: l10n.eventTrainer,
-                      border: const OutlineInputBorder(),
-                    ),
-                    items: [
-                      DropdownMenuItem(
-                        value: '__none_trainer__',
-                        child: Text(l10n.eventSelectTrainer),
-                      ),
-                      ..._availableTrainers.map(
-                        (trainer) => DropdownMenuItem(
-                          value: trainer.userId,
-                          child: Text(trainer.displayName),
-                        ),
-                      ),
-                    ],
-                    onChanged: (_saving || _loadingIntegrationOptions)
-                        ? null
-                        : (value) {
-                            setState(() {
-                              _selectedTrainerId =
-                                  value == '__none_trainer__' ? null : value;
-                            });
-                          },
-                  ),
-                  const SizedBox(height: 16),
-                ],
               ],
               TextFormField(
                 controller: _locationNameController,
@@ -555,13 +352,6 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 ),
                 keyboardType: TextInputType.number,
                 enabled: !_saving,
-              ),
-              const SizedBox(height: 16),
-              SwitchListTile(
-                title: Text(l10n.eventCreatePrivate),
-                subtitle: Text(l10n.eventCreatePrivateDescription),
-                value: _isPrivate,
-                onChanged: _saving ? null : (val) => setState(() => _isPrivate = val),
               ),
               const SizedBox(height: 16),
               TextFormField(
