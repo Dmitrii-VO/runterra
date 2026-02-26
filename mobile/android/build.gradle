@@ -23,7 +23,13 @@ allprojects {
 
 rootProject.buildDir = '../build'
 subprojects {
-    project.buildDir = "${rootProject.buildDir}/${project.name}"
+    def rootDrive = rootProject.projectDir.absolutePath.substring(0, 1).toLowerCase()
+    def projectDrive = project.projectDir.absolutePath.substring(0, 1).toLowerCase()
+    if (rootDrive == projectDrive) {
+        project.buildDir = "${rootProject.buildDir}/${project.name}"
+    } else {
+        project.buildDir = new File(System.getProperty("java.io.tmpdir"), "runterra_build/${project.name}")
+    }
 }
 subprojects {
     project.evaluationDependsOn(':app')
@@ -36,6 +42,11 @@ subprojects {
                 namespace = project.group.toString()
             }
             compileSdk 35
+            
+            // Fix for different roots Exception when generating tests
+            testOptions {
+                unitTests.includeAndroidResources = false
+            }
         }
     }
 }
