@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/api/users_service.dart' show ApiException;
 import '../../shared/di/service_locator.dart';
+import '../../shared/models/my_club_model.dart';
 import '../../shared/models/run_session.dart';
 import 'widgets/run_route_map.dart';
 
@@ -32,10 +33,13 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
   Timer? _timer;
   StreamSubscription? _gpsSubscription;
   bool _isSubmitting = false;
+  MyClubModel? _selectedScoringClub;
+  List<MyClubModel>? _myClubs;
 
   @override
   void initState() {
     super.initState();
+    _loadClubs();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final session = _runService.currentSession;
@@ -61,6 +65,61 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
     _timer?.cancel();
     _gpsSubscription?.cancel();
     super.dispose();
+  }
+
+  Future<void> _loadClubs() async {
+    try {
+      final clubs = await ServiceLocator.clubsService.getMyClubs();
+      final activeId = ServiceLocator.currentClubService.currentClubId;
+      if (mounted) {
+        setState(() {
+          _myClubs = clubs;
+          if (activeId != null) {
+            _selectedScoringClub = clubs.where((c) => c.id == activeId).firstOrNull;
+          }
+          if (_selectedScoringClub == null && clubs.isNotEmpty) {
+             _selectedScoringClub = clubs.first;
+          }
+        });
+      }
+    } catch (_) {
+      // Ignore errors silently
+    }
+  }
+
+  Future<void> _showPreRunClubSelectionDialog() async {
+    if (_myClubs == null || _myClubs!.isEmpty) return;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                AppLocalizations.of(context)!.runSelectClubTitle,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+            ..._myClubs!.map((club) => ListTile(
+              title: Text(club.name),
+              trailing: _selectedScoringClub?.id == club.id ? const Icon(Icons.check, color: Colors.green) : null,
+              onTap: () {
+                setState(() {
+                  _selectedScoringClub = club;
+                });
+                Navigator.pop(ctx);
+              },
+            )),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
   }
 
   void _restoreRunningState() {
@@ -109,6 +168,7 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
       final session = await _runService.startRun(
         activityId: widget.activityId,
         scheduledItemId: widget.scheduledItemId,
+        scoringClubId: _selectedScoringClub?.id,
       );
 
       setState(() {
@@ -496,6 +556,26 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
                       color: Colors.grey,
                     ),
                 textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+            ],
+            if (_myClubs != null && _myClubs!.isNotEmpty) ...[
+              Card(
+                elevation: 0,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: ListTile(
+                  title: Text(
+                    AppLocalizations.of(context)!.runSelectClubTitle,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  subtitle: Text(
+                    _selectedScoringClub?.name ?? 'Не выбран',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  trailing: const Icon(Icons.edit, size: 20),
+                  onTap: _showPreRunClubSelectionDialog,
+                ),
               ),
               const SizedBox(height: 24),
             ],

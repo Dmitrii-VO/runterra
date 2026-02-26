@@ -45,7 +45,7 @@ class RunService {
   /// Бросает исключение, если:
   /// - служба геолокации отключена
   /// - разрешение на геолокацию отклонено
-  Future<RunSession> startRun({String? activityId, String? scheduledItemId}) async {
+  Future<RunSession> startRun({String? activityId, String? scheduledItemId, String? scoringClubId}) async {
     // Auto-clear completed sessions (failed submissions, etc.)
     if (_currentSession != null &&
         _currentSession!.status == RunSessionStatus.completed) {
@@ -102,6 +102,7 @@ class RunService {
             id: _currentSession!.id,
             activityId: _currentSession!.activityId,
             scheduledItemId: _currentSession!.scheduledItemId,
+            scoringClubId: _currentSession!.scoringClubId,
             startedAt: _currentSession!.startedAt,
             status: _currentSession!.status,
             duration: _currentSession!.duration,
@@ -124,6 +125,7 @@ class RunService {
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       activityId: activityId,
       scheduledItemId: scheduledItemId,
+      scoringClubId: scoringClubId,
       startedAt: _startTime!,
       status: RunSessionStatus.running,
       gpsStatus: initialGpsStatus,
@@ -153,6 +155,8 @@ class RunService {
     _currentSession = RunSession(
       id: _currentSession!.id,
       activityId: _currentSession!.activityId,
+      scheduledItemId: _currentSession!.scheduledItemId,
+      scoringClubId: _currentSession!.scoringClubId,
       startedAt: _currentSession!.startedAt,
       status: RunSessionStatus.paused,
       duration: totalAccumulated,
@@ -197,6 +201,7 @@ class RunService {
             id: _currentSession!.id,
             activityId: _currentSession!.activityId,
             scheduledItemId: _currentSession!.scheduledItemId,
+            scoringClubId: _currentSession!.scoringClubId,
             startedAt: _currentSession!.startedAt,
             status: _currentSession!.status,
             duration: _currentSession!.duration,
@@ -219,6 +224,7 @@ class RunService {
       id: _currentSession!.id,
       activityId: _currentSession!.activityId,
       scheduledItemId: _currentSession!.scheduledItemId,
+      scoringClubId: _currentSession!.scoringClubId,
       startedAt: _currentSession!.startedAt,
       status: RunSessionStatus.running,
       duration: _currentSession!.accumulatedDuration,
@@ -240,6 +246,7 @@ class RunService {
         id: _currentSession!.id,
         activityId: _currentSession!.activityId,
         scheduledItemId: _currentSession!.scheduledItemId,
+        scoringClubId: _currentSession!.scoringClubId,
         startedAt: _currentSession!.startedAt,
         status: _currentSession!.status,
         duration: _currentSession!.duration,
@@ -265,6 +272,7 @@ class RunService {
         id: _currentSession!.id,
         activityId: _currentSession!.activityId,
         scheduledItemId: _currentSession!.scheduledItemId,
+        scoringClubId: _currentSession!.scoringClubId,
         startedAt: _currentSession!.startedAt,
         status: _currentSession!.status,
         duration: duration ?? _currentSession!.duration,
@@ -287,6 +295,7 @@ class RunService {
         id: _currentSession!.id,
         activityId: _currentSession!.activityId,
         scheduledItemId: _currentSession!.scheduledItemId,
+        scoringClubId: _currentSession!.scoringClubId,
         startedAt: _currentSession!.startedAt,
         status: _currentSession!.status,
         duration: _currentSession!.duration,
@@ -347,6 +356,7 @@ class RunService {
       id: _currentSession!.id,
       activityId: _currentSession!.activityId,
       scheduledItemId: _currentSession!.scheduledItemId,
+      scoringClubId: _currentSession!.scoringClubId,
       startedAt: _currentSession!.startedAt,
       status: RunSessionStatus.completed,
       duration: finalDuration,
@@ -404,8 +414,9 @@ class RunService {
     }
     
     // Include scoringClubId if provided (for territory capture)
-    if (scoringClubId != null) {
-      requestBody['scoringClubId'] = scoringClubId;
+    final finalScoringClubId = scoringClubId ?? session.scoringClubId;
+    if (finalScoringClubId != null) {
+      requestBody['scoringClubId'] = finalScoringClubId;
     }
 
     // Send to backend. Canonical path: POST /api/runs (do not use base URL only or path "/").

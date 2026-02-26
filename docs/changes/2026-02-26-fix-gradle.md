@@ -1,8 +1,11 @@
-# Fix Gradle Import and Java Version Conflict
+# Исправление сборки Gradle и конфликта версий Java
 
-## Changes made
-- Upgraded Gradle Wrapper to version `8.10.2` for both `mobile/android` and `wear/android` modules.
-- Configured VS Code `.vscode/settings.json` to explicitly use the bundled Android Studio Java 21 JDK (`C:\Program Files\Android\Android Studio1\jbr`).
+## Описание изменений
+- Обновлен Gradle Wrapper до версии `8.10.2` в модулях `mobile/android` и `wear/android`.
+- Исправлены несовместимости с Flutter 3.24.5 в мобильном приложении:
+  - Метод `.withValues(alpha: ...)` заменен на `.withOpacity(...)`.
+  - Параметр `initialValue` в `DropdownButtonFormField` заменен на `value`.
+- В GitHub Actions (`ci.yml`) добавлен шаг очистки `gradle.properties` от локальных путей к Java (`org.gradle.java.home`).
 
-## Why
-VS Code's Java extension (redhat.java) was loading Gradle projects using Java 25. Since the background Gradle daemon uses Java 21, the Java 25 compilation of the Gradle initialization scripts crashed the build with an `Unsupported class file major version 69` error. By constraining the Java version for imports to the standard Java 21, the issue is resolved and Gradle works smoothly.
+## Причина
+Локальные настройки VS Code (Java 25) конфликтовали с Gradle в CI (Java 21), что вызывало ошибку `Unsupported class file major version 69` или `65`. Обновление Gradle до 8.10.2 обеспечивает полную поддержку Java 21 и стабильность сборки в различных окружениях.

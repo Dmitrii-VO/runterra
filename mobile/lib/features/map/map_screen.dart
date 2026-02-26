@@ -881,12 +881,24 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
+  bool _isSheetShowing = false;
+
   /// Показывает bottom sheet для территории
   void _showTerritoryBottomSheet(TerritoryMapModel territory) {
+    if (_isSheetShowing) return;
+    _isSheetShowing = true;
     showModalBottomSheet(
       context: context,
       builder: (context) => TerritoryBottomSheet(territory: territory),
-    );
+    ).whenComplete(() {
+      if (mounted) {
+        setState(() {
+          _isSheetShowing = false;
+        });
+      } else {
+        _isSheetShowing = false;
+      }
+    });
   }
 
   /// Обработчик создания карты
