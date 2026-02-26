@@ -55,7 +55,7 @@ jobs:
         with:
           flutter-version: '3.24.5'
           channel: 'stable'
-          cache: false
+          cache: true
 
       - name: Install dependencies
         run: flutter pub get
@@ -86,5 +86,3 @@ jobs:
 
       - name: Build APK (debug)
         run: flutter build apk --debug
-        env:
-          GRADLE_OPTS: -Dorg.gradle.java.home=${{ env.JAVA_HOME }}
