@@ -18,6 +18,7 @@ export {
 export { ClubsRepository, getClubsRepository } from './clubs.repository';
 export { ClubChannelsRepository, getClubChannelsRepository, ClubChannelDto } from './club_channels.repository';
 export { TrainerProfilesRepository, getTrainerProfilesRepository } from './trainer_profiles.repository';
+export { TrainerGroupsRepository, getTrainerGroupsRepository } from './trainer_groups.repository';
 export { WorkoutsRepository, getWorkoutsRepository } from './workouts.repository';
 export { ScheduleRepository, getScheduleRepository } from './schedule.repository';
 export { TerritoriesRepository, getTerritoriesRepository } from './territories.repository';

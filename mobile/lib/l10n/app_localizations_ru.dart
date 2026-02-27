@@ -1606,4 +1606,30 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get directChatWaitForTrainer => 'Тренер напишет вам первым';
+
+  @override
+  String get trainerGroupsTitle => 'Группы';
+
+  @override
+  String get trainerCreateGroup => 'Создать группу';
+
+  @override
+  String get trainerGroupName => 'Название группы';
+
+  @override
+  String get trainerGroupNameHint => 'Введите название группы';
+
+  @override
+  String get trainerSelectMembers => 'Выберите участников';
+
+  @override
+  String get trainerNoGroups => 'Групп пока нет';
+
+  @override
+  String get trainerGroupCreated => 'Группа успешно создана';
+
+  @override
+  String trainerCreateGroupError(String error) {
+    return 'Не удалось создать группу: $error';
+  }
 }

@@ -1601,4 +1601,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get directChatWaitForTrainer => 'Your trainer will write you first';
+
+  @override
+  String get trainerGroupsTitle => 'Groups';
+
+  @override
+  String get trainerCreateGroup => 'Create Group';
+
+  @override
+  String get trainerGroupName => 'Group Name';
+
+  @override
+  String get trainerGroupNameHint => 'Enter group name';
+
+  @override
+  String get trainerSelectMembers => 'Select Members';
+
+  @override
+  String get trainerNoGroups => 'No groups yet';
+
+  @override
+  String get trainerGroupCreated => 'Group created successfully';
+
+  @override
+  String trainerCreateGroupError(String error) {
+    return 'Could not create group: $error';
+  }
 }

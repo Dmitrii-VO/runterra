@@ -189,6 +189,37 @@ class MessagesService {
     _throwApiException(response, 'send_direct_message_error');
   }
 
+  /// GET /api/messages/trainer-groups/:groupId — messages for a trainer group.
+  Future<List<MessageModel>> getTrainerGroupMessages(
+    String groupId, {
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    final response = await _apiClient.get(
+      '/api/messages/trainer-groups/$groupId?limit=$limit&offset=$offset',
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final jsonData = jsonDecode(response.body) as List<dynamic>;
+      return jsonData
+          .map((json) => MessageModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+    }
+    _throwApiException(response, 'get_trainer_group_messages_error');
+  }
+
+  /// POST /api/messages/trainer-groups/:groupId — send message to trainer group.
+  Future<MessageModel> sendTrainerGroupMessage(String groupId, String text) async {
+    final response = await _apiClient.post(
+      '/api/messages/trainer-groups/$groupId',
+      body: {'text': text},
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+      return MessageModel.fromJson(jsonData);
+    }
+    _throwApiException(response, 'send_trainer_group_message_error');
+  }
+
   Never _throwApiException(dynamic response, String fallbackCode) {
     String errorCode = fallbackCode;
     String errorMessage = 'Request failed (${response.statusCode})';

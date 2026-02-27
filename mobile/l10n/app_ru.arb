@@ -682,5 +682,20 @@
   "memberActionChangeRole": "Изменить роль",
   "memberActionPrivateMessages": "Личные сообщения",
   "memberActionPrivateMessagesHint": "В разработке",
-  "directChatWaitForTrainer": "Тренер напишет вам первым"
+  "directChatWaitForTrainer": "Тренер напишет вам первым",
+  "trainerGroupsTitle": "Группы",
+  "trainerCreateGroup": "Создать группу",
+  "trainerGroupName": "Название группы",
+  "trainerGroupNameHint": "Введите название группы",
+  "trainerSelectMembers": "Выберите участников",
+  "trainerNoGroups": "Групп пока нет",
+  "trainerGroupCreated": "Группа успешно создана",
+  "trainerCreateGroupError": "Не удалось создать группу: {error}",
+  "@trainerCreateGroupError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

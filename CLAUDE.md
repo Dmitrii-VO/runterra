@@ -131,6 +131,14 @@ Runs on push/PR to `main`: backend typecheck + tests + build; mobile analyze + t
 - When fixing a bug: confirm the fix actually resolves the symptom, not just compiles
 - Ask yourself: "Would a staff engineer approve this PR?"
 
+### Verification Checklist (CRITICAL)
+- [ ] **SQL Types:** Use `::uuid` when joining `VARCHAR` and `UUID` columns (PostgreSQL is strict).
+- [ ] **Schema Check:** Verify column names in `backend/src/db/migrations/001_initial.sql` before writing raw SQL (e.g., `avatar_url` not `photo_url`).
+- [ ] **L10n Check:** Verify key existence in `mobile/l10n/app_ru.arb` before using it in Flutter.
+- [ ] **Backend Reload:** Run `sudo systemctl daemon-reload && sudo systemctl restart runterra-backend` on server if service config or environment changed.
+- [ ] **CI Skip:** Use `.\scripts\deploy-backend.ps1 -SkipCI` if `npm` fails to pass the flag.
+- [ ] **Flutter Imports:** Check that all used models/classes are imported in Dart files.
+
 ### Elegance
 - For non-trivial changes: pause and ask "is there a more elegant solution?"
 - If a fix feels hacky, implement the clean version instead

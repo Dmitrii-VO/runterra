@@ -2,12 +2,46 @@ import 'dart:convert';
 import 'api_client.dart';
 import 'users_service.dart' show ApiException;
 import '../models/trainer_profile.dart';
+import '../models/trainer_group_model.dart';
 
 /// Service for trainer profile API
 class TrainerService {
   final ApiClient _apiClient;
 
   TrainerService({required ApiClient apiClient}) : _apiClient = apiClient;
+
+  /// GET /api/trainer/groups — list own groups in a club
+  Future<List<TrainerGroupModel>> getGroups(String clubId) async {
+    final response = await _apiClient.get('/api/trainer/groups?clubId=$clubId');
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final list = jsonDecode(response.body) as List<dynamic>;
+      return list
+          .map((e) => TrainerGroupModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+    _throwApiException(response, 'get_trainer_groups_error');
+  }
+
+  /// POST /api/trainer/groups — create a group
+  Future<TrainerGroupModel> createGroup({
+    required String clubId,
+    required String name,
+    required List<String> memberIds,
+  }) async {
+    final response = await _apiClient.post(
+      '/api/trainer/groups',
+      body: {
+        'clubId': clubId,
+        'name': name,
+        'memberIds': memberIds,
+      },
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return TrainerGroupModel.fromJson(json);
+    }
+    _throwApiException(response, 'create_trainer_group_error');
+  }
 
   /// GET /api/trainer — public trainer discovery (accepts_private_clients=true)
   Future<List<PublicTrainerEntry>> getTrainers({

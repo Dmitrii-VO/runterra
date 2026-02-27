@@ -3043,6 +3043,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your trainer will write you first'**
   String get directChatWaitForTrainer;
+
+  /// No description provided for @trainerGroupsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups'**
+  String get trainerGroupsTitle;
+
+  /// No description provided for @trainerCreateGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Group'**
+  String get trainerCreateGroup;
+
+  /// No description provided for @trainerGroupName.
+  ///
+  /// In en, this message translates to:
+  /// **'Group Name'**
+  String get trainerGroupName;
+
+  /// No description provided for @trainerGroupNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter group name'**
+  String get trainerGroupNameHint;
+
+  /// No description provided for @trainerSelectMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Members'**
+  String get trainerSelectMembers;
+
+  /// No description provided for @trainerNoGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'No groups yet'**
+  String get trainerNoGroups;
+
+  /// No description provided for @trainerGroupCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Group created successfully'**
+  String get trainerGroupCreated;
+
+  /// No description provided for @trainerCreateGroupError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not create group: {error}'**
+  String trainerCreateGroupError(String error);
 }
 
 class _AppLocalizationsDelegate

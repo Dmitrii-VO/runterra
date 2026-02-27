@@ -1,8 +1,8 @@
 /**
- * Message entity for chat (city / club channels).
+ * Message entity for chat (city / club channels / trainer groups).
  */
 
-export type MessageChannelType = 'city' | 'club';
+export type MessageChannelType = 'city' | 'club' | 'trainer_group';
 
 export interface Message {
   id: string;

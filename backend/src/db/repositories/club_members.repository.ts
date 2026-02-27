@@ -354,6 +354,18 @@ export class ClubMembersRepository extends BaseRepository {
     return (result?.rowCount ?? 0) > 0;
   }
 
+  /** Verify that all provided userIds are active members of the specified club */
+  async verifyActiveMembers(clubId: string, userIds: string[]): Promise<boolean> {
+    if (userIds.length === 0) return true;
+    const row = await this.queryOne<{ count: string }>(
+      `SELECT COUNT(*) as count
+       FROM club_members
+       WHERE club_id = $1 AND status = 'active' AND user_id = ANY($2)`,
+      [clubId, userIds],
+    );
+    return parseInt(row?.count ?? '0', 10) === userIds.length;
+  }
+
   /** Count active members for a club */
   async countActiveMembers(clubId: string): Promise<number> {
     const row = await this.queryOne<{ count: string }>(

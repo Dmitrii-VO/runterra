@@ -11,7 +11,13 @@ import { Router, Request, Response } from 'express';
 import { CreateMessageSchema } from '../modules/messages';
 import type { MessageViewDto, ClubChatViewDto } from '../modules/messages/message.dto';
 import { validateBody } from './validateBody';
-import { getMessagesRepository, getUsersRepository, getClubMembersRepository, getClubChannelsRepository } from '../db/repositories';
+import {
+  getMessagesRepository,
+  getUsersRepository,
+  getClubMembersRepository,
+  getClubChannelsRepository,
+  getTrainerGroupsRepository,
+} from '../db/repositories';
 import { broadcast } from '../ws/chatWs';
 import { logger } from '../shared/logger';
 import { isValidClubId } from '../shared/clubId';
@@ -455,6 +461,109 @@ router.post(
       res.status(201).json(dto);
     } catch (error) {
       logger.error('Error sending direct message', { error });
+      res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+    }
+  }
+);
+
+/**
+ * GET /api/messages/trainer-groups/:groupId
+ * Query: limit, offset.
+ * Access: trainer or members of the group.
+ */
+router.get('/trainer-groups/:groupId', async (req: Request, res: Response) => {
+  const { groupId } = req.params;
+  if (!isValidUuid(groupId)) {
+    return res.status(400).json({
+      code: 'validation_error',
+      message: 'groupId must be a valid UUID',
+    });
+  }
+
+  try {
+    const user = await resolveUser(req, res);
+    if (!user) return;
+
+    const trainerGroupsRepo = getTrainerGroupsRepository();
+    const group = await trainerGroupsRepo.findById(groupId);
+    if (!group) {
+      return res.status(404).json({ code: 'not_found', message: 'Trainer group not found' });
+    }
+
+    // Access check: must be the trainer or a member of the group
+    const isMember = await trainerGroupsRepo.isMember(groupId, user.id);
+    const isTrainer = group.trainerId === user.id;
+    if (!isMember && !isTrainer) {
+      return res.status(403).json({ code: 'forbidden', message: 'You do not have access to this group' });
+    }
+
+    const { limit, offset } = parsePagination(req.query as { limit?: string; offset?: string });
+    const messagesRepo = getMessagesRepository();
+    const messages = await messagesRepo.findByChannel('trainer_group', groupId, limit, offset);
+    res.status(200).json(messages);
+  } catch (error) {
+    logger.error('Error fetching trainer group messages', { error, groupId });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /api/messages/trainer-groups/:groupId
+ * Send a message to a trainer group.
+ * Access: trainer or members of the group.
+ */
+router.post(
+  '/trainer-groups/:groupId',
+  validateBody(CreateMessageSchema),
+  async (req: Request, res: Response) => {
+    const { groupId } = req.params;
+    if (!isValidUuid(groupId)) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'groupId must be a valid UUID',
+      });
+    }
+
+    try {
+      const user = await resolveUser(req, res);
+      if (!user) return;
+
+      const trainerGroupsRepo = getTrainerGroupsRepository();
+      const group = await trainerGroupsRepo.findById(groupId);
+      if (!group) {
+        return res.status(404).json({ code: 'not_found', message: 'Trainer group not found' });
+      }
+
+      // Access check: must be the trainer or a member of the group
+      const isMember = await trainerGroupsRepo.isMember(groupId, user.id);
+      const isTrainer = group.trainerId === user.id;
+      if (!isMember && !isTrainer) {
+        return res.status(403).json({ code: 'forbidden', message: 'You do not have access to this group' });
+      }
+
+      const { text } = req.body as { text: string };
+      const messagesRepo = getMessagesRepository();
+      const message = await messagesRepo.create({
+        channelType: 'trainer_group',
+        channelId: groupId,
+        userId: user.id,
+        text,
+      });
+
+      const dto: MessageViewDto = {
+        id: message.id,
+        text: message.text,
+        userId: message.userId,
+        userName: user.name,
+        createdAt: message.createdAt.toISOString(),
+        updatedAt: message.updatedAt.toISOString(),
+      };
+
+      // Broadcast to trainer group channel
+      broadcast(`trainer_group:${groupId}`, dto);
+      res.status(201).json(dto);
+    } catch (error) {
+      logger.error('Error sending trainer group message', { error, groupId });
       res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
     }
   }

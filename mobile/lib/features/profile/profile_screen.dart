@@ -96,7 +96,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onPressed: () async {
                     final result = await context.push<bool>(
                       '/profile/edit',
-                      extra: profile,
+                      extra: profile.user,
                     );
                     if (result == true && context.mounted) _retry();
                   },

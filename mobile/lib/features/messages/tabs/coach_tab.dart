@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../shared/di/service_locator.dart';
+import '../../../shared/models/my_club_model.dart';
 import '../../../shared/models/direct_chat_model.dart';
 import '../direct_chat_screen.dart';
-import 'club_messages_tab.dart';
+import 'trainer_groups_tab.dart';
 
 /// Tab "Тренер" — trainer messaging with sub-tabs: Groups and Personal.
-///
-/// Groups: ClubMessagesTab with highlightTrainer enabled.
-/// Personal: trainer sees client list, client sees trainer chat.
 class CoachTab extends StatefulWidget {
   const CoachTab({super.key});
 
@@ -21,10 +20,11 @@ class _CoachTabState extends State<CoachTab> with SingleTickerProviderStateMixin
   late TabController _tabController;
   List<DirectChatModel>? _trainerClients;
   DirectChatModel? _myTrainer;
+  List<MyClubModel>? _myClubs;
   bool _isLoading = true;
 
+  bool _canCreateGroups = false;
   bool _isTrainerRole = false;
-  bool _hasClubs = false;
 
   @override
   void initState() {
@@ -53,9 +53,9 @@ class _CoachTabState extends State<CoachTab> with SingleTickerProviderStateMixin
           debugPrint('CoachTab: Error loading my trainer: $e');
           return null;
         }),
-        ServiceLocator.messagesService.getClubChats().catchError((e) {
-          debugPrint('CoachTab: Error loading clubs: $e');
-          return <ClubChatModel>[];
+        ServiceLocator.clubsService.getMyClubs().catchError((e) {
+          debugPrint('CoachTab: Error loading my clubs: $e');
+          return <MyClubModel>[];
         }),
       ]);
 
@@ -64,12 +64,10 @@ class _CoachTabState extends State<CoachTab> with SingleTickerProviderStateMixin
       setState(() {
         _trainerClients = results[0] as List<DirectChatModel>?;
         _myTrainer = results[1] as DirectChatModel?;
-        final clubs = results[2] as List<ClubChatModel>;
-        _hasClubs = clubs.isNotEmpty;
+        _myClubs = results[2] as List<MyClubModel>;
         
-        // Mark as trainer if they have clients OR if they have any clubs
-        // (Simplified: if you are in a club, you might be a trainer/leader)
-        _isTrainerRole = (_trainerClients != null && _trainerClients!.isNotEmpty) || _hasClubs;
+        _canCreateGroups = _myClubs?.any((c) => c.role == 'trainer' || c.role == 'leader') ?? false;
+        _isTrainerRole = (_trainerClients != null && _trainerClients!.isNotEmpty) || _canCreateGroups;
         
         _isLoading = false;
       });
@@ -83,41 +81,70 @@ class _CoachTabState extends State<CoachTab> with SingleTickerProviderStateMixin
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
 
-    return Column(
-      children: [
-        TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: l10n.trainerGroupsTab),
-            Tab(text: l10n.trainerPersonalTab),
-          ],
-        ),
-        Expanded(
-          child: TabBarView(
+    return Scaffold(
+      body: Column(
+        children: [
+          TabBar(
             controller: _tabController,
-            children: [
-              // Groups tab
-              _buildGroupsTab(l10n, theme),
-              // Personal tab
-              _buildPersonalTab(l10n, theme),
+            tabs: [
+              Tab(text: l10n.trainerGroupsTab),
+              Tab(text: l10n.trainerPersonalTab),
             ],
           ),
-        ),
-      ],
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                const TrainerGroupsTab(),
+                _buildPersonalTab(l10n, Theme.of(context)),
+              ],
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: _canCreateGroups
+          ? FloatingActionButton(
+              onPressed: _showCreateGroupDialog,
+              child: const Icon(Icons.group_add),
+            )
+          : null,
     );
   }
 
-  Widget _buildGroupsTab(AppLocalizations l10n, ThemeData theme) {
-    if (_isLoading && !_hasClubs) {
-      return const Center(child: CircularProgressIndicator());
+  void _showCreateGroupDialog() async {
+    final l10n = AppLocalizations.of(context)!;
+    final trainerClubs = _myClubs?.where((c) => c.role == 'trainer' || c.role == 'leader').toList() ?? [];
+
+    if (trainerClubs.isEmpty) return;
+
+    String? selectedClubId;
+    if (trainerClubs.length == 1) {
+      selectedClubId = trainerClubs.first.id;
+    } else {
+      selectedClubId = await showDialog<String>(
+        context: context,
+        builder: (context) => SimpleDialog(
+          title: Text(l10n.selectClub),
+          children: trainerClubs
+              .map((c) => SimpleDialogOption(
+                    onPressed: () => Navigator.pop(context, c.id),
+                    child: Text(c.name),
+                  ))
+              .toList(),
+        ),
+      );
     }
-    if (!_hasClubs) {
-      return _buildEmptyState(l10n.noClubChats, theme);
+
+    if (selectedClubId != null && mounted) {
+      final club = trainerClubs.firstWhere((c) => c.id == selectedClubId);
+      final result = await context.push<bool>(
+        '/trainer/groups/create?clubId=$selectedClubId&clubName=${Uri.encodeComponent(club.name)}',
+      );
+      if (result == true) {
+        _loadData(); // Reload to show new group if needed (though TrainerGroupsTab has its own load)
+      }
     }
-    // For now, show ClubMessagesTab but we might want a list view here later
-    return const ClubMessagesTab(highlightTrainer: true);
   }
 
   Widget _buildPersonalTab(AppLocalizations l10n, ThemeData theme) {

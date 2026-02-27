@@ -179,4 +179,9 @@ class ChatWebSocketService {
     }
     return 'club:$clubId';
   }
+
+  /// Build channel key for trainer group subscription.
+  static String trainerGroupChannelKey(String groupId) {
+    return 'trainer_group:$groupId';
+  }
 }

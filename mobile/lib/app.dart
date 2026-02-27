@@ -18,6 +18,7 @@ import 'features/map/map_screen.dart';
 import 'features/run/run_screen.dart';
 import 'features/run/run_detail_screen.dart';
 import 'features/messages/messages_screen.dart';
+import 'features/messages/chat_screen.dart';
 import 'features/events/events_screen.dart';
 import 'features/events/event_details_screen.dart';
 import 'features/events/create_event_screen.dart';
@@ -30,6 +31,7 @@ import 'features/trainer/trainer_edit_profile_screen.dart';
 import 'features/trainer/trainers_list_screen.dart';
 import 'features/trainer/workouts_list_screen.dart';
 import 'features/trainer/workout_form_screen.dart';
+import 'features/trainer/create_trainer_group_screen.dart';
 import 'shared/models/profile_model.dart' show ProfileUserData;
 import 'shared/models/club_model.dart';
 import 'shared/models/club_member_model.dart';
@@ -320,6 +322,23 @@ class RunterraApp extends StatelessWidget {
         builder: (context, state) {
           final workout = state.extra as Workout?;
           return WorkoutFormScreen(existing: workout);
+        },
+      ),
+      GoRoute(
+        path: '/trainer/groups/create',
+        builder: (context, state) {
+          final clubId = state.uri.queryParameters['clubId'] ?? '';
+          final clubName = state.uri.queryParameters['clubName'] ?? '';
+          return CreateTrainerGroupScreen(clubId: clubId, clubName: clubName);
+        },
+      ),
+      GoRoute(
+        path: '/chat/:type/:id',
+        builder: (context, state) {
+          final type = state.pathParameters['type'] ?? '';
+          final id = state.pathParameters['id'] ?? '';
+          final title = state.uri.queryParameters['title'] ?? 'Chat';
+          return ChatScreen(channelType: type, channelId: id, title: title);
         },
       ),
     ],

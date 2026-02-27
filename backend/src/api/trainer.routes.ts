@@ -10,8 +10,18 @@
 
 import { Router, Request, Response } from 'express';
 import { validateBody } from './validateBody';
-import { getUsersRepository, getTrainerProfilesRepository, getClubMembersRepository, getMessagesRepository } from '../db/repositories';
-import { CreateTrainerProfileSchema, UpdateTrainerProfileSchema } from '../modules/trainer';
+import {
+  getUsersRepository,
+  getTrainerProfilesRepository,
+  getClubMembersRepository,
+  getMessagesRepository,
+  getTrainerGroupsRepository,
+} from '../db/repositories';
+import {
+  CreateTrainerProfileSchema,
+  UpdateTrainerProfileSchema,
+  CreateTrainerGroupSchema,
+} from '../modules/trainer';
 import { logger } from '../shared/logger';
 import { isValidUuid } from '../shared/validation';
 
@@ -214,6 +224,89 @@ router.delete('/clients/:userId', async (req: Request, res: Response) => {
     res.status(200).json({ ok: true });
   } catch (error) {
     logger.error('Error removing trainer client', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/trainer/groups — list groups in a club (as trainer or member)
+ */
+router.get('/groups', async (req: Request, res: Response) => {
+  try {
+    const userId = await resolveUserId(req, res);
+    if (!userId) return;
+
+    const { clubId } = req.query;
+    if (!clubId || typeof clubId !== 'string' || !isValidUuid(clubId)) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'clubId query parameter is required and must be a valid UUID',
+      });
+    }
+
+    const repo = getTrainerGroupsRepository();
+    // Fetch groups where user is trainer
+    const leadingGroups = await repo.findByTrainerAndClub(userId, clubId);
+    // Fetch groups where user is member
+    const memberGroups = await repo.findByMemberAndClub(userId, clubId);
+
+    // Merge and unique by ID
+    const allGroups = [...leadingGroups];
+    for (const mg of memberGroups) {
+      if (!allGroups.some(g => g.id === mg.id)) {
+        allGroups.push(mg);
+      }
+    }
+
+    // Sort by createdAt DESC
+    allGroups.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    res.status(200).json(allGroups);
+  } catch (error) {
+    logger.error('Error fetching trainer groups', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /api/trainer/groups — create a group
+ */
+router.post('/groups', validateBody(CreateTrainerGroupSchema), async (req: Request, res: Response) => {
+  try {
+    const trainerId = await resolveUserId(req, res);
+    if (!trainerId) return;
+
+    const { clubId, name, memberIds } = req.body;
+
+    // Verify trainer is indeed a trainer/leader in this club
+    const clubMembersRepo = getClubMembersRepository();
+    const membership = await clubMembersRepo.findByClubAndUser(clubId, trainerId);
+    if (!membership || membership.status !== 'active' || (membership.role !== 'trainer' && membership.role !== 'leader')) {
+      return res.status(403).json({
+        code: 'forbidden',
+        message: 'You must be a trainer or leader in this club to create groups',
+      });
+    }
+
+    // Verify all memberIds are active members of the club
+    const allMembersActive = await clubMembersRepo.verifyActiveMembers(clubId, memberIds);
+    if (!allMembersActive) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'One or more users are not active members of the club',
+      });
+    }
+
+    const repo = getTrainerGroupsRepository();
+    const group = await repo.create({
+      clubId,
+      trainerId,
+      name,
+      memberIds,
+    });
+    res.status(201).json(group);
+  } catch (error) {
+    logger.error('Error creating trainer group', { error });
     res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
   }
 });

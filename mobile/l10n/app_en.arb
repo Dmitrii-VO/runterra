@@ -856,5 +856,20 @@
   "memberActionChangeRole": "Change role",
   "memberActionPrivateMessages": "Private messages",
   "memberActionPrivateMessagesHint": "Coming soon",
-  "directChatWaitForTrainer": "Your trainer will write you first"
+  "directChatWaitForTrainer": "Your trainer will write you first",
+  "trainerGroupsTitle": "Groups",
+  "trainerCreateGroup": "Create Group",
+  "trainerGroupName": "Group Name",
+  "trainerGroupNameHint": "Enter group name",
+  "trainerSelectMembers": "Select Members",
+  "trainerNoGroups": "No groups yet",
+  "trainerGroupCreated": "Group created successfully",
+  "trainerCreateGroupError": "Could not create group: {error}",
+  "@trainerCreateGroupError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

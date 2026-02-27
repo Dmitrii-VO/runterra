@@ -8,7 +8,7 @@ import { Server as HttpServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { parse as parseUrl } from 'url';
 import { getAuthProvider } from '../modules/auth';
-import { getUsersRepository, getClubMembersRepository, getMessagesRepository } from '../db/repositories';
+import { getUsersRepository, getClubMembersRepository, getMessagesRepository, getTrainerGroupsRepository } from '../db/repositories';
 import { logger } from '../shared/logger';
 import { isValidClubId } from '../shared/clubId';
 import { isValidUuid } from '../shared/validation';
@@ -78,6 +78,20 @@ async function canSubscribe(uid: string, channelKey: string): Promise<boolean> {
       // Trainer-client relationship must exist
       const messagesRepo = getMessagesRepository();
       return messagesRepo.hasTrainerClientRelationship(id1, id2);
+    }
+
+    if (channelKey.startsWith('trainer_group:')) {
+      const groupId = channelKey.slice('trainer_group:'.length);
+      if (!isValidUuid(groupId)) return false;
+
+      const trainerGroupsRepo = getTrainerGroupsRepository();
+      const group = await trainerGroupsRepo.findById(groupId);
+      if (!group) return false;
+
+      // Access check: must be the trainer or a member of the group
+      const isMember = await trainerGroupsRepo.isMember(groupId, user.id);
+      const isTrainer = group.trainerId === user.id;
+      return isMember || isTrainer;
     }
 
     return false;
