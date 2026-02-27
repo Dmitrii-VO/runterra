@@ -846,5 +846,15 @@
   },
   "mapNoTerritory": "No territory",
   "selectClub": "Select club",
-  "messagesScrollToBottom": "Scroll to bottom"
+  "messagesScrollToBottom": "Scroll to bottom",
+  "trainerGroupsTab": "Groups",
+  "trainerPersonalTab": "Personal",
+  "trainerBadge": "Trainer",
+  "trainerNoPrivateClients": "No private clients",
+  "trainerNoPersonalTrainer": "No personal trainer",
+  "memberActionWriteAsTrainer": "Write as trainer",
+  "memberActionChangeRole": "Change role",
+  "memberActionPrivateMessages": "Private messages",
+  "memberActionPrivateMessagesHint": "Coming soon",
+  "directChatWaitForTrainer": "Your trainer will write you first"
 }

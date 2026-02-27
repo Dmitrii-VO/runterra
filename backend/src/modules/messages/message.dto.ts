@@ -7,8 +7,17 @@ export interface MessageViewDto {
   text: string;
   userId: string;
   userName: string | null;
+  senderRole?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface DirectChatViewDto {
+  userId: string;
+  userName: string;
+  userAvatar: string | null;
+  lastMessageText: string | null;
+  lastMessageAt: string | null;
 }
 
 export interface CreateMessageDto {

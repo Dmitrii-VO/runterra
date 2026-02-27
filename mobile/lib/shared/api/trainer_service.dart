@@ -87,6 +87,13 @@ class TrainerService {
     _throwApiException(response, 'update_trainer_profile_error');
   }
 
+  /// POST /api/trainer/clients/:userId — add a client
+  Future<void> addClient(String userId) async {
+    final response = await _apiClient.post('/api/trainer/clients/$userId', body: {});
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    _throwApiException(response, 'add_client_error');
+  }
+
   Never _throwApiException(dynamic response, String fallbackCode) {
     String errorCode = fallbackCode;
     String errorMessage = 'Request failed (${response.statusCode})';

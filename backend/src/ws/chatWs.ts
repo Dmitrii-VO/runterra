@@ -8,9 +8,10 @@ import { Server as HttpServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { parse as parseUrl } from 'url';
 import { getAuthProvider } from '../modules/auth';
-import { getUsersRepository, getClubMembersRepository } from '../db/repositories';
+import { getUsersRepository, getClubMembersRepository, getMessagesRepository } from '../db/repositories';
 import { logger } from '../shared/logger';
 import { isValidClubId } from '../shared/clubId';
+import { isValidUuid } from '../shared/validation';
 
 const WS_PATH = '/ws';
 
@@ -45,34 +46,43 @@ export function broadcast(channelKey: string, payload: object): void {
 /**
  * Validate that the user is allowed to subscribe to the given channel.
  *
- * Rules for MVP:
- * - Only channels of the form "club:<clubId>" are supported.
- * - User must be an ACTIVE member of the given club.
+ * Supported channels:
+ * - "club:<clubId>" or "club:<clubId>:<channelId>" — user must be active club member
+ * - "direct:<id1>:<id2>" — user must be one of the two IDs and trainer_clients must exist
  */
 async function canSubscribe(uid: string, channelKey: string): Promise<boolean> {
-  if (!channelKey.startsWith('club:')) {
-    return false;
-  }
-
-  // Support both "club:{clubId}" and "club:{clubId}:{channelId}"
-  const parts = channelKey.slice('club:'.length).split(':');
-  const clubId = parts[0];
-  if (!isValidClubId(clubId)) {
-    return false;
-  }
-
   try {
     const usersRepo = getUsersRepository();
     const user = await usersRepo.findByFirebaseUid(uid);
-    if (!user) {
-      return false;
+    if (!user) return false;
+
+    if (channelKey.startsWith('club:')) {
+      const parts = channelKey.slice('club:'.length).split(':');
+      const clubId = parts[0];
+      if (!isValidClubId(clubId)) return false;
+
+      const clubMembersRepo = getClubMembersRepository();
+      const membership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
+      return !!membership && membership.status === 'active';
     }
 
-    const clubMembersRepo = getClubMembersRepository();
-    const membership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
-    return !!membership && membership.status === 'active';
+    if (channelKey.startsWith('direct:')) {
+      const parts = channelKey.slice('direct:'.length).split(':');
+      if (parts.length !== 2) return false;
+      const [id1, id2] = parts;
+      if (!isValidUuid(id1) || !isValidUuid(id2)) return false;
+
+      // User must be one of the two participants
+      if (user.id !== id1 && user.id !== id2) return false;
+
+      // Trainer-client relationship must exist
+      const messagesRepo = getMessagesRepository();
+      return messagesRepo.hasTrainerClientRelationship(id1, id2);
+    }
+
+    return false;
   } catch (error) {
-    logger.error('Error checking club membership for WS subscribe', {
+    logger.error('Error checking WS subscribe permission', {
       uid,
       channelKey,
       error,

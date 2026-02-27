@@ -135,8 +135,19 @@ export const mockClubsRepository = {
 export const mockMessagesRepository = {
   findByChannel: jest.fn().mockResolvedValue([]),
   findByClubChannel: jest.fn().mockResolvedValue([]),
+  findByClubChannelWithRole: jest.fn().mockResolvedValue([]),
   create: jest.fn().mockResolvedValue({ id: 'msg-1', channelType: 'club', channelId: 'a0000000-0000-4000-8000-000000000001', userId: 'test-user-id', text: 'hello', createdAt: new Date(), updatedAt: new Date() }),
   getClubChatsForUser: jest.fn().mockResolvedValue([]),
+  getTrainerClients: jest.fn().mockResolvedValue([]),
+  getMyTrainer: jest.fn().mockResolvedValue(null),
+  getDirectMessages: jest.fn().mockResolvedValue([]),
+  insertDirectMessage: jest.fn().mockResolvedValue({ id: 'dm-1', text: 'hi', userId: 'test-user-id', userName: 'Test', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }),
+  hasTrainerClientRelationship: jest.fn().mockResolvedValue(false),
+  getTrainerIdForPair: jest.fn().mockResolvedValue(null),
+  hasDirectMessages: jest.fn().mockResolvedValue(false),
+  addTrainerClient: jest.fn().mockResolvedValue(undefined),
+  removeTrainerClient: jest.fn().mockResolvedValue(true),
+  isTrainerClient: jest.fn().mockResolvedValue(false),
 };
 
 export const mockClubChannelsRepository = {

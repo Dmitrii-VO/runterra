@@ -23,6 +23,9 @@ class MessageModel {
   /// Дата и время создания сообщения
   final DateTime createdAt;
   
+  /// Role of the sender in the club (e.g. 'trainer', 'leader', 'member')
+  final String? senderRole;
+
   /// Дата последнего обновления сообщения
   final DateTime updatedAt;
 
@@ -31,6 +34,7 @@ class MessageModel {
     required this.text,
     required this.userId,
     this.userName,
+    this.senderRole,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -45,6 +49,7 @@ class MessageModel {
       text: json['text'] as String,
       userId: json['userId'] as String,
       userName: json['userName'] as String?,
+      senderRole: json['senderRole'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -59,6 +64,7 @@ class MessageModel {
       'text': text,
       'userId': userId,
       if (userName != null) 'userName': userName,
+      if (senderRole != null) 'senderRole': senderRole,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };

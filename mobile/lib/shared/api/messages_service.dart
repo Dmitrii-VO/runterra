@@ -5,6 +5,7 @@ import '../models/message_model.dart';
 import '../models/chat_model.dart';
 import '../models/club_chat_model.dart';
 import '../models/club_channel_model.dart';
+import '../models/direct_chat_model.dart';
 
 /// Сервис для работы с сообщениями
 /// 
@@ -132,6 +133,60 @@ class MessagesService {
       return MessageModel.fromJson(jsonData);
     }
     _throwApiException(response, 'send_channel_message_error');
+  }
+
+  /// GET /api/messages/trainer/clients — trainer's client list with last message
+  Future<List<DirectChatModel>> getTrainerClients() async {
+    final response = await _apiClient.get('/api/messages/trainer/clients');
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final jsonData = jsonDecode(response.body) as List<dynamic>;
+      return jsonData
+          .map((json) => DirectChatModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+    }
+    _throwApiException(response, 'get_trainer_clients_error');
+  }
+
+  /// GET /api/messages/trainer/my-trainer — get my trainer (or null if 404)
+  Future<DirectChatModel?> getMyTrainer() async {
+    final response = await _apiClient.get('/api/messages/trainer/my-trainer');
+    if (response.statusCode == 404) return null;
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return DirectChatModel.fromJson(json);
+    }
+    _throwApiException(response, 'get_my_trainer_error');
+  }
+
+  /// GET /api/messages/direct/:otherUserId — direct message history
+  Future<List<MessageModel>> getDirectMessages(
+    String otherUserId, {
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    final response = await _apiClient.get(
+      '/api/messages/direct/$otherUserId?limit=$limit&offset=$offset',
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final jsonData = jsonDecode(response.body) as List<dynamic>;
+      return jsonData
+          .map((json) => MessageModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+    }
+    _throwApiException(response, 'get_direct_messages_error');
+  }
+
+  /// POST /api/messages/direct/:otherUserId — send a direct message
+  Future<MessageModel> sendDirectMessage(String otherUserId, String text) async {
+    final response = await _apiClient.post(
+      '/api/messages/direct/$otherUserId',
+      body: {'text': text},
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+      return MessageModel.fromJson(jsonData);
+    }
+    _throwApiException(response, 'send_direct_message_error');
   }
 
   Never _throwApiException(dynamic response, String fallbackCode) {

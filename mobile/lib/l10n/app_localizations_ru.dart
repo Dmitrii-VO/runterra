@@ -1576,4 +1576,34 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get messagesScrollToBottom => 'В конец';
+
+  @override
+  String get trainerGroupsTab => 'Группы';
+
+  @override
+  String get trainerPersonalTab => 'Личные';
+
+  @override
+  String get trainerBadge => 'Тренер';
+
+  @override
+  String get trainerNoPrivateClients => 'Нет личных клиентов';
+
+  @override
+  String get trainerNoPersonalTrainer => 'Нет персонального тренера';
+
+  @override
+  String get memberActionWriteAsTrainer => 'Написать как тренер';
+
+  @override
+  String get memberActionChangeRole => 'Изменить роль';
+
+  @override
+  String get memberActionPrivateMessages => 'Личные сообщения';
+
+  @override
+  String get memberActionPrivateMessagesHint => 'В разработке';
+
+  @override
+  String get directChatWaitForTrainer => 'Тренер напишет вам первым';
 }

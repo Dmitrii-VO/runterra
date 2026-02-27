@@ -19,7 +19,10 @@ class ClubMessagesTab extends StatefulWidget {
   /// If set, open chat for this club immediately (e.g. deep-link from ClubDetailsScreen).
   final String? initialClubId;
 
-  const ClubMessagesTab({super.key, this.initialClubId});
+  /// When true, highlight messages from trainers/leaders with a badge.
+  final bool highlightTrainer;
+
+  const ClubMessagesTab({super.key, this.initialClubId, this.highlightTrainer = false});
 
   @override
   State<ClubMessagesTab> createState() => _ClubMessagesTabState();
@@ -593,9 +596,36 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
               if (!isMine && (message.userName?.isNotEmpty ?? false))
                 Padding(
                   padding: const EdgeInsets.only(bottom: 4),
-                  child: Text(
-                    message.userName!,
-                    style: theme.textTheme.labelSmall,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          message.userName!,
+                          style: theme.textTheme.labelSmall,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (widget.highlightTrainer &&
+                          (message.senderRole == 'trainer' || message.senderRole == 'leader'))
+                        Padding(
+                          padding: const EdgeInsets.only(left: 6),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.tertiary,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              AppLocalizations.of(context)!.trainerBadge,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.onTertiary,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               Text(message.text),

@@ -421,7 +421,7 @@ describe('API Routes', () => {
       // Clear call history but keep default mock implementations for other suites.
       mockUsersRepository.findByFirebaseUid.mockClear();
       mockClubMembersRepository.findByClubAndUser.mockClear();
-      mockMessagesRepository.findByClubChannel.mockClear();
+      mockMessagesRepository.findByClubChannelWithRole.mockClear();
       mockMessagesRepository.create.mockClear();
       mockClubChannelsRepository.findDefaultByClub.mockClear();
       mockClubChannelsRepository.createDefaultForClub.mockClear();
@@ -432,7 +432,7 @@ describe('API Routes', () => {
       mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({ id: 'user-1', firebaseUid: 'uid-1', name: 'U' });
       mockClubMembersRepository.findByClubAndUser.mockResolvedValueOnce({ id: 'cm-1', clubId: TEST_CLUB_1, userId: 'user-1', status: 'active' });
       mockClubChannelsRepository.findDefaultByClub.mockResolvedValueOnce({ id: 'chan-1', clubId: TEST_CLUB_1, type: 'general', name: 'General', isDefault: true, createdAt: new Date() });
-      mockMessagesRepository.findByClubChannel.mockResolvedValueOnce([
+      mockMessagesRepository.findByClubChannelWithRole.mockResolvedValueOnce([
         { id: 'm-1', text: 'hello', userId: 'user-1', userName: 'U', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
       ]);
 
@@ -441,7 +441,7 @@ describe('API Routes', () => {
         .set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(200);
-      expect(mockMessagesRepository.findByClubChannel).toHaveBeenCalledWith(TEST_CLUB_1, 'chan-1', expect.any(Number), expect.any(Number));
+      expect(mockMessagesRepository.findByClubChannelWithRole).toHaveBeenCalledWith(TEST_CLUB_1, 'chan-1', expect.any(Number), expect.any(Number));
       expect(Array.isArray(res.body)).toBe(true);
       expect(res.body[0]).toHaveProperty('id', 'm-1');
     });

@@ -672,5 +672,15 @@
   },
   "mapNoTerritory": "Нет территории",
   "selectClub": "Выбрать клуб",
-  "messagesScrollToBottom": "В конец"
+  "messagesScrollToBottom": "В конец",
+  "trainerGroupsTab": "Группы",
+  "trainerPersonalTab": "Личные",
+  "trainerBadge": "Тренер",
+  "trainerNoPrivateClients": "Нет личных клиентов",
+  "trainerNoPersonalTrainer": "Нет персонального тренера",
+  "memberActionWriteAsTrainer": "Написать как тренер",
+  "memberActionChangeRole": "Изменить роль",
+  "memberActionPrivateMessages": "Личные сообщения",
+  "memberActionPrivateMessagesHint": "В разработке",
+  "directChatWaitForTrainer": "Тренер напишет вам первым"
 }

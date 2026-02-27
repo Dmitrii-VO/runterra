@@ -1,6 +1,10 @@
 /**
- * API router for messages (club chat).
+ * API router for messages (club chat + trainer direct messages).
  * GET/POST /api/messages/clubs/:clubId
+ * GET  /api/messages/trainer/clients
+ * GET  /api/messages/trainer/my-trainer
+ * GET  /api/messages/direct/:otherUserId
+ * POST /api/messages/direct/:otherUserId
  */
 
 import { Router, Request, Response } from 'express';
@@ -12,6 +16,11 @@ import { broadcast } from '../ws/chatWs';
 import { logger } from '../shared/logger';
 import { isValidClubId } from '../shared/clubId';
 import { isValidUuid } from '../shared/validation';
+import { z } from 'zod';
+
+const DirectMessageSchema = z.object({
+  text: z.string().min(1).max(500),
+});
 
 const router = Router();
 
@@ -179,7 +188,7 @@ router.get('/clubs/:clubId', async (req: Request, res: Response) => {
       resolvedChannelId = await getOrCreateDefaultChannelId(clubId);
     }
 
-    const list = await messagesRepo.findByClubChannel(clubId, resolvedChannelId, limit, offset);
+    const list = await messagesRepo.findByClubChannelWithRole(clubId, resolvedChannelId, limit, offset);
     res.status(200).json(list);
   } catch (error) {
     logger.error('Error fetching club messages', { error: error, clubId });
@@ -300,6 +309,153 @@ router.post(
         code: 'internal_error',
         message: 'Internal server error',
       });
+    }
+  }
+);
+
+// --- Helper to resolve userId from Firebase UID ---
+async function resolveUser(req: Request, res: Response): Promise<{ id: string; name: string } | null> {
+  const uid = getAuthUidOrRespondUnauthorized(req, res);
+  if (!uid) return null;
+  const user = await getUsersRepository().findByFirebaseUid(uid);
+  if (!user) {
+    res.status(401).json({ code: 'unauthorized', message: 'User not found' });
+    return null;
+  }
+  return user;
+}
+
+/**
+ * GET /api/messages/trainer/clients
+ * Returns trainer's client list with last message info.
+ */
+router.get('/trainer/clients', async (req: Request, res: Response) => {
+  try {
+    const user = await resolveUser(req, res);
+    if (!user) return;
+
+    const messagesRepo = getMessagesRepository();
+    const clients = await messagesRepo.getTrainerClients(user.id);
+    res.status(200).json(clients);
+  } catch (error) {
+    logger.error('Error fetching trainer clients', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/messages/trainer/my-trainer
+ * Returns the trainer for current user (or 404).
+ */
+router.get('/trainer/my-trainer', async (req: Request, res: Response) => {
+  try {
+    const user = await resolveUser(req, res);
+    if (!user) return;
+
+    const messagesRepo = getMessagesRepository();
+    const trainer = await messagesRepo.getMyTrainer(user.id);
+    if (!trainer) {
+      res.status(404).json({ code: 'not_found', message: 'No trainer assigned' });
+      return;
+    }
+    res.status(200).json(trainer);
+  } catch (error) {
+    logger.error('Error fetching my trainer', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/messages/direct/:otherUserId
+ * Returns direct message history between current user and otherUserId.
+ * Access: trainer_clients relationship must exist.
+ */
+router.get('/direct/:otherUserId', async (req: Request, res: Response) => {
+  const { otherUserId } = req.params;
+  if (!isValidUuid(otherUserId)) {
+    res.status(400).json({
+      code: 'validation_error',
+      message: 'Path validation failed',
+      details: { fields: [{ field: 'otherUserId', message: 'Invalid UUID', code: 'invalid_format' }] },
+    });
+    return;
+  }
+
+  try {
+    const user = await resolveUser(req, res);
+    if (!user) return;
+
+    const messagesRepo = getMessagesRepository();
+    const hasRelationship = await messagesRepo.hasTrainerClientRelationship(user.id, otherUserId);
+    if (!hasRelationship) {
+      res.status(403).json({ code: 'forbidden', message: 'No trainer-client relationship' });
+      return;
+    }
+
+    const { limit, offset } = parsePagination(req.query as { limit?: string; offset?: string });
+    const messages = await messagesRepo.getDirectMessages(user.id, otherUserId, limit, offset);
+    res.status(200).json(messages);
+  } catch (error) {
+    logger.error('Error fetching direct messages', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /api/messages/direct/:otherUserId
+ * Send a direct message. Access: trainer_clients relationship must exist.
+ * If no message history exists, only trainer can send first.
+ */
+router.post(
+  '/direct/:otherUserId',
+  validateBody(DirectMessageSchema),
+  async (req: Request, res: Response) => {
+    const { otherUserId } = req.params;
+    if (!isValidUuid(otherUserId)) {
+      res.status(400).json({
+        code: 'validation_error',
+        message: 'Path validation failed',
+        details: { fields: [{ field: 'otherUserId', message: 'Invalid UUID', code: 'invalid_format' }] },
+      });
+      return;
+    }
+
+    try {
+      const user = await resolveUser(req, res);
+      if (!user) return;
+
+      const messagesRepo = getMessagesRepository();
+      const hasRelationship = await messagesRepo.hasTrainerClientRelationship(user.id, otherUserId);
+      if (!hasRelationship) {
+        res.status(403).json({ code: 'forbidden', message: 'No trainer-client relationship' });
+        return;
+      }
+
+      // If no messages exist, only the trainer can initiate
+      const hasMessages = await messagesRepo.hasDirectMessages(user.id, otherUserId);
+      if (!hasMessages) {
+        const trainerId = await messagesRepo.getTrainerIdForPair(user.id, otherUserId);
+        if (trainerId !== user.id) {
+          res.status(403).json({
+            code: 'trainer_initiates_first',
+            message: 'Trainer must send the first message',
+          });
+          return;
+        }
+      }
+
+      const { text } = req.body as { text: string };
+      const dto = await messagesRepo.insertDirectMessage(user.id, otherUserId, text);
+
+      // Broadcast to direct WS channel
+      const ids = [user.id, otherUserId].sort();
+      const channelKey = `direct:${ids[0]}:${ids[1]}`;
+      broadcast(channelKey, dto);
+
+      res.status(201).json(dto);
+    } catch (error) {
+      logger.error('Error sending direct message', { error });
+      res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
     }
   }
 );

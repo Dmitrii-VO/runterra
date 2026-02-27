@@ -2983,6 +2983,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Scroll to bottom'**
   String get messagesScrollToBottom;
+
+  /// No description provided for @trainerGroupsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups'**
+  String get trainerGroupsTab;
+
+  /// No description provided for @trainerPersonalTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal'**
+  String get trainerPersonalTab;
+
+  /// No description provided for @trainerBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Trainer'**
+  String get trainerBadge;
+
+  /// No description provided for @trainerNoPrivateClients.
+  ///
+  /// In en, this message translates to:
+  /// **'No private clients'**
+  String get trainerNoPrivateClients;
+
+  /// No description provided for @trainerNoPersonalTrainer.
+  ///
+  /// In en, this message translates to:
+  /// **'No personal trainer'**
+  String get trainerNoPersonalTrainer;
+
+  /// No description provided for @memberActionWriteAsTrainer.
+  ///
+  /// In en, this message translates to:
+  /// **'Write as trainer'**
+  String get memberActionWriteAsTrainer;
+
+  /// No description provided for @memberActionChangeRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Change role'**
+  String get memberActionChangeRole;
+
+  /// No description provided for @memberActionPrivateMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Private messages'**
+  String get memberActionPrivateMessages;
+
+  /// No description provided for @memberActionPrivateMessagesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon'**
+  String get memberActionPrivateMessagesHint;
+
+  /// No description provided for @directChatWaitForTrainer.
+  ///
+  /// In en, this message translates to:
+  /// **'Your trainer will write you first'**
+  String get directChatWaitForTrainer;
 }
 
 class _AppLocalizationsDelegate

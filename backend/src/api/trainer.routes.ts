@@ -10,7 +10,7 @@
 
 import { Router, Request, Response } from 'express';
 import { validateBody } from './validateBody';
-import { getUsersRepository, getTrainerProfilesRepository } from '../db/repositories';
+import { getUsersRepository, getTrainerProfilesRepository, getClubMembersRepository, getMessagesRepository } from '../db/repositories';
 import { CreateTrainerProfileSchema, UpdateTrainerProfileSchema } from '../modules/trainer';
 import { logger } from '../shared/logger';
 import { isValidUuid } from '../shared/validation';
@@ -131,6 +131,89 @@ router.patch('/profile', validateBody(UpdateTrainerProfileSchema), async (req: R
     res.status(200).json(profile);
   } catch (error) {
     logger.error('Error updating trainer profile', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /api/trainer/clients/:userId — add a client (trainer/leader in a shared club)
+ */
+router.post('/clients/:userId', async (req: Request, res: Response) => {
+  try {
+    const trainerId = await resolveUserId(req, res);
+    if (!trainerId) return;
+
+    const { userId: clientId } = req.params;
+    if (!isValidUuid(clientId)) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'userId must be a valid UUID',
+        details: { fields: [{ field: 'userId', message: 'Invalid UUID', code: 'invalid_uuid' }] },
+      });
+    }
+
+    if (trainerId === clientId) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'Cannot add yourself as a client',
+      });
+    }
+
+    // Verify caller has trainer or leader role in at least one club where target is also a member
+    const clubMembersRepo = getClubMembersRepository();
+    const trainerMemberships = await clubMembersRepo.findActiveClubsByUser(trainerId);
+    const trainerClubs = trainerMemberships.filter(m => m.role === 'trainer' || m.role === 'leader');
+
+    let hasSharedClub = false;
+    for (const tc of trainerClubs) {
+      const clientMembership = await clubMembersRepo.findByClubAndUser(tc.clubId, clientId);
+      if (clientMembership && clientMembership.status === 'active') {
+        hasSharedClub = true;
+        break;
+      }
+    }
+
+    if (!hasSharedClub) {
+      return res.status(403).json({
+        code: 'forbidden',
+        message: 'You must be a trainer or leader in a club where the target is a member',
+      });
+    }
+
+    const messagesRepo = getMessagesRepository();
+    await messagesRepo.addTrainerClient(trainerId, clientId);
+    res.status(201).json({ ok: true });
+  } catch (error) {
+    logger.error('Error adding trainer client', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
+ * DELETE /api/trainer/clients/:userId — remove a client
+ */
+router.delete('/clients/:userId', async (req: Request, res: Response) => {
+  try {
+    const trainerId = await resolveUserId(req, res);
+    if (!trainerId) return;
+
+    const { userId: clientId } = req.params;
+    if (!isValidUuid(clientId)) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'userId must be a valid UUID',
+        details: { fields: [{ field: 'userId', message: 'Invalid UUID', code: 'invalid_uuid' }] },
+      });
+    }
+
+    const messagesRepo = getMessagesRepository();
+    const removed = await messagesRepo.removeTrainerClient(trainerId, clientId);
+    if (!removed) {
+      return res.status(404).json({ code: 'not_found', message: 'Client relationship not found' });
+    }
+    res.status(200).json({ ok: true });
+  } catch (error) {
+    logger.error('Error removing trainer client', { error });
     res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
   }
 });

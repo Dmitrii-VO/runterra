@@ -1571,4 +1571,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messagesScrollToBottom => 'Scroll to bottom';
+
+  @override
+  String get trainerGroupsTab => 'Groups';
+
+  @override
+  String get trainerPersonalTab => 'Personal';
+
+  @override
+  String get trainerBadge => 'Trainer';
+
+  @override
+  String get trainerNoPrivateClients => 'No private clients';
+
+  @override
+  String get trainerNoPersonalTrainer => 'No personal trainer';
+
+  @override
+  String get memberActionWriteAsTrainer => 'Write as trainer';
+
+  @override
+  String get memberActionChangeRole => 'Change role';
+
+  @override
+  String get memberActionPrivateMessages => 'Private messages';
+
+  @override
+  String get memberActionPrivateMessagesHint => 'Coming soon';
+
+  @override
+  String get directChatWaitForTrainer => 'Your trainer will write you first';
 }
