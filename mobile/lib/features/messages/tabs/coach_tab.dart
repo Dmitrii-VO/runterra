@@ -17,55 +17,60 @@ class CoachTab extends StatefulWidget {
   State<CoachTab> createState() => _CoachTabState();
 }
 
-class _CoachTabState extends State<CoachTab> {
+class _CoachTabState extends State<CoachTab> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   List<DirectChatModel>? _trainerClients;
   DirectChatModel? _myTrainer;
   bool _isLoading = true;
 
-  // Whether current user is a trainer/leader in any club
   bool _isTrainerRole = false;
-  // Whether current user has any clubs (for Groups tab)
   bool _hasClubs = false;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _loadData();
   }
 
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadData() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     
     try {
-      // Load clients
-      try {
-        _trainerClients = await ServiceLocator.messagesService.getTrainerClients();
-      } catch (e) {
-        debugPrint('CoachTab: Error loading clients: $e');
-        _trainerClients = []; 
-      }
-
-      // Load my trainer
-      try {
-        _myTrainer = await ServiceLocator.messagesService.getMyTrainer();
-      } catch (e) {
-        debugPrint('CoachTab: Error loading my trainer: $e');
-        _myTrainer = null;
-      }
-
-      // Load clubs
-      try {
-        final clubs = await ServiceLocator.messagesService.getClubChats();
-        _hasClubs = clubs.isNotEmpty;
-      } catch (e) {
-        debugPrint('CoachTab: Error loading clubs: $e');
-        _hasClubs = false;
-      }
+      final results = await Future.wait([
+        ServiceLocator.messagesService.getTrainerClients().catchError((e) {
+          debugPrint('CoachTab: Error loading clients: $e');
+          return <DirectChatModel>[];
+        }),
+        ServiceLocator.messagesService.getMyTrainer().catchError((e) {
+          debugPrint('CoachTab: Error loading my trainer: $e');
+          return null;
+        }),
+        ServiceLocator.messagesService.getClubChats().catchError((e) {
+          debugPrint('CoachTab: Error loading clubs: $e');
+          return <ClubChatModel>[];
+        }),
+      ]);
 
       if (!mounted) return;
       
       setState(() {
+        _trainerClients = results[0] as List<DirectChatModel>?;
+        _myTrainer = results[1] as DirectChatModel?;
+        final clubs = results[2] as List<ClubChatModel>;
+        _hasClubs = clubs.isNotEmpty;
+        
+        // Mark as trainer if they have clients OR if they have any clubs
+        // (Simplified: if you are in a club, you might be a trainer/leader)
         _isTrainerRole = (_trainerClients != null && _trainerClients!.isNotEmpty) || _hasClubs;
+        
         _isLoading = false;
       });
     } catch (e) {
@@ -75,62 +80,52 @@ class _CoachTabState extends State<CoachTab> {
     }
   }
 
-  bool get _hasPersonalContent =>
-      (_trainerClients != null && _trainerClients!.isNotEmpty) || _myTrainer != null;
-
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
-    return DefaultTabController(
-      length: 2,
-      child: Column(
-        children: [
-          TabBar(
-            onTap: (_) => _loadData(), // Refresh on tab switch
-            tabs: [
-              Tab(
-                child: Text(
-                  l10n.trainerGroupsTab,
-                  style: TextStyle(
-                    color: _hasClubs ? null : Colors.grey,
-                  ),
-                ),
-              ),
-              Tab(
-                child: Text(
-                  l10n.trainerPersonalTab,
-                  style: TextStyle(
-                    color: _hasPersonalContent ? null : Colors.grey,
-                  ),
-                ),
-              ),
+    return Column(
+      children: [
+        TabBar(
+          controller: _tabController,
+          tabs: [
+            Tab(text: l10n.trainerGroupsTab),
+            Tab(text: l10n.trainerPersonalTab),
+          ],
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              // Groups tab
+              _buildGroupsTab(l10n, theme),
+              // Personal tab
+              _buildPersonalTab(l10n, theme),
             ],
           ),
-          Expanded(
-            child: TabBarView(
-              children: [
-                // Groups tab
-                _hasClubs
-                    ? const ClubMessagesTab(highlightTrainer: true)
-                    : _buildEmptyState(l10n.noClubChats, theme),
-                // Personal tab
-                _buildPersonalTab(l10n, theme),
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
+  Widget _buildGroupsTab(AppLocalizations l10n, ThemeData theme) {
+    if (_isLoading && !_hasClubs) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (!_hasClubs) {
+      return _buildEmptyState(l10n.noClubChats, theme);
+    }
+    // For now, show ClubMessagesTab but we might want a list view here later
+    return const ClubMessagesTab(highlightTrainer: true);
+  }
+
   Widget _buildPersonalTab(AppLocalizations l10n, ThemeData theme) {
-    // 1. Trainer with clients (priority)
+    if (_isLoading && _trainerClients == null && _myTrainer == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    // 1. Trainer view: show clients list
     if (_trainerClients != null && _trainerClients!.isNotEmpty) {
       return RefreshIndicator(
         onRefresh: _loadData,
@@ -138,7 +133,7 @@ class _CoachTabState extends State<CoachTab> {
       );
     }
 
-    // 2. Athlete with trainer — open chat directly
+    // 2. Athlete view: show my trainer chat
     if (_myTrainer != null) {
       return DirectChatScreen(
         otherUser: _myTrainer!,
@@ -146,7 +141,7 @@ class _CoachTabState extends State<CoachTab> {
       );
     }
 
-    // 3. No personal content — decide which empty message to show
+    // 3. Empty state
     String emptyMessage = l10n.trainerNoPersonalTrainer;
     if (_isTrainerRole) {
       emptyMessage = l10n.trainerNoPrivateClients;
@@ -154,13 +149,14 @@ class _CoachTabState extends State<CoachTab> {
 
     return RefreshIndicator(
       onRefresh: _loadData,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: Container(
-          height: MediaQuery.of(context).size.height * 0.6,
-          alignment: Alignment.center,
-          child: _buildEmptyState(emptyMessage, theme),
-        ),
+      child: ListView(
+        children: [
+          Container(
+            height: MediaQuery.of(context).size.height * 0.6,
+            alignment: Alignment.center,
+            child: _buildEmptyState(emptyMessage, theme),
+          ),
+        ],
       ),
     );
   }

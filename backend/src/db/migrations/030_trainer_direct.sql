@@ -1,7 +1,7 @@
 -- Trainer-client relationships and direct messages
 
 CREATE TABLE trainer_clients (
-  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   trainer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   client_id  UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -11,7 +11,7 @@ CREATE INDEX idx_trainer_clients_trainer ON trainer_clients(trainer_id);
 CREATE INDEX idx_trainer_clients_client  ON trainer_clients(client_id);
 
 CREATE TABLE direct_messages (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   sender_id   UUID NOT NULL REFERENCES users(id),
   receiver_id UUID NOT NULL REFERENCES users(id),
   text        VARCHAR(500) NOT NULL,

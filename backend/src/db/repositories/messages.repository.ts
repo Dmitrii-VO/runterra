@@ -222,14 +222,14 @@ export class MessagesRepository extends BaseRepository {
   /** Get list of trainer's clients with last message info */
   async getTrainerClients(trainerId: string): Promise<DirectChatViewDto[]> {
     const rows = await this.queryMany<DirectChatRow>(
-      `SELECT tc.client_id AS user_id, u.name AS user_name, u.photo_url AS user_avatar,
+      `SELECT tc.client_id AS user_id, u.name AS user_name, u.avatar_url AS user_avatar,
               dm.text AS last_message_text, dm.created_at AS last_message_at
        FROM trainer_clients tc
        JOIN users u ON u.id = tc.client_id
        LEFT JOIN LATERAL (
          SELECT text, created_at FROM direct_messages
-         WHERE (sender_id = tc.trainer_id AND receiver_id = tc.client_id)
-            OR (sender_id = tc.client_id AND receiver_id = tc.trainer_id)
+         WHERE (sender_id = tc.trainer_id::uuid AND receiver_id = tc.client_id::uuid)
+            OR (sender_id = tc.client_id::uuid AND receiver_id = tc.trainer_id::uuid)
          ORDER BY created_at DESC LIMIT 1
        ) dm ON true
        WHERE tc.trainer_id = $1::uuid
@@ -242,14 +242,14 @@ export class MessagesRepository extends BaseRepository {
   /** Get trainer for a client (or null) */
   async getMyTrainer(clientId: string): Promise<DirectChatViewDto | null> {
     const row = await this.queryOne<DirectChatRow>(
-      `SELECT tc.trainer_id AS user_id, u.name AS user_name, u.photo_url AS user_avatar,
+      `SELECT tc.trainer_id AS user_id, u.name AS user_name, u.avatar_url AS user_avatar,
               dm.text AS last_message_text, dm.created_at AS last_message_at
        FROM trainer_clients tc
        JOIN users u ON u.id = tc.trainer_id
        LEFT JOIN LATERAL (
          SELECT text, created_at FROM direct_messages
-         WHERE (sender_id = tc.trainer_id AND receiver_id = tc.client_id)
-            OR (sender_id = tc.client_id AND receiver_id = tc.trainer_id)
+         WHERE (sender_id = tc.trainer_id::uuid AND receiver_id = tc.client_id::uuid)
+            OR (sender_id = tc.client_id::uuid AND receiver_id = tc.trainer_id::uuid)
          ORDER BY created_at DESC LIMIT 1
        ) dm ON true
        WHERE tc.client_id = $1::uuid
