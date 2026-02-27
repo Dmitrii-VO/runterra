@@ -66,7 +66,8 @@ if (-not $Force) {
     if ($latestTag) {
         $wearChanges = git log "$latestTag..HEAD" --oneline -- wear/ 2>$null
     } else {
-        $wearChanges = git log --oneline -- wear/ 2>$null
+        # If no tags, check only the last 10 commits to avoid deploying ancient code
+        $wearChanges = git log -n 10 --oneline -- wear/ 2>$null
     }
     $ErrorActionPreference = $prevPref
 

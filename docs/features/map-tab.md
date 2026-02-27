@@ -10,7 +10,7 @@
 
 ### MapScreen
 
-Основной экран вкладки. Использует Yandex MapKit.
+Основной экран вкладки. Использует Yandex MapKit с общим стилем из `map_style.dart`.
 
 **Параметры:**
 - `showClubs` — при `true` после загрузки показывается bottom sheet со списком клубов города
@@ -19,6 +19,8 @@
 **Стартовая позиция:**
 - Центр города из `CurrentCityService` (по `cityId` пользователя)
 - Fallback: Санкт-Петербург (59.9343, 30.3351), zoom 12
+
+**Стиль карты:** единый визуальный стиль задаётся утилитой `shared/utils/map_style.dart` (подключён также к LocationPickerScreen).
 
 ## Отображаемые объекты
 
@@ -34,7 +36,7 @@
 
 ### События
 
-- **Маркеры:** программные иконки (оранжевый круг с календарём)
+- **Маркеры:** программные иконки (оранжевый круг с календарём); отображаются условно в зависимости от уровня zoom (при большом охвате могут быть скрыты для читаемости).
 - **Тап на маркер:** bottom sheet с EventCard — дата/время, место, организатор, кнопка «Подробнее» → `/event/:id`
 
 ## Действия пользователя
@@ -71,6 +73,8 @@
 ## Связанные файлы
 
 - `mobile/lib/features/map/map_screen.dart`
+- `mobile/lib/features/map/location_picker_screen.dart`
 - `mobile/lib/features/map/widgets/territory_bottom_sheet.dart`
+- `mobile/lib/shared/utils/map_style.dart`
 - `mobile/lib/shared/api/map_service.dart`
 - `backend/src/api/map.routes.ts`

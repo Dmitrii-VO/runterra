@@ -26,6 +26,24 @@ if ($args -contains "-SkipTests") { $SkipTests = $true }
 if ($env:DEPLOY_SKIP_CI -eq "1") { $SkipCI = $true; $SkipGitCheck = $true }
 if ($env:DEPLOY_SKIP_FIREBASE -eq "1") { $SkipFirebase = $true }
 
+# Detect Wear OS changes early (before backend push)
+$SkipWear = $false
+try {
+    $latestTag = git describe --tags --match "v*" --abbrev=0 2>$null
+    if ($null -eq $latestTag) {
+        # No tags, check if there are any commits in wear/ at all in the last 10 commits of HEAD
+        $wearChanges = git log -n 10 --oneline -- wear/
+    } else {
+        $wearChanges = git log "$latestTag..HEAD" --oneline -- wear/
+    }
+    
+    if ([string]::IsNullOrWhiteSpace($wearChanges)) {
+        $SkipWear = $true
+    }
+} catch {
+    $SkipWear = $false # Fallback to deploy if git fails
+}
+
 Write-Host "========================================" -ForegroundColor Magenta
 Write-Host "        DEPLOY ALL: Backend + Mobile   " -ForegroundColor Magenta
 Write-Host "========================================" -ForegroundColor Magenta
@@ -52,13 +70,17 @@ if ($SkipFirebase) { $mobileArgs += "-SkipFirebase" }
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host ""
-Write-Host ">>> WEAR OS <<<" -ForegroundColor Magenta
+if (-not $SkipWear) {
+    Write-Host ">>> WEAR OS <<<" -ForegroundColor Magenta
 
-$wearArgs = @()
-if ($SkipFirebase) { $wearArgs += "-SkipFirebase" }
+    $wearArgs = @()
+    if ($SkipFirebase) { $wearArgs += "-SkipFirebase" }
 
-& "$ScriptDir\deploy-wear.ps1" @wearArgs
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    & "$ScriptDir\deploy-wear.ps1" @wearArgs
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+} else {
+    Write-Host ">>> WEAR OS (Skipped: no changes) <<<" -ForegroundColor Gray
+}
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Magenta

@@ -179,7 +179,7 @@ export class MessagesRepository extends BaseRepository {
               u.name AS user_name, cm.role AS sender_role
        FROM messages m
        JOIN users u ON u.id = m.user_id
-       LEFT JOIN club_members cm ON cm.club_id = m.channel_id AND cm.user_id = m.user_id AND cm.status = 'active'
+       LEFT JOIN club_members cm ON cm.club_id = m.channel_id::uuid AND cm.user_id = m.user_id AND cm.status = 'active'
        WHERE m.channel_type = 'club'
          AND m.channel_id = $1
          AND m.club_channel_id = $2

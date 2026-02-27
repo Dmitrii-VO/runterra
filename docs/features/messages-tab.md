@@ -4,7 +4,7 @@
 
 ## Назначение
 
-Коммуникация пользователя: клубные чаты (реализованы), личные чаты и сообщения тренера (заглушки). Точка входа для обсуждений в рамках беговых клубов.
+Коммуникация пользователя: клубные чаты и тренер↔клиент 1:1 (реализованы), личные чаты (заглушка). Точка входа для обсуждений в рамках беговых клубов и общения с тренером.
 
 ## Подвкладки
 
@@ -75,11 +75,31 @@
 
 ## Подвкладка «Тренер» (Coach)
 
-**Статус:** заглушка (post-MVP)
+**Статус:** полностью реализована
 
-**Содержимое:** текст «Сообщения тренера — в разработке» (l10n: `coachMessagesEmpty`)
+Внутри вкладки «Тренер» — два подтаба: **Группы** | **Личные**.
 
-**Примечание:** функционал тренерских чатов требует отдельной проработки (infra/README.md, фидбек 2026-02-12).
+### Группы
+
+- Отображается клубный чат (`ClubMessagesTab`) с параметром `highlightTrainer` — у сообщений тренеров/лидеров показывается бейдж «Тренер».
+
+### Личные
+
+- **Для тренера/лидера:** список клиентов (GET /api/messages/trainer/clients) с последним сообщением; тап → 1:1 чат с клиентом.
+- **Для атлета:** тренер текущего пользователя (GET /api/messages/trainer/my-trainer); при наличии — чат с тренером.
+- Инициатор переписки — только тренер (клиент не может написать первым); связь через таблицу `trainer_clients`.
+
+### 1:1 чат (DirectChatScreen)
+
+- Маршрут: `/messages/direct/:userId`
+- История: GET /api/messages/direct/:otherUserId (limit, offset)
+- Отправка: POST /api/messages/direct/:otherUserId
+- Real-time: WebSocket канал `direct:{minUserId}:{maxUserId}`
+- У клиента поле ввода заблокировано до первого сообщения тренера
+
+### Инициация из клуба
+
+- На `ClubDetailsScreen` при тапе на участника (для leader/trainer): action sheet «Написать как тренер» / «Изменить роль» / «Личные сообщения (в разработке)». «Написать как тренер» создаёт связь (POST /api/trainer/clients/:userId) и открывает 1:1 чат.
 
 ---
 
@@ -88,16 +108,22 @@
 | Метод | Назначение |
 |-------|------------|
 | GET /api/messages/clubs | Список клубов пользователя с чатами |
-| GET /api/messages/clubs/:clubId | История сообщений клуба (limit, offset) |
+| GET /api/messages/clubs/:clubId | История сообщений клуба (limit, offset); в ответе поле `senderRole` |
 | POST /api/messages/clubs/:clubId | Отправка сообщения |
 | GET /api/clubs/:id/channels | Список каналов (подчатов) клуба |
+| POST /api/trainer/clients/:userId | Добавить клиента (тренер/лидер) |
+| DELETE /api/trainer/clients/:userId | Удалить клиента |
+| GET /api/messages/trainer/clients | Список клиентов тренера с lastMessage |
+| GET /api/messages/trainer/my-trainer | Тренер текущего пользователя (404 если нет) |
+| GET /api/messages/direct/:otherUserId | История 1:1 сообщений (limit, offset) |
+| POST /api/messages/direct/:otherUserId | Отправить 1:1 сообщение |
 
 ## WebSocket
 
 - Путь: `/ws`, авторизация по query `?token=...`
-- Подписка: `{ type: 'subscribe', channel: 'club:clubId' }` или `club:clubId:channelId`
+- Подписка: `{ type: 'subscribe', channel: 'club:clubId' }` или `club:clubId:channelId`; для 1:1 — `direct:{minUserId}:{maxUserId}`
 - Входящие: `{ type: 'message', payload: MessageViewDto }`
-- Проверка членства: только активные участники клуба могут подписаться
+- Проверка: клуб — только активные участники; direct — участники пары тренер↔клиент
 
 ## Навигация
 
@@ -110,7 +136,10 @@
 - `mobile/lib/features/messages/tabs/club_messages_tab.dart`
 - `mobile/lib/features/messages/tabs/personal_chats_tab.dart`
 - `mobile/lib/features/messages/tabs/coach_tab.dart`
+- `mobile/lib/features/messages/direct_chat_screen.dart`
 - `mobile/lib/shared/services/chat_websocket_service.dart`
 - `mobile/lib/shared/api/messages_service.dart`
+- `mobile/lib/shared/api/trainer_service.dart`
 - `backend/src/api/messages.routes.ts`
+- `backend/src/api/trainer.routes.ts`
 - `backend/src/ws/chatWs.ts`
