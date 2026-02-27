@@ -34,43 +34,42 @@ class _CoachTabState extends State<CoachTab> {
   }
 
   Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    
     try {
-      final results = await Future.wait([
-        ServiceLocator.messagesService.getTrainerClients(),
-        ServiceLocator.messagesService.getMyTrainer(),
-        ServiceLocator.messagesService.getClubChats(),
-      ]);
+      // Load clients
+      try {
+        _trainerClients = await ServiceLocator.messagesService.getTrainerClients();
+      } catch (e) {
+        debugPrint('CoachTab: Error loading clients: $e');
+        _trainerClients = []; 
+      }
+
+      // Load my trainer
+      try {
+        _myTrainer = await ServiceLocator.messagesService.getMyTrainer();
+      } catch (e) {
+        debugPrint('CoachTab: Error loading my trainer: $e');
+        _myTrainer = null;
+      }
+
+      // Load clubs
+      try {
+        final clubs = await ServiceLocator.messagesService.getClubChats();
+        _hasClubs = clubs.isNotEmpty;
+      } catch (e) {
+        debugPrint('CoachTab: Error loading clubs: $e');
+        _hasClubs = false;
+      }
 
       if (!mounted) return;
       
-      final clubs = results[2] as List;
-      // If user is a leader or trainer in any club, they have the "trainer" capability
-      // Note: ClubChatModel doesn't have userRole yet in the model, 
-      // but we can infer from the trainer clients list or other signals.
-      // For now, if getTrainerClients returned a list (even empty), and user has clubs, 
-      // let's check if they have trainer/leader role in any of them.
-      
       setState(() {
-        _trainerClients = results[0] as List<DirectChatModel>;
-        _myTrainer = results[1] as DirectChatModel?;
-        _hasClubs = clubs.isNotEmpty;
-        
-        // A user is considered a trainer if they have at least one client 
-        // OR if they are a leader/trainer in a club. 
-        // Since ClubChatModel might not have 'userRole', we'll rely on trainerClients 
-        // being non-null (successful API call) and the fact that they might be a trainer.
-        _isTrainerRole = _trainerClients != null && _trainerClients!.isNotEmpty;
-        
-        // Fallback: if they have clubs, we check if they are "staff"
-        if (!_isTrainerRole && clubs.isNotEmpty) {
-           // We'll trust the backend response. If trainer/clients returns 200, 
-           // the user is capable of being a trainer.
-           _isTrainerRole = true; 
-        }
-
+        _isTrainerRole = (_trainerClients != null && _trainerClients!.isNotEmpty) || _hasClubs;
         _isLoading = false;
       });
-    } catch (_) {
+    } catch (e) {
+      debugPrint('CoachTab: Unexpected error: $e');
       if (!mounted) return;
       setState(() => _isLoading = false);
     }

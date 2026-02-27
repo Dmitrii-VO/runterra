@@ -195,7 +195,7 @@ export class MessagesRepository extends BaseRepository {
   /** Add trainer-client relationship */
   async addTrainerClient(trainerId: string, clientId: string): Promise<void> {
     await this.queryOne(
-      `INSERT INTO trainer_clients (trainer_id, client_id) VALUES ($1, $2)
+      `INSERT INTO trainer_clients (trainer_id, client_id) VALUES ($1::uuid, $2::uuid)
        ON CONFLICT (trainer_id, client_id) DO NOTHING`,
       [trainerId, clientId]
     );
@@ -306,7 +306,7 @@ export class MessagesRepository extends BaseRepository {
     const row = await this.queryOne<DirectMessageRow>(
       `WITH ins AS (
          INSERT INTO direct_messages (sender_id, receiver_id, text)
-         VALUES ($1, $2, $3)
+         VALUES ($1::uuid, $2::uuid, $3)
          RETURNING *
        )
        SELECT ins.id, ins.sender_id, ins.receiver_id, ins.text, ins.created_at, ins.updated_at,
@@ -322,8 +322,8 @@ export class MessagesRepository extends BaseRepository {
   async hasDirectMessages(userA: string, userB: string): Promise<boolean> {
     const row = await this.queryOne(
       `SELECT 1 FROM direct_messages
-       WHERE (sender_id = $1 AND receiver_id = $2)
-          OR (sender_id = $2 AND receiver_id = $1)
+       WHERE (sender_id = $1::uuid AND receiver_id = $2::uuid)
+          OR (sender_id = $2::uuid AND receiver_id = $1::uuid)
        LIMIT 1`,
       [userA, userB]
     );
