@@ -338,7 +338,7 @@ router.get('/trainer/clients', async (req: Request, res: Response) => {
     const clients = await messagesRepo.getTrainerClients(user.id);
     res.status(200).json(clients);
   } catch (error) {
-    logger.error('Error fetching trainer clients', { error });
+    logger.error('Error fetching trainer clients', { error: error instanceof Error ? error.message : error, stack: error instanceof Error ? error.stack : undefined });
     res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
   }
 });
@@ -360,7 +360,7 @@ router.get('/trainer/my-trainer', async (req: Request, res: Response) => {
     }
     res.status(200).json(trainer);
   } catch (error) {
-    logger.error('Error fetching my trainer', { error });
+    logger.error('Error fetching my trainer', { error: error instanceof Error ? error.message : error, stack: error instanceof Error ? error.stack : undefined });
     res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
   }
 });

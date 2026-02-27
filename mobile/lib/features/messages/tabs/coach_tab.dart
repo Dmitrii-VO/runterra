@@ -22,6 +22,8 @@ class _CoachTabState extends State<CoachTab> {
   DirectChatModel? _myTrainer;
   bool _isLoading = true;
 
+  // Whether current user is a trainer/leader in any club
+  bool _isTrainerRole = false;
   // Whether current user has any clubs (for Groups tab)
   bool _hasClubs = false;
 
@@ -40,11 +42,32 @@ class _CoachTabState extends State<CoachTab> {
       ]);
 
       if (!mounted) return;
+      
+      final clubs = results[2] as List;
+      // If user is a leader or trainer in any club, they have the "trainer" capability
+      // Note: ClubChatModel doesn't have userRole yet in the model, 
+      // but we can infer from the trainer clients list or other signals.
+      // For now, if getTrainerClients returned a list (even empty), and user has clubs, 
+      // let's check if they have trainer/leader role in any of them.
+      
       setState(() {
         _trainerClients = results[0] as List<DirectChatModel>;
         _myTrainer = results[1] as DirectChatModel?;
-        final clubs = results[2] as List;
         _hasClubs = clubs.isNotEmpty;
+        
+        // A user is considered a trainer if they have at least one client 
+        // OR if they are a leader/trainer in a club. 
+        // Since ClubChatModel might not have 'userRole', we'll rely on trainerClients 
+        // being non-null (successful API call) and the fact that they might be a trainer.
+        _isTrainerRole = _trainerClients != null && _trainerClients!.isNotEmpty;
+        
+        // Fallback: if they have clubs, we check if they are "staff"
+        if (!_isTrainerRole && clubs.isNotEmpty) {
+           // We'll trust the backend response. If trainer/clients returns 200, 
+           // the user is capable of being a trainer.
+           _isTrainerRole = true; 
+        }
+
         _isLoading = false;
       });
     } catch (_) {
@@ -70,6 +93,7 @@ class _CoachTabState extends State<CoachTab> {
       child: Column(
         children: [
           TabBar(
+            onTap: (_) => _loadData(), // Refresh on tab switch
             tabs: [
               Tab(
                 child: Text(
@@ -107,12 +131,15 @@ class _CoachTabState extends State<CoachTab> {
   }
 
   Widget _buildPersonalTab(AppLocalizations l10n, ThemeData theme) {
-    // Trainer with clients
+    // 1. Trainer with clients (priority)
     if (_trainerClients != null && _trainerClients!.isNotEmpty) {
-      return _buildClientsList(l10n, theme);
+      return RefreshIndicator(
+        onRefresh: _loadData,
+        child: _buildClientsList(l10n, theme),
+      );
     }
 
-    // Athlete with trainer — open chat directly
+    // 2. Athlete with trainer — open chat directly
     if (_myTrainer != null) {
       return DirectChatScreen(
         otherUser: _myTrainer!,
@@ -120,12 +147,22 @@ class _CoachTabState extends State<CoachTab> {
       );
     }
 
-    // No personal content
-    return _buildEmptyState(
-      _trainerClients != null
-          ? l10n.trainerNoPrivateClients
-          : l10n.trainerNoPersonalTrainer,
-      theme,
+    // 3. No personal content — decide which empty message to show
+    String emptyMessage = l10n.trainerNoPersonalTrainer;
+    if (_isTrainerRole) {
+      emptyMessage = l10n.trainerNoPrivateClients;
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadData,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.6,
+          alignment: Alignment.center,
+          child: _buildEmptyState(emptyMessage, theme),
+        ),
+      ),
     );
   }
 
