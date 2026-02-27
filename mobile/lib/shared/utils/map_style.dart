@@ -11,11 +11,6 @@ const String kCleanMapStyle = '''
     "types": "point",
     "tags": { "all": ["transit"] },
     "stylers": { "visibility": "off" }
-  },
-  {
-    "types": "point",
-    "tags": { "all": ["business"] },
-    "stylers": { "visibility": "off" }
   }
 ]
 ''';
