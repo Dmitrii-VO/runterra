@@ -204,7 +204,7 @@ export class MessagesRepository extends BaseRepository {
   /** Remove trainer-client relationship */
   async removeTrainerClient(trainerId: string, clientId: string): Promise<boolean> {
     const result = await this.query(
-      `DELETE FROM trainer_clients WHERE trainer_id = $1 AND client_id = $2`,
+      `DELETE FROM trainer_clients WHERE trainer_id = $1::uuid AND client_id = $2::uuid`,
       [trainerId, clientId]
     );
     return result.rowCount !== null && result.rowCount > 0;
@@ -213,7 +213,7 @@ export class MessagesRepository extends BaseRepository {
   /** Check if trainer-client relationship exists */
   async isTrainerClient(trainerId: string, clientId: string): Promise<boolean> {
     const row = await this.queryOne(
-      `SELECT 1 FROM trainer_clients WHERE trainer_id = $1 AND client_id = $2`,
+      `SELECT 1 FROM trainer_clients WHERE trainer_id = $1::uuid AND client_id = $2::uuid`,
       [trainerId, clientId]
     );
     return !!row;
@@ -232,7 +232,7 @@ export class MessagesRepository extends BaseRepository {
             OR (sender_id = tc.client_id AND receiver_id = tc.trainer_id)
          ORDER BY created_at DESC LIMIT 1
        ) dm ON true
-       WHERE tc.trainer_id = $1
+       WHERE tc.trainer_id = $1::uuid
        ORDER BY dm.created_at DESC NULLS LAST, u.name ASC`,
       [trainerId]
     );
@@ -252,7 +252,7 @@ export class MessagesRepository extends BaseRepository {
             OR (sender_id = tc.client_id AND receiver_id = tc.trainer_id)
          ORDER BY created_at DESC LIMIT 1
        ) dm ON true
-       WHERE tc.client_id = $1
+       WHERE tc.client_id = $1::uuid
        ORDER BY dm.created_at DESC NULLS LAST
        LIMIT 1`,
       [clientId]
@@ -264,8 +264,8 @@ export class MessagesRepository extends BaseRepository {
   async hasTrainerClientRelationship(userA: string, userB: string): Promise<boolean> {
     const row = await this.queryOne(
       `SELECT 1 FROM trainer_clients
-       WHERE (trainer_id = $1 AND client_id = $2)
-          OR (trainer_id = $2 AND client_id = $1)`,
+       WHERE (trainer_id = $1::uuid AND client_id = $2::uuid)
+          OR (trainer_id = $2::uuid AND client_id = $1::uuid)`,
       [userA, userB]
     );
     return !!row;
@@ -275,8 +275,8 @@ export class MessagesRepository extends BaseRepository {
   async getTrainerIdForPair(userA: string, userB: string): Promise<string | null> {
     const row = await this.queryOne<{ trainer_id: string }>(
       `SELECT trainer_id FROM trainer_clients
-       WHERE (trainer_id = $1 AND client_id = $2)
-          OR (trainer_id = $2 AND client_id = $1)
+       WHERE (trainer_id = $1::uuid AND client_id = $2::uuid)
+          OR (trainer_id = $2::uuid AND client_id = $1::uuid)
        LIMIT 1`,
       [userA, userB]
     );
@@ -292,8 +292,8 @@ export class MessagesRepository extends BaseRepository {
               u.name AS user_name
        FROM direct_messages dm
        JOIN users u ON u.id = dm.sender_id
-       WHERE (dm.sender_id = $1 AND dm.receiver_id = $2)
-          OR (dm.sender_id = $2 AND dm.receiver_id = $1)
+       WHERE (dm.sender_id = $1::uuid AND dm.receiver_id = $2::uuid)
+          OR (dm.sender_id = $2::uuid AND dm.receiver_id = $1::uuid)
        ORDER BY dm.created_at DESC
        LIMIT $3 OFFSET $4`,
       [userA, userB, limit, offset]
