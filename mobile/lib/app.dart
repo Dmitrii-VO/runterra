@@ -70,10 +70,6 @@ class RunterraApp extends StatelessWidget {
         return '/';
       }
 
-      if (isAuthenticated && !isLoginRoute) {
-        await ServiceLocator.refreshAuthToken();
-      }
-
       return null;
     },
     routes: [

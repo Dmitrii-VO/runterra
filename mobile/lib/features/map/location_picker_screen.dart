@@ -60,10 +60,9 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
   }
 
   void _confirm() {
-    Navigator.pop(context, {
+    Navigator.pop(context, <String, double>{
       'lat': _selectedLat,
       'lon': _selectedLon,
-      if (_selectedAddress != null) 'address': _selectedAddress,
     });
   }
 
