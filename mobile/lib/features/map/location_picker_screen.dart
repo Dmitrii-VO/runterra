@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
 import '../../l10n/app_localizations.dart';
+import '../../shared/utils/map_style.dart';
 
 /// Full-screen map for picking a location (start point for events).
 ///
@@ -171,6 +172,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
           YandexMap(
             onMapCreated: (controller) {
               _mapController = controller;
+              controller.setMapStyle(kCleanMapStyle);
               controller.moveCamera(
                 CameraUpdate.newCameraPosition(
                   CameraPosition(

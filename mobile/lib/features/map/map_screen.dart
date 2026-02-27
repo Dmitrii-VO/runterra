@@ -18,6 +18,7 @@ import '../city/city_picker_dialog.dart';
 import 'widgets/territory_bottom_sheet.dart';
 import '../../shared/models/club_model.dart';
 import '../../shared/models/event_list_item_model.dart';
+import '../../shared/utils/map_style.dart';
 import 'package:intl/intl.dart';
 
 /// Экран карты (MVP)
@@ -78,7 +79,9 @@ class _MapScreenState extends State<MapScreen> {
   List<MapObject> _territoryMapObjects = [];
   List<PlacemarkMapObject> _captureLabels = [];
   List<PlacemarkMapObject> _eventMarkers = [];
-  BitmapDescriptor? _eventMarkerIcon;
+  BitmapDescriptor? _eventMarkerIcon; // fallback / open_event
+  final Map<String, BitmapDescriptor> _eventMarkerIcons = {};
+  final Map<int, BitmapDescriptor> _groupMarkerIconCache = {};
   double _currentZoom = _defaultZoom;
 
   @override
@@ -140,61 +143,140 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  /// Creates a programmatic event marker icon (orange circle with calendar icon)
+  /// Pre-renders all event marker icons (type icons + group count icons).
   Future<void> _createEventMarkerIcon() async {
-    const size = 64.0;
+    // Type icons + group icons for counts 2..9 and "9+"
+    final groupCounts = [2, 3, 4, 5, 6, 7, 8, 9, 10]; // 10 = "9+"
+    final futures = [
+      _renderMarkerIcon(_drawOpenEventIcon),
+      _renderMarkerIcon(_drawTrainingIcon),
+      _renderMarkerIcon(_drawGroupRunIcon),
+      _renderMarkerIcon(_drawClubEventIcon),
+      ...groupCounts.map((n) => _renderMarkerIcon((c, s) => _drawGroupIcon(c, s, n))),
+    ];
+    final icons = await Future.wait(futures);
+    if (!mounted) return;
+    setState(() {
+      _eventMarkerIcons['open_event'] = icons[0];
+      _eventMarkerIcons['training']   = icons[1];
+      _eventMarkerIcons['group_run']  = icons[2];
+      _eventMarkerIcons['club_event'] = icons[3];
+      _eventMarkerIcon = icons[0]; // fallback
+      for (var i = 0; i < groupCounts.length; i++) {
+        _groupMarkerIconCache[groupCounts[i]] = icons[4 + i];
+      }
+    });
+    if (_mapData != null && _isMapReady) {
+      _updateEventMarkers();
+    }
+  }
+
+  Future<BitmapDescriptor> _renderMarkerIcon(
+      void Function(Canvas, double) draw) async {
+    const size = 96.0;
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder, const Rect.fromLTWH(0, 0, size, size));
-
-    // Orange circle background
-    final paint = Paint()..color = Colors.deepOrange;
-    canvas.drawCircle(const Offset(size / 2, size / 2), size / 2, paint);
-
-    // White border
-    final borderPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3;
-    canvas.drawCircle(
-        const Offset(size / 2, size / 2), size / 2 - 1.5, borderPaint);
-
-    // White inner icon (simple calendar-like shape)
-    final iconPaint = Paint()..color = Colors.white;
-    // Draw a small rectangle (event icon body)
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        const Rect.fromLTWH(18, 22, 28, 24),
-        const Radius.circular(3),
-      ),
-      iconPaint,
-    );
-    // Draw top bars of calendar
-    final barPaint = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(const Offset(26, 18), const Offset(26, 26), barPaint);
-    canvas.drawLine(const Offset(38, 18), const Offset(38, 26), barPaint);
-
-    // Orange dots inside calendar
-    final dotPaint = Paint()..color = Colors.deepOrange;
-    canvas.drawCircle(const Offset(26, 36), 2.5, dotPaint);
-    canvas.drawCircle(const Offset(32, 36), 2.5, dotPaint);
-    canvas.drawCircle(const Offset(38, 36), 2.5, dotPaint);
-
+    draw(canvas, size);
     final picture = recorder.endRecording();
     final image = await picture.toImage(size.toInt(), size.toInt());
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    if (byteData != null && mounted) {
-      setState(() {
-        _eventMarkerIcon =
-            BitmapDescriptor.fromBytes(byteData.buffer.asUint8List());
-      });
-      // Re-update markers if data already loaded
-      if (_mapData != null && _isMapReady) {
-        _updateEventMarkers();
-      }
-    }
+    return BitmapDescriptor.fromBytes(byteData!.buffer.asUint8List());
+  }
+
+  void _drawCircleBase(Canvas canvas, double size, Color color) {
+    canvas.drawCircle(
+      Offset(size / 2, size / 2),
+      size / 2,
+      Paint()..color = color,
+    );
+    canvas.drawCircle(
+      Offset(size / 2, size / 2),
+      size / 2 - 1.5,
+      Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3,
+    );
+  }
+
+  // Orange circle + calendar icon → open_event
+  void _drawOpenEventIcon(Canvas canvas, double size) {
+    _drawCircleBase(canvas, size, Colors.deepOrange);
+    canvas.save();
+    canvas.scale(size / 64.0);
+    final white = Paint()..color = Colors.white;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+          const Rect.fromLTWH(18, 22, 28, 24), const Radius.circular(3)),
+      white,
+    );
+    final bar = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(const Offset(26, 18), const Offset(26, 26), bar);
+    canvas.drawLine(const Offset(38, 18), const Offset(38, 26), bar);
+    final dot = Paint()..color = Colors.deepOrange;
+    canvas.drawCircle(const Offset(26, 36), 2.5, dot);
+    canvas.drawCircle(const Offset(32, 36), 2.5, dot);
+    canvas.drawCircle(const Offset(38, 36), 2.5, dot);
+    canvas.restore();
+  }
+
+  // Blue circle + lightning bolt → training
+  void _drawTrainingIcon(Canvas canvas, double size) {
+    _drawCircleBase(canvas, size, Colors.blue.shade700);
+    canvas.save();
+    canvas.scale(size / 64.0);
+    final path = Path()
+      ..moveTo(35, 14)
+      ..lineTo(25, 34)
+      ..lineTo(31, 34)
+      ..lineTo(29, 50)
+      ..lineTo(39, 30)
+      ..lineTo(33, 30)
+      ..close();
+    canvas.drawPath(path, Paint()..color = Colors.white);
+    canvas.restore();
+  }
+
+  // Green circle + running figure → group_run
+  void _drawGroupRunIcon(Canvas canvas, double size) {
+    _drawCircleBase(canvas, size, Colors.green.shade600);
+    canvas.save();
+    canvas.scale(size / 64.0);
+    final p = Paint()
+      ..color = Colors.white
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.5;
+    canvas.drawCircle(const Offset(34, 16), 5, Paint()..color = Colors.white);
+    canvas.drawLine(const Offset(34, 21), const Offset(30, 34), p);
+    canvas.drawLine(const Offset(32, 26), const Offset(24, 23), p);
+    canvas.drawLine(const Offset(31, 28), const Offset(38, 25), p);
+    canvas.drawLine(const Offset(30, 34), const Offset(24, 44), p);
+    canvas.drawLine(const Offset(30, 34), const Offset(36, 45), p);
+    canvas.restore();
+  }
+
+  // Purple circle + flag → club_event
+  void _drawClubEventIcon(Canvas canvas, double size) {
+    _drawCircleBase(canvas, size, Colors.purple.shade600);
+    canvas.save();
+    canvas.scale(size / 64.0);
+    final p = Paint()
+      ..color = Colors.white
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 3.5;
+    canvas.drawLine(const Offset(24, 46), const Offset(24, 18), p);
+    final flag = Path()
+      ..moveTo(24, 18)
+      ..lineTo(42, 23)
+      ..lineTo(24, 30)
+      ..close();
+    canvas.drawPath(flag, Paint()..color = Colors.white);
+    canvas.restore();
   }
 
   /// Загружает данные карты в фоне (не блокирует показ карты)
@@ -694,34 +776,100 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  /// Updates event markers on the map
+  /// Grouping precision depends on zoom: further out → coarser grid → more grouping.
+  int get _groupingPrecision {
+    if (_currentZoom < 15) return 3; // ~100m
+    if (_currentZoom < 17) return 4; // ~10m
+    return 5;                         // ~1m
+  }
+
+  /// Updates event markers on the map, grouping events at the same location.
+  /// Fully synchronous — all icons are pre-rendered at startup.
   void _updateEventMarkers() {
     if (_mapData == null || _eventMarkerIcon == null) return;
 
-    final markers = <PlacemarkMapObject>[];
+    final precision = _groupingPrecision;
+    final groups = <String, List<EventListItemModel>>{};
     for (final event in _mapData!.events) {
-      final startLocation = event.startLocation;
-      if (startLocation == null) continue;
-
-      markers.add(PlacemarkMapObject(
-        mapId: MapObjectId('event_${event.id}'),
-        point: Point(
-          latitude: startLocation.latitude,
-          longitude: startLocation.longitude,
-        ),
-        icon: PlacemarkIcon.single(PlacemarkIconStyle(
-          image: _eventMarkerIcon!,
-          scale: 0.8,
-        )),
-        onTap: _currentZoom >= _eventTapZoomThreshold
-            ? (_, __) => _showEventBottomSheet(event)
-            : null,
-      ));
+      if (event.startLocation == null) continue;
+      final key =
+          '${event.startLocation!.latitude.toStringAsFixed(precision)},${event.startLocation!.longitude.toStringAsFixed(precision)}';
+      groups.putIfAbsent(key, () => []).add(event);
     }
 
-    setState(() {
-      _eventMarkers = markers;
-    });
+    final markers = <PlacemarkMapObject>[];
+    final tappable = _currentZoom >= _eventTapZoomThreshold;
+
+    for (final entry in groups.entries) {
+      final events = entry.value;
+      final loc = events.first.startLocation!;
+      final point = Point(latitude: loc.latitude, longitude: loc.longitude);
+
+      if (events.length == 1) {
+        final event = events.first;
+        final icon = _eventMarkerIcons[event.type] ?? _eventMarkerIcon!;
+        markers.add(PlacemarkMapObject(
+          mapId: MapObjectId('event_${event.id}'),
+          point: point,
+          icon: PlacemarkIcon.single(PlacemarkIconStyle(
+            image: icon,
+            scale: 0.55,
+          )),
+          onTap: tappable ? (_, __) => _showEventBottomSheet(event) : null,
+        ));
+      } else {
+        // Clamp to max cached count (10 = "9+")
+        final cacheKey = events.length > 9 ? 10 : events.length;
+        final icon = _groupMarkerIconCache[cacheKey] ?? _eventMarkerIcon!;
+        markers.add(PlacemarkMapObject(
+          mapId: MapObjectId('event_group_${entry.key}'),
+          point: point,
+          icon: PlacemarkIcon.single(PlacemarkIconStyle(
+            image: icon,
+            scale: 0.55,
+          )),
+          onTap: tappable
+              ? (_, __) => _showEventGroupBottomSheet(List.unmodifiable(events))
+              : null,
+        ));
+      }
+    }
+
+    setState(() => _eventMarkers = markers);
+  }
+
+  // Dark blue circle + white count number → event group
+  void _drawGroupIcon(Canvas canvas, double size, int count) {
+    // Background circle
+    canvas.drawCircle(
+      Offset(size / 2, size / 2),
+      size / 2,
+      Paint()..color = const Color(0xFF1A237E),
+    );
+    canvas.drawCircle(
+      Offset(size / 2, size / 2),
+      size / 2 - 1.5,
+      Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3,
+    );
+    // Count number
+    final tp = TextPainter(
+      text: TextSpan(
+        text: count > 9 ? '9+' : count.toString(),
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: size * 0.38,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: ui.TextDirection.ltr,
+    )..layout();
+    tp.paint(
+      canvas,
+      Offset((size - tp.width) / 2, (size - tp.height) / 2),
+    );
   }
 
   /// Shows a bottom sheet with event details
@@ -814,12 +962,116 @@ class _MapScreenState extends State<MapScreen> {
     });
   }
 
+  void _showEventGroupBottomSheet(List<EventListItemModel> events) {
+    if (_isSheetShowing) return;
+    _isSheetShowing = true;
+    final l10n = AppLocalizations.of(context)!;
+    final dateFormat = DateFormat('d.M.y H:mm');
+
+    Color typeColor(String type) {
+      switch (type) {
+        case 'training':
+          return Colors.blue.shade700;
+        case 'group_run':
+          return Colors.green.shade600;
+        case 'club_event':
+          return Colors.purple.shade600;
+        default:
+          return Colors.deepOrange;
+      }
+    }
+
+    String typeLabel(String type) {
+      switch (type) {
+        case 'training':
+          return l10n.eventTypeTraining;
+        case 'group_run':
+          return l10n.eventTypeGroupRun;
+        case 'club_event':
+          return l10n.eventTypeClubEvent;
+        default:
+          return l10n.eventTypeOpenEvent;
+      }
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${events.length} ${l10n.eventsTitle.toLowerCase()}',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.5,
+                  ),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: events.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final event = events[index];
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: CircleAvatar(
+                          radius: 18,
+                          backgroundColor: typeColor(event.type),
+                          child: const Icon(Icons.directions_run,
+                              color: Colors.white, size: 18),
+                        ),
+                        title: Text(event.name,
+                            maxLines: 1, overflow: TextOverflow.ellipsis),
+                        subtitle: Text(
+                          '${typeLabel(event.type)} · ${dateFormat.format(event.startDateTime)}',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          Navigator.pop(context);
+                          this.context.push('/event/${event.id}');
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    ).whenComplete(() {
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          setState(() => _isSheetShowing = false);
+        } else {
+          _isSheetShowing = false;
+        }
+      });
+    });
+  }
+
+  /// Returns a discrete "marker state" based on zoom: encodes both
+  /// tap-interactivity and grouping precision tier so markers rebuild
+  /// only when something meaningful changes.
+  int _markerZoomTier(double zoom) {
+    if (zoom < _eventTapZoomThreshold) return 0; // not tappable
+    if (zoom < 15) return 1;                      // tappable, precision 3
+    if (zoom < 17) return 2;                      // tappable, precision 4
+    return 3;                                     // tappable, precision 5
+  }
+
   void _handleCameraPositionChanged(CameraPosition position) {
-    // Rebuild event markers when zoom crosses the tap threshold
     final newZoom = position.zoom;
-    final wasInteractive = _currentZoom >= _eventTapZoomThreshold;
-    final isInteractive = newZoom >= _eventTapZoomThreshold;
-    if (wasInteractive != isInteractive) {
+    if (_markerZoomTier(newZoom) != _markerZoomTier(_currentZoom)) {
       _currentZoom = newZoom;
       _updateEventMarkers();
     } else {
@@ -932,6 +1184,7 @@ class _MapScreenState extends State<MapScreen> {
     debugPrint('MapScreen: onMapCreated called');
 
     _mapController = controller;
+    await controller.setMapStyle(kCleanMapStyle);
 
     if (mounted) {
       setState(() {
