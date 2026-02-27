@@ -168,8 +168,9 @@ class _EventsScreenState extends State<EventsScreen>
       final canCreate = _myRoleInClub == 'trainer' || _myRoleInClub == 'leader';
       if (!canCreate) return null;
     }
+    final defaultType = isTrainingTab ? 'training' : 'open_event';
     return FloatingActionButton(
-      onPressed: () => context.push('/event/create'),
+      onPressed: () => context.push('/event/create?type=$defaultType'),
       child: const Icon(Icons.add),
     );
   }

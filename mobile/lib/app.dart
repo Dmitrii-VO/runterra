@@ -270,7 +270,10 @@ class RunterraApp extends StatelessWidget {
       ),
       GoRoute(
         path: '/event/create',
-        builder: (context, state) => const CreateEventScreen(),
+        builder: (context, state) {
+          final initialType = state.uri.queryParameters['type'];
+          return CreateEventScreen(initialType: initialType);
+        },
       ),
       GoRoute(
         path: '/event/:id',

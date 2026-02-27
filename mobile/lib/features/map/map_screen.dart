@@ -58,6 +58,8 @@ class _MapScreenState extends State<MapScreen> {
   static const double _defaultLongitude = 30.3351;
   static const double _defaultLatitude = 59.9343;
   static const double _defaultZoom = 12.0;
+  // Event markers become tappable only above this zoom level
+  static const double _eventTapZoomThreshold = 14.0;
 
   // Радиус территории в метрах
   static const double _territoryRadiusMeters = 500.0;
@@ -77,6 +79,7 @@ class _MapScreenState extends State<MapScreen> {
   List<PlacemarkMapObject> _captureLabels = [];
   List<PlacemarkMapObject> _eventMarkers = [];
   BitmapDescriptor? _eventMarkerIcon;
+  double _currentZoom = _defaultZoom;
 
   @override
   void initState() {
@@ -710,7 +713,9 @@ class _MapScreenState extends State<MapScreen> {
           image: _eventMarkerIcon!,
           scale: 0.8,
         )),
-        onTap: (_, __) => _showEventBottomSheet(event),
+        onTap: _currentZoom >= _eventTapZoomThreshold
+            ? (_, __) => _showEventBottomSheet(event)
+            : null,
       ));
     }
 
@@ -721,6 +726,8 @@ class _MapScreenState extends State<MapScreen> {
 
   /// Shows a bottom sheet with event details
   void _showEventBottomSheet(EventListItemModel event) {
+    if (_isSheetShowing) return;
+    _isSheetShowing = true;
     final l10n = AppLocalizations.of(context)!;
     final dateFormat = DateFormat('d.M.y H:mm');
 
@@ -796,10 +803,29 @@ class _MapScreenState extends State<MapScreen> {
           ),
         );
       },
-    );
+    ).whenComplete(() {
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          setState(() => _isSheetShowing = false);
+        } else {
+          _isSheetShowing = false;
+        }
+      });
+    });
   }
 
   void _handleCameraPositionChanged(CameraPosition position) {
+    // Rebuild event markers when zoom crosses the tap threshold
+    final newZoom = position.zoom;
+    final wasInteractive = _currentZoom >= _eventTapZoomThreshold;
+    final isInteractive = newZoom >= _eventTapZoomThreshold;
+    if (wasInteractive != isInteractive) {
+      _currentZoom = newZoom;
+      _updateEventMarkers();
+    } else {
+      _currentZoom = newZoom;
+    }
+
     if (_isAdjustingCamera ||
         _isAnimatingToFocus ||
         _mapController == null ||
@@ -891,13 +917,13 @@ class _MapScreenState extends State<MapScreen> {
       context: context,
       builder: (context) => TerritoryBottomSheet(territory: territory),
     ).whenComplete(() {
-      if (mounted) {
-        setState(() {
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          setState(() => _isSheetShowing = false);
+        } else {
           _isSheetShowing = false;
-        });
-      } else {
-        _isSheetShowing = false;
-      }
+        }
+      });
     });
   }
 

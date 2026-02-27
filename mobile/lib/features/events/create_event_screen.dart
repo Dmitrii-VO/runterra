@@ -6,7 +6,9 @@ import '../../shared/models/event_start_location.dart';
 import '../../shared/models/city_model.dart';
 
 class CreateEventScreen extends StatefulWidget {
-  const CreateEventScreen({super.key});
+  final String? initialType;
+
+  const CreateEventScreen({super.key, this.initialType});
 
   @override
   State<CreateEventScreen> createState() => _CreateEventScreenState();
@@ -20,7 +22,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final _organizerIdController = TextEditingController();
   final _participantLimitController = TextEditingController();
 
-  String _eventType = 'training';
+  late String _eventType;
   String _organizerType = 'club';
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
   TimeOfDay _selectedTime = const TimeOfDay(hour: 9, minute: 0);
@@ -36,6 +38,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   @override
   void initState() {
     super.initState();
+    _eventType = widget.initialType ?? 'training';
     _loadDefaults();
   }
 
