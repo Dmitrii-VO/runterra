@@ -44,10 +44,14 @@ class RunService {
   }
 
   Future<void> _initTts() async {
-    await _tts.setLanguage("ru-RU");
-    await _tts.setSpeechRate(0.5);
-    await _tts.setVolume(1.0);
-    await _tts.setPitch(1.0);
+    try {
+      await _tts.setLanguage("ru-RU");
+      await _tts.setSpeechRate(0.5);
+      await _tts.setVolume(1.0);
+      await _tts.setPitch(1.0);
+    } catch (e) {
+      debugPrint('Error initializing TTS: $e');
+    }
   }
 
   /// Начать пробежку.
@@ -172,7 +176,7 @@ class RunService {
     }
   }
 
-  void nextSegment() {
+  Future<void> nextSegment() async {
     final session = _currentSession;
     if (session == null || session.workout == null || session.workout!.blocks == null) return;
 
@@ -189,7 +193,11 @@ class RunService {
 
     if (nextBlockIdx >= session.workout!.blocks!.length) {
       // Workout finished
-      _tts.speak("Тренировка завершена. Отличная работа!");
+      try {
+        await _tts.speak("Тренировка завершена. Отличная работа!");
+      } catch (e) {
+        debugPrint('TTS error: $e');
+      }
       return;
     }
 
@@ -216,7 +224,11 @@ class RunService {
       text += "Цель: ${nextSeg.targetValue}. ";
     }
     
-    _tts.speak(text);
+    try {
+      await _tts.speak(text);
+    } catch (e) {
+      debugPrint('TTS error: $e');
+    }
   }
 
   /// Pause the current run: stop GPS, freeze accumulated duration.
