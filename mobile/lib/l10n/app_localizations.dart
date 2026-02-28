@@ -3091,6 +3091,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not create group: {error}'**
   String trainerCreateGroupError(String error);
+
+  /// No description provided for @errorUnauthorizedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Authorization error'**
+  String get errorUnauthorizedTitle;
+
+  /// No description provided for @errorUnauthorizedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Session expired or invalid. Please sign in again.'**
+  String get errorUnauthorizedMessage;
+
+  /// No description provided for @errorUnauthorizedAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again'**
+  String get errorUnauthorizedAction;
 }
 
 class _AppLocalizationsDelegate

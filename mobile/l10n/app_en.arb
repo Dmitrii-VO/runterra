@@ -865,6 +865,9 @@
   "trainerNoGroups": "No groups yet",
   "trainerGroupCreated": "Group created successfully",
   "trainerCreateGroupError": "Could not create group: {error}",
+  "errorUnauthorizedTitle": "Authorization error",
+  "errorUnauthorizedMessage": "Session expired or invalid. Please sign in again.",
+  "errorUnauthorizedAction": "Sign in again",
   "@trainerCreateGroupError": {
     "placeholders": {
       "error": {

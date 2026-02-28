@@ -691,6 +691,9 @@
   "trainerNoGroups": "Групп пока нет",
   "trainerGroupCreated": "Группа успешно создана",
   "trainerCreateGroupError": "Не удалось создать группу: {error}",
+  "errorUnauthorizedTitle": "Ошибка авторизации",
+  "errorUnauthorizedMessage": "Сессия истекла или недействительна. Пожалуйста, войдите снова.",
+  "errorUnauthorizedAction": "Войти заново",
   "@trainerCreateGroupError": {
     "placeholders": {
       "error": {

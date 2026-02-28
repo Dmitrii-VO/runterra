@@ -1632,4 +1632,14 @@ class AppLocalizationsRu extends AppLocalizations {
   String trainerCreateGroupError(String error) {
     return 'Не удалось создать группу: $error';
   }
+
+  @override
+  String get errorUnauthorizedTitle => 'Ошибка авторизации';
+
+  @override
+  String get errorUnauthorizedMessage =>
+      'Сессия истекла или недействительна. Пожалуйста, войдите снова.';
+
+  @override
+  String get errorUnauthorizedAction => 'Войти заново';
 }

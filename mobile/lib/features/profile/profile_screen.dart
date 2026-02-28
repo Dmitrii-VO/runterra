@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/api/users_service.dart';
+import '../../shared/auth/auth_service.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/profile_model.dart';
 import '../../shared/ui/profile/header_section.dart';
@@ -50,22 +51,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   /// Создает Future для получения данных профиля
   Future<ProfileModel> _fetchProfile() async {
-    final profile = await ServiceLocator.usersService.getProfile();
+    try {
+      final profile = await ServiceLocator.usersService.getProfile();
 
-    // Keep local currentClubId in sync with backend profile contract:
-    // if backend does not return club object, user is considered not in a club.
-    final currentClubId = ServiceLocator.currentClubService.currentClubId;
-    if (profile.club != null &&
-        (currentClubId == null || currentClubId != profile.club!.id)) {
-      await ServiceLocator.currentClubService.setCurrentClubId(profile.club!.id);
-    }
-    if (profile.club == null &&
-        currentClubId != null &&
-        currentClubId.isNotEmpty) {
-      await ServiceLocator.currentClubService.setCurrentClubId(null);
-    }
+      // Keep local currentClubId in sync with backend profile contract:
+      // if backend does not return club object, user is considered not in a club.
+      final currentClubId = ServiceLocator.currentClubService.currentClubId;
+      if (profile.club != null &&
+          (currentClubId == null || currentClubId != profile.club!.id)) {
+        await ServiceLocator.currentClubService.setCurrentClubId(profile.club!.id);
+      }
+      if (profile.club == null &&
+          currentClubId != null &&
+          currentClubId.isNotEmpty) {
+        await ServiceLocator.currentClubService.setCurrentClubId(null);
+      }
 
-    return profile;
+      return profile;
+    } on ApiException catch (e) {
+      if (e.code == 'unauthorized' && mounted) {
+        try {
+          await ServiceLocator.refreshAuthToken();
+          return await ServiceLocator.usersService.getProfile();
+        } on ApiException catch (retryErr) {
+          if (retryErr.code == 'unauthorized' && mounted) {
+            context.go('/login');
+            // Return a dummy future that will never complete or just throw
+            rethrow;
+          }
+        }
+      }
+      rethrow;
+    }
   }
   
   /// Reload profile data
@@ -74,6 +91,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _profileFuture = _fetchProfile();
     });
     _loadTrainerProfile();
+  }
+
+  Future<void> _logout() async {
+    await AuthService.instance.signOut();
+    if (mounted) {
+      context.go('/login');
+    }
   }
 
   @override
@@ -121,8 +145,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (snapshot.hasError) {
       final err = snapshot.error;
       String userMessage;
+      bool isUnauthorized = false;
+
       if (err is ApiException) {
-        userMessage = '${err.code}\n\n${err.message}';
+        if (err.code == 'unauthorized') {
+          isUnauthorized = true;
+          userMessage = l10n.errorUnauthorizedMessage;
+        } else {
+          userMessage = '${err.code}\n\n${err.message}';
+        }
       } else {
         final s = err.toString();
         if (s.contains('SocketException') ||
@@ -140,8 +171,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                Icon(
+                  isUnauthorized ? Icons.lock_outline : Icons.error_outline,
+                  size: 48,
+                  color: isUnauthorized ? Colors.orange : Colors.red,
+                ),
                 const SizedBox(height: 16),
+                Text(
+                  isUnauthorized ? l10n.errorUnauthorizedTitle : l10n.errorLoadTitle,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
                 Text(
                   userMessage,
                   style: Theme.of(context).textTheme.bodyMedium,
@@ -149,9 +189,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
-                  onPressed: _retry,
-                  icon: const Icon(Icons.refresh),
-                  label: Text(l10n.retry),
+                  onPressed: isUnauthorized ? _logout : _retry,
+                  icon: Icon(isUnauthorized ? Icons.login : Icons.refresh),
+                  label: Text(isUnauthorized ? l10n.errorUnauthorizedAction : l10n.retry),
                 ),
               ],
             ),

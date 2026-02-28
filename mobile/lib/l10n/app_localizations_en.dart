@@ -1627,4 +1627,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String trainerCreateGroupError(String error) {
     return 'Could not create group: $error';
   }
+
+  @override
+  String get errorUnauthorizedTitle => 'Authorization error';
+
+  @override
+  String get errorUnauthorizedMessage =>
+      'Session expired or invalid. Please sign in again.';
+
+  @override
+  String get errorUnauthorizedAction => 'Sign in again';
 }
