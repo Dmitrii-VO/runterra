@@ -190,8 +190,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
   }
 
   String _formatDateTime(DateTime dateTime) {
+    final local = dateTime.toLocal();
     final dateFormat = DateFormat('d.M.y H:mm');
-    return dateFormat.format(dateTime);
+    return '${dateFormat.format(local)} ${local.timeZoneName}';
   }
 
   @override
@@ -277,7 +278,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.2),
+                      color: statusColor.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(

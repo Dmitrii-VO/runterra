@@ -51,6 +51,7 @@ class EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('d MMM, HH:mm');
+    final localStart = event.startDateTime.toLocal();
 
     return Container(
       margin: const EdgeInsets.all(16.0),
@@ -76,7 +77,7 @@ class EventCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _getEventColor(event.type).withOpacity(0.1),
+                  color: _getEventColor(event.type).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -104,7 +105,7 @@ class EventCard extends StatelessWidget {
               const Icon(Icons.access_time, size: 16, color: Colors.grey),
               const SizedBox(width: 8),
               Text(
-                dateFormat.format(event.startDateTime),
+                '${dateFormat.format(localStart)} ${localStart.timeZoneName}',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             ],

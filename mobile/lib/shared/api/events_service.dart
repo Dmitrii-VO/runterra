@@ -292,7 +292,7 @@ class EventsService {
     final body = <String, dynamic>{};
     if (name != null) body['name'] = name;
     if (type != null) body['type'] = type;
-    if (startDateTime != null) body['startDateTime'] = startDateTime.toIso8601String();
+    if (startDateTime != null) body['startDateTime'] = startDateTime.toUtc().toIso8601String();
     if (startLocation != null) body['startLocation'] = startLocation.toJson();
     if (locationName != null) body['locationName'] = locationName;
     if (description != null) body['description'] = description;
