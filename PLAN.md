@@ -1,23 +1,27 @@
-# Plan: Trainer Groups Implementation
+# Plan: Relocate "Find Trainer" functionality
 
-Objective: Add the ability for trainers to create groups within a club and message them.
+Objective: Move the "Find Trainer" entry point from Profile Screen to Messages -> Coach Tab for better UX.
 
-## Phase 1: Backend Infrastructure
-- [x] **Step 1.1: Database Migration.** Create `trainer_groups` and `trainer_group_members` tables.
-- [x] **Step 1.2: Repository & Entity.** Implement `TrainerGroupRepository` for CRUD operations.
-- [x] **Step 1.3: API Endpoints.** Add routes to `trainer.routes.ts`.
-- [x] **Step 1.4: Messaging Integration.** Support `trainer_group` as a message channel type.
+## Phase 1: Research
+- [x] Identified entry point in `ProfileScreen`.
+- [x] Identified implementation in `TrainersListScreen` and `/trainers` route.
+- [x] Identified target location in `CoachTab` (Personal sub-tab).
 
-## Phase 2: Mobile Implementation
-- [x] **Step 2.1: Localization.** Add strings to `app_en.arb` and `app_ru.arb`.
-- [x] **Step 2.2: Models & API Service.** Create `TrainerGroupModel` and update `TrainerService`.
-- [x] **Step 2.3: Create Group UI.** Implement `CreateTrainerGroupScreen`.
-- [x] **Step 2.4: Integration.** Add FAB (+) to `CoachTab` and implement the Groups list.
+## Phase 2: Execution
+- [ ] **Step 1: Remove from Profile.** 
+    - Modify `mobile/lib/features/profile/profile_screen.dart`.
+    - Remove the `Card` containing `l10n.findTrainers`.
+    - Verification: Run app, check Profile tab.
 
-## Phase 3: Validation
-- [x] **Final Check.** Full end-to-end flow: Create group -> Send message -> Verify receipt.
-- [x] **Bugfixes & Management.** 
-    - [x] Creator is automatically added to the group members in DB.
-    - [x] Creator is filtered out from the selection list in Mobile UI.
-    - [x] Added Group Management (Edit, Delete, Manage Members).
-    - [x] Fixed UI refresh after creation/edit.
+- [ ] **Step 2: Add to CoachTab (Empty State).**
+    - Modify `mobile/lib/features/messages/tabs/coach_tab.dart`.
+    - Update `_buildPersonalTab` to include an action button in the empty state.
+    - Verification: Check Coach -> Personal tab when no trainer is assigned.
+
+- [ ] **Step 3: Add persistent search button.**
+    - Add a search icon button to the `CoachTab` UI so users can find new trainers even if they already have one.
+    - Verification: Ensure the button is visible and works.
+
+- [ ] **Step 4: Cleanup & Validation.**
+    - Run `flutter analyze`.
+    - Verification: 0 errors.

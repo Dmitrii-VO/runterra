@@ -228,16 +228,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
           ),
-        // Find Trainers entry
-        Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: ListTile(
-            leading: const Icon(Icons.search),
-            title: Text(l10n.findTrainers),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push('/trainers'),
-          ),
-        ),
         ProfileNotificationsSection(notifications: profile.notifications),
       ],
     );

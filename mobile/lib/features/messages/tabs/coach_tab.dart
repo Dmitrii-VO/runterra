@@ -86,11 +86,23 @@ class _CoachTabState extends State<CoachTab> with SingleTickerProviderStateMixin
     return Scaffold(
       body: Column(
         children: [
-          TabBar(
-            controller: _tabController,
-            tabs: [
-              Tab(text: l10n.trainerGroupsTab),
-              Tab(text: l10n.trainerPersonalTab),
+          Row(
+            children: [
+              Expanded(
+                child: TabBar(
+                  controller: _tabController,
+                  tabs: [
+                    Tab(text: l10n.trainerGroupsTab),
+                    Tab(text: l10n.trainerPersonalTab),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.search),
+                tooltip: l10n.findTrainers,
+                onPressed: () => context.push('/trainers'),
+              ),
+              const SizedBox(width: 8),
             ],
           ),
           Expanded(
@@ -172,8 +184,16 @@ class _CoachTabState extends State<CoachTab> with SingleTickerProviderStateMixin
 
     // 3. Empty state
     String emptyMessage = l10n.trainerNoPersonalTrainer;
+    Widget? action;
+
     if (_isTrainerRole) {
       emptyMessage = l10n.trainerNoPrivateClients;
+    } else {
+      action = ElevatedButton.icon(
+        onPressed: () => context.push('/trainers'),
+        icon: const Icon(Icons.search),
+        label: Text(l10n.findTrainers),
+      );
     }
 
     return RefreshIndicator(
@@ -183,7 +203,7 @@ class _CoachTabState extends State<CoachTab> with SingleTickerProviderStateMixin
           Container(
             height: MediaQuery.of(context).size.height * 0.6,
             alignment: Alignment.center,
-            child: _buildEmptyState(emptyMessage, theme),
+            child: _buildEmptyState(emptyMessage, theme, action: action),
           ),
         ],
       ),
@@ -234,14 +254,23 @@ class _CoachTabState extends State<CoachTab> with SingleTickerProviderStateMixin
     );
   }
 
-  Widget _buildEmptyState(String text, ThemeData theme) {
+  Widget _buildEmptyState(String text, ThemeData theme, {Widget? action}) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Text(
-          text,
-          style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
-          textAlign: TextAlign.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              text,
+              style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+            if (action != null) ...[
+              const SizedBox(height: 16),
+              action,
+            ],
+          ],
         ),
       ),
     );
