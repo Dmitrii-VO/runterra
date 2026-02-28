@@ -31,7 +31,44 @@ class _TrainerProfileScreenState extends State<TrainerProfileScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.trainerProfile)),
+      appBar: AppBar(
+        title: Text(l10n.trainerProfile),
+        actions: [
+          FutureBuilder<ProfileModel>(
+            future: _meFuture,
+            builder: (context, meSnap) {
+              final meId = meSnap.data?.user.id;
+              final isMe = meId != null && meId == widget.userId;
+              if (!isMe) return const SizedBox.shrink();
+
+              return FutureBuilder<TrainerProfile?>(
+                future: _profileFuture,
+                builder: (context, profileSnap) {
+                  final profile = profileSnap.data;
+                  if (profile == null) return const SizedBox.shrink();
+
+                  return IconButton(
+                    icon: const Icon(Icons.edit),
+                    tooltip: l10n.trainerEditProfile,
+                    onPressed: () async {
+                      final result = await context.push<bool>(
+                        '/trainer/edit',
+                        extra: profile,
+                      );
+                      if (result == true && mounted) {
+                        setState(() {
+                          _profileFuture = ServiceLocator.trainerService
+                              .getProfile(widget.userId);
+                        });
+                      }
+                    },
+                  );
+                },
+              );
+            },
+          ),
+        ],
+      ),
       body: FutureBuilder<TrainerProfile?>(
         future: _profileFuture,
         builder: (context, snapshot) {

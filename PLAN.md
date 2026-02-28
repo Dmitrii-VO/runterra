@@ -1,27 +1,38 @@
-# Plan: Relocate "Find Trainer" functionality
+# Резюме плана: Частный тренер (Refined)
 
-Objective: Move the "Find Trainer" entry point from Profile Screen to Messages -> Coach Tab for better UX.
+**Цель**: Реализовать активацию функций частного тренера через настройки профиля.
 
-## Phase 1: Research
-- [x] Identified entry point in `ProfileScreen`.
-- [x] Identified implementation in `TrainersListScreen` and `/trainers` route.
-- [x] Identified target location in `CoachTab` (Personal sub-tab).
+## Логика работы
+1. **Настройки (EditProfileScreen)**:
+   - Новая секция "Статус тренера".
+   - Переключатель "Частный тренер".
+   - Если профиля нет: включение свитча открывает экран настройки профиля (`/trainer/edit`).
+   - Если профиль есть: включение/выключение меняет флаг `acceptsPrivateClients` на бэкенде.
 
-## Phase 2: Execution
-- [ ] **Step 1: Remove from Profile.** 
-    - Modify `mobile/lib/features/profile/profile_screen.dart`.
-    - Remove the `Card` containing `l10n.findTrainers`.
-    - Verification: Run app, check Profile tab.
+2. **Личный кабинет (ProfileScreen)**:
+   - Карточка тренера (Профиль, Тренировки) видна **только** при `acceptsPrivateClients == true`.
+   - Если пользователь создал профиль, но выключил этот флаг — карточка скрывается (режим "невидимки").
 
-- [ ] **Step 2: Add to CoachTab (Empty State).**
-    - Modify `mobile/lib/features/messages/tabs/coach_tab.dart`.
-    - Update `_buildPersonalTab` to include an action button in the empty state.
-    - Verification: Check Coach -> Personal tab when no trainer is assigned.
+3. **Публичный профиль (TrainerProfileScreen)**:
+   - Если `acceptsPrivateClients == false`, профиль недоступен для поиска другими пользователями (уже реализовано на бэкенде, нужно проверить фронтенд).
 
-- [ ] **Step 3: Add persistent search button.**
-    - Add a search icon button to the `CoachTab` UI so users can find new trainers even if they already have one.
-    - Verification: Ensure the button is visible and works.
+## Шаги
 
-- [ ] **Step 4: Cleanup & Validation.**
-    - Run `flutter analyze`.
-    - Verification: 0 errors.
+### 1. Локализация (ARB)
+- [ ] Добавить `trainerSettingsSection`, `trainerPrivateToggle`, `trainerPrivateToggleHint`, `trainerSetupPrompt`.
+
+### 2. Реализация в EditProfileScreen
+- [ ] Добавить `_trainerProfile` в стейт.
+- [ ] Загрузить его через `ServiceLocator.trainerService.getMyProfile()` в `initState`.
+- [ ] Добавить виджет секции с `SwitchListTile`.
+- [ ] Реализовать логику переключения (создание или апдейт).
+
+### 3. Изменение ProfileScreen
+- [ ] Обновить условие `if (_trainerProfile?.acceptsPrivateClients == true)`.
+
+### 4. Верификация
+- [ ] Проверить создание профиля "с нуля".
+- [ ] Проверить скрытие карточки при выключении флага.
+- [ ] `flutter analyze`.
+
+**Confidence Score**: 10/10

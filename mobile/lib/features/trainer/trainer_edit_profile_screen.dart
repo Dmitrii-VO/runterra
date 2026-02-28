@@ -22,7 +22,9 @@ class _TrainerEditProfileScreenState extends State<TrainerEditProfileScreen> {
   final List<String> _selectedSpecs = [];
   final List<_CertificateEntry> _certificates = [];
   bool _saving = false;
+  bool _loading = false;
   bool _acceptsPrivateClients = false;
+  TrainerProfile? _loadedProfile;
 
   static const _allSpecs = [
     'MARATHON',
@@ -35,20 +37,51 @@ class _TrainerEditProfileScreenState extends State<TrainerEditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    final p = widget.existingProfile;
-    _bioController = TextEditingController(text: p?.bio ?? '');
-    _experienceController =
-        TextEditingController(text: p?.experienceYears.toString() ?? '0');
-    if (p != null) {
-      _selectedSpecs.addAll(p.specialization);
-      _acceptsPrivateClients = p.acceptsPrivateClients;
-      for (final c in p.certificates) {
-        _certificates.add(_CertificateEntry(
-          nameController: TextEditingController(text: c.name),
-          dateController: TextEditingController(text: c.date ?? ''),
-          orgController: TextEditingController(text: c.organization ?? ''),
-        ));
+    _loadedProfile = widget.existingProfile;
+    _bioController = TextEditingController();
+    _experienceController = TextEditingController();
+    
+    if (_loadedProfile != null) {
+      _initFromProfile(_loadedProfile!);
+    } else {
+      _loadInitialData();
+    }
+  }
+
+  void _initFromProfile(TrainerProfile p) {
+    _bioController.text = p.bio ?? '';
+    _experienceController.text = p.experienceYears.toString();
+    _selectedSpecs.clear();
+    _selectedSpecs.addAll(p.specialization);
+    _acceptsPrivateClients = p.acceptsPrivateClients;
+    
+    _certificates.clear();
+    for (final c in p.certificates) {
+      _certificates.add(_CertificateEntry(
+        nameController: TextEditingController(text: c.name),
+        dateController: TextEditingController(text: c.date ?? ''),
+        orgController: TextEditingController(text: c.organization ?? ''),
+      ));
+    }
+  }
+
+  Future<void> _loadInitialData() async {
+    setState(() => _loading = true);
+    try {
+      final p = await ServiceLocator.trainerService.getMyProfile();
+      if (p != null && mounted) {
+        setState(() {
+          _loadedProfile = p;
+          _initFromProfile(p);
+        });
+      } else if (mounted) {
+        // Just set default values for creation
+        _experienceController.text = '0';
       }
+    } catch (_) {
+      if (mounted) _experienceController.text = '0';
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -95,7 +128,7 @@ class _TrainerEditProfileScreenState extends State<TrainerEditProfileScreen> {
         'acceptsPrivateClients': _acceptsPrivateClients,
       };
 
-      if (widget.existingProfile != null) {
+      if (_loadedProfile != null) {
         await ServiceLocator.trainerService.updateProfile(data);
       } else {
         await ServiceLocator.trainerService.createProfile(
@@ -129,7 +162,16 @@ class _TrainerEditProfileScreenState extends State<TrainerEditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isEdit = widget.existingProfile != null;
+    final isEdit = (_loadedProfile ?? widget.existingProfile) != null;
+
+    if (_loading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(isEdit ? l10n.trainerEditProfile : l10n.trainerProfile),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(

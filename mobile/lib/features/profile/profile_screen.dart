@@ -5,6 +5,7 @@ import '../../shared/api/users_service.dart';
 import '../../shared/auth/auth_service.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/profile_model.dart';
+import '../../shared/models/trainer_profile.dart';
 import '../../shared/ui/profile/header_section.dart';
 import '../../shared/ui/profile/stats_section.dart';
 import '../../shared/ui/profile/activity_section.dart';
@@ -31,21 +32,28 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late Future<ProfileModel> _profileFuture;
-  bool? _hasTrainerProfile;
+  TrainerProfile? _trainerProfile;
 
   @override
   void initState() {
     super.initState();
-    _profileFuture = _fetchProfile();
-    _loadTrainerProfile();
+    _profileFuture = _fetchProfile().then((profile) {
+      _loadTrainerProfile();
+      return profile;
+    });
   }
 
   Future<void> _loadTrainerProfile() async {
     try {
       final p = await ServiceLocator.trainerService.getMyProfile();
-      if (mounted) setState(() => _hasTrainerProfile = p != null);
+      if (mounted) setState(() => _trainerProfile = p);
+    } on ApiException catch (_) {
+      // If unauthorized even after _fetchProfile refresh attempt,
+      // it will be handled by the redirect in _fetchProfile.
+      // We only hide the section if it's really not found (404) or on other errors.
+      if (mounted) setState(() => _trainerProfile = null);
     } catch (_) {
-      if (mounted) setState(() => _hasTrainerProfile = false);
+      if (mounted) setState(() => _trainerProfile = null);
     }
   }
 
@@ -88,9 +96,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   /// Reload profile data
   void _retry() {
     setState(() {
-      _profileFuture = _fetchProfile();
+      _profileFuture = _fetchProfile().then((profile) {
+        _loadTrainerProfile();
+        return profile;
+      });
     });
-    _loadTrainerProfile();
   }
 
   Future<void> _logout() async {
@@ -240,7 +250,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           hasClub: profile.club != null,
           isMercenary: profile.user.isMercenary,
         ),
-        if (_hasTrainerProfile == true)
+        if (_trainerProfile?.acceptsPrivateClients == true)
           Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Column(
@@ -250,13 +260,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   title: Text(l10n.trainerProfile),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.push('/trainer/${profile.user.id}'),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.edit_note),
-                  title: Text(l10n.trainerEditProfile),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/trainer/edit'),
                 ),
                 const Divider(height: 1),
                 ListTile(

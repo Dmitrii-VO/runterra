@@ -2,6 +2,17 @@ import 'dart:convert';
 import 'api_client.dart';
 import '../models/profile_model.dart';
 
+/// Исключение при ошибке API (статус, HTML вместо JSON, неверный JSON).
+class ApiException implements Exception {
+  final String code;
+  final String message;
+
+  ApiException(this.code, this.message);
+
+  @override
+  String toString() => 'ApiException($code): $message';
+}
+
 /// Сервис для работы с пользователями
 /// 
 /// Предоставляет методы для выполнения запросов к API пользователей.
@@ -25,6 +36,16 @@ class UsersService {
     final response = await _apiClient.get('/api/users/me/profile');
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      if (response.statusCode == 401) {
+        String code = 'unauthorized';
+        String message = 'Authorization required';
+        try {
+          final json = jsonDecode(response.body) as Map<String, dynamic>;
+          if (json['code'] != null) code = json['code'] as String;
+          if (json['message'] != null) message = json['message'] as String;
+        } catch (_) {}
+        throw ApiException(code, message);
+      }
       throw ApiException(
         'HTTP ${response.statusCode}',
         'Сервер вернул ошибку ${response.statusCode}. '
@@ -122,15 +143,4 @@ class UsersService {
       throw ApiException(code, message);
     }
   }
-}
-
-/// Исключение при ошибке API (статус, HTML вместо JSON, неверный JSON).
-class ApiException implements Exception {
-  final String code;
-  final String message;
-
-  ApiException(this.code, this.message);
-
-  @override
-  String toString() => 'ApiException($code): $message';
 }

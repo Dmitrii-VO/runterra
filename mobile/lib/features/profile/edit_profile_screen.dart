@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/profile_model.dart';
+import '../../shared/models/trainer_profile.dart';
+import '../../shared/api/users_service.dart' show ApiException;
 import '../city/city_picker_dialog.dart';
 
 /// Edit profile screen — form to change name and avatar URL.
@@ -28,6 +30,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String? _cityId;
   String? _cityName;
 
+  TrainerProfile? _trainerProfile;
+  bool _loadingTrainer = false;
+
   @override
   void initState() {
     super.initState();
@@ -39,6 +44,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _gender = widget.user.gender;
     _cityId = widget.user.cityId;
     _cityName = widget.user.cityName;
+
+    _loadTrainerProfile();
+  }
+
+  Future<void> _loadTrainerProfile() async {
+    setState(() => _loadingTrainer = true);
+    try {
+      final p = await ServiceLocator.trainerService.getMyProfile();
+      if (mounted) setState(() => _trainerProfile = p);
+    } catch (_) {
+      // Ignore errors, just means no profile or not a trainer
+    } finally {
+      if (mounted) setState(() => _loadingTrainer = false);
+    }
   }
 
   @override
@@ -83,6 +102,33 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
       );
+    }
+  }
+
+  Future<void> _toggleTrainer(bool value) async {
+    if (_trainerProfile == null) {
+      // Open setup if no profile
+      final result = await context.push<bool>('/trainer/edit');
+      if (result == true) {
+        _loadTrainerProfile();
+      }
+      return;
+    }
+
+    setState(() => _saving = true);
+    try {
+      final updated = await ServiceLocator.trainerService.updateProfile({
+        'acceptsPrivateClients': value,
+      });
+      if (mounted) setState(() => _trainerProfile = updated);
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -212,6 +258,31 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               enabled: !_saving,
             ),
             const SizedBox(height: 24),
+            const Divider(),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                l10n.trainerSection,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            if (_loadingTrainer)
+              const Center(child: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: CircularProgressIndicator(),
+              ))
+            else
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(l10n.trainerAcceptsClients),
+                subtitle: Text(
+                  _trainerProfile == null ? l10n.trainerSetupProfile : l10n.trainerAcceptsClientsHint,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                value: _trainerProfile?.acceptsPrivateClients ?? false,
+                onChanged: _saving ? null : _toggleTrainer,
+              ),
+            const SizedBox(height: 24),
             FilledButton(
               onPressed: _saving ? null : _save,
               child: _saving
@@ -228,3 +299,4 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 }
+
