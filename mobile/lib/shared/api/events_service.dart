@@ -159,6 +159,7 @@ class EventsService {
     int? participantLimit,
     String? territoryId,
     String? visibility, // 'public' or 'private'
+    String? workoutId,
   }) async {
     final body = <String, dynamic>{
       'name': name,
@@ -190,6 +191,9 @@ class EventsService {
     }
     if (visibility != null) {
       body['visibility'] = visibility;
+    }
+    if (workoutId != null) {
+      body['workoutId'] = workoutId;
     }
 
     final response = await _apiClient.post('/api/events', body: body);

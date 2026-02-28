@@ -250,7 +250,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           hasClub: profile.club != null,
           isMercenary: profile.user.isMercenary,
         ),
-        if (_trainerProfile?.acceptsPrivateClients == true)
+        if (_trainerProfile?.acceptsPrivateClients == true ||
+            profile.club?.role == 'trainer' ||
+            profile.club?.role == 'leader')
           Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Column(

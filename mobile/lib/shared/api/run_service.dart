@@ -10,6 +10,11 @@ import '../models/run_session.dart';
 import 'api_client.dart';
 import 'users_service.dart' show ApiException;
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter_tts/flutter_tts.dart';
+import '../di/service_locator.dart';
+import '../models/workout.dart';
+
 /// Сервис для работы с пробежками
 ///
 /// Предоставляет методы для сценария: начать → трекинг → завершить → отправить.
@@ -18,11 +23,16 @@ class RunService {
   late LocationService _locationService;
   final bool _ownLocationService;
   final ApiClient _apiClient;
+  final FlutterTts _tts = FlutterTts();
 
   RunSession? _currentSession;
   StreamSubscription<Position>? _positionSubscription;
   final List<Position> _gpsPoints = [];
   DateTime? _startTime;
+
+  // Segment tracking
+  DateTime? _currentSegmentStartedAt;
+  double _currentSegmentStartDistance = 0.0;
 
   RunService({
     LocationService? locationService,
@@ -30,21 +40,17 @@ class RunService {
   })  : _ownLocationService = locationService == null,
         _apiClient = apiClient ?? ApiClient.getInstance(baseUrl: ApiConfig.getBaseUrl()) {
     _locationService = locationService ?? LocationService();
+    _initTts();
+  }
+
+  Future<void> _initTts() async {
+    await _tts.setLanguage("ru-RU");
+    await _tts.setSpeechRate(0.5);
+    await _tts.setVolume(1.0);
+    await _tts.setPitch(1.0);
   }
 
   /// Начать пробежку.
-  ///
-  /// [activityId] — опциональный ID тренировки для привязки пробежки.
-  /// 
-  /// Выполняет:
-  /// - проверку разрешений на геолокацию
-  /// - запрос разрешений, если необходимо
-  /// - старт GPS-трекинга
-  /// - создание сессии пробежки
-  /// 
-  /// Бросает исключение, если:
-  /// - служба геолокации отключена
-  /// - разрешение на геолокацию отклонено
   Future<RunSession> startRun({String? activityId, String? scheduledItemId, String? scoringClubId}) async {
     // Auto-clear completed sessions (failed submissions, etc.)
     if (_currentSession != null &&
@@ -57,30 +63,40 @@ class RunService {
       throw Exception('Run already started');
     }
 
+    // Fetch workout if activityId is provided
+    Workout? workout;
+    if (activityId != null) {
+      try {
+        final event = await ServiceLocator.eventsService.getEventById(activityId);
+        if (event.workoutId != null) {
+          workout = await ServiceLocator.workoutsService.getWorkout(event.workoutId!);
+        }
+      } catch (e) {
+        debugPrint('Error fetching workout for run: $e');
+      }
+    }
+
     _startTime = DateTime.now();
     _gpsPoints.clear();
+    _currentSegmentStartedAt = _startTime;
+    _currentSegmentStartDistance = 0.0;
 
     // Start GPS tracking (background so run continues when app is in background)
     await _locationService.startTracking(distanceFilter: 5, background: true);
 
-    // Seed the route with the current GPS position so the cursor appears immediately,
-    // without waiting for the next distanceFilter-triggered stream update.
+    // Seed the route with the current GPS position
     GpsStatus initialGpsStatus = GpsStatus.searching;
     try {
       final initialPosition = await _locationService.getCurrentPosition();
       _gpsPoints.add(initialPosition);
       initialGpsStatus = GpsStatus.recording;
-    } catch (_) {
-      // Keep run alive: stream updates can still arrive shortly after tracking starts.
-    }
+    } catch (_) {}
 
     // Listen to position updates
     _positionSubscription = _locationService.positionStream.listen(
       (position) {
-        // Append new GPS point to internal buffer
         _gpsPoints.add(position);
 
-        // Calculate incremental distance based on the last segment.
         double newDistance = _currentSession?.distance ?? 0.0;
         if (_gpsPoints.length > 1) {
           final lastIndex = _gpsPoints.length - 1;
@@ -95,28 +111,19 @@ class RunService {
           newDistance += increment;
         }
 
-        // Keep RunSession.gpsPoints and distance in sync so UI (RunScreen/RunRouteMap)
-        // sees the live route and meters during the run, not only after stopRun().
         if (_currentSession != null) {
-          _currentSession = RunSession(
-            id: _currentSession!.id,
-            activityId: _currentSession!.activityId,
-            scheduledItemId: _currentSession!.scheduledItemId,
-            scoringClubId: _currentSession!.scoringClubId,
-            startedAt: _currentSession!.startedAt,
-            status: _currentSession!.status,
-            duration: _currentSession!.duration,
+          _currentSession = _currentSession!.copyWith(
             distance: newDistance,
-            gpsStatus: _currentSession!.gpsStatus,
+            gpsStatus: GpsStatus.recording,
             gpsPoints: List.from(_gpsPoints),
-            accumulatedDuration: _currentSession!.accumulatedDuration,
-            lastResumedAt: _currentSession!.lastResumedAt,
-            heartRate: _currentSession!.heartRate,
           );
+          _checkSegmentCompletion();
         }
       },
       onError: (error) {
-        // Handle GPS errors (will be reflected in gpsStatus)
+        if (_currentSession != null) {
+          _currentSession = _currentSession!.copyWith(gpsStatus: GpsStatus.error);
+        }
       },
     );
 
@@ -129,11 +136,87 @@ class RunService {
       startedAt: _startTime!,
       status: RunSessionStatus.running,
       gpsStatus: initialGpsStatus,
-      gpsPoints: List.from(_gpsPoints), // Copy list to maintain immutability
+      gpsPoints: List.from(_gpsPoints),
       lastResumedAt: _startTime!,
+      workout: workout,
     );
 
     return _currentSession!;
+  }
+
+  void _checkSegmentCompletion() {
+    final session = _currentSession;
+    if (session == null || session.workout == null || session.workout!.blocks == null) return;
+    if (session.currentBlockIndex >= session.workout!.blocks!.length) return;
+
+    final block = session.workout!.blocks![session.currentBlockIndex];
+    if (session.currentSegmentIndex >= block.segments.length) return;
+
+    final segment = block.segments[session.currentSegmentIndex];
+    bool completed = false;
+
+    if (segment.durationType == DurationType.time) {
+      final elapsed = DateTime.now().difference(_currentSegmentStartedAt!);
+      if (elapsed.inSeconds >= segment.durationValue) {
+        completed = true;
+      }
+    } else if (segment.durationType == DurationType.distance) {
+      final distanceInSegment = session.distance - _currentSegmentStartDistance;
+      if (distanceInSegment >= segment.durationValue) {
+        completed = true;
+      }
+    }
+
+    if (completed) {
+      nextSegment();
+    }
+  }
+
+  void nextSegment() {
+    final session = _currentSession;
+    if (session == null || session.workout == null || session.workout!.blocks == null) return;
+
+    int nextSegmentIdx = session.currentSegmentIndex + 1;
+    int nextBlockIdx = session.currentBlockIndex;
+
+    final currentBlock = session.workout!.blocks![nextBlockIdx];
+
+    if (nextSegmentIdx >= currentBlock.segments.length) {
+      // End of block
+      nextSegmentIdx = 0;
+      nextBlockIdx++;
+    }
+
+    if (nextBlockIdx >= session.workout!.blocks!.length) {
+      // Workout finished
+      _tts.speak("Тренировка завершена. Отличная работа!");
+      return;
+    }
+
+    _currentSegmentStartedAt = DateTime.now();
+    _currentSegmentStartDistance = session.distance;
+
+    _currentSession = session.copyWith(
+      currentBlockIndex: nextBlockIdx,
+      currentSegmentIndex: nextSegmentIdx,
+    );
+    
+    final nextSeg = session.workout!.blocks![nextBlockIdx].segments[nextSegmentIdx];
+    String text = "Следующий сегмент: ";
+    switch (nextSeg.type) {
+      case SegmentType.warmup: text += "Разминка. "; break;
+      case SegmentType.run: text += "Бег. "; break;
+      case SegmentType.rest: text += "Отдых. "; break;
+      case SegmentType.cooldown: text += "Заминка. "; break;
+    }
+    
+    if (nextSeg.targetZone != null) {
+      text += "Цель: ${nextSeg.targetZone}. ";
+    } else if (nextSeg.targetValue != null) {
+      text += "Цель: ${nextSeg.targetValue}. ";
+    }
+    
+    _tts.speak(text);
   }
 
   /// Pause the current run: stop GPS, freeze accumulated duration.
@@ -152,20 +235,11 @@ class RunService {
     final activeSinceResume = now.difference(lastResumed);
     final totalAccumulated = _currentSession!.accumulatedDuration + activeSinceResume;
 
-    _currentSession = RunSession(
-      id: _currentSession!.id,
-      activityId: _currentSession!.activityId,
-      scheduledItemId: _currentSession!.scheduledItemId,
-      scoringClubId: _currentSession!.scoringClubId,
-      startedAt: _currentSession!.startedAt,
+    _currentSession = _currentSession!.copyWith(
       status: RunSessionStatus.paused,
       duration: totalAccumulated,
-      distance: _currentSession!.distance,
-      gpsStatus: _currentSession!.gpsStatus,
-      gpsPoints: List.from(_currentSession!.gpsPoints),
       accumulatedDuration: totalAccumulated,
       lastResumedAt: null,
-      heartRate: _currentSession!.heartRate,
     );
   }
 
@@ -197,115 +271,54 @@ class RunService {
         }
 
         if (_currentSession != null) {
-          _currentSession = RunSession(
-            id: _currentSession!.id,
-            activityId: _currentSession!.activityId,
-            scheduledItemId: _currentSession!.scheduledItemId,
-            scoringClubId: _currentSession!.scoringClubId,
-            startedAt: _currentSession!.startedAt,
-            status: _currentSession!.status,
-            duration: _currentSession!.duration,
+          _currentSession = _currentSession!.copyWith(
             distance: newDistance,
-            gpsStatus: _currentSession!.gpsStatus,
+            gpsStatus: GpsStatus.recording,
             gpsPoints: List.from(_gpsPoints),
-            accumulatedDuration: _currentSession!.accumulatedDuration,
-            lastResumedAt: _currentSession!.lastResumedAt,
-            heartRate: _currentSession!.heartRate,
           );
+          _checkSegmentCompletion();
         }
       },
       onError: (error) {
-        // Handle GPS errors
+        if (_currentSession != null) {
+          _currentSession = _currentSession!.copyWith(gpsStatus: GpsStatus.error);
+        }
       },
     );
 
     final now = DateTime.now();
-    _currentSession = RunSession(
-      id: _currentSession!.id,
-      activityId: _currentSession!.activityId,
-      scheduledItemId: _currentSession!.scheduledItemId,
-      scoringClubId: _currentSession!.scoringClubId,
-      startedAt: _currentSession!.startedAt,
+    _currentSession = _currentSession!.copyWith(
       status: RunSessionStatus.running,
-      duration: _currentSession!.accumulatedDuration,
-      distance: _currentSession!.distance,
       gpsStatus: GpsStatus.recording,
-      gpsPoints: List.from(_currentSession!.gpsPoints),
-      accumulatedDuration: _currentSession!.accumulatedDuration,
       lastResumedAt: now,
-      heartRate: _currentSession!.heartRate,
     );
   }
 
   /// Обновляет статус GPS в текущей сессии
-  /// 
-  /// Вызывается из RunScreen при получении первой валидной GPS точки.
   void updateGpsStatus(GpsStatus status) {
     if (_currentSession != null) {
-      _currentSession = RunSession(
-        id: _currentSession!.id,
-        activityId: _currentSession!.activityId,
-        scheduledItemId: _currentSession!.scheduledItemId,
-        scoringClubId: _currentSession!.scoringClubId,
-        startedAt: _currentSession!.startedAt,
-        status: _currentSession!.status,
-        duration: _currentSession!.duration,
-        distance: _currentSession!.distance,
-        gpsStatus: status,
-        gpsPoints: List.from(_currentSession!.gpsPoints),
-        accumulatedDuration: _currentSession!.accumulatedDuration,
-        lastResumedAt: _currentSession!.lastResumedAt,
-        heartRate: _currentSession!.heartRate,
-      );
+      _currentSession = _currentSession!.copyWith(gpsStatus: status);
     }
   }
 
   /// Обновляет длительность и расстояние в текущей сессии
-  /// 
-  /// Вызывается из RunScreen для обновления UI.
   void updateSessionMetrics({
     Duration? duration,
     double? distance,
   }) {
     if (_currentSession != null) {
-      _currentSession = RunSession(
-        id: _currentSession!.id,
-        activityId: _currentSession!.activityId,
-        scheduledItemId: _currentSession!.scheduledItemId,
-        scoringClubId: _currentSession!.scoringClubId,
-        startedAt: _currentSession!.startedAt,
-        status: _currentSession!.status,
-        duration: duration ?? _currentSession!.duration,
-        distance: distance ?? _currentSession!.distance,
-        gpsStatus: _currentSession!.gpsStatus,
-        gpsPoints: List.from(_currentSession!.gpsPoints),
-        accumulatedDuration: _currentSession!.accumulatedDuration,
-        lastResumedAt: _currentSession!.lastResumedAt,
-        heartRate: _currentSession!.heartRate,
+      _currentSession = _currentSession!.copyWith(
+        duration: duration,
+        distance: distance,
       );
+      _checkSegmentCompletion();
     }
   }
 
   /// Update heart rate from watch sensor.
-  ///
-  /// Called by WatchService when a heart rate message is received from the watch.
   void updateHeartRate(int bpm) {
     if (_currentSession != null) {
-      _currentSession = RunSession(
-        id: _currentSession!.id,
-        activityId: _currentSession!.activityId,
-        scheduledItemId: _currentSession!.scheduledItemId,
-        scoringClubId: _currentSession!.scoringClubId,
-        startedAt: _currentSession!.startedAt,
-        status: _currentSession!.status,
-        duration: _currentSession!.duration,
-        distance: _currentSession!.distance,
-        gpsStatus: _currentSession!.gpsStatus,
-        gpsPoints: List.from(_currentSession!.gpsPoints),
-        accumulatedDuration: _currentSession!.accumulatedDuration,
-        lastResumedAt: _currentSession!.lastResumedAt,
-        heartRate: bpm,
-      );
+      _currentSession = _currentSession!.copyWith(heartRate: bpm);
     }
   }
 
@@ -313,12 +326,10 @@ class RunService {
   RunSession? get currentSession => _currentSession;
 
   /// Clear a completed session without submitting.
-  /// Use this to reset after failed submission or when user wants to discard.
-  /// Does nothing if session is still running (use cancelRun() for that).
   void clearCompletedSession() {
     if (_currentSession == null) return;
     if (_currentSession!.status == RunSessionStatus.running) {
-      return; // Don't clear running session - use cancelRun()
+      return;
     }
     _currentSession = null;
     _gpsPoints.clear();
@@ -326,9 +337,6 @@ class RunService {
   }
 
   /// Завершить трекинг.
-  ///
-  /// Останавливает GPS-трекинг и подготавливает данные для отправки.
-  /// Возвращает финальную сессию с обновлёнными данными.
   Future<RunSession> stopRun() async {
     if (_currentSession == null) {
       throw Exception('No active run session');
@@ -342,44 +350,25 @@ class RunService {
     // Calculate final active duration
     final Duration finalDuration;
     if (_currentSession!.status == RunSessionStatus.paused) {
-      // Already paused — accumulated duration is the total active time
       finalDuration = _currentSession!.accumulatedDuration;
     } else {
-      // Still running — add time since last resume
       final now = DateTime.now();
       final lastResumed = _currentSession!.lastResumedAt ?? _currentSession!.startedAt;
       finalDuration = _currentSession!.accumulatedDuration + now.difference(lastResumed);
     }
 
     // Update session with final data
-    _currentSession = RunSession(
-      id: _currentSession!.id,
-      activityId: _currentSession!.activityId,
-      scheduledItemId: _currentSession!.scheduledItemId,
-      scoringClubId: _currentSession!.scoringClubId,
-      startedAt: _currentSession!.startedAt,
+    _currentSession = _currentSession!.copyWith(
       status: RunSessionStatus.completed,
       duration: finalDuration,
-      // Distance already accumulated during tracking from _gpsPoints stream.
-      distance: _currentSession!.distance,
-      gpsStatus: _currentSession!.gpsStatus,
-      gpsPoints: List.from(_gpsPoints),
       accumulatedDuration: finalDuration,
-      heartRate: _currentSession!.heartRate,
     );
 
     return _currentSession!;
   }
 
   /// Отправить данные пробежки на backend.
-  ///
-  /// Вызывает API POST /api/runs для сохранения пробежки.
-  /// Требует, чтобы сессия была завершена (stopRun вызван).
-  /// 
-  /// Бросает исключение, если:
-  /// - сессия не завершена
-  /// - запрос к API не удался
-  Future<void> submitRun({String? scoringClubId}) async {
+  Future<void> submitRun({String? scoringClubId, int? rpe, String? notes}) async {
     if (_currentSession == null) {
       throw Exception('No run session to submit');
     }
@@ -391,7 +380,6 @@ class RunService {
     final session = _currentSession!;
     final endTime = session.startedAt.add(session.duration);
 
-    // Prepare request body
     final requestBody = <String, dynamic>{
       'startedAt': session.startedAt.toUtc().toIso8601String(),
       'endedAt': endTime.toUtc().toIso8601String(),
@@ -403,30 +391,29 @@ class RunService {
           'timestamp': p.timestamp.toUtc().toIso8601String(),
         }).toList(),
     };
-    // Only include activityId if not null
     if (session.activityId != null) {
       requestBody['activityId'] = session.activityId;
     }
-
-    // Only include scheduledItemId if not null
     if (session.scheduledItemId != null) {
       requestBody['scheduledItemId'] = session.scheduledItemId;
     }
-    
-    // Include scoringClubId if provided (for territory capture)
     final finalScoringClubId = scoringClubId ?? session.scoringClubId;
     if (finalScoringClubId != null) {
       requestBody['scoringClubId'] = finalScoringClubId;
     }
+    if (rpe != null) {
+      requestBody['rpe'] = rpe;
+    }
+    if (notes != null && notes.trim().isNotEmpty) {
+      requestBody['notes'] = notes.trim();
+    }
 
-    // Send to backend. Canonical path: POST /api/runs (do not use base URL only or path "/").
     final response = await _apiClient.post(
       '/api/runs',
       body: requestBody,
     );
 
     if (response.statusCode != 201 && response.statusCode != 200) {
-      // Try to parse structured error from backend ({ code, message, details })
       String errorMessage = 'Failed to submit run (${response.statusCode})';
       String errorCode = 'submit_error';
       try {
@@ -436,34 +423,17 @@ class RunService {
           errorMessage = (decoded['message'] as String?) ?? errorMessage;
         }
       } on FormatException {
-        // Non-JSON response, use default message
+        // ignore format exception
       }
       throw ApiException(errorCode, errorMessage);
     }
 
-    // Parse response as RunViewDto (RunModel) for consistency with backend contract
-    if (response.body.isNotEmpty) {
-      try {
-        final decoded = jsonDecode(response.body) as Map<String, dynamic>?;
-        if (decoded != null) {
-          RunModel.fromJson(decoded);
-        }
-      } on FormatException {
-        // Ignore parse errors; submission succeeded
-      }
-    }
-
-    // Clear session after successful submission
     _currentSession = null;
     _gpsPoints.clear();
     _startTime = null;
   }
 
   /// Отменить текущую пробежку без отправки на backend
-  ///
-  /// Очищает все данные и останавливает трекинг.
-  /// Если RunService создан со своим LocationService (не инжектирован),
-  /// освобождает его и создаёт новый для следующего startRun().
   void cancelRun() {
     _locationService.stopTracking();
     _positionSubscription?.cancel();
@@ -477,36 +447,34 @@ class RunService {
     }
   }
 
-  /// Fetch paginated run history (completed runs only).
+  /// Fetch paginated run history.
   Future<List<RunHistoryItem>> getRunHistory({int limit = 20, int offset = 0}) async {
     final response = await _apiClient.get('/api/runs?limit=$limit&offset=$offset');
     if (response.statusCode != 200) {
-      throw ApiException('fetch_error', 'Failed to load run history (${response.statusCode})');
+      throw ApiException('fetch_error', 'Failed to load run history');
     }
     final list = jsonDecode(response.body) as List<dynamic>;
     return list.map((e) => RunHistoryItem.fromJson(e as Map<String, dynamic>)).toList();
   }
 
-  /// Fetch user running statistics.
+  /// Fetch user statistics.
   Future<RunStats> getRunStats() async {
     final response = await _apiClient.get('/api/runs/stats');
     if (response.statusCode != 200) {
-      throw ApiException('fetch_error', 'Failed to load run stats (${response.statusCode})');
+      throw ApiException('fetch_error', 'Failed to load run stats');
     }
     return RunStats.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
-  /// Fetch a single run with GPS track.
+  /// Fetch a single run.
   Future<RunDetailModel> getRunDetail(String runId) async {
     final response = await _apiClient.get('/api/runs/$runId');
     if (response.statusCode != 200) {
-      throw ApiException('fetch_error', 'Failed to load run detail (${response.statusCode})');
+      throw ApiException('fetch_error', 'Failed to load run detail');
     }
     return RunDetailModel.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
-  /// Освобождает ресурсы собственного LocationService (если был создан внутри).
-  /// Вызывать при уничтожении RunService, если он не из ServiceLocator.
   void dispose() {
     if (_ownLocationService) {
       _locationService.stopTracking();
@@ -514,8 +482,5 @@ class RunService {
     }
   }
 
-  /// Stream позиций GPS для подписки извне
-  /// 
-  /// Используется для обновления UI при получении новых GPS точек.
   Stream<Position> get gpsPositionStream => _locationService.positionStream;
 }

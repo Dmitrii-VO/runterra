@@ -3109,6 +3109,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign in again'**
   String get errorUnauthorizedAction;
+
+  /// No description provided for @workoutIntensityZone.
+  ///
+  /// In en, this message translates to:
+  /// **'Intensity Zone'**
+  String get workoutIntensityZone;
+
+  /// No description provided for @runRPE.
+  ///
+  /// In en, this message translates to:
+  /// **'Effort (RPE)'**
+  String get runRPE;
+
+  /// No description provided for @notesForCoach.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes for coach'**
+  String get notesForCoach;
+
+  /// No description provided for @recoveryType.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery Type'**
+  String get recoveryType;
+
+  /// No description provided for @mediaUrlInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Video Instruction'**
+  String get mediaUrlInstruction;
+
+  /// No description provided for @surfaceRoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Road'**
+  String get surfaceRoad;
+
+  /// No description provided for @surfaceTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'Track'**
+  String get surfaceTrack;
+
+  /// No description provided for @surfaceTrail.
+  ///
+  /// In en, this message translates to:
+  /// **'Trail'**
+  String get surfaceTrail;
+
+  /// No description provided for @workoutSurface.
+  ///
+  /// In en, this message translates to:
+  /// **'Surface'**
+  String get workoutSurface;
+
+  /// No description provided for @segmentTypeWarmup.
+  ///
+  /// In en, this message translates to:
+  /// **'Warmup'**
+  String get segmentTypeWarmup;
+
+  /// No description provided for @segmentTypeRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Run'**
+  String get segmentTypeRun;
+
+  /// No description provided for @segmentTypeRest.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest'**
+  String get segmentTypeRest;
+
+  /// No description provided for @segmentTypeCooldown.
+  ///
+  /// In en, this message translates to:
+  /// **'Cooldown'**
+  String get segmentTypeCooldown;
+
+  /// No description provided for @recoveryJog.
+  ///
+  /// In en, this message translates to:
+  /// **'Jog'**
+  String get recoveryJog;
+
+  /// No description provided for @recoveryWalk.
+  ///
+  /// In en, this message translates to:
+  /// **'Walk'**
+  String get recoveryWalk;
+
+  /// No description provided for @recoveryStand.
+  ///
+  /// In en, this message translates to:
+  /// **'Stand'**
+  String get recoveryStand;
+
+  /// No description provided for @durationTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get durationTime;
+
+  /// No description provided for @durationDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get durationDistance;
+
+  /// No description provided for @durationManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual (Lap)'**
+  String get durationManual;
 }
 
 class _AppLocalizationsDelegate

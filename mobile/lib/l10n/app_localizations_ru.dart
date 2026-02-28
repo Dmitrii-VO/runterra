@@ -1642,4 +1642,61 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get errorUnauthorizedAction => 'Войти заново';
+
+  @override
+  String get workoutIntensityZone => 'Зона интенсивности';
+
+  @override
+  String get runRPE => 'Усилия (RPE)';
+
+  @override
+  String get notesForCoach => 'Заметки для тренера';
+
+  @override
+  String get recoveryType => 'Тип отдыха';
+
+  @override
+  String get mediaUrlInstruction => 'Видео-инструкция';
+
+  @override
+  String get surfaceRoad => 'Шоссе';
+
+  @override
+  String get surfaceTrack => 'Стадион';
+
+  @override
+  String get surfaceTrail => 'Грунт';
+
+  @override
+  String get workoutSurface => 'Покрытие';
+
+  @override
+  String get segmentTypeWarmup => 'Разминка';
+
+  @override
+  String get segmentTypeRun => 'Бег';
+
+  @override
+  String get segmentTypeRest => 'Отдых';
+
+  @override
+  String get segmentTypeCooldown => 'Заминка';
+
+  @override
+  String get recoveryJog => 'Трусца';
+
+  @override
+  String get recoveryWalk => 'Шаг';
+
+  @override
+  String get recoveryStand => 'Стоим';
+
+  @override
+  String get durationTime => 'Время';
+
+  @override
+  String get durationDistance => 'Дистанция';
+
+  @override
+  String get durationManual => 'Вручную';
 }

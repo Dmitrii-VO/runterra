@@ -6,6 +6,7 @@ import '../../shared/di/service_locator.dart';
 import '../../shared/models/event_details_model.dart';
 import '../../shared/models/event_start_location.dart';
 import '../../shared/ui/error_display.dart';
+import '../../shared/models/workout.dart';
 
 class EditEventScreen extends StatefulWidget {
   final String eventId;
@@ -30,6 +31,8 @@ class _EditEventScreenState extends State<EditEventScreen> {
   TimeOfDay _selectedTime = const TimeOfDay(hour: 9, minute: 0);
   double? _selectedLat;
   double? _selectedLon;
+  String? _selectedWorkoutId;
+  List<Workout> _workouts = [];
   bool _saving = false;
 
   @override
@@ -51,7 +54,19 @@ class _EditEventScreenState extends State<EditEventScreen> {
     final event =
         await ServiceLocator.eventsService.getEventById(widget.eventId);
     _populateForm(event);
+    _loadWorkouts(event.organizerType == 'club' ? event.organizerId : null);
     return event;
+  }
+
+  Future<void> _loadWorkouts([String? clubId]) async {
+    try {
+      final workouts = await ServiceLocator.workoutsService.getWorkouts(clubId: clubId);
+      if (mounted) {
+        setState(() => _workouts = workouts);
+      }
+    } catch (e) {
+      debugPrint('Error loading workouts: $e');
+    }
   }
 
   void _populateForm(EventDetailsModel event) {
@@ -66,6 +81,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
     _selectedTime = TimeOfDay.fromDateTime(event.startDateTime);
     _selectedLat = event.startLocation?.latitude;
     _selectedLon = event.startLocation?.longitude;
+    _selectedWorkoutId = event.workoutId;
   }
 
   Future<void> _pickDate() async {
@@ -158,6 +174,13 @@ class _EditEventScreenState extends State<EditEventScreen> {
         participantLimit: participantLimit,
         clearParticipantLimit: clearParticipantLimit,
       );
+
+      if (_selectedWorkoutId != _event?.workoutId) {
+        await ServiceLocator.eventsService.updateEventTrainerFields(
+          widget.eventId,
+          workoutId: _selectedWorkoutId,
+        );
+      }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -259,6 +282,25 @@ class _EditEventScreenState extends State<EditEventScreen> {
                             setState(() => _eventType = value ?? _eventType),
                   ),
                   const SizedBox(height: 16),
+                  if (_eventType == 'training') ...[
+                    DropdownButtonFormField<String?>(
+                      value: _selectedWorkoutId,
+                      decoration: InputDecoration(
+                        labelText: l10n.eventWorkout,
+                        border: const OutlineInputBorder(),
+                        hintText: l10n.eventSelectWorkout,
+                      ),
+                      items: [
+                        DropdownMenuItem(value: null, child: Text(l10n.eventNoWorkout)),
+                        ..._workouts.map((w) => DropdownMenuItem(
+                              value: w.id,
+                              child: Text(w.name),
+                            )),
+                      ],
+                      onChanged: _saving ? null : (value) => setState(() => _selectedWorkoutId = value),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   InkWell(
                     onTap: _saving ? null : _pickDate,
                     child: InputDecorator(

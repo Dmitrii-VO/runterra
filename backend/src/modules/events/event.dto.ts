@@ -86,6 +86,12 @@ export interface CreateEventDto {
   /** Идентификатор города, в котором проходит событие */
   cityId: string;
 
+  /** Linked workout template (optional) */
+  workoutId?: string;
+
+  /** Assigned trainer (optional) */
+  trainerId?: string;
+
   /** Event visibility: public (default) or private */
   visibility?: 'public' | 'private';
 }
@@ -112,6 +118,8 @@ export const CreateEventSchema = z.object({
   participantLimit: z.number().int().optional(),
   territoryId: z.string().optional(),
   cityId: z.string(),
+  workoutId: z.string().uuid().optional(),
+  trainerId: z.string().uuid().optional(),
   visibility: z.enum(['public', 'private']).default('public').optional(),
 });
 

@@ -45,6 +45,12 @@ export interface CreateRunDto {
     longitude: number;
     timestamp?: string;
   }>;
+
+  /** RPE (Rating of Perceived Exertion) 1-10 */
+  rpe?: number;
+
+  /** Заметки для тренера */
+  notes?: string;
 }
 
 /**
@@ -65,6 +71,8 @@ export const CreateRunSchema = z.object({
   duration: z.number(),
   distance: z.number(),
   gpsPoints: z.array(GpsPointSchema).optional(),
+  rpe: z.number().int().min(1).max(10).optional(),
+  notes: z.string().max(2000).optional(),
 });
 
 /**
@@ -101,6 +109,12 @@ export interface RunViewDto {
 
   /** Статус пробежки */
   status: RunStatus;
+
+  /** RPE 1-10 */
+  rpe?: number;
+
+  /** Notes */
+  notes?: string;
 
   /** Дата создания записи */
   createdAt: Date;

@@ -21,11 +21,13 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
   late TextEditingController _descriptionController;
   String _type = 'RECOVERY';
   String _difficulty = 'BEGINNER';
+  String _surface = 'ROAD';
   String _targetMetric = 'DISTANCE';
   final _targetValueController = TextEditingController();
   String? _targetZone;
   String? _clubId;
   String? _currentClubId;
+  List<WorkoutBlock> _blocks = [];
   bool _saving = false;
 
   static const _types = [
@@ -36,6 +38,7 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
     'LONG_RUN'
   ];
   static const _difficulties = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'PRO'];
+  static const _surfaces = ['ROAD', 'TRACK', 'TRAIL'];
   static const _metrics = ['DISTANCE', 'TIME', 'PACE'];
 
   @override
@@ -49,10 +52,12 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
     if (w != null) {
       _type = w.type;
       _difficulty = w.difficulty;
+      _surface = w.surface ?? 'ROAD';
       _targetMetric = w.targetMetric;
       _targetValueController.text = w.targetValue?.toString() ?? '';
       _targetZone = w.targetZone;
       _clubId = w.clubId;
+      _blocks = w.blocks != null ? List.from(w.blocks!) : [];
     } else {
       _clubId = null;
     }
@@ -75,18 +80,22 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
     setState(() => _saving = true);
     try {
       final isEdit = widget.existing != null;
+      final payload = {
+        'name': _nameController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'type': _type,
+        'difficulty': _difficulty,
+        'surface': _surface,
+        'targetMetric': _targetMetric,
+        'targetValue': targetValue,
+        'targetZone': _targetZone,
+        'blocks': _blocks.map((b) => b.toJson()).toList(),
+      };
+
       if (isEdit) {
         await ServiceLocator.workoutsService.updateWorkout(
           widget.existing!.id,
-          {
-            'name': _nameController.text.trim(),
-            'description': _descriptionController.text.trim(),
-            'type': _type,
-            'difficulty': _difficulty,
-            'targetMetric': _targetMetric,
-            'targetValue': targetValue,
-            'targetZone': _targetZone,
-          },
+          payload,
         );
       } else {
         await ServiceLocator.workoutsService.createWorkout(
@@ -97,9 +106,11 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
               : _descriptionController.text.trim(),
           type: _type,
           difficulty: _difficulty,
+          surface: _surface,
           targetMetric: _targetMetric,
           targetValue: targetValue,
           targetZone: _targetZone,
+          blocks: _blocks,
         );
       }
 
@@ -292,6 +303,100 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
             ),
             const SizedBox(height: 16),
 
+            // Surface dropdown
+            DropdownButtonFormField<String>(
+              // ignore: deprecated_member_use
+              value: _surface,
+              decoration: InputDecoration(labelText: l10n.workoutSurface),
+              items: _surfaces
+                  .map((s) => DropdownMenuItem(
+                        value: s,
+                        child: Text(_localizeSurface(l10n, s)),
+                      ))
+                  .toList(),
+              onChanged: (v) => setState(() => _surface = v!),
+            ),
+            const SizedBox(height: 16),
+
+            // Blocks editor
+            const Divider(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  l10n.workouts,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                TextButton.icon(
+                  onPressed: _addBlock,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Блок'),
+                ),
+              ],
+            ),
+            if (_blocks.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Text(
+                  'Нет тренировочных блоков',
+                  style: TextStyle(color: Colors.grey[600], fontStyle: FontStyle.italic),
+                ),
+              )
+            else
+              ReorderableListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _blocks.length,
+                onReorder: (oldIndex, newIndex) {
+                  setState(() {
+                    if (newIndex > oldIndex) newIndex -= 1;
+                    final b = _blocks.removeAt(oldIndex);
+                    _blocks.insert(newIndex, b);
+                  });
+                },
+                itemBuilder: (context, index) {
+                  final block = _blocks[index];
+                  return Card(
+                    key: ValueKey('block_$index'),
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.drag_handle, color: Colors.grey),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Блок ${index + 1} (x${block.repeatCount})',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              const Spacer(),
+                              IconButton(
+                                icon: const Icon(Icons.edit_outlined, size: 20),
+                                onPressed: () => _editBlock(index),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                                onPressed: () => setState(() => _blocks.removeAt(index)),
+                              ),
+                            ],
+                          ),
+                          ...block.segments.map((s) => _buildSegmentRow(l10n, s)),
+                          TextButton.icon(
+                            onPressed: () => _addSegment(index),
+                            icon: const Icon(Icons.add, size: 16),
+                            label: const Text('Сегмент', style: TextStyle(fontSize: 12)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            const SizedBox(height: 24),
+
             // Target metric dropdown
             DropdownButtonFormField<String>(
               // ignore: deprecated_member_use
@@ -423,6 +528,256 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
       default:
         return metric;
     }
+  }
+
+  String _localizeSurface(AppLocalizations l10n, String surface) {
+    switch (surface) {
+      case 'ROAD':
+        return l10n.surfaceRoad;
+      case 'TRACK':
+        return l10n.surfaceTrack;
+      case 'TRAIL':
+        return l10n.surfaceTrail;
+      default:
+        return surface;
+    }
+  }
+
+  String _localizeSegmentType(AppLocalizations l10n, SegmentType type) {
+    switch (type) {
+      case SegmentType.warmup:
+        return l10n.segmentTypeWarmup;
+      case SegmentType.run:
+        return l10n.segmentTypeRun;
+      case SegmentType.rest:
+        return l10n.segmentTypeRest;
+      case SegmentType.cooldown:
+        return l10n.segmentTypeCooldown;
+    }
+  }
+
+  String _localizeRecoveryType(AppLocalizations l10n, RecoveryType type) {
+    switch (type) {
+      case RecoveryType.jog:
+        return l10n.recoveryJog;
+      case RecoveryType.walk:
+        return l10n.recoveryWalk;
+      case RecoveryType.stand:
+        return l10n.recoveryStand;
+    }
+  }
+
+  Widget _buildSegmentRow(AppLocalizations l10n, WorkoutSegment s) {
+    final duration = s.durationType == DurationType.time
+        ? _formatDuration(s.durationValue)
+        : '${s.durationValue}m';
+    final target = s.targetZone ?? s.targetValue ?? '—';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 24,
+            decoration: BoxDecoration(
+              color: _getSegmentColor(s.type),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '${_localizeSegmentType(l10n, s.type)}: $duration @ $target',
+              style: const TextStyle(fontSize: 13),
+            ),
+          ),
+          if (s.recoveryType != null) ...[
+            const Icon(Icons.timer_outlined, size: 14, color: Colors.grey),
+            const SizedBox(width: 2),
+            Text(
+              _localizeRecoveryType(l10n, s.recoveryType!),
+              style: const TextStyle(fontSize: 11, color: Colors.grey),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _formatDuration(int seconds) {
+    final m = seconds ~/ 60;
+    final s = seconds % 60;
+    return '$m:${s.toString().padLeft(2, '0')}';
+  }
+
+  Color _getSegmentColor(SegmentType type) {
+    switch (type) {
+      case SegmentType.warmup:
+        return Colors.orange;
+      case SegmentType.run:
+        return Colors.green;
+      case SegmentType.rest:
+        return Colors.blue;
+      case SegmentType.cooldown:
+        return Colors.lightBlue;
+    }
+  }
+
+  void _addBlock() {
+    setState(() {
+      _blocks.add(WorkoutBlock(repeatCount: 1, segments: []));
+    });
+  }
+
+  Future<void> _editBlock(int index) async {
+    final block = _blocks[index];
+    final countController = TextEditingController(text: block.repeatCount.toString());
+
+    final result = await showDialog<int>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Повторения блока'),
+        content: TextField(
+          controller: countController,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(labelText: 'Количество повторов'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(AppLocalizations.of(context)!.cancel)),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, int.tryParse(countController.text)),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result > 0) {
+      setState(() {
+        _blocks[index] = WorkoutBlock(repeatCount: result, segments: block.segments);
+      });
+    }
+  }
+
+  Future<void> _addSegment(int blockIndex) async {
+    final segment = await _showSegmentDialog();
+    if (segment != null) {
+      setState(() {
+        _blocks[blockIndex].segments.add(segment);
+      });
+    }
+  }
+
+  Future<WorkoutSegment?> _showSegmentDialog([WorkoutSegment? existing]) async {
+    final l10n = AppLocalizations.of(context)!;
+    SegmentType type = existing?.type ?? SegmentType.run;
+    DurationType durationType = existing?.durationType ?? DurationType.time;
+    final durationController = TextEditingController(
+      text: existing?.durationValue.toString() ?? '',
+    );
+    final targetValueController = TextEditingController(text: existing?.targetValue ?? '');
+    String? targetZone = existing?.targetZone;
+    RecoveryType? recoveryType = existing?.recoveryType;
+    final instructionsController = TextEditingController(text: existing?.instructions ?? '');
+    final mediaUrlController = TextEditingController(text: existing?.mediaUrl ?? '');
+
+    return showDialog<WorkoutSegment>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text(existing == null ? 'Добавить сегмент' : 'Изменить сегмент'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<SegmentType>(
+                  value: type,
+                  decoration: const InputDecoration(labelText: 'Тип'),
+                  items: SegmentType.values
+                      .map((e) => DropdownMenuItem(value: e, child: Text(_localizeSegmentType(l10n, e))))
+                      .toList(),
+                  onChanged: (v) => setDialogState(() => type = v!),
+                ),
+                DropdownButtonFormField<DurationType>(
+                  value: durationType,
+                  decoration: const InputDecoration(labelText: 'Тип длительности'),
+                  items: DurationType.values
+                      .map((e) => DropdownMenuItem(
+                          value: e,
+                          child: Text(e == DurationType.time ? l10n.durationTime : l10n.durationDistance)))
+                      .toList(),
+                  onChanged: (v) => setDialogState(() => durationType = v!),
+                ),
+                TextFormField(
+                  controller: durationController,
+                  decoration: InputDecoration(
+                    labelText: durationType == DurationType.time ? 'Секунды' : 'Метры',
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                TextFormField(
+                  controller: targetValueController,
+                  decoration: const InputDecoration(labelText: 'Цель (Темп/Пульс)', hintText: '4:00 или 160'),
+                ),
+                DropdownButtonFormField<String?>(
+                  value: targetZone,
+                  decoration: InputDecoration(labelText: l10n.workoutIntensityZone),
+                  items: [
+                    DropdownMenuItem(value: null, child: Text(l10n.zoneNone)),
+                    const DropdownMenuItem(value: 'Z1', child: Text('Z1')),
+                    const DropdownMenuItem(value: 'Z2', child: Text('Z2')),
+                    const DropdownMenuItem(value: 'Z3', child: Text('Z3')),
+                    const DropdownMenuItem(value: 'Z4', child: Text('Z4')),
+                    const DropdownMenuItem(value: 'Z5', child: Text('Z5')),
+                  ],
+                  onChanged: (v) => setDialogState(() => targetZone = v),
+                ),
+                DropdownButtonFormField<RecoveryType?>(
+                  value: recoveryType,
+                  decoration: InputDecoration(labelText: l10n.recoveryType),
+                  items: [
+                    DropdownMenuItem(value: null, child: Text(l10n.zoneNone)),
+                    ...RecoveryType.values.map((e) => DropdownMenuItem(value: e, child: Text(_localizeRecoveryType(l10n, e)))),
+                  ],
+                  onChanged: (v) => setDialogState(() => recoveryType = v),
+                ),
+                TextFormField(
+                  controller: instructionsController,
+                  decoration: const InputDecoration(labelText: 'Инструкции'),
+                ),
+                TextFormField(
+                  controller: mediaUrlController,
+                  decoration: InputDecoration(labelText: l10n.mediaUrlInstruction),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
+            TextButton(
+              onPressed: () {
+                final val = int.tryParse(durationController.text) ?? 0;
+                Navigator.pop(
+                  ctx,
+                  WorkoutSegment(
+                    type: type,
+                    durationValue: val,
+                    durationType: durationType,
+                    targetValue: targetValueController.text.isEmpty ? null : targetValueController.text,
+                    targetZone: targetZone,
+                    recoveryType: recoveryType,
+                    instructions: instructionsController.text.isEmpty ? null : instructionsController.text,
+                    mediaUrl: mediaUrlController.text.isEmpty ? null : mediaUrlController.text,
+                  ),
+                );
+              },
+              child: const Text('Добавить'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   String _getTargetValueLabel(AppLocalizations l10n, String metric) {

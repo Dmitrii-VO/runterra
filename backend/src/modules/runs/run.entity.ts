@@ -61,6 +61,12 @@ export interface Run {
   /** Статус пробежки */
   status: RunStatus;
   
+  /** RPE (Rating of Perceived Exertion) 1-10 */
+  rpe?: number;
+  
+  /** Заметки для тренера */
+  notes?: string;
+
   /** Дата создания записи */
   createdAt: Date;
   

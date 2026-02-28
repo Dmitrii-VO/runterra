@@ -3,7 +3,7 @@
  */
 
 import { BaseRepository } from './base.repository';
-import { Workout } from '../../modules/workout/workout.entity';
+import { Workout, Surface, WorkoutBlock } from '../../modules/workout/workout.entity';
 
 interface WorkoutRow {
   id: string;
@@ -13,6 +13,8 @@ interface WorkoutRow {
   description: string | null;
   type: string;
   difficulty: string;
+  surface: string | null;
+  blocks: any | null;
   target_metric: string;
   target_value: number | null;
   target_zone: string | null;
@@ -28,6 +30,8 @@ function rowToWorkout(row: WorkoutRow): Workout {
     description: row.description || undefined,
     type: row.type,
     difficulty: row.difficulty,
+    surface: (row.surface as Surface) || undefined,
+    blocks: row.blocks as WorkoutBlock[] || undefined,
     targetMetric: row.target_metric,
     targetValue: row.target_value ?? undefined,
     targetZone: row.target_zone ?? undefined,
@@ -67,13 +71,15 @@ export class WorkoutsRepository extends BaseRepository {
     description?: string;
     type: string;
     difficulty: string;
+    surface?: string;
+    blocks?: any;
     targetMetric: string;
     targetValue?: number;
     targetZone?: string;
   }): Promise<Workout> {
     const row = await this.queryOne<WorkoutRow>(
-      `INSERT INTO workouts (author_id, club_id, name, description, type, difficulty, target_metric, target_value, target_zone)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `INSERT INTO workouts (author_id, club_id, name, description, type, difficulty, surface, blocks, target_metric, target_value, target_zone)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
       [
         data.authorId,
@@ -82,6 +88,8 @@ export class WorkoutsRepository extends BaseRepository {
         data.description || null,
         data.type,
         data.difficulty,
+        data.surface || null,
+        data.blocks ? JSON.stringify(data.blocks) : null,
         data.targetMetric,
         data.targetValue || null,
         data.targetZone || null,
@@ -96,6 +104,8 @@ export class WorkoutsRepository extends BaseRepository {
     description?: string;
     type?: string;
     difficulty?: string;
+    surface?: string;
+    blocks?: any;
     targetMetric?: string;
     targetValue?: number;
     targetZone?: string;
@@ -119,6 +129,14 @@ export class WorkoutsRepository extends BaseRepository {
     if (data.difficulty !== undefined) {
       sets.push(`difficulty = $${idx++}`);
       params.push(data.difficulty);
+    }
+    if (data.surface !== undefined) {
+      sets.push(`surface = $${idx++}`);
+      params.push(data.surface);
+    }
+    if (data.blocks !== undefined) {
+      sets.push(`blocks = $${idx++}`);
+      params.push(data.blocks ? JSON.stringify(data.blocks) : null);
     }
     if (data.targetMetric !== undefined) {
       sets.push(`target_metric = $${idx++}`);

@@ -1637,4 +1637,61 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorUnauthorizedAction => 'Sign in again';
+
+  @override
+  String get workoutIntensityZone => 'Intensity Zone';
+
+  @override
+  String get runRPE => 'Effort (RPE)';
+
+  @override
+  String get notesForCoach => 'Notes for coach';
+
+  @override
+  String get recoveryType => 'Recovery Type';
+
+  @override
+  String get mediaUrlInstruction => 'Video Instruction';
+
+  @override
+  String get surfaceRoad => 'Road';
+
+  @override
+  String get surfaceTrack => 'Track';
+
+  @override
+  String get surfaceTrail => 'Trail';
+
+  @override
+  String get workoutSurface => 'Surface';
+
+  @override
+  String get segmentTypeWarmup => 'Warmup';
+
+  @override
+  String get segmentTypeRun => 'Run';
+
+  @override
+  String get segmentTypeRest => 'Rest';
+
+  @override
+  String get segmentTypeCooldown => 'Cooldown';
+
+  @override
+  String get recoveryJog => 'Jog';
+
+  @override
+  String get recoveryWalk => 'Walk';
+
+  @override
+  String get recoveryStand => 'Stand';
+
+  @override
+  String get durationTime => 'Time';
+
+  @override
+  String get durationDistance => 'Distance';
+
+  @override
+  String get durationManual => 'Manual (Lap)';
 }

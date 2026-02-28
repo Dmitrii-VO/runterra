@@ -1,4 +1,5 @@
 import 'package:geolocator/geolocator.dart';
+import 'workout.dart';
 
 /// Local UI/tracker state model for the run screen (idle / recording / result).
 ///
@@ -26,6 +27,11 @@ class RunSession {
   /// Heart rate in BPM from watch sensor (null if watch not connected)
   final int? heartRate;
 
+  /// Workout template attached to the run
+  final Workout? workout;
+  final int currentBlockIndex;
+  final int currentSegmentIndex;
+
   RunSession({
     required this.id,
     this.activityId,
@@ -40,6 +46,9 @@ class RunSession {
     Duration? accumulatedDuration,
     this.lastResumedAt,
     this.heartRate,
+    this.workout,
+    this.currentBlockIndex = 0,
+    this.currentSegmentIndex = 0,
   })  : duration = duration ?? Duration.zero,
         distance = distance ?? 0.0,
         gpsStatus = gpsStatus ?? GpsStatus.searching,
@@ -60,6 +69,9 @@ class RunSession {
     Duration? accumulatedDuration,
     DateTime? lastResumedAt,
     int? heartRate,
+    Workout? workout,
+    int? currentBlockIndex,
+    int? currentSegmentIndex,
   }) {
     return RunSession(
       id: id ?? this.id,
@@ -75,6 +87,9 @@ class RunSession {
       accumulatedDuration: accumulatedDuration ?? this.accumulatedDuration,
       lastResumedAt: lastResumedAt ?? this.lastResumedAt,
       heartRate: heartRate ?? this.heartRate,
+      workout: workout ?? this.workout,
+      currentBlockIndex: currentBlockIndex ?? this.currentBlockIndex,
+      currentSegmentIndex: currentSegmentIndex ?? this.currentSegmentIndex,
     );
   }
 }

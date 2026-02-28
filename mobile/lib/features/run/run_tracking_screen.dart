@@ -35,6 +35,8 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
   bool _isSubmitting = false;
   MyClubModel? _selectedScoringClub;
   List<MyClubModel>? _myClubs;
+  int _rpe = 5;
+  final TextEditingController _notesController = TextEditingController();
 
   @override
   void initState() {
@@ -64,6 +66,7 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
   void dispose() {
     _timer?.cancel();
     _gpsSubscription?.cancel();
+    _notesController.dispose();
     super.dispose();
   }
 
@@ -281,15 +284,42 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
         setState(() {
           _session = completedSession;
           _state = _TrackingState.completed;
+          _isSubmitting = false;
         });
       }
-      await _runService.submitRun();
+    } catch (e) {
+      if (mounted) {
+        final errorText = (e is ApiException)
+            ? e.message
+            : AppLocalizations.of(context)!.runFinishError(e.toString());
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorText),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _submitCompletedRun() async {
+    if (_isSubmitting) return;
+    setState(() => _isSubmitting = true);
+
+    try {
+      await _runService.submitRun(rpe: _rpe, notes: _notesController.text);
+      if (mounted) {
+        _backToIdle();
+      }
     } catch (e) {
       if (e is ApiException && e.code == 'club_required_for_scoring') {
          if (mounted) {
            await _showClubSelectionDialog();
          }
-         return; // Don't show error snackbar, dialog handles flow
+         return;
       }
 
       if (mounted) {
@@ -370,7 +400,10 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
   Future<void> _submitWithClub(String clubId) async {
     setState(() => _isSubmitting = true);
     try {
-      await _runService.submitRun(scoringClubId: clubId);
+      await _runService.submitRun(scoringClubId: clubId, rpe: _rpe, notes: _notesController.text);
+      if (mounted) {
+        _backToIdle();
+      }
     } catch (e) {
       if (mounted) {
         final errorText = (e is ApiException)
@@ -600,9 +633,39 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
     final gpsStatus = _session?.gpsStatus ?? GpsStatus.searching;
     final gpsPoints = _session?.gpsPoints ?? [];
     final paceStr = _formatPace(duration, distance);
+    final workout = _session?.workout;
 
     return Column(
       children: [
+        if (workout != null && workout.blocks != null && _session!.currentBlockIndex < workout.blocks!.length)
+          Container(
+            color: Theme.of(context).colorScheme.primaryContainer,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        workout.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        'Блок ${_session!.currentBlockIndex + 1}/${workout.blocks!.length} • '
+                        'Сегмент ${_session!.currentSegmentIndex + 1}/${workout.blocks![_session!.currentBlockIndex].segments.length}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.skip_next),
+                  onPressed: _runService.nextSegment,
+                ),
+              ],
+            ),
+          ),
         Expanded(
           flex: 2,
           child: RunRouteMap(gpsPoints: gpsPoints),
@@ -825,9 +888,46 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
               ],
             ),
             const SizedBox(height: 32),
+            Text(
+              l10n.runRPE,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            Slider(
+              value: _rpe.toDouble(),
+              min: 1,
+              max: 10,
+              divisions: 9,
+              label: _rpe.toString(),
+              onChanged: (double value) {
+                setState(() {
+                  _rpe = value.toInt();
+                });
+              },
+            ),
+            Text(
+              '$_rpe / 10',
+              style: Theme.of(context).textTheme.bodyLarge,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _notesController,
+              decoration: InputDecoration(
+                labelText: l10n.notesForCoach,
+                border: const OutlineInputBorder(),
+              ),
+              maxLines: 3,
+            ),
+            const SizedBox(height: 32),
             FilledButton(
-              onPressed: _backToIdle,
-              child: Text(l10n.runReady),
+              onPressed: _isSubmitting ? null : _submitCompletedRun,
+              child: _isSubmitting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(l10n.runReady),
             ),
           ],
         ),

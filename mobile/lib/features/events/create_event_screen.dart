@@ -4,6 +4,7 @@ import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/event_start_location.dart';
 import '../../shared/models/city_model.dart';
+import '../../shared/models/workout.dart';
 
 class CreateEventScreen extends StatefulWidget {
   final String? initialType;
@@ -30,6 +31,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   String? _cityId;
   String? _cityName;
   bool _hasClub = false;
+  String? _selectedWorkoutId;
+  List<Workout> _workouts = [];
 
   // Location picker state (replaces lat/lon controllers)
   double? _selectedLat;
@@ -64,12 +67,14 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       _organizerIdController.text = clubId;
       _organizerType = 'club';
       setState(() => _hasClub = true);
+      _loadWorkouts(clubId);
     } else {
       // No club — use user profile as trainer
       _organizerType = 'trainer';
       try {
         final profile = await ServiceLocator.usersService.getProfile();
         _organizerIdController.text = profile.user.id;
+        _loadWorkouts();
       } catch (e) {
         debugPrint('Error loading profile for organizer: $e');
       }
@@ -89,6 +94,17 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         _selectedLat = city.center.latitude;
         _selectedLon = city.center.longitude;
       });
+    }
+  }
+
+  Future<void> _loadWorkouts([String? clubId]) async {
+    try {
+      final workouts = await ServiceLocator.workoutsService.getWorkouts(clubId: clubId);
+      if (mounted) {
+        setState(() => _workouts = workouts);
+      }
+    } catch (e) {
+      debugPrint('Error loading workouts: $e');
     }
   }
 
@@ -185,6 +201,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             ? null
             : _descriptionController.text.trim(),
         participantLimit: participantLimit,
+        workoutId: _selectedWorkoutId,
       );
 
       if (!mounted) return;
@@ -255,6 +272,25 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 onChanged: _saving ? null : (value) => setState(() => _eventType = value ?? _eventType),
               ),
               const SizedBox(height: 16),
+              if (_eventType == 'training') ...[
+                DropdownButtonFormField<String?>(
+                  value: _selectedWorkoutId,
+                  decoration: InputDecoration(
+                    labelText: l10n.eventWorkout,
+                    border: const OutlineInputBorder(),
+                    hintText: l10n.eventSelectWorkout,
+                  ),
+                  items: [
+                    DropdownMenuItem(value: null, child: Text(l10n.eventNoWorkout)),
+                    ..._workouts.map((w) => DropdownMenuItem(
+                          value: w.id,
+                          child: Text(w.name),
+                        )),
+                  ],
+                  onChanged: _saving ? null : (value) => setState(() => _selectedWorkoutId = value),
+                ),
+                const SizedBox(height: 16),
+              ],
               InkWell(
                 onTap: _saving ? null : _pickDate,
                 child: InputDecorator(

@@ -315,6 +315,8 @@ router.post('/', validateBody(CreateRunSchema), async (req: Request<{}, RunViewD
         duration,
         distance,
         gpsPoints,
+        rpe: dto.rpe,
+        notes: dto.notes,
       }, client);
 
       // 2. Calculate and Save Contribution (if eligible)
@@ -351,6 +353,8 @@ router.post('/', validateBody(CreateRunSchema), async (req: Request<{}, RunViewD
       duration: run.duration,
       distance: run.distance,
       status: run.status,
+      rpe: run.rpe,
+      notes: run.notes,
       createdAt: run.createdAt,
       updatedAt: run.updatedAt,
     };

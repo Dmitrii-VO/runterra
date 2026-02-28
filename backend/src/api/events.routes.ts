@@ -462,9 +462,13 @@ router.post('/', validateBody(CreateEventSchema), async (req: Request<{}, EventD
       territoryId: dto.territoryId,
       cityId: dto.cityId,
       visibility: dto.visibility,
+      workoutId: dto.workoutId,
+      trainerId: dto.trainerId,
     });
 
     const organizerDisplayName = await getOrganizerDisplayName(event.organizerId, event.organizerType);
+    const eventIntegration = await resolveEventIntegrationFields([event]);
+    const integration = eventIntegration.get(event.id);
 
     const eventDto: EventDetailsDto = {
       id: event.id,
@@ -485,6 +489,13 @@ router.post('/', validateBody(CreateEventSchema), async (req: Request<{}, EventD
       cityId: event.cityId,
       createdAt: event.createdAt,
       updatedAt: event.updatedAt,
+      workoutId: integration?.workoutId,
+      trainerId: integration?.trainerId,
+      workoutName: integration?.workoutName,
+      workoutDescription: integration?.workoutDescription,
+      workoutType: integration?.workoutType,
+      workoutDifficulty: integration?.workoutDifficulty,
+      trainerName: integration?.trainerName,
     };
 
     res.status(201).json(eventDto);
