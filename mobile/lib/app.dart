@@ -35,6 +35,7 @@ import 'features/trainer/create_trainer_group_screen.dart';
 import 'shared/models/profile_model.dart' show ProfileUserData;
 import 'shared/models/club_model.dart';
 import 'shared/models/club_member_model.dart';
+import 'shared/models/trainer_group_model.dart';
 import 'shared/models/workout.dart';
 import 'shared/models/trainer_profile.dart';
 import 'shared/auth/auth_service.dart';
@@ -329,7 +330,12 @@ class RunterraApp extends StatelessWidget {
         builder: (context, state) {
           final clubId = state.uri.queryParameters['clubId'] ?? '';
           final clubName = state.uri.queryParameters['clubName'] ?? '';
-          return CreateTrainerGroupScreen(clubId: clubId, clubName: clubName);
+          final group = state.extra as TrainerGroupModel?;
+          return CreateTrainerGroupScreen(
+            clubId: clubId,
+            clubName: clubName,
+            existingGroup: group,
+          );
         },
       ),
       GoRoute(

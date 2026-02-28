@@ -43,6 +43,36 @@ class TrainerService {
     _throwApiException(response, 'create_trainer_group_error');
   }
 
+  /// GET /api/trainer/groups/:groupId/members — get member IDs
+  Future<List<String>> getGroupMemberIds(String groupId) async {
+    final response = await _apiClient.get('/api/trainer/groups/$groupId/members');
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final list = jsonDecode(response.body) as List<dynamic>;
+      return list.cast<String>();
+    }
+    _throwApiException(response, 'get_group_members_error');
+  }
+
+  /// PATCH /api/trainer/groups/:groupId — update group
+  Future<void> updateGroup(String groupId, {String? name, List<String>? memberIds}) async {
+    final response = await _apiClient.patch(
+      '/api/trainer/groups/$groupId',
+      body: {
+        if (name != null) 'name': name,
+        if (memberIds != null) 'memberIds': memberIds,
+      },
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    _throwApiException(response, 'update_group_error');
+  }
+
+  /// DELETE /api/trainer/groups/:groupId — delete group
+  Future<void> deleteGroup(String groupId) async {
+    final response = await _apiClient.delete('/api/trainer/groups/$groupId');
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    _throwApiException(response, 'delete_group_error');
+  }
+
   /// GET /api/trainer — public trainer discovery (accepts_private_clients=true)
   Future<List<PublicTrainerEntry>> getTrainers({
     String? cityId,

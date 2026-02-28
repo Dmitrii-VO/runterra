@@ -18,6 +18,7 @@ class CoachTab extends StatefulWidget {
 
 class _CoachTabState extends State<CoachTab> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final GlobalKey<TrainerGroupsTabState> _groupsKey = GlobalKey();
   List<DirectChatModel>? _trainerClients;
   DirectChatModel? _myTrainer;
   List<MyClubModel>? _myClubs;
@@ -96,7 +97,7 @@ class _CoachTabState extends State<CoachTab> with SingleTickerProviderStateMixin
             child: TabBarView(
               controller: _tabController,
               children: [
-                const TrainerGroupsTab(),
+                TrainerGroupsTab(key: _groupsKey),
                 _buildPersonalTab(l10n, Theme.of(context)),
               ],
             ),
@@ -142,7 +143,8 @@ class _CoachTabState extends State<CoachTab> with SingleTickerProviderStateMixin
         '/trainer/groups/create?clubId=$selectedClubId&clubName=${Uri.encodeComponent(club.name)}',
       );
       if (result == true) {
-        _loadData(); // Reload to show new group if needed (though TrainerGroupsTab has its own load)
+        _loadData();
+        _groupsKey.currentState?.loadData();
       }
     }
   }

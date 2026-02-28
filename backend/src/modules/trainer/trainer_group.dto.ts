@@ -12,6 +12,13 @@ export const CreateTrainerGroupSchema = z.object({
 
 export type CreateTrainerGroupDto = z.infer<typeof CreateTrainerGroupSchema>;
 
+export const UpdateTrainerGroupSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  memberIds: z.array(z.string().uuid()).min(1).optional(),
+});
+
+export type UpdateTrainerGroupDto = z.infer<typeof UpdateTrainerGroupSchema>;
+
 export interface TrainerGroupViewDto {
   id: string;
   clubId: string;

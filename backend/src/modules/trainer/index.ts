@@ -5,5 +5,5 @@ export {
   UpdateTrainerProfileSchema,
 } from './trainer.dto';
 export type { CreateTrainerProfileDto, UpdateTrainerProfileDto } from './trainer.dto';
-export { CreateTrainerGroupSchema } from './trainer_group.dto';
-export type { CreateTrainerGroupDto, TrainerGroupViewDto } from './trainer_group.dto';
+export { CreateTrainerGroupSchema, UpdateTrainerGroupSchema } from './trainer_group.dto';
+export type { CreateTrainerGroupDto, UpdateTrainerGroupDto, TrainerGroupViewDto } from './trainer_group.dto';

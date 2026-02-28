@@ -56,10 +56,13 @@ export class TrainerGroupsRepository extends BaseRepository {
 
       const groupId = groupRow!.id;
 
-      if (data.memberIds.length > 0) {
+      // Automatically add trainer as a member
+      const allMemberIds = Array.from(new Set([data.trainerId, ...data.memberIds]));
+
+      if (allMemberIds.length > 0) {
         // Bulk insert members
         const values: any[] = [];
-        const placeholders = data.memberIds
+        const placeholders = allMemberIds
           .map((userId, i) => {
             values.push(groupId, userId);
             return `($${i * 2 + 1}, $${i * 2 + 2})`;
@@ -74,6 +77,47 @@ export class TrainerGroupsRepository extends BaseRepository {
       }
 
       return rowToTrainerGroup(groupRow!);
+    });
+  }
+
+  async updateName(id: string, name: string): Promise<boolean> {
+    const result = await this.query(
+      'UPDATE trainer_groups SET name = $1 WHERE id = $2',
+      [name, id]
+    );
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async updateMembers(groupId: string, memberIds: string[]): Promise<void> {
+    await this.transaction(async (client) => {
+      // Get the trainerId to ensure they are NOT removed
+      const group = await this.queryOne<TrainerGroupRow>(
+        'SELECT trainer_id FROM trainer_groups WHERE id = $1',
+        [groupId],
+        client
+      );
+      if (!group) return;
+
+      const trainerId = group.trainer_id;
+      const allMemberIds = Array.from(new Set([trainerId, ...memberIds]));
+
+      // Clear existing members
+      await this.query('DELETE FROM trainer_group_members WHERE group_id = $1', [groupId], client);
+
+      // Insert new members
+      const values: any[] = [];
+      const placeholders = allMemberIds
+        .map((userId, i) => {
+          values.push(groupId, userId);
+          return `($${i * 2 + 1}, $${i * 2 + 2})`;
+        })
+        .join(', ');
+
+      await this.query(
+        `INSERT INTO trainer_group_members (group_id, user_id) VALUES ${placeholders}`,
+        values,
+        client
+      );
     });
   }
 
@@ -118,6 +162,19 @@ export class TrainerGroupsRepository extends BaseRepository {
       [groupId, userId]
     );
     return !!row;
+  }
+
+  async findMemberIds(groupId: string): Promise<string[]> {
+    const rows = await this.queryMany<{ user_id: string }>(
+      'SELECT user_id FROM trainer_group_members WHERE group_id = $1',
+      [groupId]
+    );
+    return rows.map(r => r.user_id);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    const result = await this.query('DELETE FROM trainer_groups WHERE id = $1', [id]);
+    return (result.rowCount ?? 0) > 0;
   }
 }
 

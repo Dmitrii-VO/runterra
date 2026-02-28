@@ -21,6 +21,7 @@ import {
   CreateTrainerProfileSchema,
   UpdateTrainerProfileSchema,
   CreateTrainerGroupSchema,
+  UpdateTrainerGroupSchema,
 } from '../modules/trainer';
 import { logger } from '../shared/logger';
 import { isValidUuid } from '../shared/validation';
@@ -308,6 +309,106 @@ router.post('/groups', validateBody(CreateTrainerGroupSchema), async (req: Reque
   } catch (error) {
     logger.error('Error creating trainer group', { error });
     res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/trainer/groups/:groupId/members — get IDs of members in a group
+ */
+router.get('/groups/:groupId/members', async (req: Request, res: Response) => {
+  try {
+    const userId = await resolveUserId(req, res);
+    if (!userId) return;
+
+    const { groupId } = req.params;
+    if (!isValidUuid(groupId)) return res.status(400).json({ code: 'validation_error' });
+
+    const repo = getTrainerGroupsRepository();
+    const group = await repo.findById(groupId);
+    if (!group) return res.status(404).json({ code: 'not_found' });
+
+    // Access check: trainer or member
+    const isMember = await repo.isMember(groupId, userId);
+    const isTrainer = group.trainerId === userId;
+    if (!isMember && !isTrainer) return res.status(403).json({ code: 'forbidden' });
+
+    const memberIds = await repo.findMemberIds(groupId);
+    res.status(200).json(memberIds);
+  } catch (error) {
+    logger.error('Error fetching group members', { error });
+    res.status(500).json({ code: 'internal_error' });
+  }
+});
+
+/**
+ * PATCH /api/trainer/groups/:groupId — update group details
+ */
+router.patch('/groups/:groupId', validateBody(UpdateTrainerGroupSchema), async (req: Request, res: Response) => {
+  try {
+    const trainerId = await resolveUserId(req, res);
+    if (!trainerId) return;
+
+    const { groupId } = req.params;
+    if (!isValidUuid(groupId)) return res.status(400).json({ code: 'validation_error' });
+
+    const repo = getTrainerGroupsRepository();
+    const group = await repo.findById(groupId);
+    if (!group) return res.status(404).json({ code: 'not_found' });
+
+    if (group.trainerId !== trainerId) {
+      return res.status(403).json({ code: 'forbidden', message: 'Only the group trainer can update it' });
+    }
+
+    const { name, memberIds } = req.body;
+
+    if (name) {
+      await repo.updateName(groupId, name);
+    }
+
+    if (memberIds) {
+      // Verify all memberIds are active members of the club
+      const clubMembersRepo = getClubMembersRepository();
+      const allMembersActive = await clubMembersRepo.verifyActiveMembers(group.clubId, memberIds);
+      if (!allMembersActive) {
+        return res.status(400).json({
+          code: 'validation_error',
+          message: 'One or more users are not active members of the club',
+        });
+      }
+      await repo.updateMembers(groupId, memberIds);
+    }
+
+    res.status(200).json({ ok: true });
+  } catch (error) {
+    logger.error('Error updating trainer group', { error });
+    res.status(500).json({ code: 'internal_error' });
+  }
+});
+
+/**
+ * DELETE /api/trainer/groups/:groupId — delete a group
+ */
+router.delete('/groups/:groupId', async (req: Request, res: Response) => {
+  try {
+    const trainerId = await resolveUserId(req, res);
+    if (!trainerId) return;
+
+    const { groupId } = req.params;
+    if (!isValidUuid(groupId)) return res.status(400).json({ code: 'validation_error' });
+
+    const repo = getTrainerGroupsRepository();
+    const group = await repo.findById(groupId);
+    if (!group) return res.status(404).json({ code: 'not_found' });
+
+    if (group.trainerId !== trainerId) {
+      return res.status(403).json({ code: 'forbidden', message: 'Only the group trainer can delete it' });
+    }
+
+    await repo.delete(groupId);
+    res.status(200).json({ ok: true });
+  } catch (error) {
+    logger.error('Error deleting trainer group', { error });
+    res.status(500).json({ code: 'internal_error' });
   }
 });
 

@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/club_member_model.dart';
+import '../../shared/models/trainer_group_model.dart';
 
 class CreateTrainerGroupScreen extends StatefulWidget {
   final String clubId;
   final String clubName;
+  final TrainerGroupModel? existingGroup;
 
   const CreateTrainerGroupScreen({
     super.key,
     required this.clubId,
     required this.clubName,
+    this.existingGroup,
   });
 
   @override
@@ -21,6 +24,7 @@ class _CreateTrainerGroupScreenState extends State<CreateTrainerGroupScreen> {
   final _nameController = TextEditingController();
   final Set<String> _selectedMemberIds = {};
   List<ClubMemberModel>? _members;
+  String? _currentUserId;
   bool _isLoadingMembers = true;
   bool _isSaving = false;
   String? _error;
@@ -28,7 +32,10 @@ class _CreateTrainerGroupScreenState extends State<CreateTrainerGroupScreen> {
   @override
   void initState() {
     super.initState();
-    _loadMembers();
+    if (widget.existingGroup != null) {
+      _nameController.text = widget.existingGroup!.name;
+    }
+    _loadInitialData();
   }
 
   @override
@@ -37,17 +44,36 @@ class _CreateTrainerGroupScreenState extends State<CreateTrainerGroupScreen> {
     super.dispose();
   }
 
-  Future<void> _loadMembers() async {
+  Future<void> _loadInitialData() async {
     setState(() {
       _isLoadingMembers = true;
       _error = null;
     });
 
     try {
-      final members = await ServiceLocator.clubsService.getClubMembers(widget.clubId);
+      final results = await Future.wait([
+        ServiceLocator.usersService.getProfile(),
+        ServiceLocator.clubsService.getClubMembers(widget.clubId),
+        if (widget.existingGroup != null)
+          ServiceLocator.trainerService.getGroupMemberIds(widget.existingGroup!.id),
+      ]);
+
+      final profile = results[0] as dynamic; // ProfileModel
+      final members = results[1] as List<ClubMemberModel>;
+      
       if (mounted) {
         setState(() {
+          _currentUserId = profile.user.id;
           _members = members;
+          
+          if (widget.existingGroup != null) {
+            final existingMemberIds = results[2] as List<String>;
+            _selectedMemberIds.addAll(existingMemberIds);
+            if (_currentUserId != null) {
+              _selectedMemberIds.remove(_currentUserId);
+            }
+          }
+          
           _isLoadingMembers = false;
         });
       }
@@ -64,7 +90,6 @@ class _CreateTrainerGroupScreenState extends State<CreateTrainerGroupScreen> {
   Future<void> _save() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) return;
-    if (_selectedMemberIds.isEmpty) return;
 
     setState(() {
       _isSaving = true;
@@ -72,11 +97,20 @@ class _CreateTrainerGroupScreenState extends State<CreateTrainerGroupScreen> {
     });
 
     try {
-      await ServiceLocator.trainerService.createGroup(
-        clubId: widget.clubId,
-        name: name,
-        memberIds: _selectedMemberIds.toList(),
-      );
+      if (widget.existingGroup != null) {
+        await ServiceLocator.trainerService.updateGroup(
+          widget.existingGroup!.id,
+          name: name,
+          memberIds: _selectedMemberIds.toList(),
+        );
+      } else {
+        await ServiceLocator.trainerService.createGroup(
+          clubId: widget.clubId,
+          name: name,
+          memberIds: _selectedMemberIds.toList(),
+        );
+      }
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppLocalizations.of(context)!.trainerGroupCreated)),
@@ -98,9 +132,12 @@ class _CreateTrainerGroupScreenState extends State<CreateTrainerGroupScreen> {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
+    // Filter members to exclude the trainer
+    final filteredMembers = _members?.where((m) => m.userId != _currentUserId).toList();
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.trainerCreateGroup),
+        title: Text(widget.existingGroup != null ? l10n.editProfileEditAction : l10n.trainerCreateGroup),
         actions: [
           if (_isSaving)
             const Center(
@@ -160,12 +197,12 @@ class _CreateTrainerGroupScreenState extends State<CreateTrainerGroupScreen> {
           Expanded(
             child: _isLoadingMembers
                 ? const Center(child: CircularProgressIndicator())
-                : _members == null || _members!.isEmpty
+                : filteredMembers == null || filteredMembers.isEmpty
                     ? Center(child: Text(l10n.noData))
                     : ListView.builder(
-                        itemCount: _members!.length,
+                        itemCount: filteredMembers.length,
                         itemBuilder: (context, index) {
-                          final member = _members![index];
+                          final member = filteredMembers[index];
                           final isSelected = _selectedMemberIds.contains(member.userId);
                           return ListTile(
                             leading: CircleAvatar(
