@@ -613,7 +613,7 @@ class _MapScreenState extends State<MapScreen> {
 
       // Use semi-transparent territory color for fill if available, fallback to status fill
       final fillColor = parsedColor != null
-          ? parsedColor.withAlpha(76)
+          ? parsedColor.withValues(alpha: 0.3)
           : statusFillColor;
 
       void onTerritoryTap(_, __) => _showTerritoryBottomSheet(territory);

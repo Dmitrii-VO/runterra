@@ -450,16 +450,13 @@ class _EventsScreenState extends State<EventsScreen>
                   width: 52,
                   margin:
                       const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? Theme.of(context).colorScheme.primary
-                        : (isToday
-                            ? Theme.of(context)
-                                .colorScheme
-                                .primaryContainer
-                                .withAlpha(26)
-                            : Colors.transparent),
-                    borderRadius: BorderRadius.circular(14),
+                                                          decoration: BoxDecoration(
+                                                            color: isSelected
+                                                                ? Theme.of(context).colorScheme.primary
+                                                                : (isToday
+                                                                    ? const Color.fromRGBO(233, 213, 255, 0.1) // Light purple tint
+                                                                    : Colors.transparent),
+                                                          borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       width: isToday && !isSelected ? 1.5 : 1.0,
                       color: isSelected

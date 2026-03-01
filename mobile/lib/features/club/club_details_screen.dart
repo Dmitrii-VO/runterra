@@ -500,8 +500,8 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                         return ListTile(
                           leading: CircleAvatar(
                             backgroundColor: isCapturedByUs
-                                ? Colors.green.withAlpha(51)
-                                : Colors.orange.withAlpha(51),
+                                ? Colors.green.withValues(alpha: 0.2)
+                                : Colors.orange.withValues(alpha: 0.2),
                             child: Icon(
                               isCapturedByUs ? Icons.emoji_events : Icons.map,
                               color:
@@ -595,7 +595,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                               ? Theme.of(context)
                                   .colorScheme
                                   .primaryContainer
-                                  .withAlpha(76)
+                                  .withValues(alpha: 0.3)
                               : null,
                           leading: CircleAvatar(
                             backgroundColor: isMyClub
@@ -989,7 +989,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                           color: Theme.of(context)
                               .colorScheme
                               .primaryContainer
-                              .withAlpha(127),
+                              .withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
