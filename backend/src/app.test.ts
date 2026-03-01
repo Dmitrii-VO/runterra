@@ -7,7 +7,7 @@ describe('App', () => {
   describe('GET /health', () => {
     it('returns 200 with status ok', async () => {
       const res = await request(app).get('/health');
-      
+
       expect(res.status).toBe(200);
       expect(res.body).toEqual({ status: 'ok' });
     });
@@ -39,7 +39,7 @@ describe('App', () => {
         .post('/api/users')
         .send({ email: 'test@example.com' })
         .set('Content-Type', 'application/json');
-      
+
       // Should not fail due to body parsing (may fail auth, that's ok)
       expect(res.status).not.toBe(413);
     });

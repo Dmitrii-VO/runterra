@@ -62,10 +62,7 @@ export class RunsRepository extends BaseRepository {
   private static readonly MIN_DURATION_SECONDS = 30;
 
   async findById(id: string): Promise<Run | null> {
-    const row = await this.queryOne<RunRow>(
-      'SELECT * FROM runs WHERE id = $1',
-      [id]
-    );
+    const row = await this.queryOne<RunRow>('SELECT * FROM runs WHERE id = $1', [id]);
     return row ? rowToRun(row) : null;
   }
 
@@ -73,7 +70,7 @@ export class RunsRepository extends BaseRepository {
     const rows = await this.queryMany<RunRow>(
       `SELECT * FROM runs WHERE user_id = $1 
        ORDER BY started_at DESC LIMIT $2 OFFSET $3`,
-      [userId, limit, offset]
+      [userId, limit, offset],
     );
     return rows.map(rowToRun);
   }
@@ -88,41 +85,50 @@ export class RunsRepository extends BaseRepository {
     endedAt: Date;
   }): RunValidationResult {
     const errors: string[] = [];
-    
+
     // Check minimum distance
     if (data.distance < RunsRepository.MIN_DISTANCE_METERS) {
-      errors.push(`Distance too short: ${data.distance}m, minimum: ${RunsRepository.MIN_DISTANCE_METERS}m`);
+      errors.push(
+        `Distance too short: ${data.distance}m, minimum: ${RunsRepository.MIN_DISTANCE_METERS}m`,
+      );
     }
-    
+
     // Check minimum duration
     if (data.duration < RunsRepository.MIN_DURATION_SECONDS) {
-      errors.push(`Duration too short: ${data.duration}s, minimum: ${RunsRepository.MIN_DURATION_SECONDS}s`);
+      errors.push(
+        `Duration too short: ${data.duration}s, minimum: ${RunsRepository.MIN_DURATION_SECONDS}s`,
+      );
     }
-    
+
     // Check speed (distance in meters, duration in seconds)
     if (data.duration > 0) {
       const speedMs = data.distance / data.duration; // meters per second
       const speedKmh = speedMs * 3.6; // km/h
-      
+
       if (speedKmh > RunsRepository.MAX_SPEED_KMH) {
-        errors.push(`Speed too high: ${speedKmh.toFixed(1)} km/h, maximum: ${RunsRepository.MAX_SPEED_KMH} km/h`);
+        errors.push(
+          `Speed too high: ${speedKmh.toFixed(1)} km/h, maximum: ${RunsRepository.MAX_SPEED_KMH} km/h`,
+        );
       }
     }
-    
+
     // Check dates consistency
     const start = new Date(data.startedAt);
     const end = new Date(data.endedAt);
     if (end <= start) {
       errors.push('End time must be after start time');
     }
-    
+
     // Check duration matches dates
     const calculatedDuration = Math.round((end.getTime() - start.getTime()) / 1000);
     const durationDiff = Math.abs(calculatedDuration - data.duration);
-    if (durationDiff > 5) { // Allow 5 seconds tolerance
-      errors.push(`Duration mismatch: provided ${data.duration}s, calculated ${calculatedDuration}s`);
+    if (durationDiff > 5) {
+      // Allow 5 seconds tolerance
+      errors.push(
+        `Duration mismatch: provided ${data.duration}s, calculated ${calculatedDuration}s`,
+      );
     }
-    
+
     return {
       valid: errors.length === 0,
       status: errors.length === 0 ? RunStatus.COMPLETED : RunStatus.INVALID,
@@ -133,18 +139,21 @@ export class RunsRepository extends BaseRepository {
   /**
    * Create a new run with validation
    */
-  async create(data: {
-    userId: string;
-    activityId?: string;
-    scoringClubId?: string;
-    startedAt: Date;
-    endedAt: Date;
-    duration: number;
-    distance: number;
-    gpsPoints?: GpsPoint[];
-    rpe?: number;
-    notes?: string;
-  }, client?: import('pg').PoolClient): Promise<{ run: Run; validation: RunValidationResult }> {
+  async create(
+    data: {
+      userId: string;
+      activityId?: string;
+      scoringClubId?: string;
+      startedAt: Date;
+      endedAt: Date;
+      duration: number;
+      distance: number;
+      gpsPoints?: GpsPoint[];
+      rpe?: number;
+      notes?: string;
+    },
+    client?: import('pg').PoolClient,
+  ): Promise<{ run: Run; validation: RunValidationResult }> {
     // Validate
     const validation = this.validateRun({
       duration: data.duration,
@@ -152,7 +161,7 @@ export class RunsRepository extends BaseRepository {
       startedAt: data.startedAt,
       endedAt: data.endedAt,
     });
-    
+
     // Create run record
     const row = await this.queryOne<RunRow>(
       `INSERT INTO runs (user_id, activity_id, scoring_club_id, started_at, ended_at, duration, distance, status, rpe, notes)
@@ -170,42 +179,47 @@ export class RunsRepository extends BaseRepository {
         data.rpe || null,
         data.notes || null,
       ],
-      client
+      client,
     );
 
-    
     const run = rowToRun(row!);
-    
+
     // Save GPS points if provided
     if (data.gpsPoints && data.gpsPoints.length > 0) {
       await this.saveGpsPoints(run.id, data.gpsPoints, client);
     }
-    
+
     return { run, validation };
   }
 
   /**
    * Save GPS points for a run
    */
-  private async saveGpsPoints(runId: string, points: GpsPoint[], client?: import('pg').PoolClient): Promise<void> {
+  private async saveGpsPoints(
+    runId: string,
+    points: GpsPoint[],
+    client?: import('pg').PoolClient,
+  ): Promise<void> {
     if (points.length === 0) return;
-    
+
     // Build bulk insert query
     const values: unknown[] = [];
     const placeholders: string[] = [];
-    
+
     points.forEach((point, index) => {
       // 5 columns per row: run_id, longitude, latitude, timestamp, point_order
       const offset = index * 5;
-      placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5})`);
+      placeholders.push(
+        `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5})`,
+      );
       values.push(runId, point.longitude, point.latitude, point.timestamp || null, index);
     });
-    
+
     await this.query(
       `INSERT INTO run_gps_points (run_id, longitude, latitude, timestamp, point_order)
        VALUES ${placeholders.join(', ')}`,
       values,
-      client
+      client,
     );
   }
 
@@ -215,9 +229,9 @@ export class RunsRepository extends BaseRepository {
   async getGpsPoints(runId: string): Promise<GpsPoint[]> {
     const rows = await this.queryMany<GpsPointRow>(
       'SELECT * FROM run_gps_points WHERE run_id = $1 ORDER BY point_order',
-      [runId]
+      [runId],
     );
-    
+
     return rows.map(row => ({
       longitude: row.longitude,
       latitude: row.latitude,
@@ -245,18 +259,16 @@ export class RunsRepository extends BaseRepository {
         COALESCE(SUM(duration), 0) as total_duration
        FROM runs 
        WHERE user_id = $1 AND status = 'completed'`,
-      [userId]
+      [userId],
     );
-    
+
     const totalRuns = parseInt(result?.total_runs || '0', 10);
     const totalDistance = parseInt(result?.total_distance || '0', 10);
     const totalDuration = parseInt(result?.total_duration || '0', 10);
-    
+
     // Average pace in seconds per km
-    const averagePace = totalDistance > 0 
-      ? Math.round((totalDuration / totalDistance) * 1000) 
-      : 0;
-    
+    const averagePace = totalDistance > 0 ? Math.round((totalDuration / totalDistance) * 1000) : 0;
+
     return {
       totalRuns,
       totalDistance,

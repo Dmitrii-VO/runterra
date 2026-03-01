@@ -13,4 +13,3 @@ export const CLUB_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9
 export function isValidClubId(clubId: string): boolean {
   return CLUB_ID_RE.test(clubId);
 }
-

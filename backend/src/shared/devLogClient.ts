@@ -17,12 +17,24 @@ import type { LogContext } from './logger';
 const IS_DEV = process.env.NODE_ENV !== 'production';
 const IS_TEST = process.env.NODE_ENV === 'test';
 // Default dev log server URL when in dev; empty in prod so nothing is sent.
-const DEV_LOG_SERVER_URL =
-  (process.env.DEV_LOG_SERVER_URL ?? (IS_DEV ? 'http://176.108.255.4:4000' : '')).trim();
+const DEV_LOG_SERVER_URL = (
+  process.env.DEV_LOG_SERVER_URL ?? (IS_DEV ? 'http://176.108.255.4:4000' : '')
+).trim();
 
 /** Keys that must not be sent to the log server (case-insensitive match). */
 const SENSITIVE_KEYS = new Set(
-  ['token', 'password', 'authorization', 'cookie', 'secret', 'apikey', 'api_key', 'coordinates', 'latitude', 'longitude'].map((k) => k.toLowerCase())
+  [
+    'token',
+    'password',
+    'authorization',
+    'cookie',
+    'secret',
+    'apikey',
+    'api_key',
+    'coordinates',
+    'latitude',
+    'longitude',
+  ].map(k => k.toLowerCase()),
 );
 
 function isSensitiveKey(key: string): boolean {
@@ -44,11 +56,7 @@ function sanitizeContext(context: LogContext | undefined): LogContext | undefine
  * No-op when NODE_ENV === 'production' or DEV_LOG_SERVER_URL is not set.
  * Does not throw; errors are swallowed.
  */
-export function sendDevLog(
-  level: 'error' | 'warn',
-  message: string,
-  context?: LogContext
-): void {
+export function sendDevLog(level: 'error' | 'warn', message: string, context?: LogContext): void {
   if (IS_TEST || !IS_DEV || !DEV_LOG_SERVER_URL.trim()) return;
 
   const url = DEV_LOG_SERVER_URL.replace(/\/?$/, '') + '/log';

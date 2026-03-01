@@ -22,12 +22,24 @@ import {
   UpdateClubSchema,
 } from '../modules/clubs';
 import { findCityById } from '../modules/cities/cities.config';
-import { getTerritoriesForCity } from '../modules/territories/territories.config';
 import { validateBody } from './validateBody';
-import { getUsersRepository, getClubMembersRepository, getClubsRepository, getClubChannelsRepository, getScheduleRepository, getEventsRepository, getActivitiesRepository } from '../db/repositories';
+import {
+  getUsersRepository,
+  getClubMembersRepository,
+  getClubsRepository,
+  getClubChannelsRepository,
+  getScheduleRepository,
+  getEventsRepository,
+  getActivitiesRepository,
+} from '../db/repositories';
 import { logger } from '../shared/logger';
 import { isValidClubId } from '../shared/clubId';
-import { CreateWeeklyScheduleItemSchema, CreateWeeklyScheduleItemDto, SetupPersonalPlanSchema, SetupPersonalPlanDto } from '../modules/schedule/schedule.dto';
+import {
+  CreateWeeklyScheduleItemSchema,
+  CreateWeeklyScheduleItemDto,
+  SetupPersonalPlanSchema,
+  SetupPersonalPlanDto,
+} from '../modules/schedule/schedule.dto';
 import { CalendarItemDto, GetCalendarQuerySchema } from '../modules/schedule/calendar.dto';
 import { scheduleGeneratorService } from '../modules/schedule/schedule-generator.service';
 import { notificationsService } from '../modules/notifications/notifications.service';
@@ -82,13 +94,13 @@ async function getCityLeaderboard(cityId: string) {
 
   // Calculate points for each club
   const leaderboard = await Promise.all(
-    activeClubs.map(async (c) => {
+    activeClubs.map(async c => {
       const membersCount = await clubMembersRepo.countActiveMembers(c.id);
       const territoriesCount = clubTerritoriesCount.get(c.id) || 0;
-      
+
       // MVP Formula: 1 pt per member, 10 pts per territory
       const points = membersCount * 1 + territoriesCount * 10;
-      
+
       return {
         id: c.id,
         name: c.name,
@@ -96,7 +108,7 @@ async function getCityLeaderboard(cityId: string) {
         territoriesCount,
         points,
       };
-    })
+    }),
   );
 
   // Sort by points DESC, then by name
@@ -108,6 +120,7 @@ async function getCityLeaderboard(cityId: string) {
     if (i > 0 && leaderboard[i].points < leaderboard[i - 1].points) {
       rank = i + 1;
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (leaderboard[i] as any).rank = rank;
   }
 
@@ -135,7 +148,7 @@ router.get('/leaderboard/:cityId', async (req: Request, res: Response) => {
 
     // Filter top 10
     const top10 = leaderboard.slice(0, 10);
-    
+
     let myClub = null;
     if (clubId) {
       myClub = leaderboard.find(c => c.id === clubId);
@@ -250,7 +263,7 @@ router.get('/my', async (req: Request, res: Response) => {
 
     const clubMembersRepo = getClubMembersRepository();
     const myMemberships = await clubMembersRepo.findActiveClubsByUser(user.id);
-    const myClubs: MyClubViewDto[] = myMemberships.map((membership) => {
+    const myClubs: MyClubViewDto[] = myMemberships.map(membership => {
       const city = findCityById(membership.clubCityId);
       return {
         id: membership.clubId,
@@ -303,7 +316,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     // Calculate rank, members and territories using the leaderboard helper
     const leaderboard = await getCityLeaderboard(club.cityId);
     const clubStats = leaderboard.find(c => c.id === id);
-    
+
     const membersCount = clubStats?.membersCount ?? 0;
     const territoriesCount = clubStats?.territoriesCount ?? 0;
     const cityRank = clubStats?.rank ?? 0;
@@ -381,101 +394,113 @@ router.get('/:id', async (req: Request, res: Response) => {
  * Техническая валидация: тело запроса проверяется через CreateClubSchema.
  * TODO: Реализовать проверку уникальности названия.
  */
-router.post('/', validateBody(CreateClubSchema), async (req: Request<{}, ClubViewDto, CreateClubDto>, res: Response) => {
-  const dto = req.body;
-  const uid = req.authUser?.uid;
+router.post(
+  '/',
+  validateBody(CreateClubSchema),
+  async (req: Request<{}, ClubViewDto, CreateClubDto>, res: Response) => {
+    const dto = req.body;
+    const uid = req.authUser?.uid;
 
-  if (!uid) {
-    return res.status(401).json({
-      code: 'unauthorized',
-      message: 'Authorization required',
-      details: { reason: 'missing_header' },
-    });
-  }
-
-  try {
-    // Get current user
-    const usersRepo = getUsersRepository();
-    const user = await usersRepo.findByFirebaseUid(uid);
-    if (!user) {
-      return res.status(400).json({
-        code: 'validation_error',
-        message: 'Authentication required',
-        details: {
-          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
-        },
+    if (!uid) {
+      return res.status(401).json({
+        code: 'unauthorized',
+        message: 'Authorization required',
+        details: { reason: 'missing_header' },
       });
     }
 
-    // Validate city exists
-    const city = findCityById(dto.cityId);
-    if (!city) {
-      return res.status(400).json({
-        code: 'validation_error',
-        message: 'Request body validation failed',
-        details: {
-          fields: [
-            {
-              field: 'cityId',
-              message: 'Unknown cityId',
-              code: 'city_not_found',
-            },
-          ],
-        },
+    try {
+      // Get current user
+      const usersRepo = getUsersRepository();
+      const user = await usersRepo.findByFirebaseUid(uid);
+      if (!user) {
+        return res.status(400).json({
+          code: 'validation_error',
+          message: 'Authentication required',
+          details: {
+            fields: [
+              { field: 'userId', message: 'User not found for this token', code: 'invalid_user' },
+            ],
+          },
+        });
+      }
+
+      // Validate city exists
+      const city = findCityById(dto.cityId);
+      if (!city) {
+        return res.status(400).json({
+          code: 'validation_error',
+          message: 'Request body validation failed',
+          details: {
+            fields: [
+              {
+                field: 'cityId',
+                message: 'Unknown cityId',
+                code: 'city_not_found',
+              },
+            ],
+          },
+        });
+      }
+
+      // Create club — always PENDING until 2+ active members (auto-activation on approve)
+      const clubsRepo = getClubsRepository();
+
+      // Check if user already in a club
+      const clubMembersRepo = getClubMembersRepository();
+      const activeMemberships = await clubMembersRepo.findActiveByUser(user.id);
+      if (activeMemberships.length > 0) {
+        return res.status(400).json({
+          code: 'validation_error',
+          message: 'You are already a member of another club',
+          details: {
+            fields: [
+              {
+                field: 'userId',
+                message: 'User already has an active club membership',
+                code: 'already_in_another_club',
+              },
+            ],
+          },
+        });
+      }
+
+      const club = await clubsRepo.create(
+        dto.name,
+        dto.cityId,
+        user.id,
+        dto.description,
+        ClubStatus.PENDING,
+      );
+
+      // Auto-add creator as active leader
+      await clubMembersRepo.create(club.id, user.id, 'active', 'leader');
+
+      // Create default channel for the club
+      const clubChannelsRepo = getClubChannelsRepository();
+      await clubChannelsRepo.createDefaultForClub(club.id);
+
+      const clubDto: ClubViewDto = {
+        id: club.id,
+        name: club.name,
+        description: club.description,
+        status: club.status,
+        cityId: club.cityId,
+        createdAt: club.createdAt,
+        updatedAt: club.updatedAt,
+      };
+
+      res.status(201).json(clubDto);
+    } catch (error) {
+      logger.error('Error creating club', { dto, error });
+      res.status(500).json({
+        code: 'internal_error',
+        message: 'Internal server error',
+        details: undefined,
       });
     }
-
-    // Create club — always PENDING until 2+ active members (auto-activation on approve)
-    const clubsRepo = getClubsRepository();
-
-    // Check if user already in a club
-    const clubMembersRepo = getClubMembersRepository();
-    const activeMemberships = await clubMembersRepo.findActiveByUser(user.id);
-    if (activeMemberships.length > 0) {
-      return res.status(400).json({
-        code: 'validation_error',
-        message: 'You are already a member of another club',
-        details: {
-          fields: [{ field: 'userId', message: 'User already has an active club membership', code: 'already_in_another_club' }],
-        },
-      });
-    }
-
-    const club = await clubsRepo.create(
-      dto.name,
-      dto.cityId,
-      user.id,
-      dto.description,
-      ClubStatus.PENDING,
-    );
-
-    // Auto-add creator as active leader
-    await clubMembersRepo.create(club.id, user.id, 'active', 'leader');
-
-    // Create default channel for the club
-    const clubChannelsRepo = getClubChannelsRepository();
-    await clubChannelsRepo.createDefaultForClub(club.id);
-
-    const clubDto: ClubViewDto = {
-      id: club.id,
-      name: club.name,
-      description: club.description,
-      status: club.status,
-      cityId: club.cityId,
-      createdAt: club.createdAt,
-      updatedAt: club.updatedAt,
-    };
-
-    res.status(201).json(clubDto);
-  } catch (error) {
-    logger.error('Error creating club', { dto, error });
-    res.status(500).json({
-      code: 'internal_error',
-      message: 'Internal server error',
-      details: undefined,
-    });
-  }
-});
+  },
+);
 
 /**
  * POST /api/clubs/:id/join
@@ -518,7 +543,9 @@ router.post('/:id/join', async (req: Request, res: Response) => {
         code: 'validation_error',
         message: 'Authentication required',
         details: {
-          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+          fields: [
+            { field: 'userId', message: 'User not found for this token', code: 'invalid_user' },
+          ],
         },
       });
       return;
@@ -627,7 +654,9 @@ router.post('/:id/leave', async (req: Request, res: Response) => {
         code: 'validation_error',
         message: 'Authentication required',
         details: {
-          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+          fields: [
+            { field: 'userId', message: 'User not found for this token', code: 'invalid_user' },
+          ],
         },
       });
       return;
@@ -729,107 +758,117 @@ const UpdateMemberRoleSchema = z.object({
  *
  * Update role of a club member. Only leaders can change roles.
  */
-router.patch('/:id/members/:userId/role', validateBody(UpdateMemberRoleSchema), async (req: Request, res: Response) => {
-  const { id: clubId, userId: targetUserId } = req.params;
-  if (!isValidClubId(clubId)) {
-    return respondInvalidClubId(res);
-  }
+router.patch(
+  '/:id/members/:userId/role',
+  validateBody(UpdateMemberRoleSchema),
+  async (req: Request, res: Response) => {
+    const { id: clubId, userId: targetUserId } = req.params;
+    if (!isValidClubId(clubId)) {
+      return respondInvalidClubId(res);
+    }
 
-  const uid = req.authUser?.uid;
-  if (!uid) {
-    return res.status(401).json({
-      code: 'unauthorized',
-      message: 'Authorization required',
-      details: { reason: 'missing_header' },
-    });
-  }
-
-  const { role } = req.body as { role: 'member' | 'trainer' | 'leader' };
-
-  try {
-    // Get current user
-    const usersRepo = getUsersRepository();
-    const user = await usersRepo.findByFirebaseUid(uid);
-    if (!user) {
-      return res.status(400).json({
-        code: 'validation_error',
-        message: 'Authentication required',
-        details: {
-          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
-        },
+    const uid = req.authUser?.uid;
+    if (!uid) {
+      return res.status(401).json({
+        code: 'unauthorized',
+        message: 'Authorization required',
+        details: { reason: 'missing_header' },
       });
     }
 
-    // Check if club exists
-    const clubsRepo = getClubsRepository();
-    const club = await clubsRepo.findById(clubId);
-    if (!club) {
-      return res.status(404).json({
-        code: 'not_found',
-        message: 'Club not found',
-        details: { clubId },
-      });
-    }
+    const { role } = req.body as { role: 'member' | 'trainer' | 'leader' };
 
-    // Check if requester is a leader
-    const clubMembersRepo = getClubMembersRepository();
-    const requesterMembership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
-    if (!requesterMembership || requesterMembership.role !== 'leader') {
-      return res.status(403).json({
-        code: 'forbidden',
-        message: 'Only club leaders can change member roles',
-        details: { clubId },
-      });
-    }
-
-    // Check if target user is a member
-    const targetMembership = await clubMembersRepo.findByClubAndUser(clubId, targetUserId);
-    if (!targetMembership || targetMembership.status !== 'active') {
-      return res.status(404).json({
-        code: 'not_found',
-        message: 'Member not found in this club',
-        details: { clubId, userId: targetUserId },
-      });
-    }
-
-    // Guardrail: do not allow demoting the last active leader without transferring leadership.
-    // The correct flow is to promote another member to leader (which demotes the current leader to trainer).
-    if (targetMembership.role === 'leader' && role !== 'leader') {
-      const leadersCount = await clubMembersRepo.countActiveLeaders(clubId);
-      if (leadersCount <= 1) {
+    try {
+      // Get current user
+      const usersRepo = getUsersRepository();
+      const user = await usersRepo.findByFirebaseUid(uid);
+      if (!user) {
         return res.status(400).json({
-          code: 'leader_transfer_required',
-          message: 'Transfer leadership before changing leader role',
+          code: 'validation_error',
+          message: 'Authentication required',
+          details: {
+            fields: [
+              { field: 'userId', message: 'User not found for this token', code: 'invalid_user' },
+            ],
+          },
+        });
+      }
+
+      // Check if club exists
+      const clubsRepo = getClubsRepository();
+      const club = await clubsRepo.findById(clubId);
+      if (!club) {
+        return res.status(404).json({
+          code: 'not_found',
+          message: 'Club not found',
           details: { clubId },
         });
       }
-    }
 
-    // Update role (with leader transfer: demote old leader when promoting new one)
-    const updated = await clubMembersRepo.updateRoleWithLeaderTransfer(clubId, targetUserId, role);
-    if (!updated) {
-      return res.status(500).json({
+      // Check if requester is a leader
+      const clubMembersRepo = getClubMembersRepository();
+      const requesterMembership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
+      if (!requesterMembership || requesterMembership.role !== 'leader') {
+        return res.status(403).json({
+          code: 'forbidden',
+          message: 'Only club leaders can change member roles',
+          details: { clubId },
+        });
+      }
+
+      // Check if target user is a member
+      const targetMembership = await clubMembersRepo.findByClubAndUser(clubId, targetUserId);
+      if (!targetMembership || targetMembership.status !== 'active') {
+        return res.status(404).json({
+          code: 'not_found',
+          message: 'Member not found in this club',
+          details: { clubId, userId: targetUserId },
+        });
+      }
+
+      // Guardrail: do not allow demoting the last active leader without transferring leadership.
+      // The correct flow is to promote another member to leader (which demotes the current leader to trainer).
+      if (targetMembership.role === 'leader' && role !== 'leader') {
+        const leadersCount = await clubMembersRepo.countActiveLeaders(clubId);
+        if (leadersCount <= 1) {
+          return res.status(400).json({
+            code: 'leader_transfer_required',
+            message: 'Transfer leadership before changing leader role',
+            details: { clubId },
+          });
+        }
+      }
+
+      // Update role (with leader transfer: demote old leader when promoting new one)
+      const updated = await clubMembersRepo.updateRoleWithLeaderTransfer(
+        clubId,
+        targetUserId,
+        role,
+      );
+      if (!updated) {
+        return res.status(500).json({
+          code: 'internal_error',
+          message: 'Failed to update role',
+          details: undefined,
+        });
+      }
+
+      res.status(200).json({
+        userId: updated.userId,
+        clubId: updated.clubId,
+        role: updated.role,
+        status: updated.status,
+      });
+    } catch (error) {
+      logger.error('Error updating member role', { clubId, targetUserId, role, error });
+      res.status(500).json({
         code: 'internal_error',
-        message: 'Failed to update role',
+        message: 'Internal server error',
         details: undefined,
       });
     }
-
-    res.status(200).json({
-      userId: updated.userId,
-      clubId: updated.clubId,
-      role: updated.role,
-      status: updated.status,
-    });
-  } catch (error) {
-    logger.error('Error updating member role', { clubId, targetUserId, role, error });
-    res.status(500).json({
-      code: 'internal_error',
-      message: 'Internal server error',
-      details: undefined,
-    });
-  }
-});
+  },
+);
 
 /**
  * PATCH /api/clubs/:id
@@ -837,93 +876,99 @@ router.patch('/:id/members/:userId/role', validateBody(UpdateMemberRoleSchema), 
  * Редактирование клуба (название, описание).
  * Только лидер клуба может редактировать.
  */
-router.patch('/:id', validateBody(UpdateClubSchema), async (req: Request<{ id: string }, ClubViewDto, UpdateClubDto>, res: Response) => {
-  const { id: clubId } = req.params;
-  if (!isValidClubId(clubId)) {
-    return respondInvalidClubId(res);
-  }
+router.patch(
+  '/:id',
+  validateBody(UpdateClubSchema),
+  async (req: Request<{ id: string }, ClubViewDto, UpdateClubDto>, res: Response) => {
+    const { id: clubId } = req.params;
+    if (!isValidClubId(clubId)) {
+      return respondInvalidClubId(res);
+    }
 
-  const uid = req.authUser?.uid;
-  if (!uid) {
-    return res.status(401).json({
-      code: 'unauthorized',
-      message: 'Authorization required',
-      details: { reason: 'missing_header' },
-    });
-  }
-
-  const dto = req.body;
-
-  try {
-    // Get current user
-    const usersRepo = getUsersRepository();
-    const user = await usersRepo.findByFirebaseUid(uid);
-    if (!user) {
-      return res.status(400).json({
-        code: 'validation_error',
-        message: 'Authentication required',
-        details: {
-          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
-        },
+    const uid = req.authUser?.uid;
+    if (!uid) {
+      return res.status(401).json({
+        code: 'unauthorized',
+        message: 'Authorization required',
+        details: { reason: 'missing_header' },
       });
     }
 
-    // Check if club exists
-    const clubsRepo = getClubsRepository();
-    const club = await clubsRepo.findById(clubId);
-    if (!club) {
-      return res.status(404).json({
-        code: 'not_found',
-        message: 'Club not found',
-        details: { clubId },
+    const dto = req.body;
+
+    try {
+      // Get current user
+      const usersRepo = getUsersRepository();
+      const user = await usersRepo.findByFirebaseUid(uid);
+      if (!user) {
+        return res.status(400).json({
+          code: 'validation_error',
+          message: 'Authentication required',
+          details: {
+            fields: [
+              { field: 'userId', message: 'User not found for this token', code: 'invalid_user' },
+            ],
+          },
+        });
+      }
+
+      // Check if club exists
+      const clubsRepo = getClubsRepository();
+      const club = await clubsRepo.findById(clubId);
+      if (!club) {
+        return res.status(404).json({
+          code: 'not_found',
+          message: 'Club not found',
+          details: { clubId },
+        });
+      }
+
+      // Check if user is a leader
+      const clubMembersRepo = getClubMembersRepository();
+      const membership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
+      if (!membership || membership.role !== 'leader') {
+        return res.status(403).json({
+          code: 'forbidden',
+          message: 'Only club leaders can edit the club',
+          details: { clubId },
+        });
+      }
+
+      // Update club
+      const updatedClub = await clubsRepo.update(clubId, {
+        name: dto.name,
+        description: dto.description,
       });
-    }
 
-    // Check if user is a leader
-    const clubMembersRepo = getClubMembersRepository();
-    const membership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
-    if (!membership || membership.role !== 'leader') {
-      return res.status(403).json({
-        code: 'forbidden',
-        message: 'Only club leaders can edit the club',
-        details: { clubId },
-      });
-    }
+      if (!updatedClub) {
+        return res.status(500).json({
+          code: 'internal_error',
+          message: 'Failed to update club',
+          details: undefined,
+        });
+      }
 
-    // Update club
-    const updatedClub = await clubsRepo.update(clubId, {
-      name: dto.name,
-      description: dto.description,
-    });
+      const clubDto: ClubViewDto = {
+        id: updatedClub.id,
+        name: updatedClub.name,
+        description: updatedClub.description,
+        status: updatedClub.status,
+        cityId: updatedClub.cityId,
+        createdAt: updatedClub.createdAt,
+        updatedAt: updatedClub.updatedAt,
+      };
 
-    if (!updatedClub) {
-      return res.status(500).json({
+      res.status(200).json(clubDto);
+    } catch (error) {
+      logger.error('Error updating club', { clubId, dto, error });
+      res.status(500).json({
         code: 'internal_error',
-        message: 'Failed to update club',
+        message: 'Internal server error',
         details: undefined,
       });
     }
-
-    const clubDto: ClubViewDto = {
-      id: updatedClub.id,
-      name: updatedClub.name,
-      description: updatedClub.description,
-      status: updatedClub.status,
-      cityId: updatedClub.cityId,
-      createdAt: updatedClub.createdAt,
-      updatedAt: updatedClub.updatedAt,
-    };
-
-    res.status(200).json(clubDto);
-  } catch (error) {
-    logger.error('Error updating club', { clubId, dto, error });
-    res.status(500).json({
-      code: 'internal_error',
-      message: 'Internal server error',
-      details: undefined,
-    });
-  }
-});
+  },
+);
 
 /**
  * DELETE /api/clubs/:id
@@ -954,7 +999,9 @@ router.delete('/:id', async (req: Request, res: Response) => {
         code: 'validation_error',
         message: 'Authentication required',
         details: {
-          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+          fields: [
+            { field: 'userId', message: 'User not found for this token', code: 'invalid_user' },
+          ],
         },
       });
     }
@@ -1028,7 +1075,9 @@ router.get('/:id/channels', async (req: Request, res: Response) => {
         code: 'validation_error',
         message: 'Authentication required',
         details: {
-          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+          fields: [
+            { field: 'userId', message: 'User not found for this token', code: 'invalid_user' },
+          ],
         },
       });
     }
@@ -1046,14 +1095,16 @@ router.get('/:id/channels', async (req: Request, res: Response) => {
     const clubChannelsRepo = getClubChannelsRepository();
     const channels = await clubChannelsRepo.findByClub(clubId);
 
-    res.status(200).json(channels.map(ch => ({
-      id: ch.id,
-      clubId: ch.clubId,
-      type: ch.type,
-      name: ch.name,
-      isDefault: ch.isDefault,
-      createdAt: ch.createdAt,
-    })));
+    res.status(200).json(
+      channels.map(ch => ({
+        id: ch.id,
+        clubId: ch.clubId,
+        type: ch.type,
+        name: ch.name,
+        isDefault: ch.isDefault,
+        createdAt: ch.createdAt,
+      })),
+    );
   } catch (error) {
     logger.error('Error fetching club channels', { clubId, error });
     res.status(500).json({
@@ -1103,7 +1154,9 @@ router.post('/:id/channels', async (req: Request, res: Response) => {
         code: 'validation_error',
         message: 'Authentication required',
         details: {
-          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+          fields: [
+            { field: 'userId', message: 'User not found for this token', code: 'invalid_user' },
+          ],
         },
       });
     }
@@ -1167,7 +1220,9 @@ router.get('/:id/membership-requests', async (req: Request, res: Response) => {
         code: 'validation_error',
         message: 'Authentication required',
         details: {
-          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+          fields: [
+            { field: 'userId', message: 'User not found for this token', code: 'invalid_user' },
+          ],
         },
       });
     }
@@ -1222,7 +1277,9 @@ router.post('/:id/membership-requests/:userId/approve', async (req: Request, res
         code: 'validation_error',
         message: 'Authentication required',
         details: {
-          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+          fields: [
+            { field: 'userId', message: 'User not found for this token', code: 'invalid_user' },
+          ],
         },
       });
     }
@@ -1297,7 +1354,9 @@ router.post('/:id/membership-requests/:userId/reject', async (req: Request, res:
         code: 'validation_error',
         message: 'Authentication required',
         details: {
-          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+          fields: [
+            { field: 'userId', message: 'User not found for this token', code: 'invalid_user' },
+          ],
         },
       });
     }
@@ -1364,49 +1423,57 @@ router.get('/:id/schedule', async (req: Request, res: Response) => {
  *
  * Добавить элемент в недельный шаблон. Только для лидеров и тренеров.
  */
-router.post('/:id/schedule', validateBody(CreateWeeklyScheduleItemSchema), async (req: Request, res: Response) => {
-  const { id: clubId } = req.params;
-  if (!isValidClubId(clubId)) {
-    return respondInvalidClubId(res);
-  }
-
-  const uid = req.authUser?.uid;
-  if (!uid) {
-    return res.status(401).json({
-      code: 'unauthorized',
-      message: 'Authorization required',
-    });
-  }
-
-  const dto = req.body as CreateWeeklyScheduleItemDto;
-
-  try {
-    const usersRepo = getUsersRepository();
-    const user = await usersRepo.findByFirebaseUid(uid);
-    if (!user) {
-      return res.status(401).json({ code: 'unauthorized', message: 'User not found' });
+router.post(
+  '/:id/schedule',
+  validateBody(CreateWeeklyScheduleItemSchema),
+  async (req: Request, res: Response) => {
+    const { id: clubId } = req.params;
+    if (!isValidClubId(clubId)) {
+      return respondInvalidClubId(res);
     }
 
-    const membersRepo = getClubMembersRepository();
-    const membership = await membersRepo.findByClubAndUser(clubId, user.id);
-    if (!membership || !['leader', 'trainer'].includes(membership.role) || membership.status !== 'active') {
-      return res.status(403).json({
-        code: 'forbidden',
-        message: 'Only club leaders and trainers can manage schedule',
+    const uid = req.authUser?.uid;
+    if (!uid) {
+      return res.status(401).json({
+        code: 'unauthorized',
+        message: 'Authorization required',
       });
     }
 
-    const scheduleRepo = getScheduleRepository();
-    const newItem = await scheduleRepo.createWeeklyItem(clubId, dto);
-    res.status(201).json(newItem);
-  } catch (error) {
-    logger.error('Error creating schedule item', { clubId, error });
-    res.status(500).json({
-      code: 'internal_error',
-      message: 'Internal server error',
-    });
-  }
-});
+    const dto = req.body as CreateWeeklyScheduleItemDto;
+
+    try {
+      const usersRepo = getUsersRepository();
+      const user = await usersRepo.findByFirebaseUid(uid);
+      if (!user) {
+        return res.status(401).json({ code: 'unauthorized', message: 'User not found' });
+      }
+
+      const membersRepo = getClubMembersRepository();
+      const membership = await membersRepo.findByClubAndUser(clubId, user.id);
+      if (
+        !membership ||
+        !['leader', 'trainer'].includes(membership.role) ||
+        membership.status !== 'active'
+      ) {
+        return res.status(403).json({
+          code: 'forbidden',
+          message: 'Only club leaders and trainers can manage schedule',
+        });
+      }
+
+      const scheduleRepo = getScheduleRepository();
+      const newItem = await scheduleRepo.createWeeklyItem(clubId, dto);
+      res.status(201).json(newItem);
+    } catch (error) {
+      logger.error('Error creating schedule item', { clubId, error });
+      res.status(500).json({
+        code: 'internal_error',
+        message: 'Internal server error',
+      });
+    }
+  },
+);
 
 /**
  * DELETE /api/clubs/:id/schedule/:itemId
@@ -1436,7 +1503,11 @@ router.delete('/:id/schedule/:itemId', async (req: Request, res: Response) => {
 
     const membersRepo = getClubMembersRepository();
     const membership = await membersRepo.findByClubAndUser(clubId, user.id);
-    if (!membership || !['leader', 'trainer'].includes(membership.role) || membership.status !== 'active') {
+    if (
+      !membership ||
+      !['leader', 'trainer'].includes(membership.role) ||
+      membership.status !== 'active'
+    ) {
       return res.status(403).json({
         code: 'forbidden',
         message: 'Only club leaders and trainers can manage schedule',
@@ -1460,7 +1531,7 @@ router.delete('/:id/schedule/:itemId', async (req: Request, res: Response) => {
       clubId,
       'Тренировка отменена',
       'В расписании клуба произошли изменения: одна из тренировок была отменена.',
-      { clubId, type: 'schedule_item_deleted' }
+      { clubId, type: 'schedule_item_deleted' },
     );
 
     res.status(204).send();
@@ -1478,53 +1549,61 @@ router.delete('/:id/schedule/:itemId', async (req: Request, res: Response) => {
  *
  * Обновить элемент шаблона. Только для лидеров и тренеров.
  */
-router.patch('/:id/schedule/:itemId', validateBody(CreateWeeklyScheduleItemSchema.partial()), async (req: Request, res: Response) => {
-  const { id: clubId, itemId } = req.params;
-  if (!isValidClubId(clubId)) {
-    return respondInvalidClubId(res);
-  }
-
-  const uid = req.authUser?.uid;
-  if (!uid) {
-    return res.status(401).json({ code: 'unauthorized', message: 'Authorization required' });
-  }
-
-  const dto = req.body as Partial<CreateWeeklyScheduleItemDto>;
-
-  try {
-    const usersRepo = getUsersRepository();
-    const user = await usersRepo.findByFirebaseUid(uid);
-    if (!user) return res.status(401).json({ code: 'unauthorized', message: 'User not found' });
-
-    const membersRepo = getClubMembersRepository();
-    const membership = await membersRepo.findByClubAndUser(clubId, user.id);
-    if (!membership || !['leader', 'trainer'].includes(membership.role) || membership.status !== 'active') {
-      return res.status(403).json({ code: 'forbidden', message: 'Access denied' });
+router.patch(
+  '/:id/schedule/:itemId',
+  validateBody(CreateWeeklyScheduleItemSchema.partial()),
+  async (req: Request, res: Response) => {
+    const { id: clubId, itemId } = req.params;
+    if (!isValidClubId(clubId)) {
+      return respondInvalidClubId(res);
     }
 
-    const scheduleRepo = getScheduleRepository();
-    const updated = await scheduleRepo.updateWeeklyItem(itemId, dto);
-    if (!updated) {
-      return res.status(404).json({ code: 'not_found', message: 'Schedule item not found' });
+    const uid = req.authUser?.uid;
+    if (!uid) {
+      return res.status(401).json({ code: 'unauthorized', message: 'Authorization required' });
     }
 
-    // Trigger sync with future events
-    await scheduleGeneratorService.syncTemplateChanges(itemId, 'club');
+    const dto = req.body as Partial<CreateWeeklyScheduleItemDto>;
 
-    // Notify club members about changes
-    await notificationsService.notifyClubMembers(
-      clubId,
-      'Изменение в расписании',
-      'В расписании клуба произошли изменения. Проверьте актуальное время тренировок.',
-      { clubId, type: 'schedule_item_updated' }
-    );
+    try {
+      const usersRepo = getUsersRepository();
+      const user = await usersRepo.findByFirebaseUid(uid);
+      if (!user) return res.status(401).json({ code: 'unauthorized', message: 'User not found' });
 
-    res.status(200).json(updated);
-  } catch (error) {
-    logger.error('Error updating schedule item', { clubId, itemId, error });
-    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
-  }
-});
+      const membersRepo = getClubMembersRepository();
+      const membership = await membersRepo.findByClubAndUser(clubId, user.id);
+      if (
+        !membership ||
+        !['leader', 'trainer'].includes(membership.role) ||
+        membership.status !== 'active'
+      ) {
+        return res.status(403).json({ code: 'forbidden', message: 'Access denied' });
+      }
+
+      const scheduleRepo = getScheduleRepository();
+      const updated = await scheduleRepo.updateWeeklyItem(itemId, dto);
+      if (!updated) {
+        return res.status(404).json({ code: 'not_found', message: 'Schedule item not found' });
+      }
+
+      // Trigger sync with future events
+      await scheduleGeneratorService.syncTemplateChanges(itemId, 'club');
+
+      // Notify club members about changes
+      await notificationsService.notifyClubMembers(
+        clubId,
+        'Изменение в расписании',
+        'В расписании клуба произошли изменения. Проверьте актуальное время тренировок.',
+        { clubId, type: 'schedule_item_updated' },
+      );
+
+      res.status(200).json(updated);
+    } catch (error) {
+      logger.error('Error updating schedule item', { clubId, itemId, error });
+      res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+    }
+  },
+);
 
 /**
  * POST /api/clubs/:id/members/:userId/personal-schedule
@@ -1532,59 +1611,69 @@ router.patch('/:id/schedule/:itemId', validateBody(CreateWeeklyScheduleItemSchem
  * Настроить личный план для участника клуба. Только для лидеров и тренеров.
  * Автоматически переключает plan_type в 'personal'.
  */
-router.post('/:id/members/:userId/personal-schedule', validateBody(SetupPersonalPlanSchema), async (req: Request, res: Response) => {
-  const { id: clubId, userId: targetUserId } = req.params;
-  if (!isValidClubId(clubId)) {
-    return respondInvalidClubId(res);
-  }
-
-  const uid = req.authUser?.uid;
-  if (!uid) {
-    return res.status(401).json({ code: 'unauthorized', message: 'Authorization required' });
-  }
-
-  const { items } = req.body as SetupPersonalPlanDto;
-
-  try {
-    const usersRepo = getUsersRepository();
-    const user = await usersRepo.findByFirebaseUid(uid);
-    if (!user) return res.status(401).json({ code: 'unauthorized', message: 'User not found' });
-
-    // Проверка прав (только лидеры и тренеры могут менять планы участникам)
-    const membersRepo = getClubMembersRepository();
-    const requesterMembership = await membersRepo.findByClubAndUser(clubId, user.id);
-    if (!requesterMembership || !['leader', 'trainer'].includes(requesterMembership.role) || requesterMembership.status !== 'active') {
-      return res.status(403).json({ code: 'forbidden', message: 'Access denied' });
+router.post(
+  '/:id/members/:userId/personal-schedule',
+  validateBody(SetupPersonalPlanSchema),
+  async (req: Request, res: Response) => {
+    const { id: clubId, userId: targetUserId } = req.params;
+    if (!isValidClubId(clubId)) {
+      return respondInvalidClubId(res);
     }
 
-    // Проверка, что целевой пользователь — участник клуба
-    const targetMembership = await membersRepo.findByClubAndUser(clubId, targetUserId);
-    if (!targetMembership || targetMembership.status !== 'active') {
-      return res.status(404).json({ code: 'not_found', message: 'Target member not found in this club' });
+    const uid = req.authUser?.uid;
+    if (!uid) {
+      return res.status(401).json({ code: 'unauthorized', message: 'Authorization required' });
     }
 
-    const scheduleRepo = getScheduleRepository();
-    
-    // 1. Заменяем личный шаблон
-    const createdItems = await scheduleRepo.replacePersonalSchedule(targetUserId, items);
-    
-    // 2. Переключаем тип плана на 'personal'
-    await membersRepo.setPlanType(clubId, targetUserId, 'personal');
+    const { items } = req.body as SetupPersonalPlanDto;
 
-    // 3. Отправляем уведомление пользователю
-    await notificationsService.sendPush(
-      targetUserId,
-      'Обновление плана',
-      'Тренер обновил ваш персональный тренировочный план.',
-      { clubId, type: 'personal_plan_updated' }
-    );
+    try {
+      const usersRepo = getUsersRepository();
+      const user = await usersRepo.findByFirebaseUid(uid);
+      if (!user) return res.status(401).json({ code: 'unauthorized', message: 'User not found' });
 
-    res.status(200).json(createdItems);
-  } catch (error) {
-    logger.error('Error setting personal schedule', { clubId, targetUserId, error });
-    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
-  }
-});
+      // Проверка прав (только лидеры и тренеры могут менять планы участникам)
+      const membersRepo = getClubMembersRepository();
+      const requesterMembership = await membersRepo.findByClubAndUser(clubId, user.id);
+      if (
+        !requesterMembership ||
+        !['leader', 'trainer'].includes(requesterMembership.role) ||
+        requesterMembership.status !== 'active'
+      ) {
+        return res.status(403).json({ code: 'forbidden', message: 'Access denied' });
+      }
+
+      // Проверка, что целевой пользователь — участник клуба
+      const targetMembership = await membersRepo.findByClubAndUser(clubId, targetUserId);
+      if (!targetMembership || targetMembership.status !== 'active') {
+        return res
+          .status(404)
+          .json({ code: 'not_found', message: 'Target member not found in this club' });
+      }
+
+      const scheduleRepo = getScheduleRepository();
+
+      // 1. Заменяем личный шаблон
+      const createdItems = await scheduleRepo.replacePersonalSchedule(targetUserId, items);
+
+      // 2. Переключаем тип плана на 'personal'
+      await membersRepo.setPlanType(clubId, targetUserId, 'personal');
+
+      // 3. Отправляем уведомление пользователю
+      await notificationsService.sendPush(
+        targetUserId,
+        'Обновление плана',
+        'Тренер обновил ваш персональный тренировочный план.',
+        { clubId, type: 'personal_plan_updated' },
+      );
+
+      res.status(200).json(createdItems);
+    } catch (error) {
+      logger.error('Error setting personal schedule', { clubId, targetUserId, error });
+      res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+    }
+  },
+);
 
 /**
  * GET /api/clubs/:id/calendar
@@ -1608,7 +1697,9 @@ router.get('/:id/calendar', async (req: Request, res: Response) => {
     const membersRepo = getClubMembersRepository();
     const membership = await membersRepo.findByClubAndUser(clubId, user.id);
     if (!membership || membership.status !== 'active') {
-      return res.status(403).json({ code: 'forbidden', message: 'Only club members can view calendar' });
+      return res
+        .status(403)
+        .json({ code: 'forbidden', message: 'Only club members can view calendar' });
     }
 
     const eventsRepo = getEventsRepository();

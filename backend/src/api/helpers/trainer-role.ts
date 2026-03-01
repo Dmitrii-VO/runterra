@@ -7,7 +7,7 @@ import { getClubMembersRepository } from '../../db/repositories';
 export async function isTrainerInAnyClub(userId: string): Promise<boolean> {
   const repo = getClubMembersRepository();
   const clubs = await repo.findActiveClubsByUser(userId);
-  return clubs.some((c) => c.role === 'trainer' || c.role === 'leader');
+  return clubs.some(c => c.role === 'trainer' || c.role === 'leader');
 }
 
 export async function isTrainerOrLeaderInClub(userId: string, clubId: string): Promise<boolean> {

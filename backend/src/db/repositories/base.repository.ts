@@ -14,7 +14,11 @@ export abstract class BaseRepository {
     return pool;
   }
 
-  protected async query<T extends QueryResultRow>(sql: string, params?: unknown[], client?: PoolClient): Promise<QueryResult<T>> {
+  protected async query<T extends QueryResultRow>(
+    sql: string,
+    params?: unknown[],
+    client?: PoolClient,
+  ): Promise<QueryResult<T>> {
     if (client) {
       return client.query<T>(sql, params);
     }
@@ -22,12 +26,20 @@ export abstract class BaseRepository {
     return pool.query<T>(sql, params);
   }
 
-  protected async queryOne<T extends QueryResultRow>(sql: string, params?: unknown[], client?: PoolClient): Promise<T | null> {
+  protected async queryOne<T extends QueryResultRow>(
+    sql: string,
+    params?: unknown[],
+    client?: PoolClient,
+  ): Promise<T | null> {
     const result = await this.query<T>(sql, params, client);
     return result.rows[0] || null;
   }
 
-  protected async queryMany<T extends QueryResultRow>(sql: string, params?: unknown[], client?: PoolClient): Promise<T[]> {
+  protected async queryMany<T extends QueryResultRow>(
+    sql: string,
+    params?: unknown[],
+    client?: PoolClient,
+  ): Promise<T[]> {
     const result = await this.query<T>(sql, params, client);
     return result.rows;
   }

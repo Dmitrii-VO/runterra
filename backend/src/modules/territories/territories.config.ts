@@ -1,5 +1,4 @@
 import { TerritoryViewDto, ZoneTier, LeaderboardEntryDto, ClubProgressDto } from './territory.dto';
-import { TerritoryStatus } from './territory.status';
 import type { GeoCoordinates } from '../../shared/types/coordinates';
 
 /**
@@ -17,11 +16,7 @@ const METERS_PER_DEGREE_LON_EQUATOR = 111320;
  * Uses equirectangular projection approximation with cos(lat) correction
  * for longitude. This is sufficient for city-scale zones (<10km).
  */
-function generateSquareGeometry(
-  lat: number,
-  lon: number,
-  sizeInMeters: number,
-): GeoCoordinates[] {
+function generateSquareGeometry(lat: number, lon: number, sizeInMeters: number): GeoCoordinates[] {
   const halfSizeMeters = sizeInMeters / 2;
   const latOffset = halfSizeMeters / METERS_PER_DEGREE_LAT;
 
@@ -41,41 +36,51 @@ import { SPB_DISTRICTS_DATA } from './spb-districts.data';
 
 // --- Tier configuration ---
 
-const TIER_CONFIG: Record<ZoneTier, { paceThreshold: string; pointMultiplier: number; color: string }> = {
+const TIER_CONFIG: Record<
+  ZoneTier,
+  { paceThreshold: string; pointMultiplier: number; color: string }
+> = {
   green: { paceThreshold: '7:00', pointMultiplier: 1.2, color: '#4CAF50' },
-  blue:  { paceThreshold: '5:30', pointMultiplier: 1.3, color: '#2196F3' },
-  red:   { paceThreshold: '4:30', pointMultiplier: 1.4, color: '#F44336' },
+  blue: { paceThreshold: '5:30', pointMultiplier: 1.3, color: '#2196F3' },
+  red: { paceThreshold: '4:30', pointMultiplier: 1.4, color: '#F44336' },
   black: { paceThreshold: '4:00', pointMultiplier: 1.5, color: '#212121' },
 };
 
 // --- Mock activity data per district ---
 
 const DISTRICT_MOCK_ACTIVITY: Record<string, { totalKm: number; avgPace: string }> = {
-  'spb-admiralteyskiy':    { totalKm: 320, avgPace: '5:45' },
-  'spb-vasileostrovskiy':  { totalKm: 180, avgPace: '6:10' },
-  'spb-vyborgskiy':        { totalKm: 45,  avgPace: '7:20' },
-  'spb-kalininskiy':       { totalKm: 90,  avgPace: '6:30' },
-  'spb-kirovskiy':         { totalKm: 30,  avgPace: '7:40' },
-  'spb-kolpinskiy':        { totalKm: 15,  avgPace: '8:00' },
+  'spb-admiralteyskiy': { totalKm: 320, avgPace: '5:45' },
+  'spb-vasileostrovskiy': { totalKm: 180, avgPace: '6:10' },
+  'spb-vyborgskiy': { totalKm: 45, avgPace: '7:20' },
+  'spb-kalininskiy': { totalKm: 90, avgPace: '6:30' },
+  'spb-kirovskiy': { totalKm: 30, avgPace: '7:40' },
+  'spb-kolpinskiy': { totalKm: 15, avgPace: '8:00' },
   'spb-krasnogvardeyskiy': { totalKm: 210, avgPace: '5:20' },
-  'spb-krasnoselskiy':     { totalKm: 25,  avgPace: '7:10' },
-  'spb-kronshtadtskiy':    { totalKm: 10,  avgPace: '7:50' },
-  'spb-kurortnyy':         { totalKm: 60,  avgPace: '6:50' },
-  'spb-moskovskiy':        { totalKm: 250, avgPace: '5:10' },
-  'spb-nevskiy':           { totalKm: 150, avgPace: '5:40' },
-  'spb-petrogradskiy':     { totalKm: 550, avgPace: '4:20' },
-  'spb-petrodvorcovyy':    { totalKm: 35,  avgPace: '7:30' },
-  'spb-primorskiy':        { totalKm: 480, avgPace: '4:40' },
-  'spb-pushkinskiy':       { totalKm: 40,  avgPace: '7:00' },
-  'spb-frunzenskiy':       { totalKm: 120, avgPace: '6:00' },
-  'spb-centralnyy':        { totalKm: 600, avgPace: '4:10' },
+  'spb-krasnoselskiy': { totalKm: 25, avgPace: '7:10' },
+  'spb-kronshtadtskiy': { totalKm: 10, avgPace: '7:50' },
+  'spb-kurortnyy': { totalKm: 60, avgPace: '6:50' },
+  'spb-moskovskiy': { totalKm: 250, avgPace: '5:10' },
+  'spb-nevskiy': { totalKm: 150, avgPace: '5:40' },
+  'spb-petrogradskiy': { totalKm: 550, avgPace: '4:20' },
+  'spb-petrodvorcovyy': { totalKm: 35, avgPace: '7:30' },
+  'spb-primorskiy': { totalKm: 480, avgPace: '4:40' },
+  'spb-pushkinskiy': { totalKm: 40, avgPace: '7:00' },
+  'spb-frunzenskiy': { totalKm: 120, avgPace: '6:00' },
+  'spb-centralnyy': { totalKm: 600, avgPace: '4:10' },
 };
 
 // Fake club names for deterministic leaderboard generation
 const FAKE_CLUBS = [
-  'RunnersPro', 'NevaBears', 'PiterStride', 'NorthWind RC',
-  'BalticRunners', 'FinnishLine', 'GraniteSoles', 'WhiteNights RC',
-  'BridgeRunners', 'CanalCrew',
+  'RunnersPro',
+  'NevaBears',
+  'PiterStride',
+  'NorthWind RC',
+  'BalticRunners',
+  'FinnishLine',
+  'GraniteSoles',
+  'WhiteNights RC',
+  'BridgeRunners',
+  'CanalCrew',
 ];
 
 /**
@@ -149,7 +154,9 @@ function generateMockLeaderboard(districtId: string): LeaderboardEntryDto[] {
 
   // Sort by totalKm descending and reassign positions
   entries.sort((a, b) => b.totalKm - a.totalKm);
-  entries.forEach((e, idx) => { e.position = idx + 1; });
+  entries.forEach((e, idx) => {
+    e.position = idx + 1;
+  });
 
   return entries;
 }
@@ -201,13 +208,12 @@ export function resolveMyClubProgress(
   if (!userClubIds.length || !leaderboard.length) return null;
 
   const userClubSet = new Set(userClubIds);
-  const entry = leaderboard.find((e) => userClubSet.has(e.clubId));
+  const entry = leaderboard.find(e => userClubSet.has(e.clubId));
   if (!entry) return null;
 
   const leaderKm = leaderboard[0].totalKm;
-  const gapToLeader = entry.position === 1
-    ? leaderKm - (leaderboard[1]?.totalKm ?? 0)
-    : entry.totalKm - leaderKm;
+  const gapToLeader =
+    entry.position === 1 ? leaderKm - (leaderboard[1]?.totalKm ?? 0) : entry.totalKm - leaderKm;
 
   return {
     clubId: entry.clubId,
@@ -226,16 +232,12 @@ function materializeLight(config: StaticTerritoryConfig): TerritoryViewDto {
   const now = new Date();
   const { coordinates, geometry: manualGeometry } = config;
 
-  const geometry = manualGeometry || generateSquareGeometry(
-    coordinates.latitude,
-    coordinates.longitude,
-    TERRITORY_SQUARE_SIZE_M,
-  );
+  const geometry =
+    manualGeometry ||
+    generateSquareGeometry(coordinates.latitude, coordinates.longitude, TERRITORY_SQUARE_SIZE_M);
 
   const activity = DISTRICT_MOCK_ACTIVITY[config.id];
-  const tier: ZoneTier = activity
-    ? computeTier(activity.totalKm, activity.avgPace)
-    : 'green';
+  const tier: ZoneTier = activity ? computeTier(activity.totalKm, activity.avgPace) : 'green';
   const tierCfg = TIER_CONFIG[tier];
 
   return {
@@ -259,16 +261,12 @@ function materializeFull(config: StaticTerritoryConfig): TerritoryViewDto {
   const now = new Date();
   const { coordinates, geometry: manualGeometry } = config;
 
-  const geometry = manualGeometry || generateSquareGeometry(
-    coordinates.latitude,
-    coordinates.longitude,
-    TERRITORY_SQUARE_SIZE_M,
-  );
+  const geometry =
+    manualGeometry ||
+    generateSquareGeometry(coordinates.latitude, coordinates.longitude, TERRITORY_SQUARE_SIZE_M);
 
   const activity = DISTRICT_MOCK_ACTIVITY[config.id];
-  const tier: ZoneTier = activity
-    ? computeTier(activity.totalKm, activity.avgPace)
-    : 'green';
+  const tier: ZoneTier = activity ? computeTier(activity.totalKm, activity.avgPace) : 'green';
   const tierCfg = TIER_CONFIG[tier];
 
   const leaderboard = generateMockLeaderboard(config.id);
@@ -290,18 +288,13 @@ function materializeFull(config: StaticTerritoryConfig): TerritoryViewDto {
   };
 }
 
-export function getTerritoriesForCity(
-  cityId: string,
-): TerritoryViewDto[] {
-  const source =
-    cityId === 'spb'
-      ? SPB_TERRITORIES_CONFIG
-      : [];
+export function getTerritoriesForCity(cityId: string): TerritoryViewDto[] {
+  const source = cityId === 'spb' ? SPB_TERRITORIES_CONFIG : [];
 
   return source.map(materializeLight);
 }
 
 export function getTerritoryById(id: string): TerritoryViewDto | null {
-  const config = SPB_TERRITORIES_CONFIG.find((t) => t.id === id);
+  const config = SPB_TERRITORIES_CONFIG.find(t => t.id === id);
   return config ? materializeFull(config) : null;
 }

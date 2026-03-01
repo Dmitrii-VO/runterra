@@ -38,6 +38,5 @@ export function getAllCities(): City[] {
 }
 
 export function findCityById(id: string): City | undefined {
-  return CITIES.find((city) => city.id === id);
+  return CITIES.find(city => city.id === id);
 }
-

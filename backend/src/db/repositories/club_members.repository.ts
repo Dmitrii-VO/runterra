@@ -88,9 +88,7 @@ function rowToMembership(row: ClubMemberRow): ClubMembershipRow {
   };
 }
 
-function rowToActiveUserClubMembership(
-  row: ActiveUserClubRow,
-): ActiveUserClubMembershipRow {
+function rowToActiveUserClubMembership(row: ActiveUserClubRow): ActiveUserClubMembershipRow {
   return {
     clubId: row.club_id,
     clubName: row.club_name,
@@ -115,7 +113,7 @@ export class ClubMembersRepository extends BaseRepository {
     clubId: string,
     userId: string,
     status: 'pending' | 'active' = 'active',
-    role: 'member' | 'trainer' | 'leader' = 'member'
+    role: 'member' | 'trainer' | 'leader' = 'member',
   ): Promise<ClubMembershipRow> {
     const row = await this.queryOne<ClubMemberRow>(
       `INSERT INTO club_members (club_id, user_id, status, role)
@@ -128,7 +126,11 @@ export class ClubMembersRepository extends BaseRepository {
   }
 
   /** Set membership status to an arbitrary value */
-  async setStatus(clubId: string, userId: string, status: 'pending' | 'active' | 'inactive' | 'suspended'): Promise<ClubMembershipRow | null> {
+  async setStatus(
+    clubId: string,
+    userId: string,
+    status: 'pending' | 'active' | 'inactive' | 'suspended',
+  ): Promise<ClubMembershipRow | null> {
     const row = await this.queryOne<ClubMemberRow>(
       `UPDATE club_members
        SET status = $3, updated_at = NOW()
@@ -169,9 +171,7 @@ export class ClubMembersRepository extends BaseRepository {
     return rows.map(rowToMembership);
   }
 
-  async findActiveClubsByUser(
-    userId: string,
-  ): Promise<ActiveUserClubMembershipRow[]> {
+  async findActiveClubsByUser(userId: string): Promise<ActiveUserClubMembershipRow[]> {
     const rows = await this.queryMany<ActiveUserClubRow>(
       `SELECT
          cm.club_id,

@@ -9,23 +9,25 @@ jest.mock('../client', () => ({
   }),
 }));
 
-function userRow(overrides: Partial<{
-  id: string;
-  firebase_uid: string;
-  email: string;
-  name: string;
-  first_name: string | null;
-  last_name: string | null;
-  birth_date: Date | string | null;
-  country: string | null;
-  gender: string | null;
-  avatar_url: string | null;
-  city_id: string | null;
-  is_mercenary: boolean;
-  status: string;
-  created_at: Date;
-  updated_at: Date;
-}> = {}) {
+function userRow(
+  overrides: Partial<{
+    id: string;
+    firebase_uid: string;
+    email: string;
+    name: string;
+    first_name: string | null;
+    last_name: string | null;
+    birth_date: Date | string | null;
+    country: string | null;
+    gender: string | null;
+    avatar_url: string | null;
+    city_id: string | null;
+    is_mercenary: boolean;
+    status: string;
+    created_at: Date;
+    updated_at: Date;
+  }> = {},
+) {
   return {
     id: 'user-1',
     firebase_uid: 'firebase-uid-1',

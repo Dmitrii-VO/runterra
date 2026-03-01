@@ -89,8 +89,12 @@ export const mockEventsRepository = {
   findAll: jest.fn().mockResolvedValue([mockEvent]),
   create: jest.fn().mockResolvedValue(mockEvent),
   joinEvent: jest.fn().mockResolvedValue({ participant: mockParticipant }),
-  leaveEvent: jest.fn().mockResolvedValue({ participant: { ...mockParticipant, status: 'cancelled' as const } }),
-  checkIn: jest.fn().mockResolvedValue({ participant: { ...mockParticipant, status: 'checked_in' as const } }),
+  leaveEvent: jest
+    .fn()
+    .mockResolvedValue({ participant: { ...mockParticipant, status: 'cancelled' as const } }),
+  checkIn: jest
+    .fn()
+    .mockResolvedValue({ participant: { ...mockParticipant, status: 'checked_in' as const } }),
   getParticipant: jest.fn().mockResolvedValue(null),
   getParticipants: jest.fn().mockResolvedValue([]),
   update: jest.fn().mockResolvedValue(mockEvent),
@@ -108,17 +112,65 @@ export const mockRunsRepository = {
 
 export const mockClubMembersRepository = {
   findByClubAndUser: jest.fn().mockResolvedValue(null),
-  create: jest.fn().mockResolvedValue({ id: 'cm-1', clubId: '1', userId: 'test-user-id', status: 'active', role: 'member', createdAt: new Date(), updatedAt: new Date() }),
-  deactivate: jest.fn().mockResolvedValue({ id: 'cm-1', clubId: '1', userId: 'test-user-id', status: 'inactive', role: 'member', createdAt: new Date(), updatedAt: new Date() }),
-  activate: jest.fn().mockResolvedValue({ id: 'cm-1', clubId: '1', userId: 'test-user-id', status: 'active', role: 'member', createdAt: new Date(), updatedAt: new Date() }),
+  create: jest.fn().mockResolvedValue({
+    id: 'cm-1',
+    clubId: '1',
+    userId: 'test-user-id',
+    status: 'active',
+    role: 'member',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }),
+  deactivate: jest.fn().mockResolvedValue({
+    id: 'cm-1',
+    clubId: '1',
+    userId: 'test-user-id',
+    status: 'inactive',
+    role: 'member',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }),
+  activate: jest.fn().mockResolvedValue({
+    id: 'cm-1',
+    clubId: '1',
+    userId: 'test-user-id',
+    status: 'active',
+    role: 'member',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }),
   findPrimaryClubIdByUser: jest.fn().mockResolvedValue(null),
   countActiveMembers: jest.fn().mockResolvedValue(5),
   countActiveLeaders: jest.fn().mockResolvedValue(1),
   findActiveByUser: jest.fn().mockResolvedValue([]),
   findActiveClubsByUser: jest.fn().mockResolvedValue([]),
-  updateRole: jest.fn().mockResolvedValue({ id: 'cm-1', clubId: '1', userId: 'test-user-id', status: 'active', role: 'leader', createdAt: new Date(), updatedAt: new Date() }),
-  updateRoleWithLeaderTransfer: jest.fn().mockResolvedValue({ id: 'cm-1', clubId: '1', userId: 'test-user-id', status: 'active', role: 'leader', createdAt: new Date(), updatedAt: new Date() }),
-  approveMembership: jest.fn().mockResolvedValue({ id: 'cm-1', clubId: '1', userId: 'test-user-id', status: 'active', role: 'member', createdAt: new Date(), updatedAt: new Date() }),
+  updateRole: jest.fn().mockResolvedValue({
+    id: 'cm-1',
+    clubId: '1',
+    userId: 'test-user-id',
+    status: 'active',
+    role: 'leader',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }),
+  updateRoleWithLeaderTransfer: jest.fn().mockResolvedValue({
+    id: 'cm-1',
+    clubId: '1',
+    userId: 'test-user-id',
+    status: 'active',
+    role: 'leader',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }),
+  approveMembership: jest.fn().mockResolvedValue({
+    id: 'cm-1',
+    clubId: '1',
+    userId: 'test-user-id',
+    status: 'active',
+    role: 'member',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }),
   findMembersByClub: jest.fn().mockResolvedValue([]),
   findPendingByClub: jest.fn().mockResolvedValue([]),
 };
@@ -136,12 +188,27 @@ export const mockMessagesRepository = {
   findByChannel: jest.fn().mockResolvedValue([]),
   findByClubChannel: jest.fn().mockResolvedValue([]),
   findByClubChannelWithRole: jest.fn().mockResolvedValue([]),
-  create: jest.fn().mockResolvedValue({ id: 'msg-1', channelType: 'club', channelId: 'a0000000-0000-4000-8000-000000000001', userId: 'test-user-id', text: 'hello', createdAt: new Date(), updatedAt: new Date() }),
+  create: jest.fn().mockResolvedValue({
+    id: 'msg-1',
+    channelType: 'club',
+    channelId: 'a0000000-0000-4000-8000-000000000001',
+    userId: 'test-user-id',
+    text: 'hello',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }),
   getClubChatsForUser: jest.fn().mockResolvedValue([]),
   getTrainerClients: jest.fn().mockResolvedValue([]),
   getMyTrainer: jest.fn().mockResolvedValue(null),
   getDirectMessages: jest.fn().mockResolvedValue([]),
-  insertDirectMessage: jest.fn().mockResolvedValue({ id: 'dm-1', text: 'hi', userId: 'test-user-id', userName: 'Test', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }),
+  insertDirectMessage: jest.fn().mockResolvedValue({
+    id: 'dm-1',
+    text: 'hi',
+    userId: 'test-user-id',
+    userName: 'Test',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }),
   hasTrainerClientRelationship: jest.fn().mockResolvedValue(false),
   getTrainerIdForPair: jest.fn().mockResolvedValue(null),
   hasDirectMessages: jest.fn().mockResolvedValue(false),
@@ -229,7 +296,9 @@ export const mockWorkoutsRepository = {
 
 // Mock TerritoriesRepository
 export const mockTerritoriesRepository = {
-  getSeasonStart: jest.fn().mockReturnValue(new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1))),
+  getSeasonStart: jest
+    .fn()
+    .mockReturnValue(new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1))),
   getTerritoryScores: jest.fn().mockResolvedValue([]),
   addRunContribution: jest.fn().mockResolvedValue(undefined),
 };
@@ -280,5 +349,17 @@ export class ActivitiesRepository {}
 export type EventParticipant = { id: string };
 export type RunValidationResult = { valid: boolean };
 export type ClubMembershipRow = { id: string; clubId: string; userId: string; status: string };
-export type ActiveUserClubMembershipRow = { clubId: string; clubName: string; clubCityId: string; clubStatus: string; role: string; joinedAt: Date };
-export type ClubMemberDetailDto = { userId: string; displayName: string; role: string; joinedAt: Date };
+export type ActiveUserClubMembershipRow = {
+  clubId: string;
+  clubName: string;
+  clubCityId: string;
+  clubStatus: string;
+  role: string;
+  joinedAt: Date;
+};
+export type ClubMemberDetailDto = {
+  userId: string;
+  displayName: string;
+  role: string;
+  joinedAt: Date;
+};

@@ -1,5 +1,8 @@
 import { BaseRepository } from './base.repository';
-import { WeeklyScheduleItemDto, PersonalScheduleItemDto } from '../../modules/schedule/schedule.dto';
+import {
+  WeeklyScheduleItemDto,
+  PersonalScheduleItemDto,
+} from '../../modules/schedule/schedule.dto';
 
 interface WeeklyScheduleItemRow {
   id: string;
@@ -67,7 +70,9 @@ function rowToPersonalItem(row: PersonalScheduleItemRow): PersonalScheduleItemDt
   };
 }
 
-function rowToPersonalNote(row: PersonalNoteRow): import('../../modules/schedule/schedule.dto').PersonalNoteDto {
+function rowToPersonalNote(
+  row: PersonalNoteRow,
+): import('../../modules/schedule/schedule.dto').PersonalNoteDto {
   return {
     id: row.id,
     userId: row.user_id,
@@ -90,7 +95,7 @@ export class ScheduleRepository extends BaseRepository {
   async findWeeklyByClub(clubId: string): Promise<WeeklyScheduleItemDto[]> {
     const rows = await this.queryMany<WeeklyScheduleItemRow>(
       'SELECT * FROM weekly_schedule_items WHERE club_id = $1 ORDER BY day_of_week ASC, start_time ASC',
-      [clubId]
+      [clubId],
     );
     return rows.map(rowToWeeklyItem);
   }
@@ -98,7 +103,10 @@ export class ScheduleRepository extends BaseRepository {
   /**
    * Добавить элемент в недельное расписание
    */
-  async createWeeklyItem(clubId: string, item: Omit<WeeklyScheduleItemDto, 'id' | 'clubId'>): Promise<WeeklyScheduleItemDto> {
+  async createWeeklyItem(
+    clubId: string,
+    item: Omit<WeeklyScheduleItemDto, 'id' | 'clubId'>,
+  ): Promise<WeeklyScheduleItemDto> {
     const row = await this.queryOne<WeeklyScheduleItemRow>(
       `INSERT INTO weekly_schedule_items 
        (club_id, day_of_week, start_time, activity_type, name, description, workout_id, trainer_id)
@@ -112,8 +120,8 @@ export class ScheduleRepository extends BaseRepository {
         item.name,
         item.description || null,
         item.workoutId || null,
-        item.trainerId || null
-      ]
+        item.trainerId || null,
+      ],
     );
     if (!row) throw new Error('Failed to create weekly schedule item');
     return rowToWeeklyItem(row);
@@ -125,7 +133,7 @@ export class ScheduleRepository extends BaseRepository {
   async findWeeklyItemById(itemId: string): Promise<WeeklyScheduleItemDto | null> {
     const row = await this.queryOne<WeeklyScheduleItemRow>(
       'SELECT * FROM weekly_schedule_items WHERE id = $1',
-      [itemId]
+      [itemId],
     );
     return row ? rowToWeeklyItem(row) : null;
   }
@@ -134,35 +142,56 @@ export class ScheduleRepository extends BaseRepository {
    * Удалить элемент из расписания
    */
   async deleteWeeklyItem(itemId: string): Promise<boolean> {
-    const result = await this.query(
-      'DELETE FROM weekly_schedule_items WHERE id = $1',
-      [itemId]
-    );
+    const result = await this.query('DELETE FROM weekly_schedule_items WHERE id = $1', [itemId]);
     return (result.rowCount ?? 0) > 0;
   }
 
   /**
    * Обновить элемент шаблона
    */
-  async updateWeeklyItem(itemId: string, item: Partial<Omit<WeeklyScheduleItemDto, 'id' | 'clubId'>>): Promise<WeeklyScheduleItemDto | null> {
+  async updateWeeklyItem(
+    itemId: string,
+    item: Partial<Omit<WeeklyScheduleItemDto, 'id' | 'clubId'>>,
+  ): Promise<WeeklyScheduleItemDto | null> {
     const fields: string[] = [];
-    const values: any[] = [];
+    const values: unknown[] = [];
     let i = 1;
 
-    if (item.dayOfWeek !== undefined) { fields.push(`day_of_week = $${i++}`); values.push(item.dayOfWeek); }
-    if (item.startTime !== undefined) { fields.push(`start_time = $${i++}`); values.push(item.startTime); }
-    if (item.activityType !== undefined) { fields.push(`activity_type = $${i++}`); values.push(item.activityType); }
-    if (item.name !== undefined) { fields.push(`name = $${i++}`); values.push(item.name); }
-    if (item.description !== undefined) { fields.push(`description = $${i++}`); values.push(item.description || null); }
-    if (item.workoutId !== undefined) { fields.push(`workout_id = $${i++}`); values.push(item.workoutId || null); }
-    if (item.trainerId !== undefined) { fields.push(`trainer_id = $${i++}`); values.push(item.trainerId || null); }
+    if (item.dayOfWeek !== undefined) {
+      fields.push(`day_of_week = $${i++}`);
+      values.push(item.dayOfWeek);
+    }
+    if (item.startTime !== undefined) {
+      fields.push(`start_time = $${i++}`);
+      values.push(item.startTime);
+    }
+    if (item.activityType !== undefined) {
+      fields.push(`activity_type = $${i++}`);
+      values.push(item.activityType);
+    }
+    if (item.name !== undefined) {
+      fields.push(`name = $${i++}`);
+      values.push(item.name);
+    }
+    if (item.description !== undefined) {
+      fields.push(`description = $${i++}`);
+      values.push(item.description || null);
+    }
+    if (item.workoutId !== undefined) {
+      fields.push(`workout_id = $${i++}`);
+      values.push(item.workoutId || null);
+    }
+    if (item.trainerId !== undefined) {
+      fields.push(`trainer_id = $${i++}`);
+      values.push(item.trainerId || null);
+    }
 
     if (fields.length === 0) return this.findWeeklyItemById(itemId);
 
     values.push(itemId);
     const row = await this.queryOne<WeeklyScheduleItemRow>(
       `UPDATE weekly_schedule_items SET ${fields.join(', ')}, updated_at = NOW() WHERE id = $${i} RETURNING *`,
-      values
+      values,
     );
     return row ? rowToWeeklyItem(row) : null;
   }
@@ -173,7 +202,7 @@ export class ScheduleRepository extends BaseRepository {
   async findPersonalByUser(userId: string): Promise<PersonalScheduleItemDto[]> {
     const rows = await this.queryMany<PersonalScheduleItemRow>(
       'SELECT * FROM personal_schedule_items WHERE user_id = $1 ORDER BY day_of_week ASC',
-      [userId]
+      [userId],
     );
     return rows.map(rowToPersonalItem);
   }
@@ -184,7 +213,7 @@ export class ScheduleRepository extends BaseRepository {
   async findPersonalItemById(itemId: string): Promise<PersonalScheduleItemDto | null> {
     const row = await this.queryOne<PersonalScheduleItemRow>(
       'SELECT * FROM personal_schedule_items WHERE id = $1',
-      [itemId]
+      [itemId],
     );
     return row ? rowToPersonalItem(row) : null;
   }
@@ -192,7 +221,10 @@ export class ScheduleRepository extends BaseRepository {
   /**
    * Полностью заменить личное расписание пользователя (транзакция)
    */
-  async replacePersonalSchedule(userId: string, items: Omit<PersonalScheduleItemDto, 'id' | 'userId'>[]): Promise<PersonalScheduleItemDto[]> {
+  async replacePersonalSchedule(
+    userId: string,
+    items: Omit<PersonalScheduleItemDto, 'id' | 'userId'>[],
+  ): Promise<PersonalScheduleItemDto[]> {
     const pool = this.getPool();
     const client = await pool.connect();
     try {
@@ -215,8 +247,8 @@ export class ScheduleRepository extends BaseRepository {
             item.name,
             item.description || null,
             item.workoutId || null,
-            item.trainerId || null
-          ]
+            item.trainerId || null,
+          ],
         );
         if (res.rows[0]) {
           createdItems.push(rowToPersonalItem(res.rows[0]));
@@ -236,7 +268,10 @@ export class ScheduleRepository extends BaseRepository {
   /**
    * Получить заметки пользователя за месяц
    */
-  async findNotesByUserAndMonth(userId: string, yearMonth: string): Promise<import('../../modules/schedule/schedule.dto').PersonalNoteDto[]> {
+  async findNotesByUserAndMonth(
+    userId: string,
+    yearMonth: string,
+  ): Promise<import('../../modules/schedule/schedule.dto').PersonalNoteDto[]> {
     const startDate = `${yearMonth}-01`;
     // Last day of month logic simplified for query
     const rows = await this.queryMany<PersonalNoteRow>(
@@ -246,7 +281,7 @@ export class ScheduleRepository extends BaseRepository {
          AND date <= ($2::date + interval '1 month' - interval '1 day')::date
          AND deleted_at IS NULL
        ORDER BY date ASC`,
-      [userId, startDate]
+      [userId, startDate],
     );
     return rows.map(rowToPersonalNote);
   }
@@ -263,18 +298,23 @@ export class ScheduleRepository extends BaseRepository {
    * Получить ВСЕ личные шаблоны всех пользователей (для крона)
    */
   async getAllPersonalTemplates(): Promise<PersonalScheduleItemDto[]> {
-    const rows = await this.queryMany<PersonalScheduleItemRow>('SELECT * FROM personal_schedule_items');
+    const rows = await this.queryMany<PersonalScheduleItemRow>(
+      'SELECT * FROM personal_schedule_items',
+    );
     return rows.map(rowToPersonalItem);
   }
 
   /**
    * Найти личную заметку, сгенерированную из шаблона на дату
    */
-  async findNoteByTemplateAndDate(templateId: string, date: string): Promise<import('../../modules/schedule/schedule.dto').PersonalNoteDto | null> {
+  async findNoteByTemplateAndDate(
+    templateId: string,
+    date: string,
+  ): Promise<import('../../modules/schedule/schedule.dto').PersonalNoteDto | null> {
     const row = await this.queryOne<PersonalNoteRow>(
       `SELECT * FROM personal_notes 
        WHERE template_id = $1 AND date = $2::date AND deleted_at IS NULL`,
-      [templateId, date]
+      [templateId, date],
     );
     return row ? rowToPersonalNote(row) : null;
   }
@@ -303,8 +343,8 @@ export class ScheduleRepository extends BaseRepository {
         data.name,
         data.description || null,
         data.workoutId || null,
-        data.trainerId || null
-      ]
+        data.trainerId || null,
+      ],
     );
     if (!row) throw new Error('Failed to create personal note');
     return rowToPersonalNote(row);
@@ -313,27 +353,56 @@ export class ScheduleRepository extends BaseRepository {
   /**
    * Обновить личную заметку
    */
-  async updateNote(noteId: string, data: Partial<Omit<import('../../modules/schedule/schedule.dto').PersonalNoteDto, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>): Promise<import('../../modules/schedule/schedule.dto').PersonalNoteDto | null> {
+  async updateNote(
+    noteId: string,
+    data: Partial<
+      Omit<
+        import('../../modules/schedule/schedule.dto').PersonalNoteDto,
+        'id' | 'userId' | 'createdAt' | 'updatedAt'
+      >
+    >,
+  ): Promise<import('../../modules/schedule/schedule.dto').PersonalNoteDto | null> {
     const fields: string[] = [];
-    const values: any[] = [];
+    const values: unknown[] = [];
     let i = 1;
 
-    if (data.name !== undefined) { fields.push(`name = $${i++}`); values.push(data.name); }
-    if (data.description !== undefined) { fields.push(`description = $${i++}`); values.push(data.description || null); }
-    if (data.date !== undefined) { fields.push(`date = $${i++}`); values.push(data.date); }
-    if (data.workoutId !== undefined) { fields.push(`workout_id = $${i++}`); values.push(data.workoutId || null); }
-    if (data.trainerId !== undefined) { fields.push(`trainer_id = $${i++}`); values.push(data.trainerId || null); }
-    if (data.isManuallyEdited !== undefined) { fields.push(`is_manually_edited = $${i++}`); values.push(data.isManuallyEdited); }
+    if (data.name !== undefined) {
+      fields.push(`name = $${i++}`);
+      values.push(data.name);
+    }
+    if (data.description !== undefined) {
+      fields.push(`description = $${i++}`);
+      values.push(data.description || null);
+    }
+    if (data.date !== undefined) {
+      fields.push(`date = $${i++}`);
+      values.push(data.date);
+    }
+    if (data.workoutId !== undefined) {
+      fields.push(`workout_id = $${i++}`);
+      values.push(data.workoutId || null);
+    }
+    if (data.trainerId !== undefined) {
+      fields.push(`trainer_id = $${i++}`);
+      values.push(data.trainerId || null);
+    }
+    if (data.isManuallyEdited !== undefined) {
+      fields.push(`is_manually_edited = $${i++}`);
+      values.push(data.isManuallyEdited);
+    }
 
     if (fields.length === 0) {
-      const row = await this.queryOne<PersonalNoteRow>('SELECT * FROM personal_notes WHERE id = $1', [noteId]);
+      const row = await this.queryOne<PersonalNoteRow>(
+        'SELECT * FROM personal_notes WHERE id = $1',
+        [noteId],
+      );
       return row ? rowToPersonalNote(row) : null;
     }
 
     values.push(noteId);
     const row = await this.queryOne<PersonalNoteRow>(
       `UPDATE personal_notes SET ${fields.join(', ')}, updated_at = NOW() WHERE id = $${i} RETURNING *`,
-      values
+      values,
     );
     return row ? rowToPersonalNote(row) : null;
   }
@@ -344,7 +413,7 @@ export class ScheduleRepository extends BaseRepository {
   async deleteNote(noteId: string): Promise<boolean> {
     const result = await this.query(
       'UPDATE personal_notes SET deleted_at = NOW(), updated_at = NOW() WHERE id = $1',
-      [noteId]
+      [noteId],
     );
     return (result.rowCount ?? 0) > 0;
   }
@@ -352,13 +421,15 @@ export class ScheduleRepository extends BaseRepository {
   /**
    * Найти будущие заметки, сгенерированные из шаблона
    */
-  async findFutureByTemplate(templateId: string): Promise<import('../../modules/schedule/schedule.dto').PersonalNoteDto[]> {
+  async findFutureByTemplate(
+    templateId: string,
+  ): Promise<import('../../modules/schedule/schedule.dto').PersonalNoteDto[]> {
     const rows = await this.queryMany<PersonalNoteRow>(
       `SELECT * FROM personal_notes 
        WHERE template_id = $1 
          AND date >= CURRENT_DATE 
          AND deleted_at IS NULL`,
-      [templateId]
+      [templateId],
     );
     return rows.map(rowToPersonalNote);
   }

@@ -50,7 +50,7 @@ describe('validateBody', () => {
         details: expect.objectContaining({
           fields: expect.any(Array),
         }),
-      })
+      }),
     );
     const fields = (res.json as jest.Mock).mock.calls[0][0].details.fields;
     expect(fields.length).toBeGreaterThan(0);

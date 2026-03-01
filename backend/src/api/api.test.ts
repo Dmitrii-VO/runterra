@@ -8,28 +8,28 @@ const app = createApp();
 
 // Test UUIDs for clubs (after migration 012_clubs_fk, clubId must be UUID)
 const TEST_CLUB_1 = '550e8400-e29b-41d4-a716-446655440001';
-const TEST_CLUB_2 = '550e8400-e29b-41d4-a716-446655440002';
+const _TEST_CLUB_2 = '550e8400-e29b-41d4-a716-446655440002';
 const TEST_CLUB_NEW = '550e8400-e29b-41d4-a716-446655440003';
 
 /**
  * API smoke tests
- * 
+ *
  * Tests basic API behavior:
  * - Auth middleware blocks unauthenticated requests
  * - Endpoints exist and respond correctly
- * 
+ *
  * NOTE: These tests use stub auth. In dev mode, any Bearer token is accepted.
  * Set NODE_ENV=test to allow stub auth.
  */
 describe('API Routes', () => {
   // Store original NODE_ENV
   const originalEnv = process.env.NODE_ENV;
-  
+
   beforeAll(() => {
     // Allow stub auth for tests
     process.env.NODE_ENV = 'test';
   });
-  
+
   afterAll(() => {
     process.env.NODE_ENV = originalEnv;
   });
@@ -37,24 +37,20 @@ describe('API Routes', () => {
   describe('Auth middleware', () => {
     it('returns 401 without Authorization header', async () => {
       const res = await request(app).get('/api/users');
-      
+
       expect(res.status).toBe(401);
       expect(res.body).toHaveProperty('code', 'unauthorized');
     });
 
     it('returns 401 with invalid Authorization format', async () => {
-      const res = await request(app)
-        .get('/api/users')
-        .set('Authorization', 'InvalidFormat');
-      
+      const res = await request(app).get('/api/users').set('Authorization', 'InvalidFormat');
+
       expect(res.status).toBe(401);
     });
 
     it('accepts Bearer token (stub mode)', async () => {
-      const res = await request(app)
-        .get('/api/users')
-        .set('Authorization', 'Bearer test-token');
-      
+      const res = await request(app).get('/api/users').set('Authorization', 'Bearer test-token');
+
       // Should pass auth (stub accepts any token in non-production)
       expect(res.status).not.toBe(401);
     });
@@ -62,10 +58,8 @@ describe('API Routes', () => {
 
   describe('GET /api/users', () => {
     it('returns 200 with array', async () => {
-      const res = await request(app)
-        .get('/api/users')
-        .set('Authorization', 'Bearer test-token');
-      
+      const res = await request(app).get('/api/users').set('Authorization', 'Bearer test-token');
+
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
     });
@@ -73,10 +67,8 @@ describe('API Routes', () => {
 
   describe('GET /api/cities', () => {
     it('returns 200 with array', async () => {
-      const res = await request(app)
-        .get('/api/cities')
-        .set('Authorization', 'Bearer test-token');
-      
+      const res = await request(app).get('/api/cities').set('Authorization', 'Bearer test-token');
+
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
     });
@@ -87,7 +79,7 @@ describe('API Routes', () => {
       const res = await request(app)
         .get('/api/clubs?cityId=spb')
         .set('Authorization', 'Bearer test-token');
-      
+
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
     });
@@ -129,9 +121,7 @@ describe('API Routes', () => {
         },
       ]);
 
-      const res = await request(app)
-        .get('/api/clubs/my')
-        .set('Authorization', 'Bearer test-token');
+      const res = await request(app).get('/api/clubs/my').set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
@@ -150,9 +140,7 @@ describe('API Routes', () => {
     it('returns 401 when user record is not found', async () => {
       mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce(null);
 
-      const res = await request(app)
-        .get('/api/clubs/my')
-        .set('Authorization', 'Bearer test-token');
+      const res = await request(app).get('/api/clubs/my').set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(401);
       expect(res.body).toHaveProperty('code', 'unauthorized');
@@ -160,10 +148,10 @@ describe('API Routes', () => {
   });
 
   describe('GET /api/clubs/leaderboard/:cityId', () => {
-    const { 
-      mockClubsRepository, 
-      mockTerritoriesRepository, 
-      mockClubMembersRepository 
+    const {
+      mockClubsRepository,
+      mockTerritoriesRepository,
+      mockClubMembersRepository,
     } = require('../db/repositories');
 
     beforeEach(() => {
@@ -178,7 +166,7 @@ describe('API Routes', () => {
         { id: 'club-2', name: 'Club 2', cityId: 'spb' },
       ]);
       mockTerritoriesRepository.getTerritoryScores.mockResolvedValueOnce([
-        { territory_id: 't-1', club_id: 'club-1', club_name: 'Club 1', total_meters: '1000' }
+        { territory_id: 't-1', club_id: 'club-1', club_name: 'Club 1', total_meters: '1000' },
       ]);
       mockClubMembersRepository.countActiveMembers.mockResolvedValue(5);
 
@@ -199,7 +187,7 @@ describe('API Routes', () => {
       const res = await request(app)
         .get('/api/territories?cityId=spb')
         .set('Authorization', 'Bearer test-token');
-      
+
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
     });
@@ -276,7 +264,10 @@ describe('API Routes', () => {
       expect(first).toHaveProperty('organizerType');
       expect(first).toHaveProperty('organizerDisplayName');
       // Mock returns club with name 'Test Club' for organizerId 'a0000000-0000-4000-8000-000000000001'
-      if (first.organizerType === 'club' && first.organizerId === 'a0000000-0000-4000-8000-000000000001') {
+      if (
+        first.organizerType === 'club' &&
+        first.organizerId === 'a0000000-0000-4000-8000-000000000001'
+      ) {
         expect(first.organizerDisplayName).toBe('Test Club');
       }
     });
@@ -347,7 +338,7 @@ describe('API Routes', () => {
       const res = await request(app)
         .get('/api/activities')
         .set('Authorization', 'Bearer test-token');
-      
+
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
     });
@@ -374,13 +365,13 @@ describe('API Routes', () => {
       expect(res.status).toBe(200);
       const territories = res.body.territories;
       expect(territories.length).toBeGreaterThan(0);
-      
+
       for (const t of territories) {
         expect(t).toHaveProperty('geometry');
         expect(Array.isArray(t.geometry)).toBe(true);
         // Polygons must have at least 3 points
         expect(t.geometry.length).toBeGreaterThanOrEqual(3);
-        
+
         for (const pt of t.geometry) {
           expect(pt).toHaveProperty('latitude');
           expect(pt).toHaveProperty('longitude');
@@ -415,7 +406,12 @@ describe('API Routes', () => {
   });
 
   describe('Messages default channel behavior', () => {
-    const { mockUsersRepository, mockClubMembersRepository, mockMessagesRepository, mockClubChannelsRepository } = require('../db/repositories');
+    const {
+      mockUsersRepository,
+      mockClubMembersRepository,
+      mockMessagesRepository,
+      mockClubChannelsRepository,
+    } = require('../db/repositories');
 
     beforeEach(() => {
       // Clear call history but keep default mock implementations for other suites.
@@ -429,11 +425,34 @@ describe('API Routes', () => {
     });
 
     it('GET /api/messages/clubs/:clubId without channelId uses default channel', async () => {
-      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({ id: 'user-1', firebaseUid: 'uid-1', name: 'U' });
-      mockClubMembersRepository.findByClubAndUser.mockResolvedValueOnce({ id: 'cm-1', clubId: TEST_CLUB_1, userId: 'user-1', status: 'active' });
-      mockClubChannelsRepository.findDefaultByClub.mockResolvedValueOnce({ id: 'chan-1', clubId: TEST_CLUB_1, type: 'general', name: 'General', isDefault: true, createdAt: new Date() });
+      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({
+        id: 'user-1',
+        firebaseUid: 'uid-1',
+        name: 'U',
+      });
+      mockClubMembersRepository.findByClubAndUser.mockResolvedValueOnce({
+        id: 'cm-1',
+        clubId: TEST_CLUB_1,
+        userId: 'user-1',
+        status: 'active',
+      });
+      mockClubChannelsRepository.findDefaultByClub.mockResolvedValueOnce({
+        id: 'chan-1',
+        clubId: TEST_CLUB_1,
+        type: 'general',
+        name: 'General',
+        isDefault: true,
+        createdAt: new Date(),
+      });
       mockMessagesRepository.findByClubChannelWithRole.mockResolvedValueOnce([
-        { id: 'm-1', text: 'hello', userId: 'user-1', userName: 'U', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        {
+          id: 'm-1',
+          text: 'hello',
+          userId: 'user-1',
+          userName: 'U',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
       ]);
 
       const res = await request(app)
@@ -441,15 +460,36 @@ describe('API Routes', () => {
         .set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(200);
-      expect(mockMessagesRepository.findByClubChannelWithRole).toHaveBeenCalledWith(TEST_CLUB_1, 'chan-1', expect.any(Number), expect.any(Number));
+      expect(mockMessagesRepository.findByClubChannelWithRole).toHaveBeenCalledWith(
+        TEST_CLUB_1,
+        'chan-1',
+        expect.any(Number),
+        expect.any(Number),
+      );
       expect(Array.isArray(res.body)).toBe(true);
       expect(res.body[0]).toHaveProperty('id', 'm-1');
     });
 
     it('POST /api/messages/clubs/:clubId without channelId writes to default channel', async () => {
-      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({ id: 'user-1', firebaseUid: 'uid-1', name: 'U' });
-      mockClubMembersRepository.findByClubAndUser.mockResolvedValueOnce({ id: 'cm-1', clubId: TEST_CLUB_1, userId: 'user-1', status: 'active' });
-      mockClubChannelsRepository.findDefaultByClub.mockResolvedValueOnce({ id: 'chan-1', clubId: TEST_CLUB_1, type: 'general', name: 'General', isDefault: true, createdAt: new Date() });
+      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({
+        id: 'user-1',
+        firebaseUid: 'uid-1',
+        name: 'U',
+      });
+      mockClubMembersRepository.findByClubAndUser.mockResolvedValueOnce({
+        id: 'cm-1',
+        clubId: TEST_CLUB_1,
+        userId: 'user-1',
+        status: 'active',
+      });
+      mockClubChannelsRepository.findDefaultByClub.mockResolvedValueOnce({
+        id: 'chan-1',
+        clubId: TEST_CLUB_1,
+        type: 'general',
+        name: 'General',
+        isDefault: true,
+        createdAt: new Date(),
+      });
       mockMessagesRepository.create.mockResolvedValueOnce({
         id: 'm-1',
         channelType: 'club',
@@ -466,7 +506,13 @@ describe('API Routes', () => {
         .send({ text: 'hello' });
 
       expect(res.status).toBe(201);
-      expect(mockMessagesRepository.create).toHaveBeenCalledWith(expect.objectContaining({ channelType: 'club', channelId: TEST_CLUB_1, clubChannelId: 'chan-1' }));
+      expect(mockMessagesRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          channelType: 'club',
+          channelId: TEST_CLUB_1,
+          clubChannelId: 'chan-1',
+        }),
+      );
       expect(res.body).toHaveProperty('id', 'm-1');
     });
   });
@@ -499,7 +545,7 @@ describe('API Routes', () => {
         .post('/api/users')
         .set('Authorization', 'Bearer test-token')
         .send({ invalid: 'data' });
-      
+
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty('code', 'validation_error');
     });
@@ -509,14 +555,18 @@ describe('API Routes', () => {
         .post('/api/events')
         .set('Authorization', 'Bearer test-token')
         .send({ name: 'Test' }); // Missing required fields
-      
+
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty('code', 'validation_error');
     });
   });
 
   describe('GET by ID', () => {
-    const { mockEventsRepository, mockWorkoutsRepository, mockUsersRepository } = require('../db/repositories');
+    const {
+      mockEventsRepository,
+      mockWorkoutsRepository,
+      mockUsersRepository,
+    } = require('../db/repositories');
 
     beforeEach(() => {
       mockEventsRepository.findById.mockClear();
@@ -526,12 +576,12 @@ describe('API Routes', () => {
 
     // NOTE: Stubs return 200 with mock data for any ID.
     // TODO: Update tests when real DB integration is added.
-    
+
     it('GET /api/users/:id returns 200 (stub)', async () => {
       const res = await request(app)
         .get('/api/users/any-id')
         .set('Authorization', 'Bearer test-token');
-      
+
       expect(res.status).toBe(200);
     });
 
@@ -1048,7 +1098,11 @@ describe('API Routes', () => {
   });
 
   describe('PATCH /api/clubs/:id/members/:userId/role leader guardrail', () => {
-    const { mockUsersRepository, mockClubMembersRepository, mockClubsRepository } = require('../db/repositories');
+    const {
+      mockUsersRepository,
+      mockClubMembersRepository,
+      mockClubsRepository,
+    } = require('../db/repositories');
 
     beforeEach(() => {
       mockUsersRepository.findByFirebaseUid.mockReset();
@@ -1059,7 +1113,10 @@ describe('API Routes', () => {
     });
 
     it('returns 400 when attempting to demote the last active leader', async () => {
-      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({ id: 'user-1', firebaseUid: 'uid-1' });
+      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({
+        id: 'user-1',
+        firebaseUid: 'uid-1',
+      });
       mockClubsRepository.findById.mockResolvedValueOnce({
         id: TEST_CLUB_1,
         name: 'Test Club',
@@ -1072,8 +1129,20 @@ describe('API Routes', () => {
 
       // requesterMembership (leader) then targetMembership (same leader)
       mockClubMembersRepository.findByClubAndUser
-        .mockResolvedValueOnce({ id: 'cm-req', clubId: TEST_CLUB_1, userId: 'user-1', status: 'active', role: 'leader' })
-        .mockResolvedValueOnce({ id: 'cm-target', clubId: TEST_CLUB_1, userId: 'user-1', status: 'active', role: 'leader' });
+        .mockResolvedValueOnce({
+          id: 'cm-req',
+          clubId: TEST_CLUB_1,
+          userId: 'user-1',
+          status: 'active',
+          role: 'leader',
+        })
+        .mockResolvedValueOnce({
+          id: 'cm-target',
+          clubId: TEST_CLUB_1,
+          userId: 'user-1',
+          status: 'active',
+          role: 'leader',
+        });
 
       mockClubMembersRepository.countActiveLeaders.mockResolvedValueOnce(1);
 
@@ -1177,29 +1246,31 @@ describe('API Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.territories).toBeDefined();
       // With all territories free (clubId undefined), filter by clubId returns empty array
-      expect(res.body.territories.every((t: { clubId?: string }) => t.clubId === TEST_CLUB_1)).toBe(true);
+      expect(res.body.territories.every((t: { clubId?: string }) => t.clubId === TEST_CLUB_1)).toBe(
+        true,
+      );
     });
   });
 
   describe('cityId validation and filtering', () => {
     it('GET /api/events without cityId returns 400 with validation_error', async () => {
-      const res = await request(app)
-        .get('/api/events')
-        .set('Authorization', 'Bearer test-token');
+      const res = await request(app).get('/api/events').set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty('code', 'validation_error');
-      expect(res.body.details?.fields?.some((f: { field: string }) => f.field === 'cityId')).toBe(true);
+      expect(res.body.details?.fields?.some((f: { field: string }) => f.field === 'cityId')).toBe(
+        true,
+      );
     });
 
     it('GET /api/map/data without cityId returns 400 with validation_error', async () => {
-      const res = await request(app)
-        .get('/api/map/data')
-        .set('Authorization', 'Bearer test-token');
+      const res = await request(app).get('/api/map/data').set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty('code', 'validation_error');
-      expect(res.body.details?.fields?.some((f: { field: string }) => f.field === 'cityId')).toBe(true);
+      expect(res.body.details?.fields?.some((f: { field: string }) => f.field === 'cityId')).toBe(
+        true,
+      );
     });
 
     it('GET /api/territories returns territories only for requested city', async () => {

@@ -17,9 +17,9 @@ const apiLimiter = rateLimit({
 
 /**
  * Создание и настройка Express приложения
- * 
+ *
  * Минимальный сервер с health-check endpoint и API роутерами.
- * 
+ *
  * На текущей стадии (skeleton) API роутеры возвращают только заглушки.
  */
 export function createApp(): Express {
@@ -33,11 +33,11 @@ export function createApp(): Express {
   // Request logging middleware
   app.use((req: Request, res: Response, next: NextFunction) => {
     const start = Date.now();
-    
+
     res.on('finish', () => {
       const duration = Date.now() - start;
       const level = res.statusCode >= 400 ? 'warn' : 'info';
-      
+
       logger[level]('HTTP request', {
         method: req.method,
         path: req.path,
@@ -46,7 +46,7 @@ export function createApp(): Express {
         ip: req.ip || req.socket.remoteAddress,
       });
     });
-    
+
     next();
   });
 

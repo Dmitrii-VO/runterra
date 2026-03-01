@@ -3,7 +3,7 @@
  */
 
 import { BaseRepository } from './base.repository';
-import { TrainerGroup, TrainerGroupMember, TrainerGroupViewDto } from '../../modules/trainer';
+import { TrainerGroup, TrainerGroupViewDto } from '../../modules/trainer';
 
 interface TrainerGroupRow {
   id: string;
@@ -34,7 +34,10 @@ function rowToTrainerGroupViewDto(row: TrainerGroupViewRow): TrainerGroupViewDto
     trainerId: row.trainer_id,
     name: row.name,
     createdAt: row.created_at.toISOString(),
-    memberCount: typeof row.member_count === 'string' ? parseInt(row.member_count, 10) : Number(row.member_count),
+    memberCount:
+      typeof row.member_count === 'string'
+        ? parseInt(row.member_count, 10)
+        : Number(row.member_count),
   };
 }
 
@@ -45,13 +48,13 @@ export class TrainerGroupsRepository extends BaseRepository {
     name: string;
     memberIds: string[];
   }): Promise<TrainerGroup> {
-    return this.transaction(async (client) => {
+    return this.transaction(async client => {
       const groupRow = await this.queryOne<TrainerGroupRow>(
         `INSERT INTO trainer_groups (club_id, trainer_id, name)
          VALUES ($1, $2, $3)
          RETURNING *`,
         [data.clubId, data.trainerId, data.name],
-        client
+        client,
       );
 
       const groupId = groupRow!.id;
@@ -61,7 +64,7 @@ export class TrainerGroupsRepository extends BaseRepository {
 
       if (allMemberIds.length > 0) {
         // Bulk insert members
-        const values: any[] = [];
+        const values: unknown[] = [];
         const placeholders = allMemberIds
           .map((userId, i) => {
             values.push(groupId, userId);
@@ -72,7 +75,7 @@ export class TrainerGroupsRepository extends BaseRepository {
         await this.query(
           `INSERT INTO trainer_group_members (group_id, user_id) VALUES ${placeholders}`,
           values,
-          client
+          client,
         );
       }
 
@@ -81,20 +84,20 @@ export class TrainerGroupsRepository extends BaseRepository {
   }
 
   async updateName(id: string, name: string): Promise<boolean> {
-    const result = await this.query(
-      'UPDATE trainer_groups SET name = $1 WHERE id = $2',
-      [name, id]
-    );
+    const result = await this.query('UPDATE trainer_groups SET name = $1 WHERE id = $2', [
+      name,
+      id,
+    ]);
     return (result.rowCount ?? 0) > 0;
   }
 
   async updateMembers(groupId: string, memberIds: string[]): Promise<void> {
-    await this.transaction(async (client) => {
+    await this.transaction(async client => {
       // Get the trainerId to ensure they are NOT removed
       const group = await this.queryOne<TrainerGroupRow>(
         'SELECT trainer_id FROM trainer_groups WHERE id = $1',
         [groupId],
-        client
+        client,
       );
       if (!group) return;
 
@@ -105,7 +108,7 @@ export class TrainerGroupsRepository extends BaseRepository {
       await this.query('DELETE FROM trainer_group_members WHERE group_id = $1', [groupId], client);
 
       // Insert new members
-      const values: any[] = [];
+      const values: unknown[] = [];
       const placeholders = allMemberIds
         .map((userId, i) => {
           values.push(groupId, userId);
@@ -116,7 +119,7 @@ export class TrainerGroupsRepository extends BaseRepository {
       await this.query(
         `INSERT INTO trainer_group_members (group_id, user_id) VALUES ${placeholders}`,
         values,
-        client
+        client,
       );
     });
   }
@@ -129,7 +132,7 @@ export class TrainerGroupsRepository extends BaseRepository {
        WHERE tg.trainer_id = $1 AND tg.club_id = $2
        GROUP BY tg.id
        ORDER BY tg.created_at DESC`,
-      [trainerId, clubId]
+      [trainerId, clubId],
     );
     return rows.map(rowToTrainerGroupViewDto);
   }
@@ -143,23 +146,22 @@ export class TrainerGroupsRepository extends BaseRepository {
        WHERE tgm.user_id = $1 AND tg.club_id = $2
        GROUP BY tg.id
        ORDER BY tg.created_at DESC`,
-      [userId, clubId]
+      [userId, clubId],
     );
     return rows.map(rowToTrainerGroupViewDto);
   }
 
   async findById(id: string): Promise<TrainerGroup | null> {
-    const row = await this.queryOne<TrainerGroupRow>(
-      'SELECT * FROM trainer_groups WHERE id = $1',
-      [id]
-    );
+    const row = await this.queryOne<TrainerGroupRow>('SELECT * FROM trainer_groups WHERE id = $1', [
+      id,
+    ]);
     return row ? rowToTrainerGroup(row) : null;
   }
 
   async isMember(groupId: string, userId: string): Promise<boolean> {
     const row = await this.queryOne(
       'SELECT 1 FROM trainer_group_members WHERE group_id = $1 AND user_id = $2',
-      [groupId, userId]
+      [groupId, userId],
     );
     return !!row;
   }
@@ -167,7 +169,7 @@ export class TrainerGroupsRepository extends BaseRepository {
   async findMemberIds(groupId: string): Promise<string[]> {
     const rows = await this.queryMany<{ user_id: string }>(
       'SELECT user_id FROM trainer_group_members WHERE group_id = $1',
-      [groupId]
+      [groupId],
     );
     return rows.map(r => r.user_id);
   }

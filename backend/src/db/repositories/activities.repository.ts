@@ -29,29 +29,29 @@ function rowToActivity(row: ActivityRow): Activity {
 
 export class ActivitiesRepository extends BaseRepository {
   async findById(id: string): Promise<Activity | null> {
-    const row = await this.queryOne<ActivityRow>(
-      'SELECT * FROM activities WHERE id = $1',
-      [id]
-    );
+    const row = await this.queryOne<ActivityRow>('SELECT * FROM activities WHERE id = $1', [id]);
     return row ? rowToActivity(row) : null;
   }
 
   async findByUserId(userId: string, limit = 50, offset = 0): Promise<Activity[]> {
     const rows = await this.queryMany<ActivityRow>(
       'SELECT * FROM activities WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3',
-      [userId, limit, offset]
+      [userId, limit, offset],
     );
     return rows.map(rowToActivity);
   }
 
-  async create(data: {
-    userId: string;
-    type: ActivityType;
-    status: ActivityStatus;
-    name?: string;
-    description?: string;
-    scheduledItemId?: string;
-  }, client?: import('pg').PoolClient): Promise<Activity> {
+  async create(
+    data: {
+      userId: string;
+      type: ActivityType;
+      status: ActivityStatus;
+      name?: string;
+      description?: string;
+      scheduledItemId?: string;
+    },
+    client?: import('pg').PoolClient,
+  ): Promise<Activity> {
     const row = await this.queryOne<ActivityRow>(
       `INSERT INTO activities (user_id, type, status, name, description, scheduled_item_id)
        VALUES ($1, $2, $3, $4, $5, $6)
@@ -64,7 +64,7 @@ export class ActivitiesRepository extends BaseRepository {
         data.description || null,
         data.scheduledItemId || null,
       ],
-      client
+      client,
     );
     if (!row) throw new Error('Failed to create activity');
     return rowToActivity(row);

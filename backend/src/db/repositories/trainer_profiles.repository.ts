@@ -19,9 +19,9 @@ function rowToProfile(row: TrainerProfileRow): TrainerProfile {
   let certs: Certificate[] = [];
   if (row.certificates) {
     try {
-      certs = (typeof row.certificates === 'string'
-        ? JSON.parse(row.certificates)
-        : row.certificates) as Certificate[];
+      certs = (
+        typeof row.certificates === 'string' ? JSON.parse(row.certificates) : row.certificates
+      ) as Certificate[];
     } catch {
       certs = [];
     }
@@ -80,13 +80,16 @@ export class TrainerProfilesRepository extends BaseRepository {
     return rowToProfile(row);
   }
 
-  async update(userId: string, data: {
-    bio?: string;
-    specialization?: string[];
-    experienceYears?: number;
-    certificates?: Certificate[];
-    acceptsPrivateClients?: boolean;
-  }): Promise<TrainerProfile | null> {
+  async update(
+    userId: string,
+    data: {
+      bio?: string;
+      specialization?: string[];
+      experienceYears?: number;
+      certificates?: Certificate[];
+      acceptsPrivateClients?: boolean;
+    },
+  ): Promise<TrainerProfile | null> {
     const sets: string[] = [];
     const params: unknown[] = [];
     let idx = 1;
@@ -160,7 +163,7 @@ export class TrainerProfilesRepository extends BaseRepository {
       params,
     );
 
-    return rows.map((row) => {
+    return rows.map(row => {
       const first = row.first_name?.trim();
       const last = row.last_name?.trim();
       const fullName = [first, last].filter(Boolean).join(' ').trim() || row.name;

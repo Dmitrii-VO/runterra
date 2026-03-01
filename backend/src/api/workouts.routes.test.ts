@@ -90,9 +90,7 @@ describe('Workouts Routes', () => {
     it('returns personal workouts when no clubId query', async () => {
       mockWorkoutsRepository.findByAuthor.mockResolvedValueOnce([mockWorkout]);
 
-      const res = await request(app)
-        .get('/api/workouts')
-        .set('Authorization', 'Bearer test-token');
+      const res = await request(app).get('/api/workouts').set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
@@ -145,9 +143,7 @@ describe('Workouts Routes', () => {
         },
       ]);
 
-      const res = await request(app)
-        .get('/api/workouts')
-        .set('Authorization', 'Bearer test-token');
+      const res = await request(app).get('/api/workouts').set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(403);
       expect(res.body).toHaveProperty('code', 'forbidden');
@@ -224,7 +220,14 @@ describe('Workouts Routes', () => {
     it('returns 201 when workout is created', async () => {
       // User is trainer in a club
       mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([
-        { clubId: 'club-1', clubName: 'Club A', clubCityId: 'spb', clubStatus: 'active', role: 'trainer', joinedAt: new Date() },
+        {
+          clubId: 'club-1',
+          clubName: 'Club A',
+          clubCityId: 'spb',
+          clubStatus: 'active',
+          role: 'trainer',
+          joinedAt: new Date(),
+        },
       ]);
       mockWorkoutsRepository.create.mockResolvedValueOnce({
         ...mockWorkout,
@@ -257,7 +260,14 @@ describe('Workouts Routes', () => {
 
     it('returns 403 when user is not a trainer or leader', async () => {
       mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([
-        { clubId: 'club-1', clubName: 'Club A', clubCityId: 'spb', clubStatus: 'active', role: 'member', joinedAt: new Date() },
+        {
+          clubId: 'club-1',
+          clubName: 'Club A',
+          clubCityId: 'spb',
+          clubStatus: 'active',
+          role: 'member',
+          joinedAt: new Date(),
+        },
       ]);
 
       const res = await request(app)

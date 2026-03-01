@@ -45,10 +45,9 @@ export class ClubChannelsRepository extends BaseRepository {
 
   /** Find a specific channel by ID */
   async findById(channelId: string): Promise<ClubChannelDto | null> {
-    const row = await this.queryOne<ClubChannelRow>(
-      `SELECT * FROM club_channels WHERE id = $1`,
-      [channelId],
-    );
+    const row = await this.queryOne<ClubChannelRow>(`SELECT * FROM club_channels WHERE id = $1`, [
+      channelId,
+    ]);
     return row ? rowToDto(row) : null;
   }
 
@@ -62,7 +61,12 @@ export class ClubChannelsRepository extends BaseRepository {
   }
 
   /** Create a new channel */
-  async create(clubId: string, name: string, type: string = 'general', isDefault: boolean = false): Promise<ClubChannelDto> {
+  async create(
+    clubId: string,
+    name: string,
+    type: string = 'general',
+    isDefault: boolean = false,
+  ): Promise<ClubChannelDto> {
     const row = await this.queryOne<ClubChannelRow>(
       `INSERT INTO club_channels (club_id, type, name, is_default)
        VALUES ($1, $2, $3, $4)

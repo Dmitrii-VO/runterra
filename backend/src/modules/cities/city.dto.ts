@@ -14,7 +14,7 @@ import type { CityBounds, CityCoordinates } from './city.entity';
 
 /**
  * DTO для создания города
- * 
+ *
  * Используется при добавлении нового города в систему.
  */
 export interface CreateCityDto {
@@ -53,7 +53,7 @@ export const CreateCitySchema = z.object({
 
 /**
  * DTO для обновления города
- * 
+ *
  * Используется для частичного обновления данных города.
  * Все поля опциональны - обновляются только переданные поля.
  */

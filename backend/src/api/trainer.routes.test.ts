@@ -29,10 +29,7 @@ describe('Trainer Routes', () => {
     process.env.NODE_ENV = originalEnv;
   });
 
-  const {
-    mockUsersRepository,
-    mockTrainerProfilesRepository,
-  } = require('../db/repositories');
+  const { mockUsersRepository, mockTrainerProfilesRepository } = require('../db/repositories');
 
   const mockProfile = {
     userId,
@@ -72,9 +69,7 @@ describe('Trainer Routes', () => {
       };
       mockTrainerProfilesRepository.findPublicTrainers.mockResolvedValueOnce([publicTrainer]);
 
-      const res = await request(app)
-        .get('/api/trainer')
-        .set('Authorization', 'Bearer test-token');
+      const res = await request(app).get('/api/trainer').set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
@@ -85,9 +80,7 @@ describe('Trainer Routes', () => {
     it('returns 200 with empty array when no public trainers', async () => {
       mockTrainerProfilesRepository.findPublicTrainers.mockResolvedValueOnce([]);
 
-      const res = await request(app)
-        .get('/api/trainer')
-        .set('Authorization', 'Bearer test-token');
+      const res = await request(app).get('/api/trainer').set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual([]);

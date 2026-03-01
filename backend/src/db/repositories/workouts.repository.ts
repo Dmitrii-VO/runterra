@@ -14,7 +14,7 @@ interface WorkoutRow {
   type: string;
   difficulty: string;
   surface: string | null;
-  blocks: any | null;
+  blocks: unknown | null;
   target_metric: string;
   target_value: number | null;
   target_zone: string | null;
@@ -31,7 +31,7 @@ function rowToWorkout(row: WorkoutRow): Workout {
     type: row.type,
     difficulty: row.difficulty,
     surface: (row.surface as Surface) || undefined,
-    blocks: row.blocks as WorkoutBlock[] || undefined,
+    blocks: (row.blocks as WorkoutBlock[]) || undefined,
     targetMetric: row.target_metric,
     targetValue: row.target_value ?? undefined,
     targetZone: row.target_zone ?? undefined,
@@ -41,10 +41,7 @@ function rowToWorkout(row: WorkoutRow): Workout {
 
 export class WorkoutsRepository extends BaseRepository {
   async findById(id: string): Promise<Workout | null> {
-    const row = await this.queryOne<WorkoutRow>(
-      'SELECT * FROM workouts WHERE id = $1',
-      [id],
-    );
+    const row = await this.queryOne<WorkoutRow>('SELECT * FROM workouts WHERE id = $1', [id]);
     return row ? rowToWorkout(row) : null;
   }
 
@@ -72,7 +69,7 @@ export class WorkoutsRepository extends BaseRepository {
     type: string;
     difficulty: string;
     surface?: string;
-    blocks?: any;
+    blocks?: unknown;
     targetMetric: string;
     targetValue?: number;
     targetZone?: string;
@@ -99,17 +96,20 @@ export class WorkoutsRepository extends BaseRepository {
     return rowToWorkout(row);
   }
 
-  async update(id: string, data: {
-    name?: string;
-    description?: string;
-    type?: string;
-    difficulty?: string;
-    surface?: string;
-    blocks?: any;
-    targetMetric?: string;
-    targetValue?: number;
-    targetZone?: string;
-  }): Promise<Workout | null> {
+  async update(
+    id: string,
+    data: {
+      name?: string;
+      description?: string;
+      type?: string;
+      difficulty?: string;
+      surface?: string;
+      blocks?: unknown;
+      targetMetric?: string;
+      targetValue?: number;
+      targetZone?: string;
+    },
+  ): Promise<Workout | null> {
     const sets: string[] = [];
     const params: unknown[] = [];
     let idx = 1;
@@ -164,10 +164,7 @@ export class WorkoutsRepository extends BaseRepository {
   }
 
   async delete(id: string): Promise<boolean> {
-    const result = await this.query(
-      'DELETE FROM workouts WHERE id = $1',
-      [id],
-    );
+    const result = await this.query('DELETE FROM workouts WHERE id = $1', [id]);
     return (result?.rowCount ?? 0) > 0;
   }
 

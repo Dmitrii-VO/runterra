@@ -1,4 +1,8 @@
-import { getScheduleRepository, getEventsRepository, getClubsRepository } from '../../db/repositories';
+import {
+  getScheduleRepository,
+  getEventsRepository,
+  getClubsRepository,
+} from '../../db/repositories';
 import { logger } from '../../shared/logger';
 import { EventType } from '../events/event.type';
 
@@ -12,7 +16,7 @@ export class ScheduleGeneratorService {
     const clubsRepo = getClubsRepository();
 
     const today = new Date();
-    
+
     // 1. Обработка клубных шаблонов
     const weeklyTemplates = await scheduleRepo.getAllWeeklyTemplates();
     for (const template of weeklyTemplates) {
@@ -22,10 +26,10 @@ export class ScheduleGeneratorService {
       for (let dayOffset = 0; dayOffset <= 31; dayOffset++) {
         const targetDate = new Date(today);
         targetDate.setDate(today.getDate() + dayOffset);
-        
+
         if (targetDate.getDay() === template.dayOfWeek) {
           const dateStr = targetDate.toISOString().split('T')[0];
-          
+
           // Проверяем, нет ли уже события
           const existing = await eventsRepo.findByTemplateAndDate(template.id, dateStr);
           if (!existing) {
@@ -48,7 +52,7 @@ export class ScheduleGeneratorService {
                 templateId: template.id,
                 generatedForDate: dateStr,
               });
-              
+
               logger.info(`Generated event for club ${template.clubId} on ${dateStr}`);
             } catch (error) {
               logger.error(`Failed to generate event for template ${template.id}`, { error });
@@ -64,10 +68,10 @@ export class ScheduleGeneratorService {
       for (let dayOffset = 0; dayOffset <= 31; dayOffset++) {
         const targetDate = new Date(today);
         targetDate.setDate(today.getDate() + dayOffset);
-        
+
         if (targetDate.getDay() === template.dayOfWeek) {
           const dateStr = targetDate.toISOString().split('T')[0];
-          
+
           const existing = await scheduleRepo.findNoteByTemplateAndDate(template.id, dateStr);
           if (!existing) {
             try {
@@ -82,7 +86,9 @@ export class ScheduleGeneratorService {
               });
               logger.info(`Generated personal note for user ${template.userId} on ${dateStr}`);
             } catch (error) {
-              logger.error(`Failed to generate personal note for template ${template.id}`, { error });
+              logger.error(`Failed to generate personal note for template ${template.id}`, {
+                error,
+              });
             }
           }
         }
@@ -93,7 +99,7 @@ export class ScheduleGeneratorService {
   /**
    * Синхронизация изменений шаблона с будущими событиями/заметками.
    * Вызывается при обновлении (PATCH) или удалении (DELETE) шаблона.
-   * 
+   *
    * Если templateId передан, но template равен null — значит шаблон удален.
    */
   async syncTemplateChanges(templateId: string, type: 'club' | 'personal'): Promise<void> {
@@ -130,7 +136,7 @@ export class ScheduleGeneratorService {
       }
     } else {
       // Для личных планов в MVP мы пока просто перезаписываем весь шаблон через replacePersonalSchedule,
-      // что не требует сложной синхронизации через этот метод, так как старые записи (Notes) 
+      // что не требует сложной синхронизации через этот метод, так как старые записи (Notes)
       // могут оставаться как история, а новые сгенерируются кроном.
       // В будущем можно добавить логику удаления будущих Notes.
     }

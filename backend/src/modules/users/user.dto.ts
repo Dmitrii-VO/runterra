@@ -13,29 +13,29 @@ import { User, UserStatus } from './user.entity';
 
 /**
  * DTO для создания пользователя
- * 
+ *
  * Используется при регистрации нового пользователя.
  * Связывает пользователя с Firebase Authentication через firebaseUid.
  */
 export interface CreateUserDto {
   /** Уникальный идентификатор пользователя в Firebase Authentication */
   firebaseUid: string;
-  
+
   /** Email пользователя */
   email: string;
-  
+
   /** Имя пользователя */
   name: string;
-  
+
   /** URL фото профиля */
   avatarUrl?: string;
-  
+
   /** Идентификатор города пользователя */
   cityId?: string;
-  
+
   /** Флаг меркателя (true - меркатель, false - участник клуба) */
   isMercenary?: boolean;
-  
+
   /** Статус пользователя (по умолчанию ACTIVE) */
   status?: UserStatus;
 }
@@ -90,14 +90,14 @@ export function userToViewDto(user: User): UserViewDto {
 
 /**
  * DTO для обновления пользователя
- * 
+ *
  * Используется для частичного обновления данных пользователя.
  * Все поля опциональны - обновляются только переданные поля.
  */
 export interface UpdateUserDto {
   /** Email пользователя */
   email?: string;
-  
+
   /** Имя пользователя */
   name?: string;
 
@@ -115,16 +115,16 @@ export interface UpdateUserDto {
 
   /** Пол */
   gender?: 'male' | 'female';
-  
+
   /** URL фото профиля */
   avatarUrl?: string;
-  
+
   /** Идентификатор города пользователя */
   cityId?: string;
-  
+
   /** Флаг меркателя (true - меркатель, false - участник клуба) */
   isMercenary?: boolean;
-  
+
   /** Статус пользователя */
   status?: UserStatus;
 }
@@ -164,7 +164,10 @@ export const UpdateProfileSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100).optional(),
   firstName: z.string().min(1).max(100).optional(),
   lastName: z.string().min(1).max(100).optional(),
-  birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  birthDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
   country: z.string().max(100).optional(),
   gender: z.enum(['male', 'female']).optional(),
   avatarUrl: z.union([z.string().url(), z.literal('')]).optional(),

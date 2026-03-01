@@ -31,27 +31,23 @@ function rowToClub(row: ClubRow): Club {
 
 export class ClubsRepository extends BaseRepository {
   async findById(id: string): Promise<Club | null> {
-    const row = await this.queryOne<ClubRow>(
-      'SELECT * FROM clubs WHERE id = $1',
-      [id]
-    );
+    const row = await this.queryOne<ClubRow>('SELECT * FROM clubs WHERE id = $1', [id]);
     return row ? rowToClub(row) : null;
   }
 
   async findByIds(ids: string[]): Promise<Club[]> {
     const uniqueIds = Array.from(new Set(ids));
     if (uniqueIds.length === 0) return [];
-    const rows = await this.queryMany<ClubRow>(
-      'SELECT * FROM clubs WHERE id = ANY($1)',
-      [uniqueIds]
-    );
+    const rows = await this.queryMany<ClubRow>('SELECT * FROM clubs WHERE id = ANY($1)', [
+      uniqueIds,
+    ]);
     return rows.map(rowToClub);
   }
 
   async findByCityId(cityId: string): Promise<Club[]> {
     const rows = await this.queryMany<ClubRow>(
       'SELECT * FROM clubs WHERE city_id = $1 AND status = $2 ORDER BY created_at DESC',
-      [cityId, ClubStatus.ACTIVE]
+      [cityId, ClubStatus.ACTIVE],
     );
     return rows.map(rowToClub);
   }
@@ -61,13 +57,13 @@ export class ClubsRepository extends BaseRepository {
     cityId: string,
     creatorId: string,
     description?: string,
-    status: ClubStatus = ClubStatus.PENDING
+    status: ClubStatus = ClubStatus.PENDING,
   ): Promise<Club> {
     const row = await this.queryOne<ClubRow>(
       `INSERT INTO clubs (name, description, city_id, creator_id, status)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [name, description || null, cityId, creatorId, status]
+      [name, description || null, cityId, creatorId, status],
     );
     if (!row) {
       throw new Error('Failed to create club');
@@ -77,7 +73,7 @@ export class ClubsRepository extends BaseRepository {
 
   async update(
     id: string,
-    updates: { name?: string; description?: string; status?: ClubStatus }
+    updates: { name?: string; description?: string; status?: ClubStatus },
   ): Promise<Club | null> {
     const setClauses: string[] = ['updated_at = NOW()'];
     const values: unknown[] = [];
@@ -104,7 +100,7 @@ export class ClubsRepository extends BaseRepository {
     values.push(id);
     const row = await this.queryOne<ClubRow>(
       `UPDATE clubs SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
-      values
+      values,
     );
     return row ? rowToClub(row) : null;
   }

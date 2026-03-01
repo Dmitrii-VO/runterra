@@ -10,7 +10,11 @@
 
 import { Router, Request, Response } from 'express';
 import { validateBody } from './validateBody';
-import { getUsersRepository, getWorkoutsRepository, getClubMembersRepository } from '../db/repositories';
+import {
+  getUsersRepository,
+  getWorkoutsRepository,
+  getClubMembersRepository,
+} from '../db/repositories';
 import { CreateWorkoutSchema, UpdateWorkoutSchema } from '../modules/workout';
 import { isTrainerInAnyClub, isTrainerOrLeaderInClub } from './helpers/trainer-role';
 import { logger } from '../shared/logger';
@@ -28,7 +32,11 @@ async function resolveUserId(req: Request, res: Response): Promise<string | null
     res.status(400).json({
       code: 'validation_error',
       message: 'User not found',
-      details: { fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }] },
+      details: {
+        fields: [
+          { field: 'userId', message: 'User not found for this token', code: 'invalid_user' },
+        ],
+      },
     });
     return null;
   }
@@ -57,7 +65,9 @@ router.get('/', async (req: Request, res: Response) => {
     // Personal workouts
     const hasRole = await isTrainerInAnyClub(userId);
     if (!hasRole) {
-      return res.status(403).json({ code: 'forbidden', message: 'Trainer or leader role required' });
+      return res
+        .status(403)
+        .json({ code: 'forbidden', message: 'Trainer or leader role required' });
     }
 
     const workouts = await repo.findByAuthor(userId);
@@ -95,7 +105,9 @@ router.get('/:id', async (req: Request, res: Response) => {
     }
     const hasRole = await isTrainerInAnyClub(userId);
     if (!hasRole) {
-      return res.status(403).json({ code: 'forbidden', message: 'Trainer or leader role required' });
+      return res
+        .status(403)
+        .json({ code: 'forbidden', message: 'Trainer or leader role required' });
     }
 
     res.status(200).json(workout);
@@ -113,16 +125,31 @@ router.post('/', validateBody(CreateWorkoutSchema), async (req: Request, res: Re
 
     const hasRole = await isTrainerInAnyClub(userId);
     if (!hasRole) {
-      return res.status(403).json({ code: 'forbidden', message: 'Trainer or leader role required' });
+      return res
+        .status(403)
+        .json({ code: 'forbidden', message: 'Trainer or leader role required' });
     }
 
-    const { clubId, name, description, type, difficulty, surface, blocks, targetMetric, targetValue, targetZone } = req.body;
+    const {
+      clubId,
+      name,
+      description,
+      type,
+      difficulty,
+      surface,
+      blocks,
+      targetMetric,
+      targetValue,
+      targetZone,
+    } = req.body;
 
     // If clubId provided, verify user is trainer/leader in that specific club
     if (clubId) {
       const isClubTrainer = await isTrainerOrLeaderInClub(userId, clubId);
       if (!isClubTrainer) {
-        return res.status(403).json({ code: 'forbidden', message: 'Trainer or leader role required in this club' });
+        return res
+          .status(403)
+          .json({ code: 'forbidden', message: 'Trainer or leader role required in this club' });
       }
     }
 
@@ -159,11 +186,15 @@ router.patch('/:id', validateBody(UpdateWorkoutSchema), async (req: Request, res
       return res.status(404).json({ code: 'not_found', message: 'Workout not found' });
     }
     if (workout.authorId !== userId) {
-      return res.status(403).json({ code: 'forbidden', message: 'Only the author can update this workout' });
+      return res
+        .status(403)
+        .json({ code: 'forbidden', message: 'Only the author can update this workout' });
     }
     const hasRole = await isTrainerInAnyClub(userId);
     if (!hasRole) {
-      return res.status(403).json({ code: 'forbidden', message: 'Trainer or leader role required' });
+      return res
+        .status(403)
+        .json({ code: 'forbidden', message: 'Trainer or leader role required' });
     }
 
     const updated = await repo.update(req.params.id, req.body);
@@ -186,16 +217,22 @@ router.delete('/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ code: 'not_found', message: 'Workout not found' });
     }
     if (workout.authorId !== userId) {
-      return res.status(403).json({ code: 'forbidden', message: 'Only the author can delete this workout' });
+      return res
+        .status(403)
+        .json({ code: 'forbidden', message: 'Only the author can delete this workout' });
     }
     const hasRole = await isTrainerInAnyClub(userId);
     if (!hasRole) {
-      return res.status(403).json({ code: 'forbidden', message: 'Trainer or leader role required' });
+      return res
+        .status(403)
+        .json({ code: 'forbidden', message: 'Trainer or leader role required' });
     }
 
     const hasEvents = await repo.hasUpcomingEvents(req.params.id);
     if (hasEvents) {
-      return res.status(409).json({ code: 'workout_in_use', message: 'Workout is linked to upcoming events' });
+      return res
+        .status(409)
+        .json({ code: 'workout_in_use', message: 'Workout is linked to upcoming events' });
     }
 
     await repo.delete(req.params.id);

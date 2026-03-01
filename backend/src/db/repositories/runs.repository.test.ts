@@ -48,8 +48,8 @@ describe('RunsRepository', () => {
 
       expect(result.valid).toBe(false);
       expect(result.status).toBe(RunStatus.INVALID);
-      expect(result.errors.some((e) => e.includes('Distance too short'))).toBe(true);
-      expect(result.errors.some((e) => e.includes('100'))).toBe(true);
+      expect(result.errors.some(e => e.includes('Distance too short'))).toBe(true);
+      expect(result.errors.some(e => e.includes('100'))).toBe(true);
     });
 
     it('should return invalid when duration is too short (< 30s)', () => {
@@ -61,7 +61,7 @@ describe('RunsRepository', () => {
 
       expect(result.valid).toBe(false);
       expect(result.status).toBe(RunStatus.INVALID);
-      expect(result.errors.some((e) => e.includes('Duration too short'))).toBe(true);
+      expect(result.errors.some(e => e.includes('Duration too short'))).toBe(true);
     });
 
     it('should return invalid when speed is too high (> 30 km/h)', () => {
@@ -73,8 +73,8 @@ describe('RunsRepository', () => {
 
       expect(result.valid).toBe(false);
       expect(result.status).toBe(RunStatus.INVALID);
-      expect(result.errors.some((e) => e.includes('Speed too high'))).toBe(true);
-      expect(result.errors.some((e) => e.includes('30'))).toBe(true);
+      expect(result.errors.some(e => e.includes('Speed too high'))).toBe(true);
+      expect(result.errors.some(e => e.includes('30'))).toBe(true);
     });
 
     it('should return invalid when end time is not after start time', () => {
@@ -84,7 +84,7 @@ describe('RunsRepository', () => {
       });
 
       expect(result.valid).toBe(false);
-      expect(result.errors.some((e) => e.includes('End time must be after start time'))).toBe(true);
+      expect(result.errors.some(e => e.includes('End time must be after start time'))).toBe(true);
     });
 
     it('should return invalid when duration does not match start/end diff (tolerance 5s)', () => {
@@ -96,7 +96,7 @@ describe('RunsRepository', () => {
       });
 
       expect(result.valid).toBe(false);
-      expect(result.errors.some((e) => e.includes('Duration mismatch'))).toBe(true);
+      expect(result.errors.some(e => e.includes('Duration mismatch'))).toBe(true);
     });
 
     it('should return valid when speed is just under 30 km/h', () => {

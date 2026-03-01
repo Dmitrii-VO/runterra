@@ -1,6 +1,6 @@
 /**
  * API роутер для модуля событий
- * 
+ *
  * Содержит эндпоинты для работы с событиями:
  * - GET /api/events - список событий
  * - GET /api/events/:id - событие по ID
@@ -23,10 +23,18 @@ import {
   UpdateEventSchema,
 } from '../modules/events';
 import { validateBody } from './validateBody';
-import { getEventsRepository, getUsersRepository, getWorkoutsRepository, getTrainerProfilesRepository } from '../db/repositories';
+import {
+  getEventsRepository,
+  getUsersRepository,
+  getWorkoutsRepository,
+  getTrainerProfilesRepository,
+} from '../db/repositories';
 import { logger } from '../shared/logger';
 import { isPointWithinCityBounds } from '../modules/cities/city.utils';
-import { getOrganizerDisplayName, getOrganizerDisplayNamesBatch } from './helpers/organizer-display';
+import {
+  getOrganizerDisplayName,
+  getOrganizerDisplayNamesBatch,
+} from './helpers/organizer-display';
 import { isTrainerOrLeaderInClub, isLeaderInClub } from './helpers/trainer-role';
 
 const router = Router();
@@ -48,7 +56,10 @@ function resolveTrainerDisplayName(user: {
 }): string {
   const first = user.firstName?.trim();
   const last = user.lastName?.trim();
-  const fullName = [first, last].filter((v): v is string => Boolean(v)).join(' ').trim();
+  const fullName = [first, last]
+    .filter((v): v is string => Boolean(v))
+    .join(' ')
+    .trim();
   if (fullName) return fullName;
   return user.name;
 }
@@ -60,30 +71,36 @@ async function resolveEventIntegrationFields(
   if (events.length === 0) return result;
 
   const workoutIds = Array.from(
-    new Set(events.map((event) => event.workoutId).filter((id): id is string => Boolean(id))),
+    new Set(events.map(event => event.workoutId).filter((id): id is string => Boolean(id))),
   );
   const trainerIds = Array.from(
-    new Set(events.map((event) => event.trainerId).filter((id): id is string => Boolean(id))),
+    new Set(events.map(event => event.trainerId).filter((id): id is string => Boolean(id))),
   );
 
-  const workoutsById = new Map<string, Awaited<ReturnType<ReturnType<typeof getWorkoutsRepository>['findById']>>>();
+  const workoutsById = new Map<
+    string,
+    Awaited<ReturnType<ReturnType<typeof getWorkoutsRepository>['findById']>>
+  >();
   if (workoutIds.length > 0) {
     const workoutsRepo = getWorkoutsRepository();
-    const workouts = await Promise.all(workoutIds.map((id) => workoutsRepo.findById(id)));
-    workouts.forEach((workout) => {
+    const workouts = await Promise.all(workoutIds.map(id => workoutsRepo.findById(id)));
+    workouts.forEach(workout => {
       if (workout) workoutsById.set(workout.id, workout);
     });
   }
 
-  const trainersById = new Map<string, Awaited<ReturnType<ReturnType<typeof getUsersRepository>['findByIds']>>[number]>();
+  const trainersById = new Map<
+    string,
+    Awaited<ReturnType<ReturnType<typeof getUsersRepository>['findByIds']>>[number]
+  >();
   if (trainerIds.length > 0) {
     const trainers = await getUsersRepository().findByIds(trainerIds);
-    trainers.forEach((trainer) => {
+    trainers.forEach(trainer => {
       trainersById.set(trainer.id, trainer);
     });
   }
 
-  events.forEach((event) => {
+  events.forEach(event => {
     const fields: EventIntegrationFields = {};
 
     if (event.workoutId) {
@@ -113,9 +130,9 @@ async function resolveEventIntegrationFields(
 
 /**
  * GET /api/events
- * 
+ *
  * Возвращает список событий с фильтрацией.
- * 
+ *
  * Query параметры:
  * - cityId: string (обязателен) — идентификатор города
  * - dateFilter?: 'today' | 'tomorrow' | 'next7days'
@@ -125,12 +142,22 @@ async function resolveEventIntegrationFields(
  * - eventType?: 'group_run' | 'training' | 'competition' | 'club_event'
  * - limit?: number (default 50)
  * - offset?: number (default 0)
- * 
+ *
  * По умолчанию возвращает только события со статусом OPEN или FULL.
  */
 router.get('/', async (req: Request, res: Response) => {
   const query = req.query as Record<string, string | undefined>;
-  const { cityId, dateFilter, clubId, difficultyLevel, eventType, participantOnly, onlyOpen, limit, offset } = query;
+  const {
+    cityId,
+    dateFilter,
+    clubId,
+    difficultyLevel,
+    eventType,
+    participantOnly,
+    onlyOpen,
+    limit,
+    offset,
+  } = query;
 
   if (!cityId) {
     return res.status(400).json({
@@ -166,7 +193,9 @@ router.get('/', async (req: Request, res: Response) => {
         return res.status(400).json({
           code: 'validation_error',
           message: 'User not found for this token',
-          details: { fields: [{ field: 'userId', message: 'User not found', code: 'invalid_user' }] },
+          details: {
+            fields: [{ field: 'userId', message: 'User not found', code: 'invalid_user' }],
+          },
         });
       }
       participantUserId = user.id;
@@ -175,9 +204,9 @@ router.get('/', async (req: Request, res: Response) => {
     // Resolve current user for visibility filter (optional for public feed)
     let currentUserId: string | undefined;
     if (req.authUser?.uid) {
-       const usersRepo = getUsersRepository();
-       const user = await usersRepo.findByFirebaseUid(req.authUser.uid);
-       if (user) currentUserId = user.id;
+      const usersRepo = getUsersRepository();
+      const user = await usersRepo.findByFirebaseUid(req.authUser.uid);
+      if (user) currentUserId = user.id;
     }
 
     const repo = getEventsRepository();
@@ -194,13 +223,13 @@ router.get('/', async (req: Request, res: Response) => {
       limit: limit ? parseInt(limit, 10) : 50,
       offset: offset ? parseInt(offset, 10) : 0,
     });
-    
+
     // Resolve organizer display names in batch (two DB queries total)
     const organizerNames = await getOrganizerDisplayNamesBatch(
-      events.map((e) => ({ organizerId: e.organizerId, organizerType: e.organizerType })),
+      events.map(e => ({ organizerId: e.organizerId, organizerType: e.organizerType })),
     );
     const eventIntegration = await resolveEventIntegrationFields(events);
-    const eventsDto: EventListItemDto[] = events.map((event) => ({
+    const eventsDto: EventListItemDto[] = events.map(event => ({
       id: event.id,
       name: event.name,
       type: event.type,
@@ -210,9 +239,7 @@ router.get('/', async (req: Request, res: Response) => {
       locationName: event.locationName,
       organizerId: event.organizerId,
       organizerType: event.organizerType,
-      organizerDisplayName: organizerNames.get(
-        `${event.organizerType}:${event.organizerId}`,
-      ),
+      organizerDisplayName: organizerNames.get(`${event.organizerType}:${event.organizerId}`),
       difficultyLevel: event.difficultyLevel,
       participantCount: event.participantCount,
       territoryId: event.territoryId,
@@ -237,7 +264,7 @@ router.get('/', async (req: Request, res: Response) => {
 
 /**
  * GET /api/events/:id
- * 
+ *
  * Возвращает событие по ID.
  */
 router.get('/:id', async (req: Request, res: Response) => {
@@ -246,7 +273,7 @@ router.get('/:id', async (req: Request, res: Response) => {
   try {
     const repo = getEventsRepository();
     const event = await repo.findById(id);
-    
+
     if (!event) {
       res.status(404).json({
         code: 'not_found',
@@ -255,7 +282,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       });
       return;
     }
-    
+
     let isParticipant: boolean | undefined;
     let participantStatus: EventDetailsDto['participantStatus'];
     let isOrganizer: boolean | undefined;
@@ -268,7 +295,8 @@ router.get('/:id', async (req: Request, res: Response) => {
       if (resolvedUser) {
         const participant = await repo.getParticipant(id, resolvedUser.id);
         if (participant) {
-          isParticipant = participant.status === 'registered' || participant.status === 'checked_in';
+          isParticipant =
+            participant.status === 'registered' || participant.status === 'checked_in';
           participantStatus = participant.status;
         }
         // Check if user is organizer (can edit this event)
@@ -292,7 +320,10 @@ router.get('/:id', async (req: Request, res: Response) => {
       }
     }
 
-    const organizerDisplayName = await getOrganizerDisplayName(event.organizerId, event.organizerType);
+    const organizerDisplayName = await getOrganizerDisplayName(
+      event.organizerId,
+      event.organizerType,
+    );
     const eventIntegration = await resolveEventIntegrationFields([event]);
     const integration = eventIntegration.get(event.id);
 
@@ -391,122 +422,143 @@ router.get('/:id/participants', async (req: Request, res: Response) => {
 
 /**
  * POST /api/events
- * 
+ *
  * Создает новое событие.
  */
-router.post('/', validateBody(CreateEventSchema), async (req: Request<{}, EventDetailsDto, CreateEventDto>, res: Response) => {
-  const dto = req.body;
+router.post(
+  '/',
+  validateBody(CreateEventSchema),
+  async (req: Request<{}, EventDetailsDto, CreateEventDto>, res: Response) => {
+    const dto = req.body;
 
-  if (!isPointWithinCityBounds(dto.startLocation, dto.cityId)) {
-    return res.status(400).json({
-      code: 'validation_error',
-      message: 'Request body validation failed',
-      details: {
-        fields: [
-          {
-            field: 'startLocation',
-            message: 'startLocation coordinates are outside city bounds',
-            code: 'coordinates_out_of_city',
-          },
-        ],
-      },
-    });
-  }
-
-  // Resolve authenticated user for organizer authorization
-  const uid = req.authUser?.uid;
-  if (!uid) {
-    return res.status(401).json({ code: 'unauthorized', message: 'Authorization required' });
-  }
-
-  try {
-    const usersRepo = getUsersRepository();
-    const authUser = await usersRepo.findByFirebaseUid(uid);
-    if (!authUser) {
+    if (!isPointWithinCityBounds(dto.startLocation, dto.cityId)) {
       return res.status(400).json({
         code: 'validation_error',
-        message: 'User not found',
-        details: { fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }] },
+        message: 'Request body validation failed',
+        details: {
+          fields: [
+            {
+              field: 'startLocation',
+              message: 'startLocation coordinates are outside city bounds',
+              code: 'coordinates_out_of_city',
+            },
+          ],
+        },
       });
     }
 
-    // Authorization: club events require trainer/leader role; trainer events require accepts_private_clients
-    if (dto.organizerType === 'club') {
-      const hasRole = await isTrainerOrLeaderInClub(authUser.id, dto.organizerId);
-      if (!hasRole) {
-        return res.status(403).json({ code: 'forbidden', message: 'Trainer or leader role required in organizing club' });
-      }
-    } else {
-      // organizerType === 'trainer': organizerId must be the auth user, and they must accept private clients
-      if (dto.organizerId !== authUser.id) {
-        return res.status(403).json({ code: 'forbidden', message: 'Trainer event organizerId must match authenticated user' });
-      }
-      const trainerProfile = await getTrainerProfilesRepository().findByUserId(authUser.id);
-      if (!trainerProfile || !trainerProfile.acceptsPrivateClients) {
-        return res.status(403).json({ code: 'forbidden', message: 'Trainer profile with accepts_private_clients required to create trainer events' });
-      }
+    // Resolve authenticated user for organizer authorization
+    const uid = req.authUser?.uid;
+    if (!uid) {
+      return res.status(401).json({ code: 'unauthorized', message: 'Authorization required' });
     }
 
-    const repo = getEventsRepository();
-    const event = await repo.create({
-      name: dto.name,
-      type: dto.type,
-      startDateTime: new Date(dto.startDateTime),
-      startLocation: dto.startLocation,
-      locationName: dto.locationName,
-      organizerId: dto.organizerId,
-      organizerType: dto.organizerType,
-      difficultyLevel: dto.difficultyLevel,
-      description: dto.description,
-      participantLimit: dto.participantLimit,
-      territoryId: dto.territoryId,
-      cityId: dto.cityId,
-      visibility: dto.visibility,
-      workoutId: dto.workoutId,
-      trainerId: dto.trainerId,
-    });
+    try {
+      const usersRepo = getUsersRepository();
+      const authUser = await usersRepo.findByFirebaseUid(uid);
+      if (!authUser) {
+        return res.status(400).json({
+          code: 'validation_error',
+          message: 'User not found',
+          details: {
+            fields: [
+              { field: 'userId', message: 'User not found for this token', code: 'invalid_user' },
+            ],
+          },
+        });
+      }
 
-    const organizerDisplayName = await getOrganizerDisplayName(event.organizerId, event.organizerType);
-    const eventIntegration = await resolveEventIntegrationFields([event]);
-    const integration = eventIntegration.get(event.id);
+      // Authorization: club events require trainer/leader role; trainer events require accepts_private_clients
+      if (dto.organizerType === 'club') {
+        const hasRole = await isTrainerOrLeaderInClub(authUser.id, dto.organizerId);
+        if (!hasRole) {
+          return res.status(403).json({
+            code: 'forbidden',
+            message: 'Trainer or leader role required in organizing club',
+          });
+        }
+      } else {
+        // organizerType === 'trainer': organizerId must be the auth user, and they must accept private clients
+        if (dto.organizerId !== authUser.id) {
+          return res.status(403).json({
+            code: 'forbidden',
+            message: 'Trainer event organizerId must match authenticated user',
+          });
+        }
+        const trainerProfile = await getTrainerProfilesRepository().findByUserId(authUser.id);
+        if (!trainerProfile || !trainerProfile.acceptsPrivateClients) {
+          return res.status(403).json({
+            code: 'forbidden',
+            message:
+              'Trainer profile with accepts_private_clients required to create trainer events',
+          });
+        }
+      }
 
-    const eventDto: EventDetailsDto = {
-      id: event.id,
-      name: event.name,
-      type: event.type,
-      status: event.status,
-      startDateTime: event.startDateTime,
-      startLocation: event.startLocation,
-      locationName: event.locationName,
-      organizerId: event.organizerId,
-      organizerType: event.organizerType,
-      organizerDisplayName,
-      difficultyLevel: event.difficultyLevel,
-      description: event.description,
-      participantLimit: event.participantLimit,
-      participantCount: event.participantCount,
-      territoryId: event.territoryId,
-      cityId: event.cityId,
-      createdAt: event.createdAt,
-      updatedAt: event.updatedAt,
-      workoutId: integration?.workoutId,
-      trainerId: integration?.trainerId,
-      workoutName: integration?.workoutName,
-      workoutDescription: integration?.workoutDescription,
-      workoutType: integration?.workoutType,
-      workoutDifficulty: integration?.workoutDifficulty,
-      trainerName: integration?.trainerName,
-    };
+      const repo = getEventsRepository();
+      const event = await repo.create({
+        name: dto.name,
+        type: dto.type,
+        startDateTime: new Date(dto.startDateTime),
+        startLocation: dto.startLocation,
+        locationName: dto.locationName,
+        organizerId: dto.organizerId,
+        organizerType: dto.organizerType,
+        difficultyLevel: dto.difficultyLevel,
+        description: dto.description,
+        participantLimit: dto.participantLimit,
+        territoryId: dto.territoryId,
+        cityId: dto.cityId,
+        visibility: dto.visibility,
+        workoutId: dto.workoutId,
+        trainerId: dto.trainerId,
+      });
 
-    res.status(201).json(eventDto);
-  } catch (error) {
-    logger.error('Error creating event', { error });
-    res.status(500).json({
-      code: 'internal_error',
-      message: 'Internal server error',
-    });
-  }
-});
+      const organizerDisplayName = await getOrganizerDisplayName(
+        event.organizerId,
+        event.organizerType,
+      );
+      const eventIntegration = await resolveEventIntegrationFields([event]);
+      const integration = eventIntegration.get(event.id);
+
+      const eventDto: EventDetailsDto = {
+        id: event.id,
+        name: event.name,
+        type: event.type,
+        status: event.status,
+        startDateTime: event.startDateTime,
+        startLocation: event.startLocation,
+        locationName: event.locationName,
+        organizerId: event.organizerId,
+        organizerType: event.organizerType,
+        organizerDisplayName,
+        difficultyLevel: event.difficultyLevel,
+        description: event.description,
+        participantLimit: event.participantLimit,
+        participantCount: event.participantCount,
+        territoryId: event.territoryId,
+        cityId: event.cityId,
+        createdAt: event.createdAt,
+        updatedAt: event.updatedAt,
+        workoutId: integration?.workoutId,
+        trainerId: integration?.trainerId,
+        workoutName: integration?.workoutName,
+        workoutDescription: integration?.workoutDescription,
+        workoutType: integration?.workoutType,
+        workoutDifficulty: integration?.workoutDifficulty,
+        trainerName: integration?.trainerName,
+      };
+
+      res.status(201).json(eventDto);
+    } catch (error) {
+      logger.error('Error creating event', { error });
+      res.status(500).json({
+        code: 'internal_error',
+        message: 'Internal server error',
+      });
+    }
+  },
+);
 
 /**
  * POST /api/events/:id/join
@@ -535,7 +587,9 @@ router.post('/:id/join', async (req: Request, res: Response) => {
         code: 'validation_error',
         message: 'Authentication required',
         details: {
-          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+          fields: [
+            { field: 'userId', message: 'User not found for this token', code: 'invalid_user' },
+          ],
         },
       });
       return;
@@ -606,7 +660,9 @@ router.post('/:id/leave', async (req: Request, res: Response) => {
         code: 'validation_error',
         message: 'Authentication required',
         details: {
-          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+          fields: [
+            { field: 'userId', message: 'User not found for this token', code: 'invalid_user' },
+          ],
         },
       });
       return;
@@ -657,8 +713,7 @@ router.post('/:id/check-in', async (req: Request, res: Response) => {
   const { id } = req.params;
   const { longitude, latitude } = req.body as { longitude?: number; latitude?: number };
 
-  const isFiniteNumber = (v: unknown): v is number =>
-    typeof v === 'number' && Number.isFinite(v);
+  const isFiniteNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 
   if (!isFiniteNumber(longitude) || !isFiniteNumber(latitude)) {
     res.status(400).json({
@@ -668,7 +723,8 @@ router.post('/:id/check-in', async (req: Request, res: Response) => {
         fields: [
           {
             field: !isFiniteNumber(longitude) ? 'longitude' : 'latitude',
-            message: 'Missing or invalid coordinates. Required: { longitude: number, latitude: number }',
+            message:
+              'Missing or invalid coordinates. Required: { longitude: number, latitude: number }',
             code: 'invalid_type',
           },
         ],
@@ -695,7 +751,9 @@ router.post('/:id/check-in', async (req: Request, res: Response) => {
         code: 'validation_error',
         message: 'Authentication required',
         details: {
-          fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }],
+          fields: [
+            { field: 'userId', message: 'User not found for this token', code: 'invalid_user' },
+          ],
         },
       });
       return;
@@ -773,7 +831,11 @@ router.patch('/:id', validateBody(UpdateEventSchema), async (req: Request, res: 
       return res.status(400).json({
         code: 'validation_error',
         message: 'User not found',
-        details: { fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }] },
+        details: {
+          fields: [
+            { field: 'userId', message: 'User not found for this token', code: 'invalid_user' },
+          ],
+        },
       });
     }
     const userId = user.id;
@@ -786,19 +848,26 @@ router.patch('/:id', validateBody(UpdateEventSchema), async (req: Request, res: 
 
     // Cannot edit completed/cancelled events
     if (event.status === EventStatus.COMPLETED || event.status === EventStatus.CANCELLED) {
-      return res.status(400).json({ code: 'event_not_editable', message: 'Cannot edit completed or cancelled events' });
+      return res
+        .status(400)
+        .json({ code: 'event_not_editable', message: 'Cannot edit completed or cancelled events' });
     }
 
     // Authorization check based on organizer type
     if (event.organizerType === 'club') {
       const hasRole = await isTrainerOrLeaderInClub(userId, event.organizerId);
       if (!hasRole) {
-        return res.status(403).json({ code: 'forbidden', message: 'Trainer or leader role required in organizing club' });
+        return res.status(403).json({
+          code: 'forbidden',
+          message: 'Trainer or leader role required in organizing club',
+        });
       }
     } else {
       // trainer event — only the organizer can edit
       if (event.organizerId !== userId) {
-        return res.status(403).json({ code: 'forbidden', message: 'Only the event organizer can edit this event' });
+        return res
+          .status(403)
+          .json({ code: 'forbidden', message: 'Only the event organizer can edit this event' });
       }
     }
 
@@ -816,11 +885,16 @@ router.patch('/:id', validateBody(UpdateEventSchema), async (req: Request, res: 
     // trainerId assignment restricted to leaders (club events only)
     if (trainerId !== undefined) {
       if (event.organizerType !== 'club') {
-        return res.status(400).json({ code: 'validation_error', message: 'Trainer fields can only be set on club events' });
+        return res.status(400).json({
+          code: 'validation_error',
+          message: 'Trainer fields can only be set on club events',
+        });
       }
       const userIsLeader = await isLeaderInClub(userId, event.organizerId);
       if (!userIsLeader) {
-        return res.status(403).json({ code: 'forbidden', message: 'Only club leader can assign a trainer' });
+        return res
+          .status(403)
+          .json({ code: 'forbidden', message: 'Only club leader can assign a trainer' });
       }
       if (trainerId !== null) {
         const targetIsTrainer = await isTrainerOrLeaderInClub(trainerId, event.organizerId);
@@ -842,7 +916,10 @@ router.patch('/:id', validateBody(UpdateEventSchema), async (req: Request, res: 
       }
       if (event.organizerType === 'club') {
         if (workout.clubId !== event.organizerId && workout.authorId !== userId) {
-          return res.status(400).json({ code: 'validation_error', message: 'Workout does not belong to this club or author' });
+          return res.status(400).json({
+            code: 'validation_error',
+            message: 'Workout does not belong to this club or author',
+          });
         }
       }
     }
@@ -854,11 +931,13 @@ router.patch('/:id', validateBody(UpdateEventSchema), async (req: Request, res: 
           code: 'validation_error',
           message: 'Request body validation failed',
           details: {
-            fields: [{
-              field: 'startLocation',
-              message: 'startLocation coordinates are outside city bounds',
-              code: 'coordinates_out_of_city',
-            }],
+            fields: [
+              {
+                field: 'startLocation',
+                message: 'startLocation coordinates are outside city bounds',
+                code: 'coordinates_out_of_city',
+              },
+            ],
           },
         });
       }
@@ -874,7 +953,10 @@ router.patch('/:id', validateBody(UpdateEventSchema), async (req: Request, res: 
       return res.status(500).json({ code: 'internal_error', message: 'Failed to update event' });
     }
 
-    const organizerDisplayName = await getOrganizerDisplayName(updated.organizerId, updated.organizerType);
+    const organizerDisplayName = await getOrganizerDisplayName(
+      updated.organizerId,
+      updated.organizerType,
+    );
     const eventIntegration = await resolveEventIntegrationFields([updated]);
     const integration = eventIntegration.get(updated.id);
 

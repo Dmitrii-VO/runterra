@@ -15,21 +15,21 @@ import type { TerritoryCoordinates } from './territory.entity';
 
 /**
  * DTO для создания территории
- * 
+ *
  * Используется при добавлении новой территории в систему.
- * 
+ *
  * ВАЖНО: Не содержит геометрию границ, только координаты центра.
  */
 export interface CreateTerritoryDto {
   /** Название территории */
   name: string;
-  
+
   /** Координаты центра территории на карте */
   coordinates: TerritoryCoordinates;
-  
+
   /** Идентификатор города, к которому относится территория */
   cityId: string;
-  
+
   /** Статус территории (по умолчанию FREE) */
   status?: TerritoryStatus;
 }
@@ -64,11 +64,11 @@ export const CaptureTerritorySchema = z.object({
 
 /**
  * DTO для отображения территории
- * 
+ *
  * Используется для передачи данных территории клиенту.
  * Содержит все необходимые поля для отображения территории на карте
  * и в интерфейсе приложения.
- * 
+ *
  * geometry — опциональный массив точек полигона границ.
  * Если задан, клиент рисует PolygonMapObject; иначе — CircleMapObject (fallback).
  */
@@ -94,28 +94,28 @@ export interface ClubProgressDto {
 export interface TerritoryViewDto {
   /** Уникальный идентификатор территории в системе */
   id: string;
-  
+
   /** Название территории */
   name: string;
-  
+
   /** Статус территории */
   status: TerritoryStatus;
-  
+
   /** Координаты центра территории на карте */
   coordinates: TerritoryCoordinates;
-  
+
   /** Опциональная геометрия границ — массив точек полигона (latitude, longitude) */
   geometry?: GeoCoordinates[];
-  
+
   /** Идентификатор города, к которому относится территория */
   cityId: string;
-  
+
   /** Идентификатор игрока, захватившего территорию (если захвачена) */
   capturedByUserId?: string;
-  
+
   /** Идентификатор клуба-владельца территории (если захвачена клубом) */
   clubId?: string;
-  
+
   /** Цвет территории (hex string, e.g. '#FF0000') для отображения границ */
   color?: string;
 

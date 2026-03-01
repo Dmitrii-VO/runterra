@@ -34,12 +34,13 @@ export function isPointInPolygon(point: GeoCoordinates, polygon: GeoCoordinates[
   const { latitude: x, longitude: y } = point;
 
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const xi = polygon[i].latitude, yi = polygon[i].longitude;
-    const xj = polygon[j].latitude, yj = polygon[j].longitude;
+    const xi = polygon[i].latitude,
+      yi = polygon[i].longitude;
+    const xj = polygon[j].latitude,
+      yj = polygon[j].longitude;
 
-    const intersect =
-      yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
-    
+    const intersect = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+
     if (intersect) inside = !inside;
   }
 
@@ -59,11 +60,16 @@ export function getMidpoint(p1: GeoCoordinates, p2: GeoCoordinates): GeoCoordina
 /**
  * Calculates the bounding box of a set of points.
  */
-export function getBoundingBox(points: GeoCoordinates[]): { minLat: number; maxLat: number; minLng: number; maxLng: number } {
+export function getBoundingBox(points: GeoCoordinates[]): {
+  minLat: number;
+  maxLat: number;
+  minLng: number;
+  maxLng: number;
+} {
   if (points.length === 0) {
     return { minLat: 0, maxLat: 0, minLng: 0, maxLng: 0 };
   }
-  
+
   let minLat = points[0].latitude;
   let maxLat = points[0].latitude;
   let minLng = points[0].longitude;
@@ -84,7 +90,7 @@ export function getBoundingBox(points: GeoCoordinates[]): { minLat: number; maxL
  */
 function doBoundingBoxesIntersect(
   box1: { minLat: number; maxLat: number; minLng: number; maxLng: number },
-  box2: { minLat: number; maxLat: number; minLng: number; maxLng: number }
+  box2: { minLat: number; maxLat: number; minLng: number; maxLng: number },
 ): boolean {
   return (
     box1.minLat <= box2.maxLat &&
@@ -96,17 +102,17 @@ function doBoundingBoxesIntersect(
 
 /**
  * Calculates the contribution (in meters) of a run path to each territory.
- * 
+ *
  * @param path Array of GPS points representing the run.
  * @param territories Array of territories with their geometry.
  * @returns A Map where keys are territory IDs and values are meters contributed.
  */
 export function calculateRunContribution(
   path: GeoCoordinates[],
-  territories: TerritoryGeometry[]
+  territories: TerritoryGeometry[],
 ): Map<string, number> {
   const contribution = new Map<string, number>();
-  
+
   if (path.length < 2) return contribution;
 
   // 1. Calculate path bounding box
@@ -125,11 +131,11 @@ export function calculateRunContribution(
   for (let i = 0; i < path.length - 1; i++) {
     const p1 = path[i];
     const p2 = path[i + 1];
-    
+
     // Skip if segment is too long (e.g., GPS jump > 500m) - heuristic to avoid artifacts
     // Or just trust the input. Let's trust input for now, but maybe add a sanity check?
     // Spec doesn't mention max segment length, but "calculate meters" implies reasonable segments.
-    
+
     const distance = calculateDistance(p1, p2);
     if (distance <= 0) continue;
 

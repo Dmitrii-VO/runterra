@@ -14,7 +14,7 @@ import { RunStatus } from './run.type';
 
 /**
  * DTO для создания пробежки
- * 
+ *
  * Используется при создании новой пробежки в системе.
  */
 export interface CreateRunDto {
@@ -23,22 +23,22 @@ export interface CreateRunDto {
 
   /** Идентификатор задания из календаря (event_id или personal_note_id) (опционально) */
   scheduledItemId?: string;
-  
+
   /** Идентификатор клуба, в который идет зачет очков (опционально) */
   scoringClubId?: string;
-  
+
   /** Время начала пробежки (ISO 8601 строка) */
   startedAt: string;
-  
+
   /** Время окончания пробежки (ISO 8601 строка) */
   endedAt: string;
-  
+
   /** Длительность пробежки в секундах */
   duration: number;
-  
+
   /** Пройденное расстояние в метрах */
   distance: number;
-  
+
   /** GPS точки маршрута (опционально, TODO для будущего) */
   gpsPoints?: Array<{
     latitude: number;
@@ -77,7 +77,7 @@ export const CreateRunSchema = z.object({
 
 /**
  * DTO для отображения пробежки
- * 
+ *
  * Используется для передачи данных пробежки клиенту.
  * Содержит все необходимые поля для отображения пробежки
  * в интерфейсе приложения.

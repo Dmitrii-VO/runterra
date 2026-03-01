@@ -33,7 +33,10 @@ const router = Router();
 const MAX_LIMIT = 100;
 const DEFAULT_LIMIT = 50;
 
-function parsePagination(query: { limit?: string; offset?: string }): { limit: number; offset: number } {
+function parsePagination(query: { limit?: string; offset?: string }): {
+  limit: number;
+  offset: number;
+} {
   const limit = query.limit ? parseInt(query.limit, 10) : DEFAULT_LIMIT;
   const offset = query.offset ? parseInt(query.offset, 10) : 0;
   return {
@@ -83,7 +86,7 @@ router.get('/clubs', async (req: Request, res: Response) => {
 
     const clubMembersRepo = getClubMembersRepository();
     const memberships = await clubMembersRepo.findActiveClubsByUser(user.id);
-    const chats: ClubChatViewDto[] = memberships.map((membership) => ({
+    const chats: ClubChatViewDto[] = memberships.map(membership => ({
       id: membership.clubId,
       clubId: membership.clubId,
       clubName: membership.clubName,
@@ -194,7 +197,12 @@ router.get('/clubs/:clubId', async (req: Request, res: Response) => {
       resolvedChannelId = await getOrCreateDefaultChannelId(clubId);
     }
 
-    const list = await messagesRepo.findByClubChannelWithRole(clubId, resolvedChannelId, limit, offset);
+    const list = await messagesRepo.findByClubChannelWithRole(
+      clubId,
+      resolvedChannelId,
+      limit,
+      offset,
+    );
     res.status(200).json(list);
   } catch (error) {
     logger.error('Error fetching club messages', { error: error, clubId });
@@ -316,11 +324,14 @@ router.post(
         message: 'Internal server error',
       });
     }
-  }
+  },
 );
 
 // --- Helper to resolve userId from Firebase UID ---
-async function resolveUser(req: Request, res: Response): Promise<{ id: string; name: string } | null> {
+async function resolveUser(
+  req: Request,
+  res: Response,
+): Promise<{ id: string; name: string } | null> {
   const uid = getAuthUidOrRespondUnauthorized(req, res);
   if (!uid) return null;
   const user = await getUsersRepository().findByFirebaseUid(uid);
@@ -344,7 +355,10 @@ router.get('/trainer/clients', async (req: Request, res: Response) => {
     const clients = await messagesRepo.getTrainerClients(user.id);
     res.status(200).json(clients);
   } catch (error) {
-    logger.error('Error fetching trainer clients', { error: error instanceof Error ? error.message : error, stack: error instanceof Error ? error.stack : undefined });
+    logger.error('Error fetching trainer clients', {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
   }
 });
@@ -366,7 +380,10 @@ router.get('/trainer/my-trainer', async (req: Request, res: Response) => {
     }
     res.status(200).json(trainer);
   } catch (error) {
-    logger.error('Error fetching my trainer', { error: error instanceof Error ? error.message : error, stack: error instanceof Error ? error.stack : undefined });
+    logger.error('Error fetching my trainer', {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
   }
 });
@@ -382,7 +399,9 @@ router.get('/direct/:otherUserId', async (req: Request, res: Response) => {
     res.status(400).json({
       code: 'validation_error',
       message: 'Path validation failed',
-      details: { fields: [{ field: 'otherUserId', message: 'Invalid UUID', code: 'invalid_format' }] },
+      details: {
+        fields: [{ field: 'otherUserId', message: 'Invalid UUID', code: 'invalid_format' }],
+      },
     });
     return;
   }
@@ -421,7 +440,9 @@ router.post(
       res.status(400).json({
         code: 'validation_error',
         message: 'Path validation failed',
-        details: { fields: [{ field: 'otherUserId', message: 'Invalid UUID', code: 'invalid_format' }] },
+        details: {
+          fields: [{ field: 'otherUserId', message: 'Invalid UUID', code: 'invalid_format' }],
+        },
       });
       return;
     }
@@ -463,7 +484,7 @@ router.post(
       logger.error('Error sending direct message', { error });
       res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
     }
-  }
+  },
 );
 
 /**
@@ -494,7 +515,9 @@ router.get('/trainer-groups/:groupId', async (req: Request, res: Response) => {
     const isMember = await trainerGroupsRepo.isMember(groupId, user.id);
     const isTrainer = group.trainerId === user.id;
     if (!isMember && !isTrainer) {
-      return res.status(403).json({ code: 'forbidden', message: 'You do not have access to this group' });
+      return res
+        .status(403)
+        .json({ code: 'forbidden', message: 'You do not have access to this group' });
     }
 
     const { limit, offset } = parsePagination(req.query as { limit?: string; offset?: string });
@@ -538,7 +561,9 @@ router.post(
       const isMember = await trainerGroupsRepo.isMember(groupId, user.id);
       const isTrainer = group.trainerId === user.id;
       if (!isMember && !isTrainer) {
-        return res.status(403).json({ code: 'forbidden', message: 'You do not have access to this group' });
+        return res
+          .status(403)
+          .json({ code: 'forbidden', message: 'You do not have access to this group' });
       }
 
       const { text } = req.body as { text: string };
@@ -566,7 +591,7 @@ router.post(
       logger.error('Error sending trainer group message', { error, groupId });
       res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
     }
-  }
+  },
 );
 
 export default router;

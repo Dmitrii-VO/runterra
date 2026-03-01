@@ -1,11 +1,11 @@
 /**
  * API роутер для модуля городов
- * 
+ *
  * Содержит эндпоинты для работы с городами:
  * - GET /api/cities - список городов
  * - GET /api/cities/:id - город по ID
  * - POST /api/cities - создание города
- * 
+ *
  * На текущей стадии (skeleton) все эндпоинты возвращают заглушки.
  * TODO: Реализовать контроллеры и бизнес-логику в будущем.
  */
@@ -19,9 +19,9 @@ const router = Router();
 
 /**
  * GET /api/cities
- * 
+ *
  * Возвращает список городов.
- * 
+ *
  * TODO: Реализовать пагинацию, фильтрацию, сортировку.
  */
 router.get('/', (_req: Request, res: Response) => {
@@ -31,9 +31,9 @@ router.get('/', (_req: Request, res: Response) => {
 
 /**
  * GET /api/cities/:id
- * 
+ *
  * Возвращает город по ID.
- * 
+ *
  * TODO: Реализовать проверку существования города.
  */
 router.get('/:id', (req: Request, res: Response) => {
@@ -54,28 +54,32 @@ router.get('/:id', (req: Request, res: Response) => {
 
 /**
  * POST /api/cities
- * 
+ *
  * Создает новый город.
- * 
+ *
  * Техническая валидация: тело запроса проверяется через CreateCitySchema.
  * TODO: Реализовать проверку уникальности названия.
  */
-router.post('/', validateBody(CreateCitySchema), (req: Request<{}, unknown, CreateCityDto>, res: Response) => {
-  const dto = req.body;
+router.post(
+  '/',
+  validateBody(CreateCitySchema),
+  (req: Request<{}, unknown, CreateCityDto>, res: Response) => {
+    const dto = req.body;
 
-  // Заглушка: возвращаем город с переданными полями без сохранения.
-  // Реальное сохранение появится после внедрения БД для городов.
-  const now = new Date();
+    // Заглушка: возвращаем город с переданными полями без сохранения.
+    // Реальное сохранение появится после внедрения БД для городов.
+    const now = new Date();
 
-  res.status(201).json({
-    id: 'new-city-id',
-    name: dto.name,
-    center: dto.center,
-    bounds: dto.bounds,
-    coordinates: dto.center,
-    createdAt: now,
-    updatedAt: now,
-  });
-});
+    res.status(201).json({
+      id: 'new-city-id',
+      name: dto.name,
+      center: dto.center,
+      bounds: dto.bounds,
+      coordinates: dto.center,
+      createdAt: now,
+      updatedAt: now,
+    });
+  },
+);
 
 export default router;

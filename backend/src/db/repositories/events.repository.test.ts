@@ -24,10 +24,17 @@ jest.mock('../client', () => ({
   }),
 }));
 
-function eventRow(overrides: Partial<{
-  id: string; status: string; participant_limit: number | null; participant_count: number;
-  start_date_time: Date; start_longitude: number; start_latitude: number;
-}> = {}) {
+function eventRow(
+  overrides: Partial<{
+    id: string;
+    status: string;
+    participant_limit: number | null;
+    participant_count: number;
+    start_date_time: Date;
+    start_longitude: number;
+    start_latitude: number;
+  }> = {},
+) {
   return {
     id: 'ev-1',
     name: 'Test Run',
@@ -50,10 +57,17 @@ function eventRow(overrides: Partial<{
   };
 }
 
-function participantRow(overrides: Partial<{
-  id: string; event_id: string; user_id: string; status: string;
-  checked_in_at: Date | null; check_in_longitude: number | null; check_in_latitude: number | null;
-}> = {}) {
+function participantRow(
+  overrides: Partial<{
+    id: string;
+    event_id: string;
+    user_id: string;
+    status: string;
+    checked_in_at: Date | null;
+    check_in_longitude: number | null;
+    check_in_latitude: number | null;
+  }> = {},
+) {
   return {
     id: 'p-1',
     event_id: 'ev-1',
@@ -141,7 +155,11 @@ describe('EventsRepository', () => {
             rowCount: 1,
           };
         }
-        if (sql.includes('SELECT * FROM event_participants WHERE event_id = $1 AND user_id = $2 FOR UPDATE')) {
+        if (
+          sql.includes(
+            'SELECT * FROM event_participants WHERE event_id = $1 AND user_id = $2 FOR UPDATE',
+          )
+        ) {
           return { rows: [], rowCount: 0 };
         }
         if (sql.includes('SELECT COUNT(*)::text AS count')) {
@@ -164,7 +182,11 @@ describe('EventsRepository', () => {
             rowCount: 1,
           };
         }
-        if (sql.includes('SELECT * FROM event_participants WHERE event_id = $1 AND user_id = $2 FOR UPDATE')) {
+        if (
+          sql.includes(
+            'SELECT * FROM event_participants WHERE event_id = $1 AND user_id = $2 FOR UPDATE',
+          )
+        ) {
           return {
             rows: [participantRow({ status: 'registered' })],
             rowCount: 1,
@@ -188,7 +210,11 @@ describe('EventsRepository', () => {
             rowCount: 1,
           };
         }
-        if (sql.includes('SELECT * FROM event_participants WHERE event_id = $1 AND user_id = $2 FOR UPDATE')) {
+        if (
+          sql.includes(
+            'SELECT * FROM event_participants WHERE event_id = $1 AND user_id = $2 FOR UPDATE',
+          )
+        ) {
           return { rows: [], rowCount: 0 };
         }
         if (sql.includes('SELECT COUNT(*)::text AS count')) {

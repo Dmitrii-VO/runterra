@@ -50,7 +50,7 @@ function writeToFile(filename: string, line: string): void {
   try {
     ensureLogsDir();
     const filePath = path.join(LOGS_DIR, filename);
-    fs.appendFile(filePath, line + '\n', 'utf8', (err) => {
+    fs.appendFile(filePath, line + '\n', 'utf8', err => {
       if (err) console.error('Failed to write log to file:', err);
     });
   } catch (err) {
@@ -117,4 +117,3 @@ export const logger = {
     baseLog('error', message, context);
   },
 };
-

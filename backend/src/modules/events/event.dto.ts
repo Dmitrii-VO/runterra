@@ -41,9 +41,9 @@ export const UpdateEventSchema = z.object({
 
 /**
  * DTO для создания события
- * 
+ *
  * Используется при создании нового события в системе.
- * 
+ *
  * ВАЖНО: Не содержит GPS check-in данные, расчёты участников.
  */
 export interface CreateEventDto {
@@ -61,25 +61,25 @@ export interface CreateEventDto {
 
   /** Координаты точки старта */
   startLocation: EventStartLocation;
-  
+
   /** Краткое название локации (парк / район) */
   locationName?: string;
-  
+
   /** Идентификатор организатора (клуб или тренер) */
   organizerId: string;
-  
+
   /** Тип организатора */
   organizerType: 'club' | 'trainer';
-  
+
   /** Уровень подготовки */
   difficultyLevel?: 'beginner' | 'intermediate' | 'advanced';
-  
+
   /** Описание события (опционально) */
   description?: string;
-  
+
   /** Лимит участников (опционально) */
   participantLimit?: number;
-  
+
   /** Идентификатор территории, к которой привязано событие (если есть) */
   territoryId?: string;
 
@@ -111,9 +111,7 @@ export const CreateEventSchema = z.object({
   locationName: z.string().optional(),
   organizerId: z.string(),
   organizerType: z.enum(['club', 'trainer']),
-  difficultyLevel: z
-    .enum(['beginner', 'intermediate', 'advanced'])
-    .optional(),
+  difficultyLevel: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
   description: z.string().optional(),
   participantLimit: z.number().int().optional(),
   territoryId: z.string().optional(),
@@ -125,12 +123,12 @@ export const CreateEventSchema = z.object({
 
 /**
  * DTO для отображения детальной информации о событии
- * 
+ *
  * Используется для передачи полных данных события клиенту
  * при запросе детальной информации (GET /api/events/:id).
  * Содержит все необходимые поля для отображения события
  * в детальном экране приложения.
- * 
+ *
  * ВАЖНО: Не содержит GPS check-in данные, расчёты участников.
  */
 export interface EventDetailsDto {
@@ -154,56 +152,56 @@ export interface EventDetailsDto {
 
   /** Координаты точки старта */
   startLocation: EventStartLocation;
-  
+
   /** Краткое название локации (парк / район) */
   locationName?: string;
-  
+
   /** Идентификатор организатора (клуб или тренер) */
   organizerId: string;
-  
+
   /** Тип организатора */
   organizerType: 'club' | 'trainer';
-  
+
   /** Отображаемое имя организатора (название клуба или имя тренера). Заполняется backend при отдаче. */
   organizerDisplayName?: string;
-  
+
   /** Уровень подготовки */
   difficultyLevel?: 'beginner' | 'intermediate' | 'advanced';
-  
+
   /** Описание события (опционально) */
   description?: string;
-  
-  /** 
+
+  /**
    * Лимит участников (опционально)
-   * 
+   *
    * Также называется capacity - максимальное количество участников.
    * Если не указан, событие без ограничений по количеству участников.
    * Используется для определения статуса FULL (participantCount >= participantLimit).
-   * 
+   *
    * Invariant: status === FULL ⇔ participantLimit != null && participantCount >= participantLimit
    */
   participantLimit?: number;
-  
-  /** 
+
+  /**
    * Количество записавшихся участников
-   * 
+   *
    * Также называется participantsCount - текущее количество участников.
    * Используется вместе с participantLimit для определения статуса FULL.
    * TODO: Вычислять автоматически при записи/отмене участия.
-   * 
+   *
    * Invariant: status === FULL ⇔ participantLimit != null && participantCount >= participantLimit
    */
   participantCount: number;
-  
+
   /** Идентификатор территории, к которой привязано событие (если есть) */
   territoryId?: string;
-  
+
   /** Идентификатор города, в котором проходит событие */
   cityId: string;
-  
+
   /** Дата создания записи */
   createdAt: Date;
-  
+
   /** Дата последнего обновления */
   updatedAt: Date;
 
@@ -240,7 +238,7 @@ export interface EventDetailsDto {
 
 /**
  * DTO для отображения события в списке
- * 
+ *
  * Упрощённая версия EventViewDto для списка событий.
  * Содержит только основные поля для карточки события.
  */
@@ -265,25 +263,25 @@ export interface EventListItemDto {
 
   /** Координаты точки старта (для отображения на карте) */
   startLocation: EventStartLocation;
-  
+
   /** Краткое название локации (парк / район) */
   locationName?: string;
-  
+
   /** Идентификатор организатора (клуб или тренер) */
   organizerId: string;
-  
+
   /** Тип организатора */
   organizerType: 'club' | 'trainer';
-  
+
   /** Отображаемое имя организатора (название клуба или имя тренера). Заполняется backend при отдаче. */
   organizerDisplayName?: string;
-  
+
   /** Уровень подготовки */
   difficultyLevel?: 'beginner' | 'intermediate' | 'advanced';
-  
+
   /** Количество записавшихся участников */
   participantCount: number;
-  
+
   /** Идентификатор территории, к которой привязано событие (если есть) */
   territoryId?: string;
 

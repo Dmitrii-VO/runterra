@@ -1,6 +1,6 @@
 /**
  * API роутер для модуля карты
- * 
+ *
  * Содержит эндпоинты для работы с картой:
  * - GET /api/map/data - данные для карты (территории + события)
  */
@@ -8,7 +8,7 @@
 import { Router, Request, Response } from 'express';
 import { MapDataDto } from '../modules/map';
 import { TerritoryStatus, TerritoryViewDto } from '../modules/territories';
-import { EventType, EventStatus, EventListItemDto } from '../modules/events';
+import { EventListItemDto } from '../modules/events';
 import { getEventsRepository } from '../db/repositories';
 import { getTerritoriesForCity } from '../modules/territories/territories.config';
 import { findCityById } from '../modules/cities/cities.config';
@@ -19,9 +19,9 @@ const router = Router();
 
 /**
  * GET /api/map/data
- * 
+ *
  * Возвращает данные для отображения на карте: территории и события.
- * 
+ *
  * Query параметры:
  * - cityId: string (обязателен) — идентификатор города
  * - bounds?: string (формат: "minLng,minLat,maxLng,maxLat") - TODO
@@ -32,7 +32,7 @@ const router = Router();
 router.get('/data', async (req: Request, res: Response) => {
   const query = req.query as Record<string, string | undefined>;
   const { cityId, dateFilter, clubId, onlyActive } = query;
-  
+
   if (!cityId) {
     return res.status(400).json({
       code: 'validation_error',
@@ -65,46 +65,47 @@ router.get('/data', async (req: Request, res: Response) => {
       },
     });
   }
-  
+
   try {
     // Territories: static config (SPB popular running parks) until DB is introduced
     let territories: TerritoryViewDto[] = getTerritoriesForCity(cityId);
     if (clubId) {
       territories = territories.filter(t => t.clubId === clubId);
     }
-    
+
     // Фильтр территорий: только активные
     if (onlyActive === 'true') {
       territories = territories.filter(
-        (t) => t.status === TerritoryStatus.CAPTURED || t.status === TerritoryStatus.CONTESTED,
+        t => t.status === TerritoryStatus.CAPTURED || t.status === TerritoryStatus.CONTESTED,
       );
     }
 
     // Resolve current user for visibility filter
     let currentUserId: string | undefined;
     if (req.authUser?.uid) {
-       // We need to import getUsersRepository here
-       const { getUsersRepository } = await import('../db/repositories');
-       const usersRepo = getUsersRepository();
-       const user = await usersRepo.findByFirebaseUid(req.authUser.uid);
-       if (user) currentUserId = user.id;
+      // We need to import getUsersRepository here
+      const { getUsersRepository } = await import('../db/repositories');
+      const usersRepo = getUsersRepository();
+      const user = await usersRepo.findByFirebaseUid(req.authUser.uid);
+      if (user) currentUserId = user.id;
     }
 
     // Получаем события из БД с фильтрами
     const repo = getEventsRepository();
     const events = await repo.findAll({
       cityId,
-      dateFilter: dateFilter === 'today' ? 'today' : dateFilter === 'week' ? 'next7days' : undefined,
+      dateFilter:
+        dateFilter === 'today' ? 'today' : dateFilter === 'week' ? 'next7days' : undefined,
       clubId,
       currentUserId,
       limit: 100,
     });
-    
+
     // Resolve organizer display names in batch (two DB queries total)
     const organizerNames = await getOrganizerDisplayNamesBatch(
-      events.map((e) => ({ organizerId: e.organizerId, organizerType: e.organizerType })),
+      events.map(e => ({ organizerId: e.organizerId, organizerType: e.organizerType })),
     );
-    const eventsDto: EventListItemDto[] = events.map((event) => ({
+    const eventsDto: EventListItemDto[] = events.map(event => ({
       id: event.id,
       name: event.name,
       type: event.type,
@@ -114,15 +115,13 @@ router.get('/data', async (req: Request, res: Response) => {
       locationName: event.locationName,
       organizerId: event.organizerId,
       organizerType: event.organizerType,
-      organizerDisplayName: organizerNames.get(
-        `${event.organizerType}:${event.organizerId}`,
-      ),
+      organizerDisplayName: organizerNames.get(`${event.organizerType}:${event.organizerId}`),
       difficultyLevel: event.difficultyLevel,
       participantCount: event.participantCount,
       territoryId: event.territoryId,
       cityId: event.cityId,
     }));
-    
+
     // Viewport — центр выбранного города
     const viewport = {
       center: {
@@ -131,7 +130,7 @@ router.get('/data', async (req: Request, res: Response) => {
       },
       zoom: 12.0,
     };
-    
+
     const mapData: MapDataDto = {
       viewport,
       territories,
@@ -141,7 +140,7 @@ router.get('/data', async (req: Request, res: Response) => {
         timestamp: new Date(),
       },
     };
-    
+
     res.status(200).json(mapData);
   } catch (error) {
     logger.error('Error fetching map data', { error });

@@ -8,7 +8,12 @@ import { Server as HttpServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { parse as parseUrl } from 'url';
 import { getAuthProvider } from '../modules/auth';
-import { getUsersRepository, getClubMembersRepository, getMessagesRepository, getTrainerGroupsRepository } from '../db/repositories';
+import {
+  getUsersRepository,
+  getClubMembersRepository,
+  getMessagesRepository,
+  getTrainerGroupsRepository,
+} from '../db/repositories';
 import { logger } from '../shared/logger';
 import { isValidClubId } from '../shared/clubId';
 import { isValidUuid } from '../shared/validation';
@@ -130,7 +135,7 @@ export function initChatWs(server: HttpServer): void {
 
     getAuthProvider()
       .verifyToken(token)
-      .then((result) => {
+      .then(result => {
         if (!result.valid || !result.user) {
           socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
           socket.destroy();
@@ -157,7 +162,7 @@ export function initChatWs(server: HttpServer): void {
           const client = clients.get(ws);
           if (!client) return;
           canSubscribe(client.uid, msg.channel)
-            .then((allowed) => {
+            .then(allowed => {
               if (allowed) {
                 client.channels.add(msg.channel!);
               } else {

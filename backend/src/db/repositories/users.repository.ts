@@ -56,25 +56,21 @@ function toDateOnlyString(value: Date | string | null): string | undefined {
 
 export class UsersRepository extends BaseRepository {
   async findById(id: string): Promise<User | null> {
-    const row = await this.queryOne<UserRow>(
-      'SELECT * FROM users WHERE id = $1',
-      [id]
-    );
+    const row = await this.queryOne<UserRow>('SELECT * FROM users WHERE id = $1', [id]);
     return row ? rowToUser(row) : null;
   }
 
   async findByFirebaseUid(firebaseUid: string): Promise<User | null> {
-    const row = await this.queryOne<UserRow>(
-      'SELECT * FROM users WHERE firebase_uid = $1',
-      [firebaseUid]
-    );
+    const row = await this.queryOne<UserRow>('SELECT * FROM users WHERE firebase_uid = $1', [
+      firebaseUid,
+    ]);
     return row ? rowToUser(row) : null;
   }
 
   async findAll(limit = 50, offset = 0): Promise<User[]> {
     const rows = await this.queryMany<UserRow>(
       'SELECT * FROM users WHERE profile_visible = true ORDER BY created_at DESC LIMIT $1 OFFSET $2',
-      [limit, offset]
+      [limit, offset],
     );
     return rows.map(rowToUser);
   }
@@ -82,10 +78,9 @@ export class UsersRepository extends BaseRepository {
   async findByIds(ids: string[]): Promise<User[]> {
     const uniqueIds = Array.from(new Set(ids));
     if (uniqueIds.length === 0) return [];
-    const rows = await this.queryMany<UserRow>(
-      'SELECT * FROM users WHERE id = ANY($1)',
-      [uniqueIds]
-    );
+    const rows = await this.queryMany<UserRow>('SELECT * FROM users WHERE id = ANY($1)', [
+      uniqueIds,
+    ]);
     return rows.map(rowToUser);
   }
 
@@ -121,24 +116,27 @@ export class UsersRepository extends BaseRepository {
         data.avatarUrl || null,
         data.cityId || null,
         data.isMercenary || false,
-      ]
+      ],
     );
     return rowToUser(row!);
   }
 
-  async update(id: string, data: Partial<{
-    name: string;
-    firstName: string;
-    lastName: string;
-    birthDate: string | null;
-    country: string;
-    gender: User['gender'];
-    avatarUrl: string;
-    cityId: string | null;
-    isMercenary: boolean;
-    profileVisible: boolean;
-    status: UserStatus;
-  }>): Promise<User | null> {
+  async update(
+    id: string,
+    data: Partial<{
+      name: string;
+      firstName: string;
+      lastName: string;
+      birthDate: string | null;
+      country: string;
+      gender: User['gender'];
+      avatarUrl: string;
+      cityId: string | null;
+      isMercenary: boolean;
+      profileVisible: boolean;
+      status: UserStatus;
+    }>,
+  ): Promise<User | null> {
     const fields: string[] = [];
     const values: unknown[] = [];
     let paramIndex = 1;
@@ -197,7 +195,7 @@ export class UsersRepository extends BaseRepository {
 
     const row = await this.queryOne<UserRow>(
       `UPDATE users SET ${fields.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
-      values
+      values,
     );
     return row ? rowToUser(row) : null;
   }
@@ -224,10 +222,7 @@ export class UsersRepository extends BaseRepository {
    * Cascade deletes: runs, event_participants (configured in DB)
    */
   async delete(id: string): Promise<boolean> {
-    const result = await this.query(
-      'DELETE FROM users WHERE id = $1',
-      [id]
-    );
+    const result = await this.query('DELETE FROM users WHERE id = $1', [id]);
     return (result.rowCount ?? 0) > 0;
   }
 
@@ -243,7 +238,7 @@ export class UsersRepository extends BaseRepository {
           EXISTS(SELECT 1 FROM trainer_clients WHERE client_id = $1) OR
           EXISTS(SELECT 1 FROM club_members WHERE user_id = $1 AND role IN ('trainer', 'leader') AND status = 'active')
         ) as has_trainers`,
-      [userId]
+      [userId],
     );
     return {
       hasClubs: res?.has_clubs ?? false,

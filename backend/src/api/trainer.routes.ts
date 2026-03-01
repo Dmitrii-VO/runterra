@@ -40,7 +40,11 @@ async function resolveUserId(req: Request, res: Response): Promise<string | null
     res.status(400).json({
       code: 'validation_error',
       message: 'User not found',
-      details: { fields: [{ field: 'userId', message: 'User not found for this token', code: 'invalid_user' }] },
+      details: {
+        fields: [
+          { field: 'userId', message: 'User not found for this token', code: 'invalid_user' },
+        ],
+      },
     });
     return null;
   }
@@ -102,49 +106,59 @@ router.get('/profile/:userId', async (req: Request, res: Response) => {
 });
 
 // POST /api/trainer/profile — create (any authenticated user with bio + specialization)
-router.post('/profile', validateBody(CreateTrainerProfileSchema), async (req: Request, res: Response) => {
-  try {
-    const userId = await resolveUserId(req, res);
-    if (!userId) return;
+router.post(
+  '/profile',
+  validateBody(CreateTrainerProfileSchema),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = await resolveUserId(req, res);
+      if (!userId) return;
 
-    const repo = getTrainerProfilesRepository();
-    const existing = await repo.findByUserId(userId);
-    if (existing) {
-      return res.status(409).json({ code: 'conflict', message: 'Trainer profile already exists' });
+      const repo = getTrainerProfilesRepository();
+      const existing = await repo.findByUserId(userId);
+      if (existing) {
+        return res
+          .status(409)
+          .json({ code: 'conflict', message: 'Trainer profile already exists' });
+      }
+
+      const profile = await repo.create({
+        userId,
+        bio: req.body.bio,
+        specialization: req.body.specialization,
+        experienceYears: req.body.experienceYears,
+        certificates: req.body.certificates,
+        acceptsPrivateClients: req.body.acceptsPrivateClients ?? false,
+      });
+      res.status(201).json(profile);
+    } catch (error) {
+      logger.error('Error creating trainer profile', { error });
+      res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
     }
-
-    const profile = await repo.create({
-      userId,
-      bio: req.body.bio,
-      specialization: req.body.specialization,
-      experienceYears: req.body.experienceYears,
-      certificates: req.body.certificates,
-      acceptsPrivateClients: req.body.acceptsPrivateClients ?? false,
-    });
-    res.status(201).json(profile);
-  } catch (error) {
-    logger.error('Error creating trainer profile', { error });
-    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
-  }
-});
+  },
+);
 
 // PATCH /api/trainer/profile — update own profile
-router.patch('/profile', validateBody(UpdateTrainerProfileSchema), async (req: Request, res: Response) => {
-  try {
-    const userId = await resolveUserId(req, res);
-    if (!userId) return;
+router.patch(
+  '/profile',
+  validateBody(UpdateTrainerProfileSchema),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = await resolveUserId(req, res);
+      if (!userId) return;
 
-    const repo = getTrainerProfilesRepository();
-    const profile = await repo.update(userId, req.body);
-    if (!profile) {
-      return res.status(404).json({ code: 'not_found', message: 'Trainer profile not found' });
+      const repo = getTrainerProfilesRepository();
+      const profile = await repo.update(userId, req.body);
+      if (!profile) {
+        return res.status(404).json({ code: 'not_found', message: 'Trainer profile not found' });
+      }
+      res.status(200).json(profile);
+    } catch (error) {
+      logger.error('Error updating trainer profile', { error });
+      res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
     }
-    res.status(200).json(profile);
-  } catch (error) {
-    logger.error('Error updating trainer profile', { error });
-    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
-  }
-});
+  },
+);
 
 /**
  * POST /api/trainer/clients/:userId — add a client (trainer/leader in a shared club)
@@ -173,7 +187,9 @@ router.post('/clients/:userId', async (req: Request, res: Response) => {
     // Verify caller has trainer or leader role in at least one club where target is also a member
     const clubMembersRepo = getClubMembersRepository();
     const trainerMemberships = await clubMembersRepo.findActiveClubsByUser(trainerId);
-    const trainerClubs = trainerMemberships.filter(m => m.role === 'trainer' || m.role === 'leader');
+    const trainerClubs = trainerMemberships.filter(
+      m => m.role === 'trainer' || m.role === 'leader',
+    );
 
     let hasSharedClub = false;
     for (const tc of trainerClubs) {
@@ -272,45 +288,53 @@ router.get('/groups', async (req: Request, res: Response) => {
 /**
  * POST /api/trainer/groups — create a group
  */
-router.post('/groups', validateBody(CreateTrainerGroupSchema), async (req: Request, res: Response) => {
-  try {
-    const trainerId = await resolveUserId(req, res);
-    if (!trainerId) return;
+router.post(
+  '/groups',
+  validateBody(CreateTrainerGroupSchema),
+  async (req: Request, res: Response) => {
+    try {
+      const trainerId = await resolveUserId(req, res);
+      if (!trainerId) return;
 
-    const { clubId, name, memberIds } = req.body;
+      const { clubId, name, memberIds } = req.body;
 
-    // Verify trainer is indeed a trainer/leader in this club
-    const clubMembersRepo = getClubMembersRepository();
-    const membership = await clubMembersRepo.findByClubAndUser(clubId, trainerId);
-    if (!membership || membership.status !== 'active' || (membership.role !== 'trainer' && membership.role !== 'leader')) {
-      return res.status(403).json({
-        code: 'forbidden',
-        message: 'You must be a trainer or leader in this club to create groups',
+      // Verify trainer is indeed a trainer/leader in this club
+      const clubMembersRepo = getClubMembersRepository();
+      const membership = await clubMembersRepo.findByClubAndUser(clubId, trainerId);
+      if (
+        !membership ||
+        membership.status !== 'active' ||
+        (membership.role !== 'trainer' && membership.role !== 'leader')
+      ) {
+        return res.status(403).json({
+          code: 'forbidden',
+          message: 'You must be a trainer or leader in this club to create groups',
+        });
+      }
+
+      // Verify all memberIds are active members of the club
+      const allMembersActive = await clubMembersRepo.verifyActiveMembers(clubId, memberIds);
+      if (!allMembersActive) {
+        return res.status(400).json({
+          code: 'validation_error',
+          message: 'One or more users are not active members of the club',
+        });
+      }
+
+      const repo = getTrainerGroupsRepository();
+      const group = await repo.create({
+        clubId,
+        trainerId,
+        name,
+        memberIds,
       });
+      res.status(201).json(group);
+    } catch (error) {
+      logger.error('Error creating trainer group', { error });
+      res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
     }
-
-    // Verify all memberIds are active members of the club
-    const allMembersActive = await clubMembersRepo.verifyActiveMembers(clubId, memberIds);
-    if (!allMembersActive) {
-      return res.status(400).json({
-        code: 'validation_error',
-        message: 'One or more users are not active members of the club',
-      });
-    }
-
-    const repo = getTrainerGroupsRepository();
-    const group = await repo.create({
-      clubId,
-      trainerId,
-      name,
-      memberIds,
-    });
-    res.status(201).json(group);
-  } catch (error) {
-    logger.error('Error creating trainer group', { error });
-    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
-  }
-});
+  },
+);
 
 /**
  * GET /api/trainer/groups/:groupId/members — get IDs of members in a group
@@ -343,47 +367,53 @@ router.get('/groups/:groupId/members', async (req: Request, res: Response) => {
 /**
  * PATCH /api/trainer/groups/:groupId — update group details
  */
-router.patch('/groups/:groupId', validateBody(UpdateTrainerGroupSchema), async (req: Request, res: Response) => {
-  try {
-    const trainerId = await resolveUserId(req, res);
-    if (!trainerId) return;
+router.patch(
+  '/groups/:groupId',
+  validateBody(UpdateTrainerGroupSchema),
+  async (req: Request, res: Response) => {
+    try {
+      const trainerId = await resolveUserId(req, res);
+      if (!trainerId) return;
 
-    const { groupId } = req.params;
-    if (!isValidUuid(groupId)) return res.status(400).json({ code: 'validation_error' });
+      const { groupId } = req.params;
+      if (!isValidUuid(groupId)) return res.status(400).json({ code: 'validation_error' });
 
-    const repo = getTrainerGroupsRepository();
-    const group = await repo.findById(groupId);
-    if (!group) return res.status(404).json({ code: 'not_found' });
+      const repo = getTrainerGroupsRepository();
+      const group = await repo.findById(groupId);
+      if (!group) return res.status(404).json({ code: 'not_found' });
 
-    if (group.trainerId !== trainerId) {
-      return res.status(403).json({ code: 'forbidden', message: 'Only the group trainer can update it' });
-    }
-
-    const { name, memberIds } = req.body;
-
-    if (name) {
-      await repo.updateName(groupId, name);
-    }
-
-    if (memberIds) {
-      // Verify all memberIds are active members of the club
-      const clubMembersRepo = getClubMembersRepository();
-      const allMembersActive = await clubMembersRepo.verifyActiveMembers(group.clubId, memberIds);
-      if (!allMembersActive) {
-        return res.status(400).json({
-          code: 'validation_error',
-          message: 'One or more users are not active members of the club',
-        });
+      if (group.trainerId !== trainerId) {
+        return res
+          .status(403)
+          .json({ code: 'forbidden', message: 'Only the group trainer can update it' });
       }
-      await repo.updateMembers(groupId, memberIds);
-    }
 
-    res.status(200).json({ ok: true });
-  } catch (error) {
-    logger.error('Error updating trainer group', { error });
-    res.status(500).json({ code: 'internal_error' });
-  }
-});
+      const { name, memberIds } = req.body;
+
+      if (name) {
+        await repo.updateName(groupId, name);
+      }
+
+      if (memberIds) {
+        // Verify all memberIds are active members of the club
+        const clubMembersRepo = getClubMembersRepository();
+        const allMembersActive = await clubMembersRepo.verifyActiveMembers(group.clubId, memberIds);
+        if (!allMembersActive) {
+          return res.status(400).json({
+            code: 'validation_error',
+            message: 'One or more users are not active members of the club',
+          });
+        }
+        await repo.updateMembers(groupId, memberIds);
+      }
+
+      res.status(200).json({ ok: true });
+    } catch (error) {
+      logger.error('Error updating trainer group', { error });
+      res.status(500).json({ code: 'internal_error' });
+    }
+  },
+);
 
 /**
  * DELETE /api/trainer/groups/:groupId — delete a group
@@ -401,7 +431,9 @@ router.delete('/groups/:groupId', async (req: Request, res: Response) => {
     if (!group) return res.status(404).json({ code: 'not_found' });
 
     if (group.trainerId !== trainerId) {
-      return res.status(403).json({ code: 'forbidden', message: 'Only the group trainer can delete it' });
+      return res
+        .status(403)
+        .json({ code: 'forbidden', message: 'Only the group trainer can delete it' });
     }
 
     await repo.delete(groupId);

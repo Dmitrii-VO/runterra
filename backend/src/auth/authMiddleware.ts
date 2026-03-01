@@ -71,7 +71,7 @@ export async function authMiddleware(
     req.authToken = token;
 
     next();
-  } catch (error) {
+  } catch (_error) {
     // На skeleton-этапе не делаем подробного логирования, только базовый ответ
     res.status(401).json({
       code: 'unauthorized',
@@ -82,4 +82,3 @@ export async function authMiddleware(
     });
   }
 }
-

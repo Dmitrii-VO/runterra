@@ -44,12 +44,16 @@ export async function getOrganizerDisplayNamesBatch(
   const validId = (id: string) => isValidUuid(id);
   const clubIds = Array.from(
     new Set(
-      pairs.filter((p) => p.organizerType === 'club' && validId(p.organizerId)).map((p) => p.organizerId),
+      pairs
+        .filter(p => p.organizerType === 'club' && validId(p.organizerId))
+        .map(p => p.organizerId),
     ),
   );
   const trainerIds = Array.from(
     new Set(
-      pairs.filter((p) => p.organizerType === 'trainer' && validId(p.organizerId)).map((p) => p.organizerId),
+      pairs
+        .filter(p => p.organizerType === 'trainer' && validId(p.organizerId))
+        .map(p => p.organizerId),
     ),
   );
 

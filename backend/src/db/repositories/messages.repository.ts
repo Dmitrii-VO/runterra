@@ -124,7 +124,7 @@ export class MessagesRepository extends BaseRepository {
       `INSERT INTO messages (channel_type, channel_id, user_id, text, club_channel_id)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [data.channelType, data.channelId, data.userId, data.text, data.clubChannelId ?? null]
+      [data.channelType, data.channelId, data.userId, data.text, data.clubChannelId ?? null],
     );
     return rowToMessage(row!);
   }
@@ -133,7 +133,7 @@ export class MessagesRepository extends BaseRepository {
     channelType: MessageChannelType,
     channelId: string,
     limit: number,
-    offset: number
+    offset: number,
   ): Promise<MessageViewDto[]> {
     const rows = await this.queryMany<MessageWithUserNameRow>(
       `SELECT m.id, m.channel_type, m.channel_id, m.user_id, m.text, m.created_at, m.updated_at, u.name AS user_name
@@ -142,7 +142,7 @@ export class MessagesRepository extends BaseRepository {
        WHERE m.channel_type = $1 AND m.channel_id = $2
        ORDER BY m.created_at DESC
        LIMIT $3 OFFSET $4`,
-      [channelType, channelId, limit, offset]
+      [channelType, channelId, limit, offset],
     );
     return rows.map(rowToMessageViewDto);
   }
@@ -151,7 +151,7 @@ export class MessagesRepository extends BaseRepository {
     clubId: string,
     clubChannelId: string,
     limit: number,
-    offset: number
+    offset: number,
   ): Promise<MessageViewDto[]> {
     const rows = await this.queryMany<MessageWithUserNameRow>(
       `SELECT m.id, m.channel_type, m.channel_id, m.user_id, m.text, m.created_at, m.updated_at, u.name AS user_name
@@ -162,7 +162,7 @@ export class MessagesRepository extends BaseRepository {
          AND m.club_channel_id = $2
        ORDER BY m.created_at DESC
        LIMIT $3 OFFSET $4`,
-      [clubId, clubChannelId, limit, offset]
+      [clubId, clubChannelId, limit, offset],
     );
     return rows.map(rowToMessageViewDto);
   }
@@ -172,7 +172,7 @@ export class MessagesRepository extends BaseRepository {
     clubId: string,
     clubChannelId: string,
     limit: number,
-    offset: number
+    offset: number,
   ): Promise<MessageViewDto[]> {
     const rows = await this.queryMany<MessageWithRoleRow>(
       `SELECT m.id, m.channel_type, m.channel_id, m.user_id, m.text, m.created_at, m.updated_at,
@@ -185,7 +185,7 @@ export class MessagesRepository extends BaseRepository {
          AND m.club_channel_id = $2
        ORDER BY m.created_at DESC
        LIMIT $3 OFFSET $4`,
-      [clubId, clubChannelId, limit, offset]
+      [clubId, clubChannelId, limit, offset],
     );
     return rows.map(rowToMessageViewDtoWithRole);
   }
@@ -197,7 +197,7 @@ export class MessagesRepository extends BaseRepository {
     await this.queryOne(
       `INSERT INTO trainer_clients (trainer_id, client_id) VALUES ($1::uuid, $2::uuid)
        ON CONFLICT (trainer_id, client_id) DO NOTHING`,
-      [trainerId, clientId]
+      [trainerId, clientId],
     );
   }
 
@@ -205,7 +205,7 @@ export class MessagesRepository extends BaseRepository {
   async removeTrainerClient(trainerId: string, clientId: string): Promise<boolean> {
     const result = await this.query(
       `DELETE FROM trainer_clients WHERE trainer_id = $1::uuid AND client_id = $2::uuid`,
-      [trainerId, clientId]
+      [trainerId, clientId],
     );
     return result.rowCount !== null && result.rowCount > 0;
   }
@@ -214,7 +214,7 @@ export class MessagesRepository extends BaseRepository {
   async isTrainerClient(trainerId: string, clientId: string): Promise<boolean> {
     const row = await this.queryOne(
       `SELECT 1 FROM trainer_clients WHERE trainer_id = $1::uuid AND client_id = $2::uuid`,
-      [trainerId, clientId]
+      [trainerId, clientId],
     );
     return !!row;
   }
@@ -234,7 +234,7 @@ export class MessagesRepository extends BaseRepository {
        ) dm ON true
        WHERE tc.trainer_id = $1::uuid
        ORDER BY dm.created_at DESC NULLS LAST, u.name ASC`,
-      [trainerId]
+      [trainerId],
     );
     return rows.map(rowToDirectChatViewDto);
   }
@@ -255,7 +255,7 @@ export class MessagesRepository extends BaseRepository {
        WHERE tc.client_id = $1::uuid
        ORDER BY dm.created_at DESC NULLS LAST
        LIMIT 1`,
-      [clientId]
+      [clientId],
     );
     return row ? rowToDirectChatViewDto(row) : null;
   }
@@ -266,7 +266,7 @@ export class MessagesRepository extends BaseRepository {
       `SELECT 1 FROM trainer_clients
        WHERE (trainer_id = $1::uuid AND client_id = $2::uuid)
           OR (trainer_id = $2::uuid AND client_id = $1::uuid)`,
-      [userA, userB]
+      [userA, userB],
     );
     return !!row;
   }
@@ -278,7 +278,7 @@ export class MessagesRepository extends BaseRepository {
        WHERE (trainer_id = $1::uuid AND client_id = $2::uuid)
           OR (trainer_id = $2::uuid AND client_id = $1::uuid)
        LIMIT 1`,
-      [userA, userB]
+      [userA, userB],
     );
     return row ? row.trainer_id : null;
   }
@@ -286,7 +286,12 @@ export class MessagesRepository extends BaseRepository {
   // --- Direct messages ---
 
   /** Get direct messages between two users */
-  async getDirectMessages(userA: string, userB: string, limit: number, offset: number): Promise<MessageViewDto[]> {
+  async getDirectMessages(
+    userA: string,
+    userB: string,
+    limit: number,
+    offset: number,
+  ): Promise<MessageViewDto[]> {
     const rows = await this.queryMany<DirectMessageRow>(
       `SELECT dm.id, dm.sender_id, dm.receiver_id, dm.text, dm.created_at, dm.updated_at,
               u.name AS user_name
@@ -296,13 +301,17 @@ export class MessagesRepository extends BaseRepository {
           OR (dm.sender_id = $2::uuid AND dm.receiver_id = $1::uuid)
        ORDER BY dm.created_at DESC
        LIMIT $3 OFFSET $4`,
-      [userA, userB, limit, offset]
+      [userA, userB, limit, offset],
     );
     return rows.map(directRowToMessageViewDto);
   }
 
   /** Insert a direct message */
-  async insertDirectMessage(senderId: string, receiverId: string, text: string): Promise<MessageViewDto> {
+  async insertDirectMessage(
+    senderId: string,
+    receiverId: string,
+    text: string,
+  ): Promise<MessageViewDto> {
     const row = await this.queryOne<DirectMessageRow>(
       `WITH ins AS (
          INSERT INTO direct_messages (sender_id, receiver_id, text)
@@ -313,7 +322,7 @@ export class MessagesRepository extends BaseRepository {
               u.name AS user_name
        FROM ins
        JOIN users u ON u.id = ins.sender_id`,
-      [senderId, receiverId, text]
+      [senderId, receiverId, text],
     );
     return directRowToMessageViewDto(row!);
   }
@@ -325,7 +334,7 @@ export class MessagesRepository extends BaseRepository {
        WHERE (sender_id = $1::uuid AND receiver_id = $2::uuid)
           OR (sender_id = $2::uuid AND receiver_id = $1::uuid)
        LIMIT 1`,
-      [userA, userB]
+      [userA, userB],
     );
     return !!row;
   }

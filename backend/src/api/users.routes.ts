@@ -1,6 +1,6 @@
 /**
  * API роутер для модуля пользователей
- * 
+ *
  * Содержит эндпоинты для работы с пользователями:
  * - GET /api/users - список пользователей
  * - GET /api/users/me/profile - профиль текущего пользователя
@@ -11,11 +11,21 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { User, UserStatus, CreateUserDto, CreateUserSchema, userToViewDto, ProfileDto, UpdateProfileSchema } from '../modules/users';
-import { NotificationType } from '../modules/notifications';
-import { ActivityStatus } from '../modules/activities';
+import {
+  User,
+  CreateUserDto,
+  CreateUserSchema,
+  userToViewDto,
+  ProfileDto,
+  UpdateProfileSchema,
+} from '../modules/users';
 import { validateBody } from './validateBody';
-import { getUsersRepository, getRunsRepository, getClubMembersRepository, getClubsRepository } from '../db/repositories';
+import {
+  getUsersRepository,
+  getRunsRepository,
+  getClubMembersRepository,
+  getClubsRepository,
+} from '../db/repositories';
 import { findCityById } from '../modules/cities/cities.config';
 import { ClubRole } from '../modules/clubs';
 import { logger } from '../shared/logger';
@@ -32,18 +42,18 @@ function splitDisplayName(displayName?: string): { firstName?: string; lastName?
 
 /**
  * GET /api/users
- * 
+ *
  * Возвращает список пользователей.
  * Query: limit, offset
  */
 router.get('/', async (req: Request, res: Response) => {
   const { limit, offset } = req.query as { limit?: string; offset?: string };
-  
+
   try {
     const repo = getUsersRepository();
     const users = await repo.findAll(
       limit ? parseInt(limit, 10) : 50,
-      offset ? parseInt(offset, 10) : 0
+      offset ? parseInt(offset, 10) : 0,
     );
     res.status(200).json(users.map(userToViewDto));
   } catch (error) {
@@ -54,7 +64,7 @@ router.get('/', async (req: Request, res: Response) => {
 
 /**
  * GET /api/users/me/profile
- * 
+ *
  * Возвращает агрегированные данные личного кабинета текущего пользователя.
  */
 router.get('/me/profile', async (req: Request, res: Response) => {
@@ -71,7 +81,7 @@ router.get('/me/profile', async (req: Request, res: Response) => {
   try {
     const usersRepo = getUsersRepository();
     const runsRepo = getRunsRepository();
-    
+
     // Найти или создать пользователя
     let user = await usersRepo.findByFirebaseUid(firebaseUid);
     if (!user) {
@@ -87,7 +97,7 @@ router.get('/me/profile', async (req: Request, res: Response) => {
         avatarUrl: req.authUser?.photoURL,
       });
     }
-    
+
     // Получаем статистику пробежек
     const runStats = await runsRepo.getUserStats(user.id);
 
@@ -151,100 +161,104 @@ router.get('/me/profile', async (req: Request, res: Response) => {
  * Обновляет профиль текущего пользователя (например currentCityId).
  * Тело: { currentCityId?: string }.
  */
-router.patch('/me/profile', validateBody(UpdateProfileSchema), async (req: Request, res: Response) => {
-  const firebaseUid = req.authUser?.uid;
-  if (!firebaseUid) {
-    res.status(401).json({
-      code: 'unauthorized',
-      message: 'Authorization required',
-      details: { reason: 'missing_header' },
-    });
-    return;
-  }
-
-  try {
-    const usersRepo = getUsersRepository();
-    const user = await usersRepo.findByFirebaseUid(firebaseUid);
-    if (!user) {
-      res.status(404).json({
-        code: 'not_found',
-        message: 'User not found',
+router.patch(
+  '/me/profile',
+  validateBody(UpdateProfileSchema),
+  async (req: Request, res: Response) => {
+    const firebaseUid = req.authUser?.uid;
+    if (!firebaseUid) {
+      res.status(401).json({
+        code: 'unauthorized',
+        message: 'Authorization required',
+        details: { reason: 'missing_header' },
       });
       return;
     }
 
-    const body = req.body as {
-      currentCityId?: string;
-      name?: string;
-      firstName?: string;
-      lastName?: string;
-      birthDate?: string;
-      country?: string;
-      gender?: 'male' | 'female';
-      avatarUrl?: string;
-      profileVisible?: boolean;
-    };
-    const updates: {
-      cityId?: string | null;
-      name?: string;
-      firstName?: string;
-      lastName?: string;
-      birthDate?: string | null;
-      country?: string;
-      gender?: 'male' | 'female';
-      avatarUrl?: string;
-      profileVisible?: boolean;
-    } = {};
-    if (body.currentCityId !== undefined) {
-      const cityId = body.currentCityId.trim();
-      if (cityId && !findCityById(cityId)) {
-        res.status(400).json({
-          code: 'validation_error',
-          message: 'Request body validation failed',
-          details: {
-            fields: [
-              {
-                field: 'currentCityId',
-                message: 'Unknown cityId',
-                code: 'unknown_city',
-              },
-            ],
-          },
+    try {
+      const usersRepo = getUsersRepository();
+      const user = await usersRepo.findByFirebaseUid(firebaseUid);
+      if (!user) {
+        res.status(404).json({
+          code: 'not_found',
+          message: 'User not found',
         });
         return;
       }
-      updates.cityId = cityId || null;
-    }
-    if (body.name !== undefined) updates.name = body.name;
-    if (body.firstName !== undefined) updates.firstName = body.firstName;
-    if (body.lastName !== undefined) updates.lastName = body.lastName;
-    if (body.birthDate !== undefined) updates.birthDate = body.birthDate;
-    if (body.country !== undefined) updates.country = body.country;
-    if (body.gender !== undefined) updates.gender = body.gender;
-    if (body.avatarUrl !== undefined) updates.avatarUrl = body.avatarUrl;
-    if (body.profileVisible !== undefined) updates.profileVisible = body.profileVisible;
 
-    if (body.firstName !== undefined || body.lastName !== undefined) {
-      const resolvedFirstName = body.firstName ?? user.firstName ?? user.name;
-      const resolvedLastName = body.lastName ?? user.lastName;
-      const combinedName = [resolvedFirstName, resolvedLastName].filter(Boolean).join(' ').trim();
-      if (combinedName) updates.name = combinedName;
-    }
+      const body = req.body as {
+        currentCityId?: string;
+        name?: string;
+        firstName?: string;
+        lastName?: string;
+        birthDate?: string;
+        country?: string;
+        gender?: 'male' | 'female';
+        avatarUrl?: string;
+        profileVisible?: boolean;
+      };
+      const updates: {
+        cityId?: string | null;
+        name?: string;
+        firstName?: string;
+        lastName?: string;
+        birthDate?: string | null;
+        country?: string;
+        gender?: 'male' | 'female';
+        avatarUrl?: string;
+        profileVisible?: boolean;
+      } = {};
+      if (body.currentCityId !== undefined) {
+        const cityId = body.currentCityId.trim();
+        if (cityId && !findCityById(cityId)) {
+          res.status(400).json({
+            code: 'validation_error',
+            message: 'Request body validation failed',
+            details: {
+              fields: [
+                {
+                  field: 'currentCityId',
+                  message: 'Unknown cityId',
+                  code: 'unknown_city',
+                },
+              ],
+            },
+          });
+          return;
+        }
+        updates.cityId = cityId || null;
+      }
+      if (body.name !== undefined) updates.name = body.name;
+      if (body.firstName !== undefined) updates.firstName = body.firstName;
+      if (body.lastName !== undefined) updates.lastName = body.lastName;
+      if (body.birthDate !== undefined) updates.birthDate = body.birthDate;
+      if (body.country !== undefined) updates.country = body.country;
+      if (body.gender !== undefined) updates.gender = body.gender;
+      if (body.avatarUrl !== undefined) updates.avatarUrl = body.avatarUrl;
+      if (body.profileVisible !== undefined) updates.profileVisible = body.profileVisible;
 
-    if (Object.keys(updates).length > 0) {
-      await usersRepo.update(user.id, updates);
-    }
+      if (body.firstName !== undefined || body.lastName !== undefined) {
+        const resolvedFirstName = body.firstName ?? user.firstName ?? user.name;
+        const resolvedLastName = body.lastName ?? user.lastName;
+        const combinedName = [resolvedFirstName, resolvedLastName].filter(Boolean).join(' ').trim();
+        if (combinedName) updates.name = combinedName;
+      }
 
-    res.status(200).json({ success: true });
-  } catch (error) {
-    logger.error('Error updating profile', { firebaseUid, error });
-    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
-  }
-});
+      if (Object.keys(updates).length > 0) {
+        await usersRepo.update(user.id, updates);
+      }
+
+      res.status(200).json({ success: true });
+    } catch (error) {
+      logger.error('Error updating profile', { firebaseUid, error });
+      res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+    }
+  },
+);
 
 /**
  * GET /api/users/me/nav-status
- * 
+ *
  * Returns flags for dynamic UI navigation (tabs visibility).
  */
 router.get('/me/nav-status', async (req: Request, res: Response) => {
@@ -276,7 +290,7 @@ router.get('/me/nav-status', async (req: Request, res: Response) => {
 
 /**
  * GET /api/users/:id
- * 
+ *
  * Возвращает пользователя по ID.
  */
 router.get('/:id', async (req: Request, res: Response) => {
@@ -285,7 +299,7 @@ router.get('/:id', async (req: Request, res: Response) => {
   try {
     const repo = getUsersRepository();
     const user = await repo.findById(id);
-    
+
     if (!user) {
       res.status(404).json({ code: 'not_found', message: 'User not found' });
       return;
@@ -300,59 +314,65 @@ router.get('/:id', async (req: Request, res: Response) => {
 
 /**
  * POST /api/users
- * 
+ *
  * Создает нового пользователя.
  */
-router.post('/', validateBody(CreateUserSchema), async (req: Request<{}, User, CreateUserDto>, res: Response) => {
-  const dto = req.body;
+router.post(
+  '/',
+  validateBody(CreateUserSchema),
+  async (req: Request<{}, User, CreateUserDto>, res: Response) => {
+    const dto = req.body;
 
-  try {
-    const cityId = dto.cityId?.trim();
-    if (cityId && !findCityById(cityId)) {
-      res.status(400).json({
-        code: 'validation_error',
-        message: 'Request body validation failed',
-        details: {
-          fields: [
-            {
-              field: 'cityId',
-              message: 'Unknown cityId',
-              code: 'unknown_city',
-            },
-          ],
-        },
+    try {
+      const cityId = dto.cityId?.trim();
+      if (cityId && !findCityById(cityId)) {
+        res.status(400).json({
+          code: 'validation_error',
+          message: 'Request body validation failed',
+          details: {
+            fields: [
+              {
+                field: 'cityId',
+                message: 'Unknown cityId',
+                code: 'unknown_city',
+              },
+            ],
+          },
+        });
+        return;
+      }
+
+      const repo = getUsersRepository();
+
+      // Проверяем уникальность firebaseUid
+      const existing = await repo.findByFirebaseUid(dto.firebaseUid);
+      if (existing) {
+        res
+          .status(409)
+          .json({ code: 'conflict', message: 'User with this firebaseUid already exists' });
+        return;
+      }
+
+      const user = await repo.create({
+        firebaseUid: dto.firebaseUid,
+        email: dto.email,
+        name: dto.name,
+        avatarUrl: dto.avatarUrl,
+        cityId: cityId || undefined,
+        isMercenary: dto.isMercenary,
       });
-      return;
-    }
 
-    const repo = getUsersRepository();
-    
-    // Проверяем уникальность firebaseUid
-    const existing = await repo.findByFirebaseUid(dto.firebaseUid);
-    if (existing) {
-      res.status(409).json({ code: 'conflict', message: 'User with this firebaseUid already exists' });
-      return;
+      res.status(201).json(userToViewDto(user));
+    } catch (error) {
+      logger.error('Error creating user', { error });
+      res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
     }
-    
-    const user = await repo.create({
-      firebaseUid: dto.firebaseUid,
-      email: dto.email,
-      name: dto.name,
-      avatarUrl: dto.avatarUrl,
-      cityId: cityId || undefined,
-      isMercenary: dto.isMercenary,
-    });
-
-    res.status(201).json(userToViewDto(user));
-  } catch (error) {
-    logger.error('Error creating user', { error });
-    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
-  }
-});
+  },
+);
 
 /**
  * DELETE /api/users/me
- * 
+ *
  * Удаляет аккаунт текущего пользователя.
  * Каскадно удаляет: runs, event_participants.
  */
@@ -366,21 +386,21 @@ router.delete('/me', async (req: Request, res: Response) => {
     });
     return;
   }
-  
+
   try {
     const repo = getUsersRepository();
     const user = await repo.findByFirebaseUid(firebaseUid);
-    
+
     if (!user) {
       res.status(404).json({ code: 'not_found', message: 'User not found' });
       return;
     }
-    
+
     await repo.delete(user.id);
-    
-    res.status(200).json({ 
-      success: true, 
-      message: 'Account deleted successfully' 
+
+    res.status(200).json({
+      success: true,
+      message: 'Account deleted successfully',
     });
   } catch (error) {
     logger.error('Error deleting user', { firebaseUid, error });

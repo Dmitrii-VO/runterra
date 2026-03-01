@@ -108,8 +108,7 @@ function deriveAuthUserFromToken(token: string): AuthUser {
     getString(payload, 'preferred_username') ||
     email;
   const emailVerified =
-    getBoolean(payload, 'email_verified') ??
-    getBoolean(payload, 'emailVerified');
+    getBoolean(payload, 'email_verified') ?? getBoolean(payload, 'emailVerified');
   const photoURL = getString(payload, 'picture') || getString(payload, 'photoURL');
 
   return {
@@ -124,10 +123,10 @@ function deriveAuthUserFromToken(token: string): AuthUser {
 /**
  * Провайдер авторизации через Firebase Authentication
  *
-   * Реализация поверх Firebase Admin SDK с fallback-заглушкой в non-production.
-   *
-   * В production среде ожидается корректная настройка Firebase Admin SDK
-   * через переменные окружения, иначе сервер не стартует.
+ * Реализация поверх Firebase Admin SDK с fallback-заглушкой в non-production.
+ *
+ * В production среде ожидается корректная настройка Firebase Admin SDK
+ * через переменные окружения, иначе сервер не стартует.
  */
 export class FirebaseAuthProvider implements AuthProvider {
   /**

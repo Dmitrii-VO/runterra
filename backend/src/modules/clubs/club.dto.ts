@@ -60,10 +60,12 @@ export interface UpdateClubDto {
  *
  * Validates name length (3-50 chars) and description length (max 500 chars).
  */
-export const UpdateClubSchema = z.object({
-  name: z.string().min(3).max(50).optional(),
-  description: z.string().max(500).optional(),
-}).strict();
+export const UpdateClubSchema = z
+  .object({
+    name: z.string().min(3).max(50).optional(),
+    description: z.string().max(500).optional(),
+  })
+  .strict();
 
 /**
  * DTO для отображения клуба

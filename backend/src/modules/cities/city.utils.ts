@@ -4,10 +4,7 @@ import { findCityById } from './cities.config';
 /**
  * Проверяет, лежит ли точка внутри прямоугольных границ города.
  */
-export function isPointWithinBounds(
-  point: CityCoordinates,
-  bounds: CityBounds,
-): boolean {
+export function isPointWithinBounds(point: CityCoordinates, bounds: CityBounds): boolean {
   const { latitude, longitude } = point;
   const { ne, sw } = bounds;
 
@@ -23,10 +20,7 @@ export function isPointWithinBounds(
  * Проверяет, что точка лежит внутри границ указанного города.
  * Возвращает false, если город не найден.
  */
-export function isPointWithinCityBounds(
-  point: CityCoordinates,
-  cityId: string,
-): boolean {
+export function isPointWithinCityBounds(point: CityCoordinates, cityId: string): boolean {
   const city = findCityById(cityId);
   if (!city) {
     return false;
@@ -34,4 +28,3 @@ export function isPointWithinCityBounds(
 
   return isPointWithinBounds(point, city.bounds);
 }
-

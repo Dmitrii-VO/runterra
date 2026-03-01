@@ -6,7 +6,6 @@ import { BaseRepository } from './base.repository';
 import { Event } from '../../modules/events/event.entity';
 import { EventType } from '../../modules/events/event.type';
 import { EventStatus } from '../../modules/events/event.status';
-import { EventListItemDto, EventDetailsDto } from '../../modules/events/event.dto';
 import { PoolClient } from 'pg';
 
 interface EventRow {
@@ -57,7 +56,8 @@ function computeEventStatus(row: EventRow): EventStatus {
 
   // Check if event has ended (time-based transition to completed).
   // Some events may not have end_date_time; treat them as ended after a default duration.
-  const effectiveEnd = row.end_date_time ?? new Date(row.start_date_time.getTime() + DEFAULT_EVENT_DURATION_MS);
+  const effectiveEnd =
+    row.end_date_time ?? new Date(row.start_date_time.getTime() + DEFAULT_EVENT_DURATION_MS);
   const now = new Date();
   if (effectiveEnd < now) {
     return EventStatus.COMPLETED;
@@ -139,10 +139,7 @@ function rowToParticipant(row: ParticipantRow): EventParticipant {
 
 export class EventsRepository extends BaseRepository {
   async findById(id: string): Promise<Event | null> {
-    const row = await this.queryOne<EventRow>(
-      'SELECT * FROM events WHERE id = $1',
-      [id]
-    );
+    const row = await this.queryOne<EventRow>('SELECT * FROM events WHERE id = $1', [id]);
     return row ? rowToEvent(row) : null;
   }
 
@@ -163,11 +160,11 @@ export class EventsRepository extends BaseRepository {
   }): Promise<Event[]> {
     const limit = options?.limit || 50;
     const offset = options?.offset || 0;
-    
+
     const conditions: string[] = [];
     const params: unknown[] = [];
     let paramIndex = 1;
-    
+
     // Status filter (default: only OPEN and FULL, exclude DRAFT and COMPLETED)
     if (options?.status && options.status.length > 0) {
       conditions.push(`status = ANY($${paramIndex++})`);
@@ -181,32 +178,38 @@ export class EventsRepository extends BaseRepository {
       }
       conditions.push(`COALESCE(end_date_time, start_date_time + INTERVAL '4 hours') > NOW()`);
     }
-    
+
     // Date filter
     if (options?.dateFilter) {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      
+
       if (options.dateFilter === 'today') {
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
-        conditions.push(`start_date_time >= $${paramIndex++} AND start_date_time < $${paramIndex++}`);
+        conditions.push(
+          `start_date_time >= $${paramIndex++} AND start_date_time < $${paramIndex++}`,
+        );
         params.push(today, tomorrow);
       } else if (options.dateFilter === 'tomorrow') {
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
         const dayAfter = new Date(tomorrow);
         dayAfter.setDate(dayAfter.getDate() + 1);
-        conditions.push(`start_date_time >= $${paramIndex++} AND start_date_time < $${paramIndex++}`);
+        conditions.push(
+          `start_date_time >= $${paramIndex++} AND start_date_time < $${paramIndex++}`,
+        );
         params.push(tomorrow, dayAfter);
       } else if (options.dateFilter === 'next7days') {
         const nextWeek = new Date(today);
         nextWeek.setDate(nextWeek.getDate() + 7);
-        conditions.push(`start_date_time >= $${paramIndex++} AND start_date_time < $${paramIndex++}`);
+        conditions.push(
+          `start_date_time >= $${paramIndex++} AND start_date_time < $${paramIndex++}`,
+        );
         params.push(today, nextWeek);
       }
     }
-    
+
     // Club filter (organizer)
     if (options?.clubId) {
       conditions.push(`organizer_id = $${paramIndex++} AND organizer_type = 'club'`);
@@ -218,19 +221,19 @@ export class EventsRepository extends BaseRepository {
       conditions.push(`city_id = $${paramIndex++}`);
       params.push(options.cityId);
     }
-    
+
     // Difficulty level filter
     if (options?.difficultyLevel) {
       conditions.push(`difficulty_level = $${paramIndex++}`);
       params.push(options.difficultyLevel);
     }
-    
+
     // Event type filter
     if (options?.eventType) {
       conditions.push(`type = $${paramIndex++}`);
       params.push(options.eventType);
     }
-    
+
     // Organizer filter
     if (options?.organizerId) {
       conditions.push(`organizer_id = $${paramIndex++}`);
@@ -254,11 +257,13 @@ export class EventsRepository extends BaseRepository {
     // Visibility filter
     if (options?.currentUserId) {
       // Show public + private where user is participant/organizer
-      // Note: organizer check logic is separate, but usually organizer is participant? 
+      // Note: organizer check logic is separate, but usually organizer is participant?
       // For now, let's assume private events require being a participant (invited).
-      // Or we can check if user is organizer. 
+      // Or we can check if user is organizer.
       // Plan says: "AND (visibility = 'public' OR (visibility = 'private' AND EXISTS(participants...)))"
-      conditions.push(`(visibility = 'public' OR (visibility = 'private' AND EXISTS (SELECT 1 FROM event_participants ep WHERE ep.event_id = events.id AND ep.user_id = $${paramIndex})))`);
+      conditions.push(
+        `(visibility = 'public' OR (visibility = 'private' AND EXISTS (SELECT 1 FROM event_participants ep WHERE ep.event_id = events.id AND ep.user_id = $${paramIndex})))`,
+      );
       params.push(options.currentUserId);
       paramIndex++;
     } else {
@@ -272,7 +277,7 @@ export class EventsRepository extends BaseRepository {
     }
     sql += ` ORDER BY start_date_time ASC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
     params.push(limit, offset);
-    
+
     const rows = await this.queryMany<EventRow>(sql, params);
     return rows.map(rowToEvent);
   }
@@ -326,7 +331,7 @@ export class EventsRepository extends BaseRepository {
         data.generatedForDate || null,
         data.workoutId || null,
         data.trainerId || null,
-      ]
+      ],
     );
     return rowToEvent(row!);
   }
@@ -335,7 +340,10 @@ export class EventsRepository extends BaseRepository {
    * Join event - register user as participant
    * Returns error message if cannot join, null if success
    */
-  async joinEvent(eventId: string, userId: string): Promise<{ error?: string; participant?: EventParticipant }> {
+  async joinEvent(
+    eventId: string,
+    userId: string,
+  ): Promise<{ error?: string; participant?: EventParticipant }> {
     const pool = this.getPool();
     const client = await pool.connect();
 
@@ -345,7 +353,7 @@ export class EventsRepository extends BaseRepository {
       // Lock event row to make participant_limit checks and count updates atomic.
       const eventRes = await client.query<EventRow>(
         'SELECT * FROM events WHERE id = $1 FOR UPDATE',
-        [eventId]
+        [eventId],
       );
       const eventRow = eventRes.rows[0];
       if (!eventRow) {
@@ -361,7 +369,7 @@ export class EventsRepository extends BaseRepository {
 
       const existingRes = await client.query<ParticipantRow>(
         'SELECT * FROM event_participants WHERE event_id = $1 AND user_id = $2 FOR UPDATE',
-        [eventId, userId]
+        [eventId, userId],
       );
       const existing = existingRes.rows[0];
       if (existing && (existing.status === 'registered' || existing.status === 'checked_in')) {
@@ -381,7 +389,7 @@ export class EventsRepository extends BaseRepository {
           `UPDATE event_participants
            SET status = 'registered', updated_at = NOW()
            WHERE id = $1 RETURNING *`,
-          [existing.id]
+          [existing.id],
         );
         participantRow = updatedRes.rows[0];
       } else {
@@ -389,7 +397,7 @@ export class EventsRepository extends BaseRepository {
           `INSERT INTO event_participants (event_id, user_id, status)
            VALUES ($1, $2, 'registered')
            RETURNING *`,
-          [eventId, userId]
+          [eventId, userId],
         );
         participantRow = insertRes.rows[0];
       }
@@ -406,7 +414,7 @@ export class EventsRepository extends BaseRepository {
              END,
              updated_at = NOW()
          WHERE id = $1`,
-        [eventId, newActiveCount]
+        [eventId, newActiveCount],
       );
 
       await client.query('COMMIT');
@@ -427,57 +435,61 @@ export class EventsRepository extends BaseRepository {
    * Check-in to event with GPS verification
    */
   async checkIn(
-    eventId: string, 
-    userId: string, 
-    coordinates: { longitude: number; latitude: number }
+    eventId: string,
+    userId: string,
+    coordinates: { longitude: number; latitude: number },
   ): Promise<{ error?: string; participant?: EventParticipant }> {
     // Check if event exists
     const event = await this.findById(eventId);
     if (!event) {
       return { error: 'Event not found' };
     }
-    
+
     // Check time window (30 minutes before to 1 hour after start) — Z8 decisions 2026-02-13
     const now = new Date();
     const eventStart = new Date(event.startDateTime);
     const windowStart = new Date(eventStart.getTime() - 30 * 60 * 1000); // 30 min before
-    const windowEnd = new Date(eventStart.getTime() + 60 * 60 * 1000);   // 1 hour after
-    
+    const windowEnd = new Date(eventStart.getTime() + 60 * 60 * 1000); // 1 hour after
+
     if (now < windowStart) {
       return { error: 'Check-in is not yet available. Opens 30 minutes before event start.' };
     }
     if (now > windowEnd) {
       return { error: 'Check-in window has closed.' };
     }
-    
+
     // Check GPS distance (500 meters radius)
     const distance = this.calculateDistance(
-      coordinates.latitude, coordinates.longitude,
-      event.startLocation.latitude, event.startLocation.longitude
+      coordinates.latitude,
+      coordinates.longitude,
+      event.startLocation.latitude,
+      event.startLocation.longitude,
     );
-    
+
     if (distance > 500) {
-      return { error: `Too far from event location. Distance: ${Math.round(distance)}m, max: 500m` };
+      return {
+        error: `Too far from event location. Distance: ${Math.round(distance)}m, max: 500m`,
+      };
     }
-    
+
     // Check if registered
     const registration = await this.queryOne<ParticipantRow>(
       'SELECT * FROM event_participants WHERE event_id = $1 AND user_id = $2',
-      [eventId, userId]
+      [eventId, userId],
     );
-    
+
     if (!registration) {
       return { error: 'Not registered for this event' };
     }
-    
+
     if (registration.status === 'checked_in') {
       return { error: 'Already checked in' };
     }
-    
+
     if (registration.status === 'cancelled') {
       return { error: 'Registration was cancelled' };
     }
-    
+
     // Perform check-in
     const updated = await this.queryOne<ParticipantRow>(
       `UPDATE event_participants 
@@ -487,19 +499,22 @@ export class EventsRepository extends BaseRepository {
            check_in_latitude = $2,
            updated_at = NOW()
        WHERE id = $3 RETURNING *`,
-      [coordinates.longitude, coordinates.latitude, registration.id]
+      [coordinates.longitude, coordinates.latitude, registration.id],
     );
-    
+
     return { participant: rowToParticipant(updated!) };
   }
 
   /**
    * Cancel participation in event
    */
-  async leaveEvent(eventId: string, userId: string): Promise<{ error?: string; participant?: EventParticipant }> {
+  async leaveEvent(
+    eventId: string,
+    userId: string,
+  ): Promise<{ error?: string; participant?: EventParticipant }> {
     const registration = await this.queryOne<ParticipantRow>(
       'SELECT * FROM event_participants WHERE event_id = $1 AND user_id = $2',
-      [eventId, userId]
+      [eventId, userId],
     );
 
     if (!registration) {
@@ -514,7 +529,7 @@ export class EventsRepository extends BaseRepository {
       `UPDATE event_participants
        SET status = 'cancelled', updated_at = NOW()
        WHERE id = $1 RETURNING *`,
-      [registration.id]
+      [registration.id],
     );
 
     await this.updateParticipantCount(eventId);
@@ -526,19 +541,16 @@ export class EventsRepository extends BaseRepository {
    * Calculate distance between two GPS points using Haversine formula
    * Returns distance in meters
    */
-  private calculateDistance(
-    lat1: number, lon1: number,
-    lat2: number, lon2: number
-  ): number {
+  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 6371000; // Earth's radius in meters
-    const φ1 = lat1 * Math.PI / 180;
-    const φ2 = lat2 * Math.PI / 180;
-    const Δφ = (lat2 - lat1) * Math.PI / 180;
-    const Δλ = (lon2 - lon1) * Math.PI / 180;
+    const φ1 = (lat1 * Math.PI) / 180;
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
 
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     return R * c;
@@ -556,9 +568,9 @@ export class EventsRepository extends BaseRepository {
        ),
        updated_at = NOW()
        WHERE id = $1`,
-      [eventId]
+      [eventId],
     );
-    
+
     // Check if should update status to FULL / OPEN (keep CANCELLED/COMPLETED)
     await this.query(
       `UPDATE events 
@@ -570,7 +582,7 @@ export class EventsRepository extends BaseRepository {
        END,
        updated_at = NOW()
        WHERE id = $1`,
-      [eventId]
+      [eventId],
     );
   }
 
@@ -579,7 +591,7 @@ export class EventsRepository extends BaseRepository {
       `SELECT COUNT(*)::text AS count
        FROM event_participants
        WHERE event_id = $1 AND status IN ('registered', 'checked_in')`,
-      [eventId]
+      [eventId],
     );
     return parseInt(result.rows[0]?.count ?? '0', 10);
   }
@@ -587,7 +599,7 @@ export class EventsRepository extends BaseRepository {
   async getParticipant(eventId: string, userId: string): Promise<EventParticipant | null> {
     const row = await this.queryOne<ParticipantRow>(
       'SELECT * FROM event_participants WHERE event_id = $1 AND user_id = $2',
-      [eventId, userId]
+      [eventId, userId],
     );
     return row ? rowToParticipant(row) : null;
   }
@@ -712,7 +724,7 @@ export class EventsRepository extends BaseRepository {
       `SELECT * FROM event_participants 
        WHERE event_id = $1 AND status IN ('registered', 'checked_in')
        ORDER BY created_at`,
-      [eventId]
+      [eventId],
     );
     return rows.map(rowToParticipant);
   }
@@ -730,7 +742,7 @@ export class EventsRepository extends BaseRepository {
          AND start_date_time < ($2::timestamp + interval '1 month')
          AND deleted_at IS NULL
        ORDER BY start_date_time ASC`,
-      [clubId, startDate]
+      [clubId, startDate],
     );
     return rows.map(rowToEvent);
   }
@@ -742,7 +754,7 @@ export class EventsRepository extends BaseRepository {
     const row = await this.queryOne<EventRow>(
       `SELECT * FROM events 
        WHERE template_id = $1 AND generated_for_date = $2::date AND deleted_at IS NULL`,
-      [templateId, date]
+      [templateId, date],
     );
     return row ? rowToEvent(row) : null;
   }
@@ -756,7 +768,7 @@ export class EventsRepository extends BaseRepository {
        WHERE template_id = $1 
          AND start_date_time >= NOW() 
          AND deleted_at IS NULL`,
-      [templateId]
+      [templateId],
     );
     return rows.map(rowToEvent);
   }
