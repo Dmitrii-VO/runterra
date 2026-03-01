@@ -223,12 +223,24 @@ export class UsersRepository extends BaseRepository {
    * Delete user by ID
    * Cascade deletes: runs, event_participants (configured in DB)
    */
-  async delete(id: string): Promise<boolean> {
-    const result = await this.query(
-      'DELETE FROM users WHERE id = $1',
-      [id]
+  /**
+   * Check if user has clubs or trainers to show/hide navigation tabs.
+   */
+  async getNavigationStatus(userId: string): Promise<{ hasClubs: boolean; hasTrainers: boolean }> {
+    const res = await this.queryOne<{ has_clubs: boolean; has_trainers: boolean }>(
+      `SELECT 
+        EXISTS(SELECT 1 FROM club_members WHERE user_id = $1 AND status = 'active') as has_clubs,
+        (
+          EXISTS(SELECT 1 FROM trainer_group_members WHERE user_id = $1) OR 
+          EXISTS(SELECT 1 FROM trainer_clients WHERE client_id = $1) OR
+          EXISTS(SELECT 1 FROM club_members WHERE user_id = $1 AND role IN ('trainer', 'leader') AND status = 'active')
+        ) as has_trainers`,
+      [userId]
     );
-    return (result.rowCount ?? 0) > 0;
+    return {
+      hasClubs: res?.has_clubs ?? false,
+      hasTrainers: res?.has_trainers ?? false,
+    };
   }
 }
 

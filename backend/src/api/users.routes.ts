@@ -243,6 +243,38 @@ router.patch('/me/profile', validateBody(UpdateProfileSchema), async (req: Reque
 });
 
 /**
+ * GET /api/users/me/nav-status
+ * 
+ * Returns flags for dynamic UI navigation (tabs visibility).
+ */
+router.get('/me/nav-status', async (req: Request, res: Response) => {
+  const firebaseUid = req.authUser?.uid;
+  if (!firebaseUid) {
+    res.status(401).json({
+      code: 'unauthorized',
+      message: 'Authorization required',
+    });
+    return;
+  }
+
+  try {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(firebaseUid);
+    if (!user) {
+      // Return default false if user not created yet
+      res.status(200).json({ hasClubs: false, hasTrainers: false });
+      return;
+    }
+
+    const status = await usersRepo.getNavigationStatus(user.id);
+    res.status(200).json(status);
+  } catch (error) {
+    logger.error('Error fetching nav status', { firebaseUid, error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
  * GET /api/users/:id
  * 
  * Возвращает пользователя по ID.

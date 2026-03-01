@@ -3,6 +3,7 @@ import 'api_client.dart';
 import 'users_service.dart' show ApiException;
 import '../models/trainer_profile.dart';
 import '../models/trainer_group_model.dart';
+import '../navigation/nav_status_provider.dart';
 
 /// Service for trainer profile API
 class TrainerService {
@@ -38,7 +39,9 @@ class TrainerService {
     );
     if (response.statusCode >= 200 && response.statusCode < 300) {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return TrainerGroupModel.fromJson(json);
+      final group = TrainerGroupModel.fromJson(json);
+      UserNavStatusNotifier().refresh();
+      return group;
     }
     _throwApiException(response, 'create_trainer_group_error');
   }
@@ -69,7 +72,10 @@ class TrainerService {
   /// DELETE /api/trainer/groups/:groupId — delete group
   Future<void> deleteGroup(String groupId) async {
     final response = await _apiClient.delete('/api/trainer/groups/$groupId');
-    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      UserNavStatusNotifier().refresh();
+      return;
+    }
     _throwApiException(response, 'delete_group_error');
   }
 
@@ -136,7 +142,9 @@ class TrainerService {
     );
     if (response.statusCode >= 200 && response.statusCode < 300) {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return TrainerProfile.fromJson(json);
+      final profile = TrainerProfile.fromJson(json);
+      UserNavStatusNotifier().refresh();
+      return profile;
     }
     _throwApiException(response, 'create_trainer_profile_error');
   }
@@ -154,7 +162,10 @@ class TrainerService {
   /// POST /api/trainer/clients/:userId — add a client
   Future<void> addClient(String userId) async {
     final response = await _apiClient.post('/api/trainer/clients/$userId', body: {});
-    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      UserNavStatusNotifier().refresh();
+      return;
+    }
     _throwApiException(response, 'add_client_error');
   }
 

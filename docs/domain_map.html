@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Runterra Static Domain Map</title>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
+    <style type="text/css">
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #1a1a1a; color: #d4d4d4; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        #network-container { width: 100%; height: 100%; }
+        .header { position: absolute; top: 20px; left: 20px; z-index: 10; background: rgba(35, 35, 35, 0.9); padding: 15px 25px; border-radius: 4px; border: 1px solid #444; pointer-events: none; }
+        .header h1 { margin: 0; font-size: 22px; color: #4ec9b0; }
+        .header p { margin: 5px 0 0 0; font-size: 13px; color: #888; }
+        .legend { position: absolute; top: 20px; right: 20px; background: rgba(35, 35, 35, 0.9); padding: 15px; border-radius: 4px; border: 1px solid #444; font-size: 11px; z-index: 10; }
+        .legend-item { display: flex; align-items: center; margin-bottom: 6px; }
+        .legend-color { width: 12px; height: 12px; border-radius: 2px; margin-right: 10px; border: 1px solid #666; }
+        .controls { position: absolute; bottom: 20px; left: 20px; background: rgba(35, 35, 35, 0.9); padding: 10px; border-radius: 4px; border: 1px solid #444; z-index: 10; }
+        button { background: #333; color: #ccc; border: 1px solid #555; padding: 6px 12px; cursor: pointer; border-radius: 2px; font-size: 11px; }
+        button:hover { background: #444; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Runterra: Архитектура (Static Mode)</h1>
+        <p>Динамическая видимость вкладок: Показ только при наличии контента</p>
+    </div>
+    <div id="network-container"></div>
+    <div class="legend">
+        <strong>ЗОНЫ КАРТЫ:</strong>
+        <div class="legend-item"><div class="legend-color" style="background: #ce9178;"></div> Слой 1: Пользователи и Эксперты</div>
+        <div class="legend-item"><div class="legend-color" style="background: #4fc1ff;"></div> Слой 2: Клубы и Членство (L1)</div>
+        <div class="legend-item"><div class="legend-color" style="background: #b5cea8;"></div> Слой 3: Групповое обучение (L2)</div>
+        <div class="legend-item"><div class="legend-color" style="background: #f1c40f;"></div> Слой 4: Личное обучение (L3)</div>
+        <div class="legend-item"><div class="legend-color" style="background: #e74c3c;"></div> ЛОГИКА ВИДИМОСТИ ВКЛАДОК</div>
+    </div>
+    <div class="controls">
+        <button onclick="network.fit()">Показать всё</button>
+        <button onclick="togglePhysics()">Включить "встряску" (Физика)</button>
+    </div>
+
+    <script type="text/javascript">
+        let network = null;
+        let physicsEnabled = false;
+
+        window.onload = function() {
+            const nodes = new vis.DataSet([
+                // СЛОЙ 1: ПОЛЬЗОВАТЕЛИ (-500)
+                { id: 'user', label: 'USER (Атлет)', x: -500, y: 0, group: 'users', shape: 'dot', size: 25 },
+                { id: 'trainer_profile', label: 'TRAINER_PROFILE', x: -500, y: 200, group: 'users', shape: 'diamond', size: 30 },
+                
+                // СЛОЙ 2: КЛУБЫ (-100)
+                { id: 'club_member', label: 'CLUB_MEMBER (1:N)', x: -150, y: -100, group: 'clubs' },
+                { id: 'club', label: 'CLUBS (N)', x: 100, y: -100, group: 'clubs', shape: 'box' },
+                { id: 'chat_club_l1', label: 'L1: ЧАТЫ КЛУБОВ (N)', x: 400, y: -200, group: 'clubs', borderWidth: 3 },
+
+                // СЛОЙ 3: ГРУППЫ (300)
+                { id: 'trainer_group', label: 'TRAINER_GROUPS (N)', x: 200, y: 100, group: 'groups' },
+                { id: 'event', label: 'EVENT (Группа)', x: 450, y: 100, group: 'groups', shape: 'ellipse' },
+                { id: 'chat_group_l2', label: 'L2: ЧАТЫ ГРУПП (N)', x: 700, y: 100, group: 'groups', borderWidth: 3 },
+
+                // СЛОЙ 4: ЛИЧНОЕ (300/700)
+                { id: 'trainer_client', label: 'TRAINER_CLIENTS (N)', x: 200, y: 300, group: 'pro', shape: 'diamond' },
+                { id: 'chat_pro_l3', label: 'L3: ЛИЧНЫЕ ЧАТЫ (N)', x: 700, y: 300, group: 'pro', borderWidth: 3, color: '#f1c40f' },
+                { id: 'chat_social_l4', label: 'L4: ЛИЧНЫЕ (Друзья)', x: 700, y: -50, group: 'social', dashes: true },
+
+                // НОВОЕ: ЛОГИКА ВИДИМОСТИ (-800)
+                { id: 'ui_nav', label: 'НИЖНЕЕ МЕНЮ\n(Navigation Bar)', x: -850, y: 100, group: 'logic', shape: 'star', size: 40, color: '#e74c3c' },
+
+                // СЛОЙ 5: ГЕО И РЕЗУЛЬТАТЫ (Внизу)
+                { id: 'workout', label: 'WORKOUT (План)', x: 450, y: 250, group: 'groups' },
+                { id: 'run', label: 'RUN (Трек)', x: 450, y: 500, group: 'groups', shape: 'hexagon' },
+                { id: 'territory', label: 'TERRITORY', x: 100, y: 500, group: 'map', shape: 'hexagon' }
+            ]);
+
+            const edges = new vis.DataSet([
+                { from: 'user', to: 'club_member', label: 'состоит в (1:N)' },
+                { from: 'club_member', to: 'club' },
+                { from: 'club', to: 'chat_club_l1' },
+                
+                // ЛОГИКА ВИДИМОСТИ (КРАСНЫЕ СТРЕЛКИ)
+                { from: 'club_member', to: 'ui_nav', label: 'IF exists -> ПОКАЗАТЬ "КЛУБЫ"', color: '#e74c3c', dashes: true },
+                { from: 'trainer_group', to: 'ui_nav', label: 'IF exists -> ПОКАЗАТЬ "ТРЕНЕР"', color: '#e74c3c', dashes: true },
+                { from: 'trainer_client', to: 'ui_nav', label: 'IF exists -> ПОКАЗАТЬ "ТРЕНЕР"', color: '#e74c3c', dashes: true },
+
+                { from: 'trainer_profile', to: 'trainer_group', label: 'ведет (1:N)', color: '#ce9178', width: 2 },
+                { from: 'trainer_profile', to: 'trainer_client', label: 'ведет (1:N)', color: '#ce9178', width: 2 },
+                
+                { from: 'club', to: 'trainer_group', label: 'создает группы' },
+                { from: 'club', to: 'trainer_client', label: 'база поиска', dashes: true },
+
+                { from: 'trainer_group', to: 'event', label: 'организует' },
+                { from: 'user', to: 'event', label: 'участник (N)' },
+                { from: 'trainer_group', to: 'chat_group_l2' },
+
+                { from: 'user', to: 'trainer_client', label: 'нанимает (N)' },
+                { from: 'trainer_client', to: 'chat_pro_l3' },
+
+                { from: 'workout', to: 'event' },
+                { from: 'workout', to: 'trainer_client', dashes: true },
+                { from: 'event', to: 'run' },
+                { from: 'user', to: 'run' },
+                { from: 'run', to: 'club' },
+                { from: 'run', to: 'territory' },
+                { from: 'club', to: 'territory' },
+                { from: 'user', to: 'chat_social_l4', dashes: true }
+            ]);
+
+            const container = document.getElementById('network-container');
+            const data = { nodes: nodes, edges: edges };
+            const options = {
+                nodes: { font: { size: 13, color: '#fff' }, margin: 10, shadow: false },
+                edges: { font: { size: 9, align: 'middle', color: '#888' }, arrows: 'to', color: '#444', smooth: { type: 'cubicBezier', forceDirection: 'horizontal' } },
+                groups: {
+                    users: { color: { background: '#8a5a44', border: '#ce9178' } },
+                    clubs: { color: { background: '#264f78', border: '#4fc1ff' } },
+                    groups: { color: { background: '#4d603f', border: '#b5cea8' } },
+                    pro: { color: { background: '#6d6d3d', border: '#f1c40f' } },
+                    social: { color: { background: '#333', border: '#888' } },
+                    map: { color: { background: '#5d3d5d', border: '#c586c0' } },
+                    logic: { color: { background: '#c0392b', border: '#e74c3c' } }
+                },
+                physics: { enabled: false },
+                interaction: { dragNodes: true, hover: true, tooltipDelay: 200 }
+            };
+
+            network = new vis.Network(container, data, options);
+        };
+
+        function togglePhysics() {
+            physicsEnabled = !physicsEnabled;
+            network.setOptions({ physics: { enabled: physicsEnabled } });
+        }
+    </script>
+</body>
+</html>

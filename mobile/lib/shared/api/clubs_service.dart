@@ -7,6 +7,7 @@ import '../models/my_club_model.dart';
 import '../models/schedule_model.dart';
 import '../models/calendar_model.dart';
 import '../models/city_leaderboard_entry.dart';
+import '../navigation/nav_status_provider.dart';
 
 class ClubsService {
   final ApiClient _apiClient;
@@ -280,14 +281,19 @@ class ClubsService {
       throw ApiException('invalid_response', 'Server returned non-JSON');
     }
     final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
-    return ClubModel.fromJson(jsonData);
+    final club = ClubModel.fromJson(jsonData);
+    UserNavStatusNotifier().refresh();
+    return club;
   }
 
   /// POST /api/clubs/:id/join
   Future<void> joinClub(String clubId) async {
     final response =
         await _apiClient.post('/api/clubs/${Uri.encodeComponent(clubId)}/join');
-    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      UserNavStatusNotifier().refresh();
+      return;
+    }
     String errorCode = 'join_club_error';
     String errorMessage = 'Failed to join club (${response.statusCode})';
     try {
@@ -304,7 +310,10 @@ class ClubsService {
   Future<void> leaveClub(String clubId) async {
     final response = await _apiClient
         .post('/api/clubs/${Uri.encodeComponent(clubId)}/leave');
-    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      UserNavStatusNotifier().refresh();
+      return;
+    }
     String errorCode = 'leave_club_error';
     String errorMessage = 'Failed to leave club (${response.statusCode})';
     try {

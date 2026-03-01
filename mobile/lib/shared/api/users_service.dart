@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'api_client.dart';
 import '../models/profile_model.dart';
+import '../models/user_nav_status.dart';
 
 /// Исключение при ошибке API (статус, HTML вместо JSON, неверный JSON).
 class ApiException implements Exception {
@@ -125,6 +126,21 @@ class UsersService {
         'Не удалось обновить профиль: ${response.statusCode}. ${response.body}',
       );
     }
+  }
+
+  /// Возвращает флаги видимости вкладок навигации (hasClubs, hasTrainers).
+  Future<UserNavStatus> getNavigationStatus() async {
+    final response = await _apiClient.get('/api/users/me/nav-status');
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      try {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        return UserNavStatus.fromJson(json);
+      } catch (_) {
+        return UserNavStatus.initial();
+      }
+    }
+    return UserNavStatus.initial();
   }
 
   /// Удаляет аккаунт текущего пользователя (DELETE /api/users/me).

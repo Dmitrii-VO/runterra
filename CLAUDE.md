@@ -161,10 +161,8 @@ Runs on push/PR to `main`: backend typecheck + tests + build; mobile analyze + t
 - **Documentation: Russian**
 - Simple, readable, explicit code. No premature abstractions. No "future-proofing."
 
-### After every task (MANDATORY — task is NOT done without this)
-1. Update `docs/progress.md`
-2. Update/create `docs/changes/*.md` if behavior changed
-3. Create ADR in `docs/adr/` if an architectural decision was made
+### Architecture Visualization
+- **Domain Map:** Always update `docs/domain_map.html` after modifying the database schema (migrations), entities (`*.entity.ts`), or adding new core relationships. The map must always reflect the current state of the domain.
 
 ### Mobile-specific
 - **Never** call HTTP/API in `FutureBuilder.future` — use `StatefulWidget` and cache `Future` in `initState`

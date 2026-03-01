@@ -310,9 +310,13 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
     final distFromBottom = position.maxScrollExtent - position.pixels;
     final scrolledAway = distFromBottom > 200;
     if (_userScrolledAway != scrolledAway || _showScrollToBottom != scrolledAway) {
-      setState(() {
-        _userScrolledAway = scrolledAway;
-        _showScrollToBottom = scrolledAway;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _userScrolledAway = scrolledAway;
+            _showScrollToBottom = scrolledAway;
+          });
+        }
       });
     }
   }
