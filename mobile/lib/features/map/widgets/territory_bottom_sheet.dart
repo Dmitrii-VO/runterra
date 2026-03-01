@@ -206,7 +206,7 @@ class _TerritoryBottomSheetState extends State<TerritoryBottomSheet> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: const Color.fromRGBO(255, 255, 255, 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -241,7 +241,7 @@ class _TerritoryBottomSheetState extends State<TerritoryBottomSheet> {
       bgColor = Colors.white.withAlpha(38);
     } else if (info.leaderboard.length >= 2) {
       statusText = '${l10n.zoneContested} (${info.leaderboard.length})';
-      bgColor = Colors.orange.withValues(alpha: 0.3);
+      bgColor = Colors.orange.withAlpha(76);
     } else {
       statusText = l10n.zoneCaptured(info.leaderboard.first.clubName);
       bgColor = Colors.white.withAlpha(38);
