@@ -692,7 +692,7 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<SegmentType>(
-                  value: type,
+                  initialValue: type,
                   decoration: const InputDecoration(labelText: 'Тип'),
                   items: SegmentType.values
                       .map((e) => DropdownMenuItem(value: e, child: Text(_localizeSegmentType(l10n, e))))
@@ -700,7 +700,7 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
                   onChanged: (v) => setDialogState(() => type = v!),
                 ),
                 DropdownButtonFormField<DurationType>(
-                  value: durationType,
+                  initialValue: durationType,
                   decoration: const InputDecoration(labelText: 'Тип длительности'),
                   items: DurationType.values
                       .map((e) => DropdownMenuItem(
@@ -721,7 +721,7 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
                   decoration: const InputDecoration(labelText: 'Цель (Темп/Пульс)', hintText: '4:00 или 160'),
                 ),
                 DropdownButtonFormField<String?>(
-                  value: targetZone,
+                  initialValue: targetZone,
                   decoration: InputDecoration(labelText: l10n.workoutIntensityZone),
                   items: [
                     DropdownMenuItem(value: null, child: Text(l10n.zoneNone)),
@@ -734,7 +734,7 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
                   onChanged: (v) => setDialogState(() => targetZone = v),
                 ),
                 DropdownButtonFormField<RecoveryType?>(
-                  value: recoveryType,
+                  initialValue: recoveryType,
                   decoration: InputDecoration(labelText: l10n.recoveryType),
                   items: [
                     DropdownMenuItem(value: null, child: Text(l10n.zoneNone)),

@@ -608,12 +608,12 @@ class _MapScreenState extends State<MapScreen> {
 
       // Prefer explicit territory color for stroke, fallback to status color
       final strokeColor = parsedColor != null
-          ? parsedColor.withOpacity(0.8)
+          ? parsedColor.withAlpha(204)
           : statusStrokeColor;
 
       // Use semi-transparent territory color for fill if available, fallback to status fill
       final fillColor = parsedColor != null
-          ? parsedColor.withOpacity(0.3)
+          ? parsedColor.withAlpha(76)
           : statusFillColor;
 
       void onTerritoryTap(_, __) => _showTerritoryBottomSheet(territory);

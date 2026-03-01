@@ -145,7 +145,7 @@ class LeaderboardSheet extends StatelessWidget {
     Color tierColor,
   ) {
     return Container(
-      color: isMyClub ? tierColor.withOpacity(0.08) : null,
+      color: isMyClub ? tierColor.withAlpha(20) : null,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
@@ -164,7 +164,7 @@ class LeaderboardSheet extends StatelessWidget {
           // Club initial circle
           CircleAvatar(
             radius: 16,
-            backgroundColor: tierColor.withOpacity(0.15),
+            backgroundColor: tierColor.withAlpha(38),
             child: Text(
               entry.clubName.isNotEmpty ? entry.clubName[0].toUpperCase() : '?',
               style: TextStyle(

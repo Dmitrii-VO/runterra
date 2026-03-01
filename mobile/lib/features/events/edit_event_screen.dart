@@ -258,7 +258,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
                   ),
                   const SizedBox(height: 16),
                               DropdownButtonFormField<String>(
-                                value: _eventType,
+                                initialValue: _eventType,
                                 decoration: InputDecoration(
                                   labelText: l10n.eventCreateType,
                                   border: const OutlineInputBorder(),
@@ -284,7 +284,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
                   const SizedBox(height: 16),
                   if (_eventType == 'training') ...[
                     DropdownButtonFormField<String?>(
-                      value: _selectedWorkoutId,
+                      initialValue: _selectedWorkoutId,
                       decoration: InputDecoration(
                         labelText: l10n.eventWorkout,
                         border: const OutlineInputBorder(),
