@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../api/users_service.dart';
 import '../models/user_nav_status.dart';
 import '../di/service_locator.dart';
 import '../auth/auth_service.dart';
@@ -15,8 +14,8 @@ class UserNavStatusNotifier extends ValueNotifier<UserNavStatus> {
 
   UserNavStatusNotifier._internal() : super(UserNavStatus.initial()) {
     // Refresh status when auth state changes (e.g. login)
-    AuthService.instance.addListener(() {
-      if (AuthService.instance.isAuthenticated) {
+    AuthService.instance.authStateChanges.listen((user) {
+      if (user != null) {
         refresh();
       } else {
         value = UserNavStatus.initial();

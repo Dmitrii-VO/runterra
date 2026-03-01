@@ -223,6 +223,14 @@ export class UsersRepository extends BaseRepository {
    * Delete user by ID
    * Cascade deletes: runs, event_participants (configured in DB)
    */
+  async delete(id: string): Promise<boolean> {
+    const result = await this.query(
+      'DELETE FROM users WHERE id = $1',
+      [id]
+    );
+    return (result.rowCount ?? 0) > 0;
+  }
+
   /**
    * Check if user has clubs or trainers to show/hide navigation tabs.
    */
