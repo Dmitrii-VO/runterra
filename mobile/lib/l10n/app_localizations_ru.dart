@@ -1720,15 +1720,42 @@ class AppLocalizationsRu extends AppLocalizations {
   String get eventsResetFilters => 'Сбросить фильтры';
 
   @override
-  String eventTimeToday(String time) => 'Сегодня в $time';
+  String eventTimeToday(String time) {
+    return 'Сегодня в $time';
+  }
 
   @override
-  String eventTimeTomorrow(String time) => 'Завтра в $time';
+  String eventTimeTomorrow(String time) {
+    return 'Завтра в $time';
+  }
 
   @override
-  String eventTimeInMinutes(int minutes) => 'Через $minutes мин';
+  String eventTimeInMinutes(int minutes) {
+    return 'Через $minutes мин';
+  }
 
   @override
-  String eventTimeInHoursMinutes(int hours, int minutes) =>
-      'Через ${hours} ч ${minutes} мин';
+  String eventTimeInHoursMinutes(int hours, int minutes) {
+    return 'Через $hours ч $minutes мин';
+  }
+
+  @override
+  String get runClubNotSelected => 'Не выбран';
+
+  @override
+  String get runSelectTaskTitle => 'Выберите задание на сегодня';
+
+  @override
+  String get runNoTask => 'Просто пробежка (без задания)';
+
+  @override
+  String get runStatsTotalTime => 'Общее время';
+
+  @override
+  String runCountedTerritoryForClub(String clubName) {
+    return 'Очки территории для клуба $clubName';
+  }
+
+  @override
+  String get loadMore => 'Загрузить ещё';
 }

@@ -6,6 +6,7 @@ class RunHistoryItem {
   final int duration; // seconds
   final int distance; // meters
   final int paceSecondsPerKm;
+  final int? rpe;
 
   RunHistoryItem({
     required this.id,
@@ -13,6 +14,7 @@ class RunHistoryItem {
     required this.duration,
     required this.distance,
     required this.paceSecondsPerKm,
+    this.rpe,
   });
 
   factory RunHistoryItem.fromJson(Map<String, dynamic> json) {
@@ -22,6 +24,7 @@ class RunHistoryItem {
       duration: (json['duration'] as num).toInt(),
       distance: (json['distance'] as num).toInt(),
       paceSecondsPerKm: (json['paceSecondsPerKm'] as num).toInt(),
+      rpe: json['rpe'] != null ? (json['rpe'] as num).toInt() : null,
     );
   }
 }

@@ -3237,28 +3237,88 @@ abstract class AppLocalizations {
   String get durationManual;
 
   /// No description provided for @filtersEventType.
+  ///
+  /// In en, this message translates to:
+  /// **'Event type'**
   String get filtersEventType;
 
   /// No description provided for @filtersDifficulty.
+  ///
+  /// In en, this message translates to:
+  /// **'Difficulty'**
   String get filtersDifficulty;
 
   /// No description provided for @eventsEmptyFiltered.
+  ///
+  /// In en, this message translates to:
+  /// **'No events match the selected filters'**
   String get eventsEmptyFiltered;
 
   /// No description provided for @eventsResetFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset filters'**
   String get eventsResetFilters;
 
   /// No description provided for @eventTimeToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today at {time}'**
   String eventTimeToday(String time);
 
   /// No description provided for @eventTimeTomorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow at {time}'**
   String eventTimeTomorrow(String time);
 
   /// No description provided for @eventTimeInMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'In {minutes} min'**
   String eventTimeInMinutes(int minutes);
 
   /// No description provided for @eventTimeInHoursMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'In {hours} h {minutes} min'**
   String eventTimeInHoursMinutes(int hours, int minutes);
+
+  /// No description provided for @runClubNotSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Not selected'**
+  String get runClubNotSelected;
+
+  /// No description provided for @runSelectTaskTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select today\'s task'**
+  String get runSelectTaskTitle;
+
+  /// No description provided for @runNoTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Just a run (no task)'**
+  String get runNoTask;
+
+  /// No description provided for @runStatsTotalTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Total time'**
+  String get runStatsTotalTime;
+
+  /// No description provided for @runCountedTerritoryForClub.
+  ///
+  /// In en, this message translates to:
+  /// **'Territory points for {clubName}'**
+  String runCountedTerritoryForClub(String clubName);
+
+  /// No description provided for @loadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get loadMore;
 }
 
 class _AppLocalizationsDelegate

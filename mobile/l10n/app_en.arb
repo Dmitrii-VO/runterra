@@ -934,5 +934,18 @@
         "type": "int"
       }
     }
-  }
+  },
+  "runClubNotSelected": "Not selected",
+  "runSelectTaskTitle": "Select today's task",
+  "runNoTask": "Just a run (no task)",
+  "runStatsTotalTime": "Total time",
+  "runCountedTerritoryForClub": "Territory points for {clubName}",
+  "@runCountedTerritoryForClub": {
+    "placeholders": {
+      "clubName": {
+        "type": "String"
+      }
+    }
+  },
+  "loadMore": "Load more"
 }

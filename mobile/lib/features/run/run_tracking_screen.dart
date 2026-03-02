@@ -4,7 +4,9 @@ import '../../l10n/app_localizations.dart';
 import '../../shared/api/users_service.dart' show ApiException;
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/my_club_model.dart';
+import '../../shared/models/run_model.dart';
 import '../../shared/models/run_session.dart';
+import 'widgets/run_detail_map.dart';
 import 'widgets/run_route_map.dart';
 
 /// Callback invoked when user dismisses completed run result.
@@ -223,13 +225,14 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
   Future<void> _resumeRun() async {
     try {
       await _runService.resumeRun();
+      if (!mounted) return;
       setState(() {
         _session = _runService.currentSession;
         _state = _TrackingState.running;
       });
 
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        if (_session != null && _state == _TrackingState.running) {
+        if (_session != null && _state == _TrackingState.running && mounted) {
           final lastResumed = _session!.lastResumedAt ?? _session!.startedAt;
           final activeSinceResume = DateTime.now().difference(lastResumed);
           final totalDuration = _session!.accumulatedDuration + activeSinceResume;
@@ -245,12 +248,14 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
           if (_session?.gpsStatus == GpsStatus.searching) {
             _runService.updateGpsStatus(GpsStatus.recording);
           }
+          if (!mounted) return;
           setState(() {
             _session = _runService.currentSession;
           });
         },
         onError: (error) {
           _runService.updateGpsStatus(GpsStatus.error);
+          if (!mounted) return;
           setState(() {
             _session = _runService.currentSession;
           });
@@ -603,7 +608,7 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   subtitle: Text(
-                    _selectedScoringClub?.name ?? 'Не выбран',
+                    _selectedScoringClub?.name ?? AppLocalizations.of(context)!.runClubNotSelected,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   trailing: const Icon(Icons.edit, size: 20),
@@ -797,6 +802,14 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
 
     final int? heartRateBpm = _session?.heartRate;
 
+    final gpsPoints = (_session?.gpsPoints ?? [])
+        .map((p) => GpsPointModel(
+              latitude: p.latitude,
+              longitude: p.longitude,
+              timestamp: p.timestamp,
+            ))
+        .toList();
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
@@ -806,7 +819,17 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
               l10n.runDone,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+            if (gpsPoints.length >= 2) ...[
+              SizedBox(
+                height: 200,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: RunDetailMap(gpsPoints: gpsPoints),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -880,7 +903,9 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
                     const Icon(Icons.check, color: Colors.green, size: 20),
                     const SizedBox(width: 8),
                     Text(
-                      l10n.runCountedTerritory,
+                      _selectedScoringClub != null
+                          ? l10n.runCountedTerritoryForClub(_selectedScoringClub!.name)
+                          : l10n.runCountedTerritory,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],

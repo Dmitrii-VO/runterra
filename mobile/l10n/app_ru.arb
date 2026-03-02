@@ -760,5 +760,18 @@
         "type": "int"
       }
     }
-  }
+  },
+  "runClubNotSelected": "Не выбран",
+  "runSelectTaskTitle": "Выберите задание на сегодня",
+  "runNoTask": "Просто пробежка (без задания)",
+  "runStatsTotalTime": "Общее время",
+  "runCountedTerritoryForClub": "Очки территории для клуба {clubName}",
+  "@runCountedTerritoryForClub": {
+    "placeholders": {
+      "clubName": {
+        "type": "String"
+      }
+    }
+  },
+  "loadMore": "Загрузить ещё"
 }

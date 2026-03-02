@@ -90,6 +90,7 @@ router.get('/', async (req: Request, res: Response) => {
         duration: r.duration,
         distance: r.distance,
         paceSecondsPerKm: r.distance > 0 ? Math.round((r.duration / r.distance) * 1000) : 0,
+        rpe: r.rpe,
       }));
 
     res.json(items);

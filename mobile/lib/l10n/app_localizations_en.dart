@@ -1715,15 +1715,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventsResetFilters => 'Reset filters';
 
   @override
-  String eventTimeToday(String time) => 'Today at $time';
+  String eventTimeToday(String time) {
+    return 'Today at $time';
+  }
 
   @override
-  String eventTimeTomorrow(String time) => 'Tomorrow at $time';
+  String eventTimeTomorrow(String time) {
+    return 'Tomorrow at $time';
+  }
 
   @override
-  String eventTimeInMinutes(int minutes) => 'In $minutes min';
+  String eventTimeInMinutes(int minutes) {
+    return 'In $minutes min';
+  }
 
   @override
-  String eventTimeInHoursMinutes(int hours, int minutes) =>
-      'In ${hours}h ${minutes}min';
+  String eventTimeInHoursMinutes(int hours, int minutes) {
+    return 'In $hours h $minutes min';
+  }
+
+  @override
+  String get runClubNotSelected => 'Not selected';
+
+  @override
+  String get runSelectTaskTitle => 'Select today\'s task';
+
+  @override
+  String get runNoTask => 'Just a run (no task)';
+
+  @override
+  String get runStatsTotalTime => 'Total time';
+
+  @override
+  String runCountedTerritoryForClub(String clubName) {
+    return 'Territory points for $clubName';
+  }
+
+  @override
+  String get loadMore => 'Load more';
 }

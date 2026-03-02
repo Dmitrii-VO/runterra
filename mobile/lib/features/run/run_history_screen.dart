@@ -21,23 +21,73 @@ class _RunHistoryScreenState extends State<RunHistoryScreen> {
   final _runService = ServiceLocator.runService;
 
   late Future<RunStats> _statsFuture;
-  late Future<List<RunHistoryItem>> _historyFuture;
+  final List<RunHistoryItem> _runs = [];
+  bool _historyLoading = false;
+  bool _historyError = false;
+  int _offset = 0;
+  bool _hasMore = true;
+  bool _loadingMore = false;
+
+  static const int _pageSize = 20;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    _statsFuture = _runService.getRunStats();
+    _loadHistory();
   }
 
-  void _loadData() {
-    _statsFuture = _runService.getRunStats();
-    _historyFuture = _runService.getRunHistory();
+  Future<void> _loadHistory() async {
+    if (_historyLoading) return;
+    setState(() {
+      _historyLoading = true;
+      _historyError = false;
+    });
+    try {
+      final items = await _runService.getRunHistory(limit: _pageSize, offset: 0);
+      if (mounted) {
+        setState(() {
+          _runs
+            ..clear()
+            ..addAll(items);
+          _offset = items.length;
+          _hasMore = items.length == _pageSize;
+          _historyLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _historyLoading = false;
+          _historyError = true;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_loadingMore || !_hasMore) return;
+    setState(() => _loadingMore = true);
+    try {
+      final items = await _runService.getRunHistory(limit: _pageSize, offset: _offset);
+      if (mounted) {
+        setState(() {
+          _runs.addAll(items);
+          _offset += items.length;
+          _hasMore = items.length == _pageSize;
+          _loadingMore = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loadingMore = false);
+    }
   }
 
   Future<void> _refresh() async {
     setState(() {
-      _loadData();
+      _statsFuture = _runService.getRunStats();
     });
+    await _loadHistory();
   }
 
   Future<String?> _resolveClubId() async {
@@ -86,11 +136,11 @@ class _RunHistoryScreenState extends State<RunHistoryScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Padding(
-                padding: EdgeInsets.all(16.0),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
                 child: Text(
-                  "Выберите задание на сегодня",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  AppLocalizations.of(ctx)!.runSelectTaskTitle,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
               ...todayTasks.map((task) => ListTile(
@@ -104,7 +154,7 @@ class _RunHistoryScreenState extends State<RunHistoryScreen> {
               )),
               ListTile(
                 leading: const Icon(Icons.close),
-                title: const Text("Просто пробежка (без задания)"),
+                title: Text(AppLocalizations.of(ctx)!.runNoTask),
                 onTap: () => Navigator.pop(ctx),
               ),
               const SizedBox(height: 16),
@@ -119,6 +169,12 @@ class _RunHistoryScreenState extends State<RunHistoryScreen> {
     } catch (e) {
       widget.onStartRun(null);
     }
+  }
+
+  String _formatTotalDuration(int seconds) {
+    final h = seconds ~/ 3600;
+    final m = (seconds % 3600) ~/ 60;
+    return h > 0 ? '${h}h ${m}m' : '${m}m';
   }
 
   String _formatPace(int paceSecondsPerKm) {
@@ -234,6 +290,12 @@ class _RunHistoryScreenState extends State<RunHistoryScreen> {
                     ),
                     Expanded(
                       child: _statItem(
+                        value: _formatTotalDuration(stats.totalDuration),
+                        label: l10n.runStatsTotalTime,
+                      ),
+                    ),
+                    Expanded(
+                      child: _statItem(
                         value: _formatDistance(context, stats.totalDistance),
                         label: l10n.runStatsTotalDistance,
                       ),
@@ -277,69 +339,81 @@ class _RunHistoryScreenState extends State<RunHistoryScreen> {
   }
 
   Widget _buildHistorySection(AppLocalizations l10n) {
-    return FutureBuilder<List<RunHistoryItem>>(
-      future: _historyFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Padding(
-            padding: EdgeInsets.all(32),
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
+    if (_historyLoading && _runs.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(32),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
 
-        if (snapshot.hasError) {
-          return Padding(
-            padding: const EdgeInsets.all(32),
-            child: Center(
-              child: Column(
-                children: [
-                  Text(l10n.runDetailLoadError),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: _refresh,
-                    child: Text(l10n.retry),
-                  ),
-                ],
+    if (_historyError && _runs.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(32),
+        child: Center(
+          child: Column(
+            children: [
+              Text(l10n.runDetailLoadError),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: _refresh,
+                child: Text(l10n.retry),
               ),
-            ),
-          );
-        }
+            ],
+          ),
+        ),
+      );
+    }
 
-        final runs = snapshot.data ?? [];
-        if (runs.isEmpty) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
-            child: Center(
-              child: Column(
-                children: [
-                  Icon(Icons.directions_run, size: 64, color: Colors.grey[300]),
-                  const SizedBox(height: 16),
-                  Text(
-                    l10n.runHistoryEmpty,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Colors.grey,
-                        ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.runHistoryEmptyHint,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey,
-                        ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+    if (_runs.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
+        child: Center(
+          child: Column(
+            children: [
+              Icon(Icons.directions_run, size: 64, color: Colors.grey[300]),
+              const SizedBox(height: 16),
+              Text(
+                l10n.runHistoryEmpty,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.grey,
+                    ),
+                textAlign: TextAlign.center,
               ),
-            ),
-          );
-        }
+              const SizedBox(height: 8),
+              Text(
+                l10n.runHistoryEmptyHint,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.grey,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
-        return Column(
-          children: runs.map((run) => _buildRunCard(run)).toList(),
-        );
-      },
+    return Column(
+      children: [
+        ..._runs.map((run) => _buildRunCard(run)),
+        if (_hasMore)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: _loadingMore
+                ? const CircularProgressIndicator()
+                : TextButton(
+                    onPressed: _loadMore,
+                    child: Text(l10n.loadMore),
+                  ),
+          ),
+      ],
     );
+  }
+
+  Color _rpeColor(int rpe) {
+    if (rpe <= 3) return Colors.green;
+    if (rpe <= 6) return Colors.orange;
+    return Colors.red;
   }
 
   Widget _buildRunCard(RunHistoryItem run) {
@@ -394,6 +468,20 @@ class _RunHistoryScreenState extends State<RunHistoryScreen> {
                   ],
                 ),
               ),
+              if (run.rpe != null) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _rpeColor(run.rpe!).withAlpha(30),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'RPE ${run.rpe}',
+                    style: TextStyle(fontSize: 11, color: _rpeColor(run.rpe!)),
+                  ),
+                ),
+              ],
               const Icon(Icons.chevron_right, color: Colors.grey),
             ],
           ),

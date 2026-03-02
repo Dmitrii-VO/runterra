@@ -130,6 +130,7 @@ export interface RunHistoryItemDto {
   duration: number;
   distance: number;
   paceSecondsPerKm: number;
+  rpe?: number;
 }
 
 /** Run details with GPS track */
