@@ -156,6 +156,20 @@ export interface UpdateProfileDto {
 }
 
 /**
+ * DTO for user search results (GET /api/users/search).
+ */
+export interface UserSearchResultDto {
+  id: string;
+  name: string;
+  firstName?: string;
+  lastName?: string;
+  avatarUrl?: string;
+  cityId?: string;
+  cityName?: string;
+  clubName?: string;
+}
+
+/**
  * Runtime schema for PATCH /me/profile body.
  * name: non-empty string, max 100 chars; avatarUrl: optional string (URL).
  */

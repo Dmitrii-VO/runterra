@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'api_client.dart';
 import '../models/profile_model.dart';
 import '../models/user_nav_status.dart';
+import '../models/user_search_result_model.dart';
 
 /// Исключение при ошибке API (статус, HTML вместо JSON, неверный JSON).
 class ApiException implements Exception {
@@ -141,6 +142,53 @@ class UsersService {
       }
     }
     return UserNavStatus.initial();
+  }
+
+  /// Returns raw JSON map for a user by ID (GET /api/users/:id).
+  /// Used by PublicProfileScreen when no preloaded data is available.
+  Future<Map<String, dynamic>> getRawUserById(String userId) async {
+    final response = await _apiClient.get('/api/users/$userId');
+    if (response.statusCode == 404) {
+      throw ApiException('not_found', 'User not found');
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ApiException('http_${response.statusCode}', 'Request failed');
+    }
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  /// Search users by name (GET /api/users/search).
+  /// [query] must be at least 2 characters.
+  Future<List<UserSearchResult>> searchUsers(
+    String query, {
+    String? cityId,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    final params = <String, String>{
+      'q': query,
+      'limit': '$limit',
+      'offset': '$offset',
+    };
+    if (cityId != null) params['cityId'] = cityId;
+    final queryString = Uri(queryParameters: params).query;
+    final response = await _apiClient.get('/api/users/search?$queryString');
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      String code = 'http_${response.statusCode}';
+      String message = 'Search failed: ${response.statusCode}';
+      try {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        if (json['code'] != null) code = json['code'] as String;
+        if (json['message'] != null) message = json['message'] as String;
+      } catch (_) {}
+      throw ApiException(code, message);
+    }
+
+    final list = jsonDecode(response.body) as List<dynamic>;
+    return list
+        .map((e) => UserSearchResult.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   /// Удаляет аккаунт текущего пользователя (DELETE /api/users/me).

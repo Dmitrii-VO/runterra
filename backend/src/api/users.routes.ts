@@ -18,6 +18,7 @@ import {
   userToViewDto,
   ProfileDto,
   UpdateProfileSchema,
+  UserSearchResultDto,
 } from '../modules/users';
 import { validateBody } from './validateBody';
 import {
@@ -284,6 +285,68 @@ router.get('/me/nav-status', async (req: Request, res: Response) => {
     res.status(200).json(status);
   } catch (error) {
     logger.error('Error fetching nav status', { firebaseUid, error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/users/search
+ *
+ * Search users by name (ILIKE). Excludes the requesting user and hidden profiles.
+ * Query: q (required, min 2 chars), cityId?, limit (1-50, default 20), offset (default 0).
+ */
+router.get('/search', async (req: Request, res: Response) => {
+  const { q, cityId, limit: limitStr, offset: offsetStr } = req.query as {
+    q?: string;
+    cityId?: string;
+    limit?: string;
+    offset?: string;
+  };
+
+  if (!q || q.trim().length < 2) {
+    res.status(400).json({
+      code: 'validation_error',
+      message: 'Query must be at least 2 characters',
+      details: {
+        fields: [{ field: 'q', message: 'Must be at least 2 characters', code: 'min_length' }],
+      },
+    });
+    return;
+  }
+
+  const limit = Math.min(50, Math.max(1, limitStr ? parseInt(limitStr, 10) : 20));
+  const offset = Math.max(0, offsetStr ? parseInt(offsetStr, 10) : 0);
+
+  try {
+    const repo = getUsersRepository();
+    const firebaseUid = req.authUser!.uid;
+    const currentUser = await repo.findByFirebaseUid(firebaseUid);
+    if (!currentUser) {
+      res.status(404).json({ code: 'not_found', message: 'User not found' });
+      return;
+    }
+
+    const results = await repo.searchByName(q.trim(), {
+      cityId: cityId?.trim() || undefined,
+      excludeUserId: currentUser.id,
+      limit,
+      offset,
+    });
+
+    const dtos: UserSearchResultDto[] = results.map((r) => ({
+      id: r.id,
+      name: r.name,
+      firstName: r.firstName,
+      lastName: r.lastName,
+      avatarUrl: r.avatarUrl,
+      cityId: r.cityId,
+      cityName: r.cityId ? findCityById(r.cityId)?.name : undefined,
+      clubName: r.clubName,
+    }));
+
+    res.status(200).json(dtos);
+  } catch (error) {
+    logger.error('Error searching users', { error });
     res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
   }
 });

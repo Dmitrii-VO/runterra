@@ -32,7 +32,10 @@ import 'features/trainer/trainers_list_screen.dart';
 import 'features/trainer/workouts_list_screen.dart';
 import 'features/trainer/workout_form_screen.dart';
 import 'features/trainer/create_trainer_group_screen.dart';
+import 'features/people/people_search_screen.dart';
+import 'features/people/public_profile_screen.dart';
 import 'shared/models/profile_model.dart' show ProfileUserData;
+import 'shared/models/user_search_result_model.dart';
 import 'shared/models/club_model.dart';
 import 'shared/models/club_member_model.dart';
 import 'shared/models/trainer_group_model.dart';
@@ -346,6 +349,17 @@ class RunterraApp extends StatelessWidget {
           final title = state.uri.queryParameters['title'] ?? 'Chat';
           return ChatScreen(channelType: type, channelId: id, title: title);
         },
+      ),
+      GoRoute(
+        path: '/people',
+        builder: (context, state) => const PeopleSearchScreen(),
+      ),
+      GoRoute(
+        path: '/user/:id',
+        builder: (context, state) => PublicProfileScreen(
+          userId: state.pathParameters['id']!,
+          preload: state.extra as UserSearchResult?,
+        ),
       ),
     ],
   );

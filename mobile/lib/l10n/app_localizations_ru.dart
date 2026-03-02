@@ -1758,4 +1758,22 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get loadMore => 'Загрузить ещё';
+
+  @override
+  String get findPeople => 'Найти людей';
+
+  @override
+  String get peopleSearchHint => 'Поиск по имени...';
+
+  @override
+  String get peopleSearchPlaceholder => 'Введите минимум 2 символа для поиска';
+
+  @override
+  String get peopleSearchEmpty => 'Пользователи не найдены';
+
+  @override
+  String get peopleMyCity => 'Мой город';
+
+  @override
+  String get messageComingSoon => 'Сообщения — скоро';
 }

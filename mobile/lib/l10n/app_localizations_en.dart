@@ -1753,4 +1753,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loadMore => 'Load more';
+
+  @override
+  String get findPeople => 'Find people';
+
+  @override
+  String get peopleSearchHint => 'Search by name...';
+
+  @override
+  String get peopleSearchPlaceholder => 'Enter at least 2 characters to search';
+
+  @override
+  String get peopleSearchEmpty => 'No users found';
+
+  @override
+  String get peopleMyCity => 'My city';
+
+  @override
+  String get messageComingSoon => 'Messaging — coming soon';
 }

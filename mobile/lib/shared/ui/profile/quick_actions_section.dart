@@ -59,6 +59,11 @@ class ProfileQuickActionsSection extends StatelessWidget {
                     label: Text(AppLocalizations.of(context)!.quickCreateClub),
                   ),
                 ],
+                OutlinedButton.icon(
+                  onPressed: () => GoRouter.of(context).push('/people'),
+                  icon: const Icon(Icons.person_search_outlined),
+                  label: Text(AppLocalizations.of(context)!.findPeople),
+                ),
               ],
             ),
           ],

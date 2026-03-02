@@ -3319,6 +3319,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Load more'**
   String get loadMore;
+
+  /// No description provided for @findPeople.
+  ///
+  /// In en, this message translates to:
+  /// **'Find people'**
+  String get findPeople;
+
+  /// No description provided for @peopleSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name...'**
+  String get peopleSearchHint;
+
+  /// No description provided for @peopleSearchPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter at least 2 characters to search'**
+  String get peopleSearchPlaceholder;
+
+  /// No description provided for @peopleSearchEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No users found'**
+  String get peopleSearchEmpty;
+
+  /// No description provided for @peopleMyCity.
+  ///
+  /// In en, this message translates to:
+  /// **'My city'**
+  String get peopleMyCity;
+
+  /// No description provided for @messageComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Messaging — coming soon'**
+  String get messageComingSoon;
 }
 
 class _AppLocalizationsDelegate

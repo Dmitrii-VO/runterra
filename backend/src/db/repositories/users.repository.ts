@@ -227,6 +227,45 @@ export class UsersRepository extends BaseRepository {
   }
 
   /**
+   * Search users by name (case-insensitive, ILIKE).
+   * Excludes the requesting user and users with profile_visible = false.
+   */
+  async searchByName(
+    query: string,
+    options: {
+      cityId?: string;
+      excludeUserId: string;
+      limit: number;
+      offset: number;
+    },
+  ): Promise<Array<User & { clubName?: string }>> {
+    const params: unknown[] = [`%${query}%`, options.excludeUserId];
+    let paramIndex = 3;
+    let cityFilter = '';
+    if (options.cityId) {
+      cityFilter = `AND u.city_id = $${paramIndex++}`;
+      params.push(options.cityId);
+    }
+    params.push(options.limit, options.offset);
+
+    const rows = await this.queryMany<UserRow & { club_name?: string }>(
+      `SELECT u.*, c.name AS club_name
+       FROM users u
+       LEFT JOIN club_members cm ON cm.user_id = u.id AND cm.status = 'active'
+       LEFT JOIN clubs c ON c.id = cm.club_id
+       WHERE u.name ILIKE $1
+         AND u.profile_visible = true
+         AND u.id != $2::uuid
+         ${cityFilter}
+       ORDER BY u.name
+       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+      params,
+    );
+
+    return rows.map((row) => ({ ...rowToUser(row), clubName: row.club_name ?? undefined }));
+  }
+
+  /**
    * Check if user has clubs or trainers to show/hide navigation tabs.
    */
   async getNavigationStatus(userId: string): Promise<{ hasClubs: boolean; hasTrainers: boolean }> {

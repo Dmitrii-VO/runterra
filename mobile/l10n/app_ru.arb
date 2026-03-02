@@ -773,5 +773,11 @@
       }
     }
   },
-  "loadMore": "Загрузить ещё"
+  "loadMore": "Загрузить ещё",
+  "findPeople": "Найти людей",
+  "peopleSearchHint": "Поиск по имени...",
+  "peopleSearchPlaceholder": "Введите минимум 2 символа для поиска",
+  "peopleSearchEmpty": "Пользователи не найдены",
+  "peopleMyCity": "Мой город",
+  "messageComingSoon": "Сообщения — скоро"
 }
