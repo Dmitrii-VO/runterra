@@ -168,6 +168,9 @@ class AppLocalizationsRu extends AppLocalizations {
   }
 
   @override
+  String get profileMyClub => 'Мой клуб';
+
+  @override
   String get activityNext => 'Ближайшая тренировка';
 
   @override
@@ -193,6 +196,10 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get activityStatusCancelled => 'Отменено';
+
+  @override
+  String get activityNoActivities =>
+      'Нет запланированных тренировок. Найди событие на карте!';
 
   @override
   String get activityResultCounted => 'Засчитано';

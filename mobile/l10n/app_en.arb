@@ -83,6 +83,7 @@
       }
     }
   },
+  "profileMyClub": "My club",
   "activityNext": "Next workout",
   "activityLast": "Last activity",
   "activityDefaultName": "Workout",
@@ -92,6 +93,7 @@
   "activityStatusInProgress": "In progress",
   "activityStatusCompleted": "Completed",
   "activityStatusCancelled": "Cancelled",
+  "activityNoActivities": "No upcoming workouts. Find an event on the map!",
   "activityResultCounted": "Counted",
   "activityResultNotCounted": "Not counted",
   "settingsLocation": "Location",

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
@@ -34,13 +36,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late Future<ProfileModel> _profileFuture;
   TrainerProfile? _trainerProfile;
 
+  Future<ProfileModel> _loadAll() {
+    // Fire both requests concurrently; _loadTrainerProfile handles its own state
+    _loadTrainerProfile();
+    return _fetchProfile();
+  }
+
   @override
   void initState() {
     super.initState();
-    _profileFuture = _fetchProfile().then((profile) {
-      _loadTrainerProfile();
-      return profile;
-    });
+    _profileFuture = _loadAll();
   }
 
   Future<void> _loadTrainerProfile() async {
@@ -96,10 +101,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   /// Reload profile data
   void _retry() {
     setState(() {
-      _profileFuture = _fetchProfile().then((profile) {
-        _loadTrainerProfile();
-        return profile;
-      });
+      _profileFuture = _loadAll();
     });
   }
 
@@ -164,11 +166,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         } else {
           userMessage = '${err.code}\n\n${err.message}';
         }
+      } else if (err is SocketException) {
+        userMessage = l10n.profileConnectionError;
       } else {
         final s = err.toString();
-        if (s.contains('SocketException') ||
-            s.contains('connection refused') ||
-            s.contains('отклонил это сетевое подключение')) {
+        if (s.contains('connection refused')) {
           userMessage = l10n.profileConnectionError;
         } else {
           userMessage = l10n.errorGeneric(s);
@@ -217,7 +219,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final profile = snapshot.data!;
     final activeClubId = profile.club?.id ?? ServiceLocator.currentClubService.currentClubId;
     final activeClubName = profile.club?.name;
-    final myClubLabel = l10n.filtersMyClub.replaceAll('🏃', '').trim();
+    final myClubLabel = l10n.profileMyClub;
 
     return ListView(
       children: [

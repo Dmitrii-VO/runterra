@@ -24,6 +24,20 @@ class ProfileActivitySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (nextActivity == null && lastActivity == null) {
+      return Card(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            AppLocalizations.of(context)!.activityNoActivities,
+            style: Theme.of(context).textTheme.bodyMedium,
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
     return Column(
       children: [
         // Ближайшая активность
@@ -130,43 +144,28 @@ class _StatusChip extends StatelessWidget {
 
   const _StatusChip({required this.status});
 
+  static const _statusColors = {
+    'planned': Colors.blue,
+    'in_progress': Colors.orange,
+    'completed': Colors.green,
+    'cancelled': Colors.grey,
+  };
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    String label;
-    Color color;
-
-    switch (status) {
-      case 'planned':
-        label = l10n.activityStatusPlanned;
-        color = Colors.blue;
-        break;
-      case 'in_progress':
-        label = l10n.activityStatusInProgress;
-        color = Colors.orange;
-        break;
-      case 'completed':
-        label = l10n.activityStatusCompleted;
-        color = Colors.green;
-        break;
-      case 'cancelled':
-        label = l10n.activityStatusCancelled;
-        color = Colors.grey;
-        break;
-      default:
-        label = status;
-        color = Colors.grey;
-    }
+    final color = _statusColors[status] ?? Colors.grey;
+    final label = switch (status) {
+      'planned' => l10n.activityStatusPlanned,
+      'in_progress' => l10n.activityStatusInProgress,
+      'completed' => l10n.activityStatusCompleted,
+      'cancelled' => l10n.activityStatusCancelled,
+      _ => status,
+    };
 
     return Chip(
       label: Text(label),
-      backgroundColor: color == Colors.blue 
-          ? const Color.fromRGBO(33, 150, 243, 0.1)
-          : color == Colors.orange
-              ? const Color.fromRGBO(255, 152, 0, 0.1)
-              : color == Colors.green
-                  ? const Color.fromRGBO(76, 175, 80, 0.1)
-                  : const Color.fromRGBO(158, 158, 158, 0.1),
+      backgroundColor: color.withAlpha(26), // ~10% opacity
       labelStyle: TextStyle(color: color, fontSize: 12),
     );
   }

@@ -21,18 +21,19 @@ class ProfileHeaderSection extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            // Avatar
+            // Avatar with graceful fallback to initials on broken URL
             CircleAvatar(
               radius: 40,
-              backgroundImage: user.avatarUrl != null
+              foregroundImage: user.avatarUrl != null
                   ? NetworkImage(user.avatarUrl!)
                   : null,
-              child: user.avatarUrl == null
-                  ? Text(
-                      user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
-                      style: const TextStyle(fontSize: 32),
-                    )
+              onForegroundImageError: user.avatarUrl != null
+                  ? (_, __) {}
                   : null,
+              child: Text(
+                user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                style: const TextStyle(fontSize: 32),
+              ),
             ),
             const SizedBox(width: 16),
             // User info

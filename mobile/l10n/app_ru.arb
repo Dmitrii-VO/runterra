@@ -55,6 +55,7 @@
       }
     }
   },
+  "profileMyClub": "Мой клуб",
   "activityNext": "Ближайшая тренировка",
   "activityLast": "Последняя активность",
   "activityDefaultName": "Тренировка",
@@ -64,6 +65,7 @@
   "activityStatusInProgress": "В процессе",
   "activityStatusCompleted": "Завершено",
   "activityStatusCancelled": "Отменено",
+  "activityNoActivities": "Нет запланированных тренировок. Найди событие на карте!",
   "activityResultCounted": "Засчитано",
   "activityResultNotCounted": "Не засчитано",
   "settingsLocation": "Геолокация",

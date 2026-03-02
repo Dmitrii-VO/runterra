@@ -167,6 +167,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get profileMyClub => 'My club';
+
+  @override
   String get activityNext => 'Next workout';
 
   @override
@@ -192,6 +195,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activityStatusCancelled => 'Cancelled';
+
+  @override
+  String get activityNoActivities =>
+      'No upcoming workouts. Find an event on the map!';
 
   @override
   String get activityResultCounted => 'Counted';

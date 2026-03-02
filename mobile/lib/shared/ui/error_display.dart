@@ -30,8 +30,7 @@ class ErrorDisplay extends StatelessWidget {
         errorMessage.contains('превысил таймаут')) {
       return l10n.errorTimeoutMessage;
     } else if (errorMessage.contains('SocketException') ||
-        errorMessage.contains('connection refused') ||
-        errorMessage.contains('отклонил это сетевое подключение')) {
+        errorMessage.contains('connection refused')) {
       return l10n.errorConnectionMessage;
     } else {
       return l10n.errorGeneric(errorMessage);

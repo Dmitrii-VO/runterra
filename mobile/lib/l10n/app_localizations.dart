@@ -386,6 +386,12 @@ abstract class AppLocalizations {
   /// **'Could not load clubs: {error}'**
   String profileMyClubsLoadError(String error);
 
+  /// No description provided for @profileMyClub.
+  ///
+  /// In en, this message translates to:
+  /// **'My club'**
+  String get profileMyClub;
+
   /// No description provided for @activityNext.
   ///
   /// In en, this message translates to:
@@ -439,6 +445,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancelled'**
   String get activityStatusCancelled;
+
+  /// No description provided for @activityNoActivities.
+  ///
+  /// In en, this message translates to:
+  /// **'No upcoming workouts. Find an event on the map!'**
+  String get activityNoActivities;
 
   /// No description provided for @activityResultCounted.
   ///
