@@ -895,5 +895,44 @@
         "type": "String"
       }
     }
+  },
+  "filtersEventType": "Event type",
+  "filtersDifficulty": "Difficulty",
+  "eventsEmptyFiltered": "No events match the selected filters",
+  "eventsResetFilters": "Reset filters",
+  "eventTimeToday": "Today at {time}",
+  "@eventTimeToday": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "eventTimeTomorrow": "Tomorrow at {time}",
+  "@eventTimeTomorrow": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "eventTimeInMinutes": "In {minutes} min",
+  "@eventTimeInMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "eventTimeInHoursMinutes": "In {hours} h {minutes} min",
+  "@eventTimeInHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
   }
 }

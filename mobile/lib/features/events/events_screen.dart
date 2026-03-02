@@ -37,6 +37,8 @@ class _EventsScreenState extends State<EventsScreen>
   String? _selectedClubId;
   bool _onlyOpen = true;
   bool _participantOnly = false;
+  String? _selectedEventType;
+  String? _selectedDifficulty;
 
   @override
   void initState() {
@@ -110,15 +112,14 @@ class _EventsScreenState extends State<EventsScreen>
       clubId: _selectedClubId,
       onlyOpen: _onlyOpen,
       participantOnly: _participantOnly,
+      eventType: _selectedEventType,
+      difficultyLevel: _selectedDifficulty,
     );
 
-    // City Events tab shows only open_event type events
-    var filtered = events.where((event) => event.type == 'open_event').toList();
-
-    // Safety net: if backend still returns stale open events in the past.
-    if (!_onlyOpen) return filtered;
+    // Safety net: filter out past open events not yet updated by backend.
+    if (!_onlyOpen) return events;
     final now = DateTime.now();
-    return filtered
+    return events
         .where((event) =>
             event.status == 'open' && !event.startDateTime.isBefore(now))
         .toList();
@@ -128,6 +129,25 @@ class _EventsScreenState extends State<EventsScreen>
     setState(() {
       _trainingClubIdFuture = _resolveTrainingClubId();
       _calendarFuture = _fetchCalendar();
+      _eventsFuture = _fetchCityEvents();
+    });
+  }
+
+  Future<void> _onRefreshCityEvents() async {
+    setState(() {
+      _eventsFuture = _fetchCityEvents();
+    });
+    await _eventsFuture;
+  }
+
+  void _resetFilters() {
+    setState(() {
+      _selectedDateFilter = null;
+      _selectedClubId = null;
+      _onlyOpen = true;
+      _participantOnly = false;
+      _selectedEventType = null;
+      _selectedDifficulty = null;
       _eventsFuture = _fetchCityEvents();
     });
   }
@@ -533,6 +553,13 @@ class _EventsScreenState extends State<EventsScreen>
       );
 
   Widget _buildCityEventsTab(AppLocalizations l10n) {
+    final hasActiveFilters = _selectedDateFilter != null ||
+        _selectedClubId != null ||
+        _onlyOpen ||
+        _participantOnly ||
+        _selectedEventType != null ||
+        _selectedDifficulty != null;
+
     return Column(
       children: [
         _buildEventsFiltersPanel(l10n),
@@ -548,34 +575,59 @@ class _EventsScreenState extends State<EventsScreen>
               }
 
               final events = snapshot.data ?? [];
+
               if (events.isEmpty) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.event_busy,
-                            size: 64, color: Colors.grey[400]),
-                        const SizedBox(height: 16),
-                        Text(
-                          l10n.eventsEmpty,
-                          style: Theme.of(context).textTheme.titleMedium,
+                // Scrollable so RefreshIndicator works on empty list too
+                return RefreshIndicator(
+                  onRefresh: _onRefreshCityEvents,
+                  child: ListView(
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.5,
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.event_busy,
+                                    size: 64, color: Colors.grey[400]),
+                                const SizedBox(height: 16),
+                                Text(
+                                  hasActiveFilters
+                                      ? l10n.eventsEmptyFiltered
+                                      : l10n.eventsEmpty,
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium,
+                                  textAlign: TextAlign.center,
+                                ),
+                                if (hasActiveFilters) ...[
+                                  const SizedBox(height: 12),
+                                  OutlinedButton(
+                                    onPressed: _resetFilters,
+                                    child: Text(l10n.eventsResetFilters),
+                                  ),
+                                ] else ...[
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    l10n.eventsEmptyHint,
+                                    style:
+                                        Theme.of(context).textTheme.bodySmall,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          l10n.eventsEmptyHint,
-                          style: Theme.of(context).textTheme.bodySmall,
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 );
               }
 
               return RefreshIndicator(
-                onRefresh: () async => _refresh(),
+                onRefresh: _onRefreshCityEvents,
                 child: ListView.builder(
                   itemCount: events.length,
                   itemBuilder: (context, index) =>
@@ -602,63 +654,132 @@ class _EventsScreenState extends State<EventsScreen>
           ),
         ],
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Row(
-          children: [
-            _buildDateFilterChip(l10n.filterToday, 'today'),
-            const SizedBox(width: 8),
-            _buildDateFilterChip(l10n.filterTomorrow, 'tomorrow'),
-            const SizedBox(width: 8),
-            _buildDateFilterChip(l10n.filter7days, 'next7days'),
-            const SizedBox(width: 16),
-            FilterChip(
-              label: Text(l10n.filterOnlyOpen),
-              selected: _onlyOpen,
-              onSelected: (selected) {
-                setState(() {
-                  _onlyOpen = selected;
-                  _eventsFuture = _fetchCityEvents();
-                });
-              },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Row 1: date, open, club, participant
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Row(
+              children: [
+                _buildDateFilterChip(l10n.filterToday, 'today'),
+                const SizedBox(width: 8),
+                _buildDateFilterChip(l10n.filterTomorrow, 'tomorrow'),
+                const SizedBox(width: 8),
+                _buildDateFilterChip(l10n.filter7days, 'next7days'),
+                const SizedBox(width: 16),
+                FilterChip(
+                  label: Text(l10n.filterOnlyOpen),
+                  selected: _onlyOpen,
+                  onSelected: (selected) {
+                    setState(() {
+                      _onlyOpen = selected;
+                      _eventsFuture = _fetchCityEvents();
+                    });
+                  },
+                ),
+                const SizedBox(width: 16),
+                FilterChip(
+                  label: Text(l10n.filtersMyClub),
+                  selected:
+                      _selectedClubId != null && _selectedClubId!.isNotEmpty,
+                  onSelected: (selected) async {
+                    if (!selected) {
+                      setState(() {
+                        _selectedClubId = null;
+                        _eventsFuture = _fetchCityEvents();
+                      });
+                      return;
+                    }
+                    final clubId = await _resolveTrainingClubId();
+                    if (!mounted) return;
+                    setState(() {
+                      _selectedClubId = clubId;
+                      _eventsFuture = _fetchCityEvents();
+                    });
+                  },
+                ),
+                const SizedBox(width: 16),
+                FilterChip(
+                  label: Text(l10n.filterParticipantOnly),
+                  selected: _participantOnly,
+                  onSelected: (selected) {
+                    setState(() {
+                      _participantOnly = selected;
+                      _eventsFuture = _fetchCityEvents();
+                    });
+                  },
+                ),
+                const SizedBox(width: 16),
+              ],
             ),
-            const SizedBox(width: 16),
-            FilterChip(
-              label: Text(l10n.filtersMyClub),
-              selected: _selectedClubId != null && _selectedClubId!.isNotEmpty,
-              onSelected: (selected) async {
-                if (!selected) {
-                  setState(() {
-                    _selectedClubId = null;
-                    _eventsFuture = _fetchCityEvents();
-                  });
-                  return;
-                }
-
-                final clubId = await _resolveTrainingClubId();
-                if (!mounted) return;
-                setState(() {
-                  _selectedClubId = clubId;
-                  _eventsFuture = _fetchCityEvents();
-                });
-              },
+          ),
+          // Row 2: event type
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+            child: Row(
+              children: [
+                _buildEventTypeChip(l10n.filterAll, null),
+                const SizedBox(width: 8),
+                _buildEventTypeChip(l10n.eventTypeTraining, 'training'),
+                const SizedBox(width: 8),
+                _buildEventTypeChip(l10n.eventTypeGroupRun, 'group_run'),
+                const SizedBox(width: 8),
+                _buildEventTypeChip(l10n.eventTypeClubEvent, 'club_event'),
+                const SizedBox(width: 8),
+                _buildEventTypeChip(l10n.eventTypeOpenEvent, 'open_event'),
+                const SizedBox(width: 16),
+              ],
             ),
-            const SizedBox(width: 16),
-            FilterChip(
-              label: Text(l10n.filterParticipantOnly),
-              selected: _participantOnly,
-              onSelected: (selected) {
-                setState(() {
-                  _participantOnly = selected;
-                  _eventsFuture = _fetchCityEvents();
-                });
-              },
+          ),
+          // Row 3: difficulty
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+            child: Row(
+              children: [
+                _buildDifficultyChip(l10n.filterAll, null),
+                const SizedBox(width: 8),
+                _buildDifficultyChip(l10n.eventDifficultyBeginner, 'beginner'),
+                const SizedBox(width: 8),
+                _buildDifficultyChip(
+                    l10n.eventDifficultyIntermediate, 'intermediate'),
+                const SizedBox(width: 8),
+                _buildDifficultyChip(l10n.eventDifficultyAdvanced, 'advanced'),
+                const SizedBox(width: 16),
+              ],
             ),
-            const SizedBox(width: 16),
-          ],
-        ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildEventTypeChip(String label, String? value) {
+    return ChoiceChip(
+      label: Text(label),
+      selected: _selectedEventType == value,
+      onSelected: (selected) {
+        setState(() {
+          _selectedEventType = selected ? value : null;
+          _eventsFuture = _fetchCityEvents();
+        });
+      },
+    );
+  }
+
+  Widget _buildDifficultyChip(String label, String? value) {
+    return ChoiceChip(
+      label: Text(label),
+      selected: _selectedDifficulty == value,
+      onSelected: (selected) {
+        setState(() {
+          _selectedDifficulty = selected ? value : null;
+          _eventsFuture = _fetchCityEvents();
+        });
+      },
     );
   }
 

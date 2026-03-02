@@ -721,5 +721,44 @@
         "type": "String"
       }
     }
+  },
+  "filtersEventType": "Тип события",
+  "filtersDifficulty": "Уровень",
+  "eventsEmptyFiltered": "Нет событий по выбранным фильтрам",
+  "eventsResetFilters": "Сбросить фильтры",
+  "eventTimeToday": "Сегодня в {time}",
+  "@eventTimeToday": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "eventTimeTomorrow": "Завтра в {time}",
+  "@eventTimeTomorrow": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "eventTimeInMinutes": "Через {minutes} мин",
+  "@eventTimeInMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "eventTimeInHoursMinutes": "Через {hours} ч {minutes} мин",
+  "@eventTimeInHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
   }
 }

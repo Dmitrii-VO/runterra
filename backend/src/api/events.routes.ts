@@ -77,16 +77,11 @@ async function resolveEventIntegrationFields(
     new Set(events.map(event => event.trainerId).filter((id): id is string => Boolean(id))),
   );
 
-  const workoutsById = new Map<
-    string,
-    Awaited<ReturnType<ReturnType<typeof getWorkoutsRepository>['findById']>>
-  >();
+  const workoutsById = new Map<string, Awaited<ReturnType<ReturnType<typeof getWorkoutsRepository>['findById']>>>();
   if (workoutIds.length > 0) {
     const workoutsRepo = getWorkoutsRepository();
-    const workouts = await Promise.all(workoutIds.map(id => workoutsRepo.findById(id)));
-    workouts.forEach(workout => {
-      if (workout) workoutsById.set(workout.id, workout);
-    });
+    const batchResult = await workoutsRepo.findByIds(workoutIds);
+    batchResult.forEach((workout, id) => workoutsById.set(id, workout));
   }
 
   const trainersById = new Map<

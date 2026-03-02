@@ -29,11 +29,14 @@ class UserNavStatusNotifier extends ValueNotifier<UserNavStatus> {
   /// Fetch latest status from backend.
   Future<void> refresh() async {
     if (!AuthService.instance.isAuthenticated) return;
-    
+
     _isLoading = true;
     notifyListeners();
-    
+
     try {
+      // Ensure token is fresh — Firebase returns cached token if valid,
+      // requests a new one if expired. Prevents 401 on stale tokens.
+      await ServiceLocator.refreshAuthToken();
       final status = await ServiceLocator.usersService.getNavigationStatus();
       value = status;
     } catch (e) {

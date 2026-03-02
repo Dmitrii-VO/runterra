@@ -8,6 +8,7 @@
 
 export const mockWorkoutsRepository = {
   findById: jest.fn().mockResolvedValue(null),
+  findByIds: jest.fn().mockResolvedValue(new Map()),
   findByAuthor: jest.fn().mockResolvedValue([]),
   findByClub: jest.fn().mockResolvedValue([]),
   create: jest.fn().mockResolvedValue({

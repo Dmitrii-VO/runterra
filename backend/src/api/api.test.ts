@@ -203,6 +203,7 @@ describe('API Routes', () => {
     beforeEach(() => {
       mockEventsRepository.findAll.mockClear();
       mockWorkoutsRepository.findById.mockClear();
+      mockWorkoutsRepository.findByIds.mockClear();
       mockUsersRepository.findByIds.mockClear();
     });
 
@@ -291,17 +292,24 @@ describe('API Routes', () => {
           trainerId: 'trainer-1',
         },
       ]);
-      mockWorkoutsRepository.findById.mockResolvedValueOnce({
-        id: 'workout-1',
-        authorId: 'trainer-1',
-        clubId: TEST_CLUB_1,
-        name: 'Intervals 8x400',
-        description: 'Warm-up and intervals',
-        type: 'INTERVAL',
-        difficulty: 'INTERMEDIATE',
-        targetMetric: 'DISTANCE',
-        createdAt: new Date(),
-      });
+      mockWorkoutsRepository.findByIds.mockResolvedValueOnce(
+        new Map([
+          [
+            'workout-1',
+            {
+              id: 'workout-1',
+              authorId: 'trainer-1',
+              clubId: TEST_CLUB_1,
+              name: 'Intervals 8x400',
+              description: 'Warm-up and intervals',
+              type: 'INTERVAL',
+              difficulty: 'INTERMEDIATE',
+              targetMetric: 'DISTANCE',
+              createdAt: new Date(),
+            },
+          ],
+        ]),
+      );
       mockUsersRepository.findByIds.mockResolvedValueOnce([
         {
           id: 'trainer-1',
@@ -571,6 +579,7 @@ describe('API Routes', () => {
     beforeEach(() => {
       mockEventsRepository.findById.mockClear();
       mockWorkoutsRepository.findById.mockClear();
+      mockWorkoutsRepository.findByIds.mockClear();
       mockUsersRepository.findByIds.mockClear();
     });
 
@@ -616,17 +625,24 @@ describe('API Routes', () => {
         workoutId: 'workout-2',
         trainerId: 'trainer-2',
       });
-      mockWorkoutsRepository.findById.mockResolvedValueOnce({
-        id: 'workout-2',
-        authorId: 'trainer-2',
-        clubId: TEST_CLUB_1,
-        name: 'Long Tempo',
-        description: '15 min warm-up + tempo blocks',
-        type: 'TEMPO',
-        difficulty: 'ADVANCED',
-        targetMetric: 'TIME',
-        createdAt: new Date(),
-      });
+      mockWorkoutsRepository.findByIds.mockResolvedValueOnce(
+        new Map([
+          [
+            'workout-2',
+            {
+              id: 'workout-2',
+              authorId: 'trainer-2',
+              clubId: TEST_CLUB_1,
+              name: 'Long Tempo',
+              description: '15 min warm-up + tempo blocks',
+              type: 'TEMPO',
+              difficulty: 'ADVANCED',
+              targetMetric: 'TIME',
+              createdAt: new Date(),
+            },
+          ],
+        ]),
+      );
       mockUsersRepository.findByIds.mockResolvedValueOnce([
         {
           id: 'trainer-2',

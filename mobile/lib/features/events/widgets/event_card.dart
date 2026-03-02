@@ -85,14 +85,36 @@ class EventCard extends StatelessWidget {
     }
   }
 
-  String _formatDateTime(DateTime dateTime) {
-    final local = dateTime.toLocal();
-    final dateFormat = DateFormat('d.M.y H:mm');
-    return '${dateFormat.format(local)} ${local.timeZoneName}';
+  String _formatRelativeDateTime(DateTime dt, AppLocalizations l10n) {
+    final now = DateTime.now();
+    final local = dt.toLocal();
+    final diff = local.difference(now);
+
+    // Upcoming within 2 hours: show countdown
+    if (!diff.isNegative && diff.inHours < 2) {
+      if (diff.inMinutes < 2) {
+        return l10n.eventTimeInMinutes(1);
+      }
+      if (diff.inMinutes < 60) {
+        return l10n.eventTimeInMinutes(diff.inMinutes);
+      }
+      return l10n.eventTimeInHoursMinutes(1, diff.inMinutes % 60);
+    }
+
+    final timeStr = DateFormat('H:mm').format(local);
+    final today = DateTime(now.year, now.month, now.day);
+    final eventDay = DateTime(local.year, local.month, local.day);
+
+    if (eventDay == today) return l10n.eventTimeToday(timeStr);
+    if (eventDay == today.add(const Duration(days: 1))) {
+      return l10n.eventTimeTomorrow(timeStr);
+    }
+    return DateFormat('d MMM, H:mm', l10n.localeName).format(local);
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final status = _effectiveStatus(event);
     final statusColor = _getStatusColor(status);
 
@@ -153,7 +175,7 @@ class EventCard extends StatelessWidget {
                   const Icon(Icons.access_time, size: 16, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
-                    _formatDateTime(event.startDateTime),
+                    _formatRelativeDateTime(event.startDateTime, l10n),
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],

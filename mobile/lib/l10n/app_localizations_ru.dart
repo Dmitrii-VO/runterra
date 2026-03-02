@@ -1706,4 +1706,29 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get durationManual => 'Вручную';
+
+  @override
+  String get filtersEventType => 'Тип события';
+
+  @override
+  String get filtersDifficulty => 'Уровень';
+
+  @override
+  String get eventsEmptyFiltered => 'Нет событий по выбранным фильтрам';
+
+  @override
+  String get eventsResetFilters => 'Сбросить фильтры';
+
+  @override
+  String eventTimeToday(String time) => 'Сегодня в $time';
+
+  @override
+  String eventTimeTomorrow(String time) => 'Завтра в $time';
+
+  @override
+  String eventTimeInMinutes(int minutes) => 'Через $minutes мин';
+
+  @override
+  String eventTimeInHoursMinutes(int hours, int minutes) =>
+      'Через ${hours} ч ${minutes} мин';
 }

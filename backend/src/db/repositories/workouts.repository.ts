@@ -45,6 +45,15 @@ export class WorkoutsRepository extends BaseRepository {
     return row ? rowToWorkout(row) : null;
   }
 
+  async findByIds(ids: string[]): Promise<Map<string, Workout>> {
+    if (ids.length === 0) return new Map();
+    const rows = await this.queryMany<WorkoutRow>(
+      'SELECT * FROM workouts WHERE id = ANY($1::uuid[])',
+      [ids],
+    );
+    return new Map(rows.map(r => [r.id, rowToWorkout(r)]));
+  }
+
   async findByAuthor(authorId: string): Promise<Workout[]> {
     const rows = await this.queryMany<WorkoutRow>(
       'SELECT * FROM workouts WHERE author_id = $1 AND club_id IS NULL ORDER BY created_at DESC',

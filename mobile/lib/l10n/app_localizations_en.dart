@@ -1701,4 +1701,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get durationManual => 'Manual (Lap)';
+
+  @override
+  String get filtersEventType => 'Event type';
+
+  @override
+  String get filtersDifficulty => 'Difficulty';
+
+  @override
+  String get eventsEmptyFiltered => 'No events match the selected filters';
+
+  @override
+  String get eventsResetFilters => 'Reset filters';
+
+  @override
+  String eventTimeToday(String time) => 'Today at $time';
+
+  @override
+  String eventTimeTomorrow(String time) => 'Tomorrow at $time';
+
+  @override
+  String eventTimeInMinutes(int minutes) => 'In $minutes min';
+
+  @override
+  String eventTimeInHoursMinutes(int hours, int minutes) =>
+      'In ${hours}h ${minutes}min';
 }

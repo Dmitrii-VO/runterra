@@ -3235,6 +3235,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Manual (Lap)'**
   String get durationManual;
+
+  /// No description provided for @filtersEventType.
+  String get filtersEventType;
+
+  /// No description provided for @filtersDifficulty.
+  String get filtersDifficulty;
+
+  /// No description provided for @eventsEmptyFiltered.
+  String get eventsEmptyFiltered;
+
+  /// No description provided for @eventsResetFilters.
+  String get eventsResetFilters;
+
+  /// No description provided for @eventTimeToday.
+  String eventTimeToday(String time);
+
+  /// No description provided for @eventTimeTomorrow.
+  String eventTimeTomorrow(String time);
+
+  /// No description provided for @eventTimeInMinutes.
+  String eventTimeInMinutes(int minutes);
+
+  /// No description provided for @eventTimeInHoursMinutes.
+  String eventTimeInHoursMinutes(int hours, int minutes);
 }
 
 class _AppLocalizationsDelegate
