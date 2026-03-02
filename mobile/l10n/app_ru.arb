@@ -779,5 +779,12 @@
   "peopleSearchPlaceholder": "Введите минимум 2 символа для поиска",
   "peopleSearchEmpty": "Пользователи не найдены",
   "peopleMyCity": "Мой город",
-  "messageComingSoon": "Сообщения — скоро"
+  "messageComingSoon": "Сообщения — скоро",
+  "profileVisibilityToggle": "Публичный профиль",
+  "profileVisibilityHint": "Другие пользователи смогут найти вас через поиск",
+  "publicProfileRuns": "пробежек",
+  "publicProfileKm": "км",
+  "publicProfilePoints": "очков",
+  "publicProfileRecentRuns": "Последние пробежки",
+  "publicProfileNoRuns": "Пробежек пока нет"
 }

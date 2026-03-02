@@ -29,6 +29,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String? _gender;
   String? _cityId;
   String? _cityName;
+  late bool _profileVisible;
 
   TrainerProfile? _trainerProfile;
   bool _loadingTrainer = false;
@@ -44,6 +45,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _gender = widget.user.gender;
     _cityId = widget.user.cityId;
     _cityName = widget.user.cityName;
+    _profileVisible = widget.user.profileVisible;
 
     _loadTrainerProfile();
   }
@@ -93,6 +95,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         gender: _gender,
         currentCityId: _cityId,
         avatarUrl: avatarUrl.isEmpty ? '' : avatarUrl,
+        profileVisible: _profileVisible,
       );
       if (!mounted) return;
       context.pop(true);
@@ -284,6 +287,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 value: _trainerProfile?.acceptsPrivateClients ?? false,
                 onChanged: _saving ? null : _toggleTrainer,
               ),
+            const Divider(),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(l10n.profileVisibilityToggle),
+              subtitle: Text(
+                l10n.profileVisibilityHint,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              value: _profileVisible,
+              onChanged: _saving ? null : (v) => setState(() => _profileVisible = v),
+            ),
             const SizedBox(height: 24),
             FilledButton(
               onPressed: _saving ? null : _save,

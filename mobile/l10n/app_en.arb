@@ -953,5 +953,12 @@
   "peopleSearchPlaceholder": "Enter at least 2 characters to search",
   "peopleSearchEmpty": "No users found",
   "peopleMyCity": "My city",
-  "messageComingSoon": "Messaging — coming soon"
+  "messageComingSoon": "Messaging — coming soon",
+  "profileVisibilityToggle": "Public profile",
+  "profileVisibilityHint": "Other users can find you in search",
+  "publicProfileRuns": "runs",
+  "publicProfileKm": "km",
+  "publicProfilePoints": "points",
+  "publicProfileRecentRuns": "Recent runs",
+  "publicProfileNoRuns": "No runs yet"
 }

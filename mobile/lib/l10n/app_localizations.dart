@@ -3355,6 +3355,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Messaging — coming soon'**
   String get messageComingSoon;
+
+  /// No description provided for @profileVisibilityToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Public profile'**
+  String get profileVisibilityToggle;
+
+  /// No description provided for @profileVisibilityHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Other users can find you in search'**
+  String get profileVisibilityHint;
+
+  /// No description provided for @publicProfileRuns.
+  ///
+  /// In en, this message translates to:
+  /// **'runs'**
+  String get publicProfileRuns;
+
+  /// No description provided for @publicProfileKm.
+  ///
+  /// In en, this message translates to:
+  /// **'km'**
+  String get publicProfileKm;
+
+  /// No description provided for @publicProfilePoints.
+  ///
+  /// In en, this message translates to:
+  /// **'points'**
+  String get publicProfilePoints;
+
+  /// No description provided for @publicProfileRecentRuns.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent runs'**
+  String get publicProfileRecentRuns;
+
+  /// No description provided for @publicProfileNoRuns.
+  ///
+  /// In en, this message translates to:
+  /// **'No runs yet'**
+  String get publicProfileNoRuns;
 }
 
 class _AppLocalizationsDelegate

@@ -19,6 +19,39 @@ import { ClubRole } from '../clubs';
 import { UserNotification } from '../notifications';
 import { ActivityStatus } from '../activities';
 
+// ---------------------------------------------------------------------------
+// Public profile DTOs
+// ---------------------------------------------------------------------------
+
+export interface PublicRunDto {
+  id: string;
+  startedAt: string; // ISO date
+  distance: number; // meters
+  duration: number; // seconds
+  pace: number; // sec/km
+}
+
+export interface PublicProfileDto {
+  user: {
+    id: string;
+    name: string;
+    firstName?: string;
+    lastName?: string;
+    avatarUrl?: string;
+    cityId?: string;
+    cityName?: string;
+  };
+  club: { id: string; name: string } | null;
+  stats: {
+    totalRuns: number;
+    totalDistanceKm: number; // totalDistance / 1000, 1 decimal
+    totalDurationMin: number; // totalDuration / 60, rounded
+    averagePace: number; // sec/km
+    contributionPoints: number; // floor(totalDistance / 100)
+  };
+  recentRuns: PublicRunDto[];
+}
+
 /**
  * Упрощенная модель активности для личного кабинета
  */

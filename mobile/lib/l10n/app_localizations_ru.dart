@@ -1776,4 +1776,26 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get messageComingSoon => 'Сообщения — скоро';
+
+  @override
+  String get profileVisibilityToggle => 'Публичный профиль';
+
+  @override
+  String get profileVisibilityHint =>
+      'Другие пользователи смогут найти вас через поиск';
+
+  @override
+  String get publicProfileRuns => 'пробежек';
+
+  @override
+  String get publicProfileKm => 'км';
+
+  @override
+  String get publicProfilePoints => 'очков';
+
+  @override
+  String get publicProfileRecentRuns => 'Последние пробежки';
+
+  @override
+  String get publicProfileNoRuns => 'Пробежек пока нет';
 }

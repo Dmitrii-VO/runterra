@@ -19,6 +19,8 @@ import {
   ProfileDto,
   UpdateProfileSchema,
   UserSearchResultDto,
+  PublicProfileDto,
+  PublicRunDto,
 } from '../modules/users';
 import { validateBody } from './validateBody';
 import {
@@ -347,6 +349,74 @@ router.get('/search', async (req: Request, res: Response) => {
     res.status(200).json(dtos);
   } catch (error) {
     logger.error('Error searching users', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/users/:id/profile
+ *
+ * Returns public profile with run stats and recent runs for another user.
+ * 404 if user not found or profile is hidden (profileVisible = false).
+ */
+router.get('/:id/profile', async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findById(id);
+
+    if (!user || user.profileVisible === false) {
+      res.status(404).json({ code: 'not_found', message: 'User not found' });
+      return;
+    }
+
+    const runsRepo = getRunsRepository();
+    const runStats = await runsRepo.getUserStats(user.id);
+
+    const recentRunEntities = await runsRepo.findByUserId(user.id, 5, 0);
+    const recentRuns: PublicRunDto[] = recentRunEntities
+      .filter((r) => r.status === 'completed')
+      .slice(0, 5)
+      .map((r) => ({
+        id: r.id,
+        startedAt: r.startedAt.toISOString(),
+        distance: r.distance,
+        duration: r.duration,
+        pace:
+          r.distance > 0 ? Math.round((r.duration / r.distance) * 1000) : 0,
+      }));
+
+    const clubMembersRepo = getClubMembersRepository();
+    const clubsRepo = getClubsRepository();
+    const primaryClubId = await clubMembersRepo.findPrimaryClubIdByUser(user.id);
+    const primaryClub = primaryClubId ? await clubsRepo.findById(primaryClubId) : null;
+
+    const profile: PublicProfileDto = {
+      user: {
+        id: user.id,
+        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatarUrl: user.avatarUrl,
+        cityId: user.cityId,
+        cityName: user.cityId ? findCityById(user.cityId)?.name : undefined,
+      },
+      club: primaryClub ? { id: primaryClub.id, name: primaryClub.name } : null,
+      stats: {
+        totalRuns: runStats.totalRuns,
+        totalDistanceKm:
+          Math.round((runStats.totalDistance / 1000) * 10) / 10,
+        totalDurationMin: Math.round(runStats.totalDuration / 60),
+        averagePace: runStats.averagePace,
+        contributionPoints: Math.floor(runStats.totalDistance / 100),
+      },
+      recentRuns,
+    };
+
+    res.status(200).json(profile);
+  } catch (error) {
+    logger.error('Error fetching public profile', { userId: id, error });
     res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
   }
 });

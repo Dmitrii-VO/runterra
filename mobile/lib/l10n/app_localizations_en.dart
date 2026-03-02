@@ -1771,4 +1771,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messageComingSoon => 'Messaging — coming soon';
+
+  @override
+  String get profileVisibilityToggle => 'Public profile';
+
+  @override
+  String get profileVisibilityHint => 'Other users can find you in search';
+
+  @override
+  String get publicProfileRuns => 'runs';
+
+  @override
+  String get publicProfileKm => 'km';
+
+  @override
+  String get publicProfilePoints => 'points';
+
+  @override
+  String get publicProfileRecentRuns => 'Recent runs';
+
+  @override
+  String get publicProfileNoRuns => 'No runs yet';
 }

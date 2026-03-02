@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'api_client.dart';
 import '../models/profile_model.dart';
+import '../models/public_profile_model.dart';
 import '../models/user_nav_status.dart';
 import '../models/user_search_result_model.dart';
 
@@ -142,6 +143,21 @@ class UsersService {
       }
     }
     return UserNavStatus.initial();
+  }
+
+  /// Fetches the full public profile of another user (GET /api/users/:id/profile).
+  /// Throws [ApiException] with code 'not_found' if user is hidden or doesn't exist.
+  Future<PublicProfileModel> getPublicProfile(String userId) async {
+    final response = await _apiClient.get('/api/users/$userId/profile');
+    if (response.statusCode == 404) {
+      throw ApiException('not_found', 'User not found');
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ApiException('http_${response.statusCode}', 'Request failed');
+    }
+    return PublicProfileModel.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
   }
 
   /// Returns raw JSON map for a user by ID (GET /api/users/:id).
