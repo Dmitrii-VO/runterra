@@ -252,6 +252,12 @@ router.delete('/:id', async (req: Request, res: Response) => {
     await repo.delete(req.params.id);
     res.status(200).json({ success: true, message: 'Workout deleted' });
   } catch (error) {
+    // FK violation: workout is still referenced by event rows (incl. past/completed events)
+    if ((error as { code?: string }).code === '23503') {
+      return res
+        .status(409)
+        .json({ code: 'workout_in_use', message: 'Workout is linked to events' });
+    }
     logger.error('Error deleting workout', { error });
     res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
   }
