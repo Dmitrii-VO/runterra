@@ -249,7 +249,7 @@ export class WorkoutsRepository extends BaseRepository {
     const row = await this.queryOne<{ count: string }>(
       `SELECT COUNT(*)::text AS count FROM events
        WHERE workout_id = $1
-       AND COALESCE(end_date_time, start_date_time + INTERVAL '4 hours') > NOW()
+       AND start_date_time > NOW()
        AND status NOT IN ('cancelled', 'completed')`,
       [workoutId],
     );
