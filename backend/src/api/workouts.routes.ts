@@ -62,14 +62,7 @@ router.get('/', async (req: Request, res: Response) => {
       return res.status(200).json(workouts);
     }
 
-    // Personal workouts
-    const hasRole = await isTrainerInAnyClub(userId);
-    if (!hasRole) {
-      return res
-        .status(403)
-        .json({ code: 'forbidden', message: 'Trainer or leader role required' });
-    }
-
+    // Personal workouts — any authenticated user can access their own
     const workouts = await repo.findByAuthor(userId);
     res.status(200).json(workouts);
   } catch (error) {
@@ -99,15 +92,9 @@ router.get('/:id', async (req: Request, res: Response) => {
       return res.status(200).json(workout);
     }
 
-    // Personal workout: only author with trainer/leader role.
+    // Personal workout: only the author.
     if (workout.authorId !== userId) {
       return res.status(403).json({ code: 'forbidden', message: 'Access denied' });
-    }
-    const hasRole = await isTrainerInAnyClub(userId);
-    if (!hasRole) {
-      return res
-        .status(403)
-        .json({ code: 'forbidden', message: 'Trainer or leader role required' });
     }
 
     res.status(200).json(workout);
@@ -122,13 +109,6 @@ router.post('/', validateBody(CreateWorkoutSchema), async (req: Request, res: Re
   try {
     const userId = await resolveUserId(req, res);
     if (!userId) return;
-
-    const hasRole = await isTrainerInAnyClub(userId);
-    if (!hasRole) {
-      return res
-        .status(403)
-        .json({ code: 'forbidden', message: 'Trainer or leader role required' });
-    }
 
     const {
       clubId,
@@ -204,11 +184,14 @@ router.patch('/:id', validateBody(UpdateWorkoutSchema), async (req: Request, res
         .status(403)
         .json({ code: 'forbidden', message: 'Only the author can update this workout' });
     }
-    const hasRole = await isTrainerInAnyClub(userId);
-    if (!hasRole) {
-      return res
-        .status(403)
-        .json({ code: 'forbidden', message: 'Trainer or leader role required' });
+    // Club workouts require trainer/leader role
+    if (workout.clubId) {
+      const hasRole = await isTrainerInAnyClub(userId);
+      if (!hasRole) {
+        return res
+          .status(403)
+          .json({ code: 'forbidden', message: 'Trainer or leader role required' });
+      }
     }
 
     const updated = await repo.update(req.params.id, req.body);
@@ -235,11 +218,14 @@ router.delete('/:id', async (req: Request, res: Response) => {
         .status(403)
         .json({ code: 'forbidden', message: 'Only the author can delete this workout' });
     }
-    const hasRole = await isTrainerInAnyClub(userId);
-    if (!hasRole) {
-      return res
-        .status(403)
-        .json({ code: 'forbidden', message: 'Trainer or leader role required' });
+    // Club workouts require trainer/leader role
+    if (workout.clubId) {
+      const hasRole = await isTrainerInAnyClub(userId);
+      if (!hasRole) {
+        return res
+          .status(403)
+          .json({ code: 'forbidden', message: 'Trainer or leader role required' });
+      }
     }
 
     const hasEvents = await repo.hasUpcomingEvents(req.params.id);

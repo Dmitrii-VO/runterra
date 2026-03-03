@@ -252,27 +252,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
           hasClub: profile.club != null,
           isMercenary: profile.user.isMercenary,
         ),
+        Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: ListTile(
+            leading: const Icon(Icons.fitness_center),
+            title: Text(l10n.workouts),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/workouts'),
+          ),
+        ),
         if (_trainerProfile?.acceptsPrivateClients == true ||
             profile.club?.role == 'trainer' ||
             profile.club?.role == 'leader')
           Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.sports),
-                  title: Text(l10n.trainerProfile),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/trainer/${profile.user.id}'),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.fitness_center),
-                  title: Text(l10n.workouts),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/workouts'),
-                ),
-              ],
+            child: ListTile(
+              leading: const Icon(Icons.sports),
+              title: Text(l10n.trainerProfile),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/trainer/${profile.user.id}'),
             ),
           ),
         ProfileNotificationsSection(notifications: profile.notifications),

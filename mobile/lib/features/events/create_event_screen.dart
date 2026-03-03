@@ -99,10 +99,13 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
   Future<void> _loadWorkouts([String? clubId]) async {
     try {
-      final workouts = await ServiceLocator.workoutsService.getWorkouts(clubId: clubId);
-      if (mounted) {
-        setState(() => _workouts = workouts);
-      }
+      final personal = await ServiceLocator.workoutsService.getWorkouts();
+      final club = clubId != null
+          ? await ServiceLocator.workoutsService.getWorkouts(clubId: clubId)
+          : <Workout>[];
+      final seen = <String>{};
+      final merged = [...personal, ...club].where((w) => seen.add(w.id)).toList();
+      if (mounted) setState(() => _workouts = merged);
     } catch (e) {
       debugPrint('Error loading workouts: $e');
     }
@@ -337,17 +340,19 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                       ? null
                       : (value) async {
                           setState(() => _organizerType = value ?? _organizerType);
-                          // Update organizerId based on selection
+                          // Update organizerId and reload workouts based on selection
                           if (value == 'club') {
                             final clubId = ServiceLocator.currentClubService.currentClubId;
                             if (clubId != null && clubId.isNotEmpty) {
                               _organizerIdController.text = clubId;
+                              _loadWorkouts(clubId);
                             }
                           } else {
                             try {
                               final profile = await ServiceLocator.usersService.getProfile();
                               _organizerIdController.text = profile.user.id;
                             } catch (_) {}
+                            _loadWorkouts();
                           }
                         },
                 ),

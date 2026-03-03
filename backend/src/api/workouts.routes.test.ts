@@ -131,7 +131,7 @@ describe('Workouts Routes', () => {
       expect(res.body).toHaveProperty('code', 'forbidden');
     });
 
-    it('returns 403 for personal workouts when user has only member role', async () => {
+    it('returns personal workouts for any authenticated user regardless of role', async () => {
       mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([
         {
           clubId: TEST_CLUB_1,
@@ -142,12 +142,13 @@ describe('Workouts Routes', () => {
           joinedAt: new Date(),
         },
       ]);
+      mockWorkoutsRepository.findByAuthor.mockResolvedValueOnce([mockWorkout]);
 
       const res = await request(app).get('/api/workouts').set('Authorization', 'Bearer test-token');
 
-      expect(res.status).toBe(403);
-      expect(res.body).toHaveProperty('code', 'forbidden');
-      expect(mockWorkoutsRepository.findByAuthor).not.toHaveBeenCalled();
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(mockWorkoutsRepository.findByAuthor).toHaveBeenCalledWith('user-1');
     });
   });
 
@@ -187,25 +188,15 @@ describe('Workouts Routes', () => {
       expect(res.body).toHaveProperty('code', 'forbidden');
     });
 
-    it('returns 403 for author personal workout when user has only member role', async () => {
+    it('returns personal workout for author regardless of club role', async () => {
       mockWorkoutsRepository.findById.mockResolvedValueOnce(mockWorkout);
-      mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([
-        {
-          clubId: TEST_CLUB_1,
-          clubName: 'Club A',
-          clubCityId: 'spb',
-          clubStatus: 'active',
-          role: 'member',
-          joinedAt: new Date(),
-        },
-      ]);
 
       const res = await request(app)
         .get('/api/workouts/workout-1')
         .set('Authorization', 'Bearer test-token');
 
-      expect(res.status).toBe(403);
-      expect(res.body).toHaveProperty('code', 'forbidden');
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('id', 'workout-1');
     });
   });
 
@@ -258,7 +249,7 @@ describe('Workouts Routes', () => {
       );
     });
 
-    it('returns 403 when user is not a trainer or leader', async () => {
+    it('returns 201 when any authenticated user creates a personal workout', async () => {
       mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([
         {
           clubId: 'club-1',
@@ -269,11 +260,30 @@ describe('Workouts Routes', () => {
           joinedAt: new Date(),
         },
       ]);
+      mockWorkoutsRepository.create.mockResolvedValueOnce({ ...mockWorkout, name: 'New Workout' });
 
       const res = await request(app)
         .post('/api/workouts')
         .set('Authorization', 'Bearer test-token')
         .send(validBody);
+
+      expect(res.status).toBe(201);
+      expect(mockWorkoutsRepository.create).toHaveBeenCalled();
+    });
+
+    it('returns 403 when non-trainer creates a club workout', async () => {
+      mockClubMembersRepository.findByClubAndUser.mockResolvedValueOnce({
+        id: 'cm-1',
+        clubId: TEST_CLUB_1,
+        userId: 'user-1',
+        status: 'active',
+        role: 'member',
+      });
+
+      const res = await request(app)
+        .post('/api/workouts')
+        .set('Authorization', 'Bearer test-token')
+        .send({ ...validBody, clubId: TEST_CLUB_1 });
 
       expect(res.status).toBe(403);
       expect(res.body).toHaveProperty('code', 'forbidden');
@@ -340,27 +350,18 @@ describe('Workouts Routes', () => {
       expect(res.body).toHaveProperty('code', 'not_found');
     });
 
-    it('returns 403 when author has only member role', async () => {
+    it('returns 200 when author updates personal workout regardless of club role', async () => {
       mockWorkoutsRepository.findById.mockResolvedValueOnce(mockWorkout);
-      mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([
-        {
-          clubId: TEST_CLUB_1,
-          clubName: 'Club A',
-          clubCityId: 'spb',
-          clubStatus: 'active',
-          role: 'member',
-          joinedAt: new Date(),
-        },
-      ]);
+      mockWorkoutsRepository.update.mockResolvedValueOnce({ ...mockWorkout, name: 'Updated Name' });
 
       const res = await request(app)
         .patch('/api/workouts/workout-1')
         .set('Authorization', 'Bearer test-token')
         .send({ name: 'Updated Name' });
 
-      expect(res.status).toBe(403);
-      expect(res.body).toHaveProperty('code', 'forbidden');
-      expect(mockWorkoutsRepository.update).not.toHaveBeenCalled();
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('name', 'Updated Name');
+      expect(mockWorkoutsRepository.update).toHaveBeenCalled();
     });
   });
 
@@ -417,26 +418,18 @@ describe('Workouts Routes', () => {
       expect(res.body).toHaveProperty('code', 'not_found');
     });
 
-    it('returns 403 when author has only member role', async () => {
+    it('returns 200 when author deletes personal workout regardless of club role', async () => {
       mockWorkoutsRepository.findById.mockResolvedValueOnce(mockWorkout);
-      mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([
-        {
-          clubId: TEST_CLUB_1,
-          clubName: 'Club A',
-          clubCityId: 'spb',
-          clubStatus: 'active',
-          role: 'member',
-          joinedAt: new Date(),
-        },
-      ]);
+      mockWorkoutsRepository.hasUpcomingEvents.mockResolvedValueOnce(false);
+      mockWorkoutsRepository.delete.mockResolvedValueOnce(true);
 
       const res = await request(app)
         .delete('/api/workouts/workout-1')
         .set('Authorization', 'Bearer test-token');
 
-      expect(res.status).toBe(403);
-      expect(res.body).toHaveProperty('code', 'forbidden');
-      expect(mockWorkoutsRepository.delete).not.toHaveBeenCalled();
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('success', true);
+      expect(mockWorkoutsRepository.delete).toHaveBeenCalledWith('workout-1');
     });
   });
 });
