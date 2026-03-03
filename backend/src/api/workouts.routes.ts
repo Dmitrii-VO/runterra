@@ -141,6 +141,13 @@ router.post('/', validateBody(CreateWorkoutSchema), async (req: Request, res: Re
       targetMetric,
       targetValue,
       targetZone,
+      distanceM,
+      heartRateTarget,
+      paceTarget,
+      repCount,
+      repDistanceM,
+      exerciseName,
+      exerciseInstructions,
     } = req.body;
 
     // If clubId provided, verify user is trainer/leader in that specific club
@@ -166,6 +173,13 @@ router.post('/', validateBody(CreateWorkoutSchema), async (req: Request, res: Re
       targetMetric,
       targetValue,
       targetZone,
+      distanceM,
+      heartRateTarget,
+      paceTarget,
+      repCount,
+      repDistanceM,
+      exerciseName,
+      exerciseInstructions,
     });
     res.status(201).json(workout);
   } catch (error) {

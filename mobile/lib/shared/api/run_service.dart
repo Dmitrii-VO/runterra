@@ -30,9 +30,6 @@ class RunService {
   final List<Position> _gpsPoints = [];
   DateTime? _startTime;
 
-  // Segment tracking
-  DateTime? _currentSegmentStartedAt;
-  double _currentSegmentStartDistance = 0.0;
 
   RunService({
     LocationService? locationService,
@@ -82,8 +79,6 @@ class RunService {
 
     _startTime = DateTime.now();
     _gpsPoints.clear();
-    _currentSegmentStartedAt = _startTime;
-    _currentSegmentStartDistance = 0.0;
 
     // Start GPS tracking (background so run continues when app is in background)
     await _locationService.startTracking(distanceFilter: 5, background: true);
@@ -148,88 +143,10 @@ class RunService {
     return _currentSession!;
   }
 
-  void _checkSegmentCompletion() {
-    final session = _currentSession;
-    if (session == null || session.workout == null || session.workout!.blocks == null) return;
-    if (session.currentBlockIndex >= session.workout!.blocks!.length) return;
+  // Block-based segment tracking removed — workouts now use flat type-specific fields.
+  void _checkSegmentCompletion() {}
 
-    final block = session.workout!.blocks![session.currentBlockIndex];
-    if (session.currentSegmentIndex >= block.segments.length) return;
-
-    final segment = block.segments[session.currentSegmentIndex];
-    bool completed = false;
-
-    if (segment.durationType == DurationType.time) {
-      final elapsed = DateTime.now().difference(_currentSegmentStartedAt!);
-      if (elapsed.inSeconds >= segment.durationValue) {
-        completed = true;
-      }
-    } else if (segment.durationType == DurationType.distance) {
-      final distanceInSegment = session.distance - _currentSegmentStartDistance;
-      if (distanceInSegment >= segment.durationValue) {
-        completed = true;
-      }
-    }
-
-    if (completed) {
-      nextSegment();
-    }
-  }
-
-  Future<void> nextSegment() async {
-    final session = _currentSession;
-    if (session == null || session.workout == null || session.workout!.blocks == null) return;
-
-    int nextSegmentIdx = session.currentSegmentIndex + 1;
-    int nextBlockIdx = session.currentBlockIndex;
-
-    final currentBlock = session.workout!.blocks![nextBlockIdx];
-
-    if (nextSegmentIdx >= currentBlock.segments.length) {
-      // End of block
-      nextSegmentIdx = 0;
-      nextBlockIdx++;
-    }
-
-    if (nextBlockIdx >= session.workout!.blocks!.length) {
-      // Workout finished
-      try {
-        await _tts.speak("Тренировка завершена. Отличная работа!");
-      } catch (e) {
-        debugPrint('TTS error: $e');
-      }
-      return;
-    }
-
-    _currentSegmentStartedAt = DateTime.now();
-    _currentSegmentStartDistance = session.distance;
-
-    _currentSession = session.copyWith(
-      currentBlockIndex: nextBlockIdx,
-      currentSegmentIndex: nextSegmentIdx,
-    );
-    
-    final nextSeg = session.workout!.blocks![nextBlockIdx].segments[nextSegmentIdx];
-    String text = "Следующий сегмент: ";
-    switch (nextSeg.type) {
-      case SegmentType.warmup: text += "Разминка. "; break;
-      case SegmentType.run: text += "Бег. "; break;
-      case SegmentType.rest: text += "Отдых. "; break;
-      case SegmentType.cooldown: text += "Заминка. "; break;
-    }
-    
-    if (nextSeg.targetZone != null) {
-      text += "Цель: ${nextSeg.targetZone}. ";
-    } else if (nextSeg.targetValue != null) {
-      text += "Цель: ${nextSeg.targetValue}. ";
-    }
-    
-    try {
-      await _tts.speak(text);
-    } catch (e) {
-      debugPrint('TTS error: $e');
-    }
-  }
+  Future<void> nextSegment() async {}
 
   /// Pause the current run: stop GPS, freeze accumulated duration.
   void pauseRun() {

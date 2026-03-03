@@ -1,84 +1,4 @@
-enum SegmentType { warmup, run, rest, cooldown }
-
-enum DurationType { time, distance, manual }
-
-enum RecoveryType { jog, walk, stand }
-
-class WorkoutSegment {
-  final SegmentType type;
-  final int durationValue; // seconds or meters
-  final DurationType durationType;
-  final String? targetValue;
-  final String? targetZone;
-  final RecoveryType? recoveryType;
-  final String? instructions;
-  final String? mediaUrl;
-
-  WorkoutSegment({
-    required this.type,
-    required this.durationValue,
-    required this.durationType,
-    this.targetValue,
-    this.targetZone,
-    this.recoveryType,
-    this.instructions,
-    this.mediaUrl,
-  });
-
-  factory WorkoutSegment.fromJson(Map<String, dynamic> json) {
-    return WorkoutSegment(
-      type: SegmentType.values.firstWhere((e) => e.name.toUpperCase() == (json['type'] as String).toUpperCase()),
-      durationValue: json['durationValue'] as int,
-      durationType: DurationType.values.firstWhere((e) => e.name.toUpperCase() == (json['durationType'] as String).toUpperCase()),
-      targetValue: json['targetValue'] as String?,
-      targetZone: json['targetZone'] as String?,
-      recoveryType: json['recoveryType'] != null
-          ? RecoveryType.values.firstWhere((e) => e.name.toUpperCase() == (json['recoveryType'] as String).toUpperCase())
-          : null,
-      instructions: json['instructions'] as String?,
-      mediaUrl: json['mediaUrl'] as String?,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'type': type.name.toUpperCase(),
-      'durationValue': durationValue,
-      'durationType': durationType.name.toUpperCase(),
-      if (targetValue != null) 'targetValue': targetValue,
-      if (targetZone != null) 'targetZone': targetZone,
-      if (recoveryType != null) 'recoveryType': recoveryType!.name.toUpperCase(),
-      if (instructions != null) 'instructions': instructions,
-      if (mediaUrl != null) 'mediaUrl': mediaUrl,
-    };
-  }
-}
-
-class WorkoutBlock {
-  final int repeatCount;
-  final List<WorkoutSegment> segments;
-
-  WorkoutBlock({
-    required this.repeatCount,
-    required this.segments,
-  });
-
-  factory WorkoutBlock.fromJson(Map<String, dynamic> json) {
-    return WorkoutBlock(
-      repeatCount: json['repeatCount'] as int,
-      segments: (json['segments'] as List)
-          .map((s) => WorkoutSegment.fromJson(s as Map<String, dynamic>))
-          .toList(),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'repeatCount': repeatCount,
-      'segments': segments.map((s) => s.toJson()).toList(),
-    };
-  }
-}
+enum WorkoutType { functional, tempo, recovery, accelerations }
 
 /// Workout template model
 class Workout {
@@ -89,11 +9,14 @@ class Workout {
   final String? description;
   final String type;
   final String difficulty;
-  final String? surface;
-  final List<WorkoutBlock>? blocks;
-  final String targetMetric;
-  final int? targetValue;
-  final String? targetZone;
+  // Type-specific fields
+  final int? distanceM;
+  final int? heartRateTarget;
+  final int? paceTarget;
+  final int? repCount;
+  final int? repDistanceM;
+  final String? exerciseName;
+  final String? exerciseInstructions;
   final DateTime createdAt;
 
   Workout({
@@ -104,11 +27,13 @@ class Workout {
     this.description,
     required this.type,
     required this.difficulty,
-    this.surface,
-    this.blocks,
-    required this.targetMetric,
-    this.targetValue,
-    this.targetZone,
+    this.distanceM,
+    this.heartRateTarget,
+    this.paceTarget,
+    this.repCount,
+    this.repDistanceM,
+    this.exerciseName,
+    this.exerciseInstructions,
     required this.createdAt,
   });
 
@@ -120,16 +45,14 @@ class Workout {
       name: json['name'] as String,
       description: json['description'] as String?,
       type: json['type'] as String,
-      difficulty: json['difficulty'] as String,
-      surface: json['surface'] as String?,
-      blocks: json['blocks'] != null
-          ? (json['blocks'] as List)
-              .map((b) => WorkoutBlock.fromJson(b as Map<String, dynamic>))
-              .toList()
-          : null,
-      targetMetric: json['targetMetric'] as String,
-      targetValue: json['targetValue'] as int?,
-      targetZone: json['targetZone'] as String?,
+      difficulty: (json['difficulty'] as String?) ?? 'BEGINNER',
+      distanceM: json['distanceM'] as int?,
+      heartRateTarget: json['heartRateTarget'] as int?,
+      paceTarget: json['paceTarget'] as int?,
+      repCount: json['repCount'] as int?,
+      repDistanceM: json['repDistanceM'] as int?,
+      exerciseName: json['exerciseName'] as String?,
+      exerciseInstructions: json['exerciseInstructions'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
@@ -143,11 +66,13 @@ class Workout {
       if (description != null) 'description': description,
       'type': type,
       'difficulty': difficulty,
-      if (surface != null) 'surface': surface,
-      if (blocks != null) 'blocks': blocks!.map((b) => b.toJson()).toList(),
-      'targetMetric': targetMetric,
-      if (targetValue != null) 'targetValue': targetValue,
-      if (targetZone != null) 'targetZone': targetZone,
+      if (distanceM != null) 'distanceM': distanceM,
+      if (heartRateTarget != null) 'heartRateTarget': heartRateTarget,
+      if (paceTarget != null) 'paceTarget': paceTarget,
+      if (repCount != null) 'repCount': repCount,
+      if (repDistanceM != null) 'repDistanceM': repDistanceM,
+      if (exerciseName != null) 'exerciseName': exerciseName,
+      if (exerciseInstructions != null) 'exerciseInstructions': exerciseInstructions,
       'createdAt': createdAt.toIso8601String(),
     };
   }

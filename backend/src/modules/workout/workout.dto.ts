@@ -4,7 +4,7 @@
 
 import { z } from 'zod';
 
-const workoutTypes = ['RECOVERY', 'TEMPO', 'INTERVAL', 'FARTLEK', 'LONG_RUN'] as const;
+const workoutTypes = ['FUNCTIONAL', 'TEMPO', 'RECOVERY', 'ACCELERATIONS'] as const;
 const difficulties = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'PRO'] as const;
 const targetMetrics = ['DISTANCE', 'TIME', 'PACE'] as const;
 const surfaces = ['ROAD', 'TRACK', 'TRAIL'] as const;
@@ -33,12 +33,20 @@ export const CreateWorkoutSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(5000).optional(),
   type: z.enum(workoutTypes),
-  difficulty: z.enum(difficulties),
+  difficulty: z.enum(difficulties).optional().default('BEGINNER'),
   surface: z.enum(surfaces).optional(),
   blocks: z.array(WorkoutBlockSchema).optional(),
-  targetMetric: z.enum(targetMetrics),
+  targetMetric: z.enum(targetMetrics).optional().default('DISTANCE'),
   targetValue: z.number().int().min(1).optional(),
   targetZone: z.string().max(50).optional(),
+  // Type-specific fields
+  distanceM: z.number().int().min(1).optional(),
+  heartRateTarget: z.number().int().min(1).optional(),
+  paceTarget: z.number().int().min(1).optional(),
+  repCount: z.number().int().min(1).optional(),
+  repDistanceM: z.number().int().min(1).optional(),
+  exerciseName: z.string().max(200).optional(),
+  exerciseInstructions: z.string().max(5000).optional(),
 });
 
 export const UpdateWorkoutSchema = CreateWorkoutSchema.partial().omit({ clubId: true });

@@ -1409,13 +1409,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get typeTempo => 'Tempo';
 
   @override
-  String get typeInterval => 'Interval';
+  String get typeFunctional => 'Functional';
 
   @override
-  String get typeFartlek => 'Fartlek';
+  String get typeAccelerations => 'Accelerations';
 
   @override
-  String get typeLongRun => 'Long Run';
+  String get workoutDistanceM => 'Distance (m)';
+
+  @override
+  String get workoutHeartRate => 'Target HR (bpm)';
+
+  @override
+  String get workoutPaceTarget => 'Target Pace (min/km)';
+
+  @override
+  String get workoutRepCount => 'Repetitions';
+
+  @override
+  String get workoutRepDistance => 'Rep Distance (m)';
+
+  @override
+  String get workoutExercise => 'Exercise';
+
+  @override
+  String get workoutInstructions => 'Instructions (how to)';
 
   @override
   String get diffBeginner => 'Beginner';

@@ -18,6 +18,13 @@ interface WorkoutRow {
   target_metric: string;
   target_value: number | null;
   target_zone: string | null;
+  distance_m: number | null;
+  heart_rate_target: number | null;
+  pace_target: number | null;
+  rep_count: number | null;
+  rep_distance_m: number | null;
+  exercise_name: string | null;
+  exercise_instructions: string | null;
   created_at: Date;
 }
 
@@ -35,6 +42,13 @@ function rowToWorkout(row: WorkoutRow): Workout {
     targetMetric: row.target_metric,
     targetValue: row.target_value ?? undefined,
     targetZone: row.target_zone ?? undefined,
+    distanceM: row.distance_m ?? undefined,
+    heartRateTarget: row.heart_rate_target ?? undefined,
+    paceTarget: row.pace_target ?? undefined,
+    repCount: row.rep_count ?? undefined,
+    repDistanceM: row.rep_distance_m ?? undefined,
+    exerciseName: row.exercise_name ?? undefined,
+    exerciseInstructions: row.exercise_instructions ?? undefined,
     createdAt: row.created_at,
   };
 }
@@ -82,10 +96,22 @@ export class WorkoutsRepository extends BaseRepository {
     targetMetric: string;
     targetValue?: number;
     targetZone?: string;
+    distanceM?: number;
+    heartRateTarget?: number;
+    paceTarget?: number;
+    repCount?: number;
+    repDistanceM?: number;
+    exerciseName?: string;
+    exerciseInstructions?: string;
   }): Promise<Workout> {
     const row = await this.queryOne<WorkoutRow>(
-      `INSERT INTO workouts (author_id, club_id, name, description, type, difficulty, surface, blocks, target_metric, target_value, target_zone)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      `INSERT INTO workouts (
+         author_id, club_id, name, description, type, difficulty, surface, blocks,
+         target_metric, target_value, target_zone,
+         distance_m, heart_rate_target, pace_target, rep_count, rep_distance_m,
+         exercise_name, exercise_instructions
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
        RETURNING *`,
       [
         data.authorId,
@@ -97,8 +123,15 @@ export class WorkoutsRepository extends BaseRepository {
         data.surface || null,
         data.blocks ? JSON.stringify(data.blocks) : null,
         data.targetMetric,
-        data.targetValue || null,
-        data.targetZone || null,
+        data.targetValue ?? null,
+        data.targetZone ?? null,
+        data.distanceM ?? null,
+        data.heartRateTarget ?? null,
+        data.paceTarget ?? null,
+        data.repCount ?? null,
+        data.repDistanceM ?? null,
+        data.exerciseName ?? null,
+        data.exerciseInstructions ?? null,
       ],
     );
     if (!row) throw new Error('Insert workouts failed');
@@ -117,6 +150,13 @@ export class WorkoutsRepository extends BaseRepository {
       targetMetric?: string;
       targetValue?: number;
       targetZone?: string;
+      distanceM?: number;
+      heartRateTarget?: number;
+      paceTarget?: number;
+      repCount?: number;
+      repDistanceM?: number;
+      exerciseName?: string;
+      exerciseInstructions?: string;
     },
   ): Promise<Workout | null> {
     const sets: string[] = [];
@@ -158,6 +198,34 @@ export class WorkoutsRepository extends BaseRepository {
     if (data.targetZone !== undefined) {
       sets.push(`target_zone = $${idx++}`);
       params.push(data.targetZone);
+    }
+    if (data.distanceM !== undefined) {
+      sets.push(`distance_m = $${idx++}`);
+      params.push(data.distanceM);
+    }
+    if (data.heartRateTarget !== undefined) {
+      sets.push(`heart_rate_target = $${idx++}`);
+      params.push(data.heartRateTarget);
+    }
+    if (data.paceTarget !== undefined) {
+      sets.push(`pace_target = $${idx++}`);
+      params.push(data.paceTarget);
+    }
+    if (data.repCount !== undefined) {
+      sets.push(`rep_count = $${idx++}`);
+      params.push(data.repCount);
+    }
+    if (data.repDistanceM !== undefined) {
+      sets.push(`rep_distance_m = $${idx++}`);
+      params.push(data.repDistanceM);
+    }
+    if (data.exerciseName !== undefined) {
+      sets.push(`exercise_name = $${idx++}`);
+      params.push(data.exerciseName);
+    }
+    if (data.exerciseInstructions !== undefined) {
+      sets.push(`exercise_instructions = $${idx++}`);
+      params.push(data.exerciseInstructions);
     }
 
     if (sets.length === 0) {

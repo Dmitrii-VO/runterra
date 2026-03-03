@@ -39,5 +39,13 @@ export interface Workout {
   targetMetric: string;
   targetValue?: number;
   targetZone?: string;
+  // New type-specific fields
+  distanceM?: number;
+  heartRateTarget?: number;
+  paceTarget?: number;
+  repCount?: number;
+  repDistanceM?: number;
+  exerciseName?: string;
+  exerciseInstructions?: string;
   createdAt: Date;
 }

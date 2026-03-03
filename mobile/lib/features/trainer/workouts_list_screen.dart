@@ -257,14 +257,6 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
                       label: Text(_localizeType(l10n, w.type)),
                       visualDensity: VisualDensity.compact,
                     ),
-                    Chip(
-                      label: Text(_localizeDifficulty(l10n, w.difficulty)),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                    Chip(
-                      label: Text(_localizeTargetMetric(l10n, w.targetMetric)),
-                      visualDensity: VisualDensity.compact,
-                    ),
                   ],
                 ),
                 onTap: () async {
@@ -286,42 +278,13 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
         return l10n.typeRecovery;
       case 'TEMPO':
         return l10n.typeTempo;
-      case 'INTERVAL':
-        return l10n.typeInterval;
-      case 'FARTLEK':
-        return l10n.typeFartlek;
-      case 'LONG_RUN':
-        return l10n.typeLongRun;
+      case 'FUNCTIONAL':
+        return l10n.typeFunctional;
+      case 'ACCELERATIONS':
+        return l10n.typeAccelerations;
       default:
         return type;
     }
   }
 
-  String _localizeDifficulty(AppLocalizations l10n, String diff) {
-    switch (diff) {
-      case 'BEGINNER':
-        return l10n.diffBeginner;
-      case 'INTERMEDIATE':
-        return l10n.diffIntermediate;
-      case 'ADVANCED':
-        return l10n.diffAdvanced;
-      case 'PRO':
-        return l10n.diffPro;
-      default:
-        return diff;
-    }
-  }
-
-  String _localizeTargetMetric(AppLocalizations l10n, String metric) {
-    switch (metric) {
-      case 'DISTANCE':
-        return l10n.metricDistance;
-      case 'TIME':
-        return l10n.metricTime;
-      case 'PACE':
-        return l10n.metricPace;
-      default:
-        return metric;
-    }
-  }
 }

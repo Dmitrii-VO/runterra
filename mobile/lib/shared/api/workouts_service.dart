@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'api_client.dart';
 import 'users_service.dart' show ApiException;
-import '../models/workout.dart';
+import '../models/workout.dart' show Workout;
 
 /// Service for workouts API
 class WorkoutsService {
@@ -44,12 +44,13 @@ class WorkoutsService {
     required String name,
     String? description,
     required String type,
-    required String difficulty,
-    String? surface,
-    List<WorkoutBlock>? blocks,
-    required String targetMetric,
-    int? targetValue,
-    String? targetZone,
+    int? distanceM,
+    int? heartRateTarget,
+    int? paceTarget,
+    int? repCount,
+    int? repDistanceM,
+    String? exerciseName,
+    String? exerciseInstructions,
   }) async {
     final response = await _apiClient.post(
       '/api/workouts',
@@ -58,12 +59,13 @@ class WorkoutsService {
         'name': name,
         if (description != null) 'description': description,
         'type': type,
-        'difficulty': difficulty,
-        if (surface != null) 'surface': surface,
-        if (blocks != null) 'blocks': blocks.map((b) => b.toJson()).toList(),
-        'targetMetric': targetMetric,
-        if (targetValue != null) 'targetValue': targetValue,
-        if (targetZone != null) 'targetZone': targetZone,
+        if (distanceM != null) 'distanceM': distanceM,
+        if (heartRateTarget != null) 'heartRateTarget': heartRateTarget,
+        if (paceTarget != null) 'paceTarget': paceTarget,
+        if (repCount != null) 'repCount': repCount,
+        if (repDistanceM != null) 'repDistanceM': repDistanceM,
+        if (exerciseName != null) 'exerciseName': exerciseName,
+        if (exerciseInstructions != null) 'exerciseInstructions': exerciseInstructions,
       },
     );
     if (response.statusCode >= 200 && response.statusCode < 300) {

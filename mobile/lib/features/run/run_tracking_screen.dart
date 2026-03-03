@@ -642,33 +642,13 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
 
     return Column(
       children: [
-        if (workout != null && workout.blocks != null && _session!.currentBlockIndex < workout.blocks!.length)
+        if (workout != null)
           Container(
             color: Theme.of(context).colorScheme.primaryContainer,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        workout.name,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        'Блок ${_session!.currentBlockIndex + 1}/${workout.blocks!.length} • '
-                        'Сегмент ${_session!.currentSegmentIndex + 1}/${workout.blocks![_session!.currentBlockIndex].segments.length}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.skip_next),
-                  onPressed: _runService.nextSegment,
-                ),
-              ],
+            child: Text(
+              workout.name,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
         Expanded(

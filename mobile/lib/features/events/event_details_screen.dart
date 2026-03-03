@@ -162,12 +162,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         return l10n.typeRecovery;
       case 'TEMPO':
         return l10n.typeTempo;
-      case 'INTERVAL':
-        return l10n.typeInterval;
-      case 'FARTLEK':
-        return l10n.typeFartlek;
-      case 'LONG_RUN':
-        return l10n.typeLongRun;
+      case 'FUNCTIONAL':
+        return l10n.typeFunctional;
+      case 'ACCELERATIONS':
+        return l10n.typeAccelerations;
       default:
         return type;
     }

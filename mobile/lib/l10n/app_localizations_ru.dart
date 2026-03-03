@@ -1414,13 +1414,31 @@ class AppLocalizationsRu extends AppLocalizations {
   String get typeTempo => 'Темповая';
 
   @override
-  String get typeInterval => 'Интервальная';
+  String get typeFunctional => 'Функциональная';
 
   @override
-  String get typeFartlek => 'Фартлек';
+  String get typeAccelerations => 'Ускорения';
 
   @override
-  String get typeLongRun => 'Длительная';
+  String get workoutDistanceM => 'Дистанция (м)';
+
+  @override
+  String get workoutHeartRate => 'Целевой пульс (уд/мин)';
+
+  @override
+  String get workoutPaceTarget => 'Целевой темп (мин/км)';
+
+  @override
+  String get workoutRepCount => 'Количество повторений';
+
+  @override
+  String get workoutRepDistance => 'Дистанция отрезка (м)';
+
+  @override
+  String get workoutExercise => 'Что делать';
+
+  @override
+  String get workoutInstructions => 'Техника выполнения';
 
   @override
   String get diffBeginner => 'Начинающий';

@@ -2672,23 +2672,59 @@ abstract class AppLocalizations {
   /// **'Tempo'**
   String get typeTempo;
 
-  /// No description provided for @typeInterval.
+  /// No description provided for @typeFunctional.
   ///
   /// In en, this message translates to:
-  /// **'Interval'**
-  String get typeInterval;
+  /// **'Functional'**
+  String get typeFunctional;
 
-  /// No description provided for @typeFartlek.
+  /// No description provided for @typeAccelerations.
   ///
   /// In en, this message translates to:
-  /// **'Fartlek'**
-  String get typeFartlek;
+  /// **'Accelerations'**
+  String get typeAccelerations;
 
-  /// No description provided for @typeLongRun.
+  /// No description provided for @workoutDistanceM.
   ///
   /// In en, this message translates to:
-  /// **'Long Run'**
-  String get typeLongRun;
+  /// **'Distance (m)'**
+  String get workoutDistanceM;
+
+  /// No description provided for @workoutHeartRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Target HR (bpm)'**
+  String get workoutHeartRate;
+
+  /// No description provided for @workoutPaceTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Target Pace (min/km)'**
+  String get workoutPaceTarget;
+
+  /// No description provided for @workoutRepCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Repetitions'**
+  String get workoutRepCount;
+
+  /// No description provided for @workoutRepDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Rep Distance (m)'**
+  String get workoutRepDistance;
+
+  /// No description provided for @workoutExercise.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercise'**
+  String get workoutExercise;
+
+  /// No description provided for @workoutInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Instructions (how to)'**
+  String get workoutInstructions;
 
   /// No description provided for @diffBeginner.
   ///
