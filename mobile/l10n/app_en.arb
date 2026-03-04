@@ -989,5 +989,11 @@
   "workoutAssignedToGroup": "Assigned to group",
   "workoutAssignTabClient": "Client",
   "workoutAssignTabGroup": "Group",
-  "trainerNoGroups": "No groups yet"
+  "trainerNoGroups": "No groups yet",
+  "updateAvailableTitle": "Update available",
+  "updateDescription": "A new version is available. Check your email for the download link.",
+  "updateCurrentVersionLabel": "Current version",
+  "updateLatestVersionLabel": "New version",
+  "updateClose": "Close",
+  "updateInstall": "Update"
 }

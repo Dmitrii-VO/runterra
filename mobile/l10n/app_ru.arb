@@ -815,5 +815,11 @@
   "workoutAssignedToGroup": "Назначено группе",
   "workoutAssignTabClient": "Клиент",
   "workoutAssignTabGroup": "Группа",
-  "trainerNoGroups": "Групп пока нет"
+  "trainerNoGroups": "Групп пока нет",
+  "updateAvailableTitle": "Доступно обновление",
+  "updateDescription": "Вышла новая версия приложения. Проверьте письмо для загрузки.",
+  "updateCurrentVersionLabel": "Текущая версия",
+  "updateLatestVersionLabel": "Новая версия",
+  "updateClose": "Закрыть",
+  "updateInstall": "Обновить"
 }

@@ -43,9 +43,11 @@ import 'shared/models/club_member_model.dart';
 import 'shared/models/trainer_group_model.dart';
 import 'shared/models/workout.dart';
 import 'shared/models/trainer_profile.dart';
+import 'shared/api/version_service.dart';
 import 'shared/auth/auth_service.dart';
 import 'shared/di/service_locator.dart';
 import 'shared/navigation/bottom_nav.dart';
+import 'shared/ui/update_dialog.dart';
 
 /// Notifier for auth state changes; when [refresh] is called, GoRouter refreshes (e.g. redirect).
 /// Called from AuthService listener when auth state changes.
@@ -57,9 +59,35 @@ final authRefreshNotifier = AuthRefreshNotifier();
 
 /// Main application widget for Runterra.
 ///
-/// Uses GoRouter for navigation.
-class RunterraApp extends StatelessWidget {
+/// Uses GoRouter for navigation. Checks for app updates once after first frame.
+class RunterraApp extends StatefulWidget {
   const RunterraApp({super.key});
+
+  @override
+  State<RunterraApp> createState() => _RunterraAppState();
+}
+
+class _RunterraAppState extends State<RunterraApp> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkForUpdate());
+  }
+
+  Future<void> _checkForUpdate() async {
+    final update = await VersionService.checkForUpdate();
+    if (update == null) return;
+    final ctx = _router.routerDelegate.navigatorKey.currentContext;
+    if (ctx == null || !ctx.mounted) return;
+    showDialog<void>(
+      context: ctx,
+      barrierDismissible: false,
+      builder: (_) => UpdateDialog(
+        currentVersion: update.currentVersion,
+        latestVersion: update.latestVersion,
+      ),
+    );
+  }
 
   static final GoRouter _router = GoRouter(
     initialLocation: '/', // Profile — entry point

@@ -1863,4 +1863,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workoutAssignTabGroup => 'Group';
+
+  @override
+  String get updateAvailableTitle => 'Update available';
+
+  @override
+  String get updateDescription =>
+      'A new version is available. Check your email for the download link.';
+
+  @override
+  String get updateCurrentVersionLabel => 'Current version';
+
+  @override
+  String get updateLatestVersionLabel => 'New version';
+
+  @override
+  String get updateClose => 'Close';
+
+  @override
+  String get updateInstall => 'Update';
 }

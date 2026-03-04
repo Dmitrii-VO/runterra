@@ -24,6 +24,8 @@ dependencies:
   shared_preferences: ^2.2.2
   watch_connectivity: ^0.2.4
   flutter_tts: ^4.2.5
+  package_info_plus: ^8.0.0
+  url_launcher: ^6.3.0
 
 dev_dependencies:
   flutter_test:

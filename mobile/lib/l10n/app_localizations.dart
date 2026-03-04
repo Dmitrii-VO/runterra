@@ -3535,6 +3535,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Group'**
   String get workoutAssignTabGroup;
+
+  /// No description provided for @updateAvailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update available'**
+  String get updateAvailableTitle;
+
+  /// No description provided for @updateDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'A new version is available. Check your email for the download link.'**
+  String get updateDescription;
+
+  /// No description provided for @updateCurrentVersionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Current version'**
+  String get updateCurrentVersionLabel;
+
+  /// No description provided for @updateLatestVersionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'New version'**
+  String get updateLatestVersionLabel;
+
+  /// No description provided for @updateClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get updateClose;
+
+  /// No description provided for @updateInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get updateInstall;
 }
 
 class _AppLocalizationsDelegate

@@ -1869,4 +1869,23 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get workoutAssignTabGroup => 'Группа';
+
+  @override
+  String get updateAvailableTitle => 'Доступно обновление';
+
+  @override
+  String get updateDescription =>
+      'Вышла новая версия приложения. Проверьте письмо для загрузки.';
+
+  @override
+  String get updateCurrentVersionLabel => 'Текущая версия';
+
+  @override
+  String get updateLatestVersionLabel => 'Новая версия';
+
+  @override
+  String get updateClose => 'Закрыть';
+
+  @override
+  String get updateInstall => 'Обновить';
 }

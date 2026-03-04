@@ -25,6 +25,12 @@ import workoutsRouter from './workouts.routes';
 
 const apiRouter = Router();
 
+// Public endpoint — no auth required
+apiRouter.get('/version', (_req: Request, res: Response) => {
+  const latestVersion = process.env.APP_VERSION ?? null;
+  res.json({ latestVersion });
+});
+
 // Глобальное middleware авторизации для всех API роутов (modules/auth AuthProvider)
 apiRouter.use(authMiddleware);
 

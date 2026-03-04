@@ -3,6 +3,9 @@
 ## Обзор
 Документ отслеживает выполнение задач и прогресс разработки проекта Runterra.
 
+## 2026-03-04 (продолжение 5)
+- **Уведомление о новой версии приложения (2026-03-04):** Реализован диалог «Доступно обновление». (1) **Backend:** `GET /api/version` — публичный endpoint (до auth middleware), возвращает `{ latestVersion: string | null }` из env-переменной `APP_VERSION`. (2) **Mobile:** добавлены зависимости `package_info_plus` и `url_launcher`. Создан `VersionService` — читает текущую версию через `PackageInfo.fromPlatform()`, запрашивает последнюю с бэкенда, сравнивает по semver; проверка выполняется один раз за сессию. Создан `UpdateDialog` — отображает текущую и новую версии, кнопка «Обновить» открывает приложение Gmail (`googlegmail://`) с fallback на `https://mail.google.com`, кнопка «Закрыть» закрывает диалог. `RunterraApp` переведён с `StatelessWidget` на `StatefulWidget`; проверка версии вызывается через `addPostFrameCallback` при старте. (3) **L10n:** 6 новых ключей (EN + RU). (4) **Verification:** `flutter analyze` — 0 issues, `npm run build` — 0 errors.
+
 ## 2026-03-04 (продолжение 4)
 - **Профиль: UX-оптимизация QuickActions и порядка секций (2026-03-04):** Рефакторинг вкладки Профиль. (1) `ProfileQuickActionsSection` переработана: убраны кнопки "Открыть карту" (дублировала таб) и "Найти людей" (не CTA); секция теперь скрывается (`SizedBox.shrink`) при `hasClub || isMercenary`; для новых пользователей без клуба показывает только два `OutlinedButton.icon` — "Найти клуб" и "Создать клуб". (2) В `ProfileScreen` `ProfileStatsSection` перемещена выше `ProfilePersonalInfoSection` — статистика важнее личных данных при первом взгляде. (3) "Найти людей" перенесено в `Card > ListTile` после Trainer Card — стилистически консистентно с остальными карточками-переходами. `flutter analyze lib/` — 0 issues.
 
