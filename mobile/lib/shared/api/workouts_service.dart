@@ -118,6 +118,22 @@ class WorkoutsService {
     _throwApiException(response, 'assign_workout_error');
   }
 
+  /// POST /api/workouts/:id/assign-group — assign workout to all members of a group
+  Future<int> assignWorkoutToGroup(String workoutId, String groupId, {String? note}) async {
+    final response = await _apiClient.post(
+      '/api/workouts/$workoutId/assign-group',
+      body: {
+        'groupId': groupId,
+        if (note != null) 'note': note,
+      },
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return (json['assigned'] as int?) ?? 0;
+    }
+    _throwApiException(response, 'assign_workout_to_group_error');
+  }
+
   /// DELETE /api/workouts/:id/assign/:clientId — remove workout assignment
   Future<void> unassignWorkout(String workoutId, String clientId) async {
     final response = await _apiClient.delete('/api/workouts/$workoutId/assign/$clientId');

@@ -1839,4 +1839,34 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get publicProfileNoRuns => 'Пробежек пока нет';
+
+  @override
+  String get clientRunsTitle => 'Пробежки клиента';
+
+  @override
+  String get clientRunsEmpty => 'Выполненных пробежек пока нет';
+
+  @override
+  String get clientRunsViewResults => 'Результаты';
+
+  @override
+  String get clientRunsDistance => 'Дистанция';
+
+  @override
+  String get clientRunsRpe => 'RPE';
+
+  @override
+  String get clientRunsAssignment => 'Задание';
+
+  @override
+  String get workoutAssignSelectGroup => 'Выберите группу';
+
+  @override
+  String get workoutAssignedToGroup => 'Назначено группе';
+
+  @override
+  String get workoutAssignTabClient => 'Клиент';
+
+  @override
+  String get workoutAssignTabGroup => 'Группа';
 }

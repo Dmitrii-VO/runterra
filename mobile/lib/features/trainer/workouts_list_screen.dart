@@ -5,6 +5,7 @@ import '../../shared/models/workout.dart';
 import '../../shared/models/assigned_workout.dart';
 import '../../shared/models/my_club_model.dart';
 import '../../shared/models/direct_chat_model.dart';
+import '../../shared/models/trainer_group_model.dart';
 import '../../shared/api/users_service.dart' show ApiException;
 import 'package:go_router/go_router.dart';
 
@@ -171,13 +172,23 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
     }
   }
 
-  /// Show bottom sheet to pick a client and assign this workout to them
+  /// Show bottom sheet to assign this workout to a client or a group
   Future<void> _showAssignDialog(Workout workout) async {
     final l10n = AppLocalizations.of(context)!;
-    final List<DirectChatModel> clients;
+
+    // Load clients and groups in parallel
+    late List<DirectChatModel> clients;
+    late List<TrainerGroupModel> groups;
 
     try {
-      clients = await ServiceLocator.messagesService.getTrainerClients();
+      final results = await Future.wait([
+        ServiceLocator.messagesService.getTrainerClients(),
+        _currentClubId != null
+            ? ServiceLocator.trainerService.getGroups(_currentClubId!)
+            : Future.value(<TrainerGroupModel>[]),
+      ]);
+      clients = results[0] as List<DirectChatModel>;
+      groups = results[1] as List<TrainerGroupModel>;
     } on ApiException {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -189,48 +200,45 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
 
     if (!mounted) return;
 
-    if (clients.isEmpty) {
+    if (clients.isEmpty && groups.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.trainerNoPrivateClients)),
       );
       return;
     }
 
-    final selected = await showModalBottomSheet<DirectChatModel>(
+    // Show unified bottom sheet with tabs
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
-      builder: (ctx) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              l10n.workoutAssignSelectClient,
-              style: Theme.of(ctx).textTheme.titleMedium,
-            ),
-          ),
-          const Divider(height: 1),
-          Flexible(
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: clients.length,
-              itemBuilder: (_, i) => ListTile(
-                title: Text(clients[i].userName),
-                onTap: () => Navigator.of(ctx).pop(clients[i]),
-              ),
-            ),
-          ),
-        ],
+      isScrollControlled: true,
+      builder: (ctx) => _AssignBottomSheet(
+        clients: clients,
+        groups: groups,
+        l10n: l10n,
       ),
     );
 
-    if (selected == null || !mounted) return;
+    if (result == null || !mounted) return;
+
+    final type = result['type'] as String;
 
     try {
-      await ServiceLocator.workoutsService.assignWorkout(workout.id, selected.userId);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.workoutAssigned)),
-        );
+      if (type == 'client') {
+        final client = result['client'] as DirectChatModel;
+        await ServiceLocator.workoutsService.assignWorkout(workout.id, client.userId);
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(l10n.workoutAssigned)));
+        }
+      } else {
+        final group = result['group'] as TrainerGroupModel;
+        final count =
+            await ServiceLocator.workoutsService.assignWorkoutToGroup(workout.id, group.id);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${l10n.workoutAssignedToGroup}: ${group.name} ($count)')),
+          );
+        }
       }
     } on ApiException {
       if (mounted) {
@@ -474,6 +482,9 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
                     ),
                 ],
               ),
+              trailing: w.isCompleted
+                  ? const Icon(Icons.check_circle, color: Colors.green)
+                  : const Icon(Icons.radio_button_unchecked, color: Colors.grey),
               onTap: () => context.push('/workouts/${w.id}/edit', extra: w),
             );
           },
@@ -495,5 +506,109 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
       default:
         return type;
     }
+  }
+}
+
+/// Bottom sheet for assigning a workout to a client or a group
+class _AssignBottomSheet extends StatefulWidget {
+  final List<DirectChatModel> clients;
+  final List<TrainerGroupModel> groups;
+  final AppLocalizations l10n;
+
+  const _AssignBottomSheet({
+    required this.clients,
+    required this.groups,
+    required this.l10n,
+  });
+
+  @override
+  State<_AssignBottomSheet> createState() => _AssignBottomSheetState();
+}
+
+class _AssignBottomSheetState extends State<_AssignBottomSheet>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = widget.l10n;
+    return DraggableScrollableSheet(
+      initialChildSize: 0.5,
+      minChildSize: 0.3,
+      maxChildSize: 0.8,
+      expand: false,
+      builder: (_, scrollController) => Column(
+        children: [
+          const SizedBox(height: 8),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[400],
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          TabBar(
+            controller: _tabController,
+            tabs: [
+              Tab(text: l10n.workoutAssignTabClient),
+              Tab(text: l10n.workoutAssignTabGroup),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                // Clients tab
+                widget.clients.isEmpty
+                    ? Center(child: Text(l10n.trainerNoPrivateClients))
+                    : ListView.builder(
+                        controller: scrollController,
+                        itemCount: widget.clients.length,
+                        itemBuilder: (_, i) {
+                          final client = widget.clients[i];
+                          return ListTile(
+                            leading: const Icon(Icons.person),
+                            title: Text(client.userName),
+                            onTap: () => Navigator.of(context)
+                                .pop(<String, dynamic>{'type': 'client', 'client': client}),
+                          );
+                        },
+                      ),
+                // Groups tab
+                widget.groups.isEmpty
+                    ? Center(child: Text(l10n.trainerNoGroups))
+                    : ListView.builder(
+                        controller: scrollController,
+                        itemCount: widget.groups.length,
+                        itemBuilder: (_, i) {
+                          final group = widget.groups[i];
+                          return ListTile(
+                            leading: const Icon(Icons.group),
+                            title: Text(group.name),
+                            subtitle: Text('${group.memberCount} members'),
+                            onTap: () => Navigator.of(context)
+                                .pop(<String, dynamic>{'type': 'group', 'group': group}),
+                          );
+                        },
+                      ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

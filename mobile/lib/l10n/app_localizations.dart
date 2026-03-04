@@ -3475,6 +3475,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No runs yet'**
   String get publicProfileNoRuns;
+
+  /// No description provided for @clientRunsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Client runs'**
+  String get clientRunsTitle;
+
+  /// No description provided for @clientRunsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No completed runs yet'**
+  String get clientRunsEmpty;
+
+  /// No description provided for @clientRunsViewResults.
+  ///
+  /// In en, this message translates to:
+  /// **'View runs'**
+  String get clientRunsViewResults;
+
+  /// No description provided for @clientRunsDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get clientRunsDistance;
+
+  /// No description provided for @clientRunsRpe.
+  ///
+  /// In en, this message translates to:
+  /// **'RPE'**
+  String get clientRunsRpe;
+
+  /// No description provided for @clientRunsAssignment.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignment'**
+  String get clientRunsAssignment;
+
+  /// No description provided for @workoutAssignSelectGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Select group'**
+  String get workoutAssignSelectGroup;
+
+  /// No description provided for @workoutAssignedToGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned to group'**
+  String get workoutAssignedToGroup;
+
+  /// No description provided for @workoutAssignTabClient.
+  ///
+  /// In en, this message translates to:
+  /// **'Client'**
+  String get workoutAssignTabClient;
+
+  /// No description provided for @workoutAssignTabGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Group'**
+  String get workoutAssignTabGroup;
 }
 
 class _AppLocalizationsDelegate

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
@@ -286,6 +287,17 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
             ),
           ],
         ),
+        actions: [
+          if (widget.isTrainer)
+            IconButton(
+              icon: const Icon(Icons.bar_chart),
+              tooltip: AppLocalizations.of(context)!.clientRunsViewResults,
+              onPressed: () => context.push(
+                '/trainer/clients/${widget.otherUser.userId}/runs',
+                extra: <String, String>{'clientName': widget.otherUser.userName},
+              ),
+            ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

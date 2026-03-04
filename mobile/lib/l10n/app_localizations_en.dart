@@ -1833,4 +1833,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get publicProfileNoRuns => 'No runs yet';
+
+  @override
+  String get clientRunsTitle => 'Client runs';
+
+  @override
+  String get clientRunsEmpty => 'No completed runs yet';
+
+  @override
+  String get clientRunsViewResults => 'View runs';
+
+  @override
+  String get clientRunsDistance => 'Distance';
+
+  @override
+  String get clientRunsRpe => 'RPE';
+
+  @override
+  String get clientRunsAssignment => 'Assignment';
+
+  @override
+  String get workoutAssignSelectGroup => 'Select group';
+
+  @override
+  String get workoutAssignedToGroup => 'Assigned to group';
+
+  @override
+  String get workoutAssignTabClient => 'Client';
+
+  @override
+  String get workoutAssignTabGroup => 'Group';
 }

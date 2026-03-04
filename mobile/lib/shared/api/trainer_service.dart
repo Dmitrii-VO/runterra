@@ -3,6 +3,7 @@ import 'api_client.dart';
 import 'users_service.dart' show ApiException;
 import '../models/trainer_profile.dart';
 import '../models/trainer_group_model.dart';
+import '../models/client_run_model.dart';
 import '../navigation/nav_status_provider.dart';
 
 /// Service for trainer profile API
@@ -157,6 +158,20 @@ class TrainerService {
       return TrainerProfile.fromJson(json);
     }
     _throwApiException(response, 'update_trainer_profile_error');
+  }
+
+  /// GET /api/trainer/clients/:clientId/runs — view client's completed runs
+  Future<List<ClientRunModel>> getClientRuns(String clientId, {int limit = 50, int offset = 0}) async {
+    final response = await _apiClient.get(
+      '/api/trainer/clients/$clientId/runs?limit=$limit&offset=$offset',
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final list = jsonDecode(response.body) as List<dynamic>;
+      return list
+          .map((e) => ClientRunModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+    _throwApiException(response, 'get_client_runs_error');
   }
 
   /// POST /api/trainer/clients/:userId — add a client

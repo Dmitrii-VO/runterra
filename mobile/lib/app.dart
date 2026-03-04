@@ -33,6 +33,7 @@ import 'features/trainer/trainers_list_screen.dart';
 import 'features/trainer/workouts_list_screen.dart';
 import 'features/trainer/workout_form_screen.dart';
 import 'features/trainer/create_trainer_group_screen.dart';
+import 'features/trainer/client_runs_screen.dart';
 import 'features/people/people_search_screen.dart';
 import 'features/people/public_profile_screen.dart';
 import 'shared/models/profile_model.dart' show ProfileUserData;
@@ -364,6 +365,16 @@ class RunterraApp extends StatelessWidget {
           userId: state.pathParameters['id']!,
           preload: state.extra as UserSearchResult?,
         ),
+      ),
+      GoRoute(
+        path: '/trainer/clients/:clientId/runs',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, String>;
+          return ClientRunsScreen(
+            clientId: state.pathParameters['clientId']!,
+            clientName: extra['clientName'] ?? '',
+          );
+        },
       ),
     ],
   );

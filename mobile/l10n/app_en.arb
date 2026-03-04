@@ -978,5 +978,16 @@
   "publicProfileKm": "km",
   "publicProfilePoints": "points",
   "publicProfileRecentRuns": "Recent runs",
-  "publicProfileNoRuns": "No runs yet"
+  "publicProfileNoRuns": "No runs yet",
+  "clientRunsTitle": "Client runs",
+  "clientRunsEmpty": "No completed runs yet",
+  "clientRunsViewResults": "View runs",
+  "clientRunsDistance": "Distance",
+  "clientRunsRpe": "RPE",
+  "clientRunsAssignment": "Assignment",
+  "workoutAssignSelectGroup": "Select group",
+  "workoutAssignedToGroup": "Assigned to group",
+  "workoutAssignTabClient": "Client",
+  "workoutAssignTabGroup": "Group",
+  "trainerNoGroups": "No groups yet"
 }

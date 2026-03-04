@@ -6,6 +6,8 @@ class AssignedWorkout extends Workout {
   final String trainerName;
   final String? note;
   final DateTime assignedAt;
+  final String assignmentId;
+  final bool isCompleted;
 
   AssignedWorkout({
     required super.id,
@@ -27,6 +29,8 @@ class AssignedWorkout extends Workout {
     required this.trainerName,
     this.note,
     required this.assignedAt,
+    required this.assignmentId,
+    this.isCompleted = false,
   });
 
   factory AssignedWorkout.fromJson(Map<String, dynamic> json) {
@@ -50,6 +54,8 @@ class AssignedWorkout extends Workout {
       trainerName: json['trainerName'] as String,
       note: json['note'] as String?,
       assignedAt: DateTime.parse(json['assignedAt'] as String),
+      assignmentId: json['assignmentId'] as String,
+      isCompleted: (json['isCompleted'] as bool?) ?? false,
     );
   }
 }
