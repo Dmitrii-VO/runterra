@@ -27,21 +27,23 @@ if ($env:DEPLOY_SKIP_CI -eq "1") { $SkipCI = $true; $SkipGitCheck = $true }
 if ($env:DEPLOY_SKIP_FIREBASE -eq "1") { $SkipFirebase = $true }
 
 # Detect Wear OS changes early (before backend push)
+# Skip if: no commits ahead of origin/main touching wear/, no staged/unstaged wear changes
 $SkipWear = $false
-try {
-    $latestTag = git describe --tags --match "v*" --abbrev=0 2>$null
-    if ($null -eq $latestTag) {
-        # No tags, check if there are any commits in wear/ at all in the last 10 commits of HEAD
-        $wearChanges = git log -n 10 --oneline -- wear/
-    } else {
-        $wearChanges = git log "$latestTag..HEAD" --oneline -- wear/
+if (-not (Test-Path "$ProjectRoot/wear")) {
+    $SkipWear = $true
+} else {
+    try {
+        $committedWear   = git diff --name-only origin/main..HEAD -- wear/ 2>$null
+        $uncommittedWear = git diff --name-only -- wear/ 2>$null
+        $stagedWear      = git diff --staged --name-only -- wear/ 2>$null
+        if ([string]::IsNullOrWhiteSpace($committedWear) -and
+            [string]::IsNullOrWhiteSpace($uncommittedWear) -and
+            [string]::IsNullOrWhiteSpace($stagedWear)) {
+            $SkipWear = $true
+        }
+    } catch {
+        $SkipWear = $false # Fallback: deploy if git check fails
     }
-    
-    if ([string]::IsNullOrWhiteSpace($wearChanges)) {
-        $SkipWear = $true
-    }
-} catch {
-    $SkipWear = $false # Fallback to deploy if git fails
 }
 
 Write-Host "========================================" -ForegroundColor Magenta
