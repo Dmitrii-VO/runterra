@@ -15,6 +15,7 @@ import {
   getWorkoutsRepository,
   getClubMembersRepository,
   getMessagesRepository,
+  getTrainerGroupsRepository,
 } from '../db/repositories';
 import { CreateWorkoutSchema, UpdateWorkoutSchema } from '../modules/workout';
 import { isTrainerInAnyClub, isTrainerOrLeaderInClub } from './helpers/trainer-role';
@@ -294,6 +295,55 @@ router.post('/:id/assign', async (req: Request, res: Response) => {
     res.status(201).json({ ok: true });
   } catch (error) {
     logger.error('Error assigning workout', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+// POST /api/workouts/:id/assign-group — assign workout template to all members of a trainer group
+router.post('/:id/assign-group', async (req: Request, res: Response) => {
+  try {
+    const userId = await resolveUserId(req, res);
+    if (!userId) return;
+
+    const { groupId, note } = req.body as { groupId?: string; note?: string };
+
+    if (!groupId || !isValidUuid(groupId)) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'groupId must be a valid UUID',
+        details: { fields: [{ field: 'groupId', message: 'Invalid UUID', code: 'invalid_uuid' }] },
+      });
+    }
+
+    const workoutsRepo = getWorkoutsRepository();
+    const workout = await workoutsRepo.findById(req.params.id);
+    if (!workout) {
+      return res.status(404).json({ code: 'not_found', message: 'Workout not found' });
+    }
+
+    if (workout.authorId !== userId) {
+      return res.status(403).json({ code: 'forbidden', message: 'Only the author can assign this workout' });
+    }
+
+    const groupsRepo = getTrainerGroupsRepository();
+    const group = await groupsRepo.findById(groupId);
+    if (!group) {
+      return res.status(404).json({ code: 'not_found', message: 'Group not found' });
+    }
+
+    if (group.trainerId !== userId) {
+      return res.status(403).json({ code: 'forbidden', message: 'Only the group trainer can assign to it' });
+    }
+
+    const memberIds = await groupsRepo.findMemberIds(groupId);
+    if (memberIds.length === 0) {
+      return res.status(400).json({ code: 'validation_error', message: 'Group has no members' });
+    }
+
+    const assigned = await workoutsRepo.assignToClients(req.params.id, userId, memberIds, note);
+    res.status(201).json({ ok: true, assigned });
+  } catch (error) {
+    logger.error('Error assigning workout to group', { error });
     res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
   }
 });

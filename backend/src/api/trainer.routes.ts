@@ -16,6 +16,7 @@ import {
   getClubMembersRepository,
   getMessagesRepository,
   getTrainerGroupsRepository,
+  getRunsRepository,
 } from '../db/repositories';
 import {
   CreateTrainerProfileSchema,
@@ -448,6 +449,40 @@ router.delete('/groups/:groupId', async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Error deleting trainer group', { error });
     res.status(500).json({ code: 'internal_error' });
+  }
+});
+
+/**
+ * GET /api/trainer/clients/:clientId/runs — view a client's completed runs
+ * Trainer must have clientId in their trainer_clients list
+ */
+router.get('/clients/:clientId/runs', async (req: Request, res: Response) => {
+  try {
+    const trainerId = await resolveUserId(req, res);
+    if (!trainerId) return;
+
+    const { clientId } = req.params;
+    if (!isValidUuid(clientId)) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'clientId must be a valid UUID',
+        details: { fields: [{ field: 'clientId', message: 'Invalid UUID', code: 'invalid_uuid' }] },
+      });
+    }
+
+    const isClient = await getMessagesRepository().isTrainerClient(trainerId, clientId);
+    if (!isClient) {
+      return res.status(403).json({ code: 'forbidden', message: 'User is not your client' });
+    }
+
+    const limit = Math.min(parseInt((req.query.limit as string) || '50', 10), 100);
+    const offset = parseInt((req.query.offset as string) || '0', 10);
+
+    const runs = await getRunsRepository().findByClientForTrainer(trainerId, clientId, limit, offset);
+    res.status(200).json(runs);
+  } catch (error) {
+    logger.error('Error fetching client runs', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
   }
 });
 

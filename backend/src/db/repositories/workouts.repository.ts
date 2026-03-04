@@ -255,6 +255,27 @@ export class WorkoutsRepository extends BaseRepository {
     );
   }
 
+  /** Assign a workout template to multiple clients (batch) */
+  async assignToClients(
+    workoutId: string,
+    trainerId: string,
+    clientIds: string[],
+    note?: string,
+  ): Promise<number> {
+    if (clientIds.length === 0) return 0;
+    let assigned = 0;
+    for (const clientId of clientIds) {
+      const result = await this.query(
+        `INSERT INTO workout_assignments (workout_id, trainer_id, client_id, note)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (workout_id, client_id) DO NOTHING`,
+        [workoutId, trainerId, clientId, note ?? null],
+      );
+      assigned += result?.rowCount ?? 0;
+    }
+    return assigned;
+  }
+
   /** Remove a workout assignment */
   async unassignFromClient(workoutId: string, trainerId: string, clientId: string): Promise<boolean> {
     const result = await this.query(

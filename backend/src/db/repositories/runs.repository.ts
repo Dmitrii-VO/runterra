@@ -11,6 +11,7 @@ interface RunRow {
   user_id: string;
   activity_id: string | null;
   scoring_club_id: string | null;
+  assignment_id: string | null;
   started_at: Date;
   ended_at: Date;
   duration: number;
@@ -37,6 +38,7 @@ function rowToRun(row: RunRow): Run {
     userId: row.user_id,
     activityId: row.activity_id || undefined,
     scoringClubId: row.scoring_club_id || undefined,
+    assignmentId: row.assignment_id ?? undefined,
     startedAt: row.started_at,
     endedAt: row.ended_at,
     duration: row.duration,
@@ -236,6 +238,35 @@ export class RunsRepository extends BaseRepository {
       longitude: row.longitude,
       latitude: row.latitude,
       timestamp: row.timestamp || undefined,
+    }));
+  }
+
+  /**
+   * Get runs for a client, accessible by their trainer
+   * Returns runs with assignment info if linked
+   */
+  async findByClientForTrainer(
+    trainerId: string,
+    clientId: string,
+    limit = 50,
+    offset = 0,
+  ): Promise<Array<Run & { assignmentId?: string; workoutTitle?: string }>> {
+    const rows = await this.queryMany<
+      RunRow & { assignment_id: string | null; workout_title: string | null }
+    >(
+      `SELECT r.*, r.assignment_id, w.title AS workout_title
+       FROM runs r
+       LEFT JOIN workout_assignments wa ON wa.id = r.assignment_id AND wa.trainer_id = $1
+       LEFT JOIN workouts w ON w.id = wa.workout_id
+       WHERE r.user_id = $2 AND r.status = 'completed'
+       ORDER BY r.started_at DESC
+       LIMIT $3 OFFSET $4`,
+      [trainerId, clientId, limit, offset],
+    );
+    return rows.map(row => ({
+      ...rowToRun(row),
+      assignmentId: row.assignment_id ?? undefined,
+      workoutTitle: row.workout_title ?? undefined,
     }));
   }
 
