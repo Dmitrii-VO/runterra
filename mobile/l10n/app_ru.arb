@@ -591,6 +591,18 @@
   "workoutDeleteAction": "Удалить",
   "workoutInUse": "Нельзя удалить: привязана к будущим событиям",
   "workoutEmpty": "Тренировок пока нет",
+  "workoutFromTrainer": "От тренера",
+  "workoutAssignedEmpty": "Тренер ещё не назначил тренировок",
+  "workoutAssignedBy": "Тренер: {name}",
+  "@workoutAssignedBy": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "workoutAssignToClient": "Назначить клиенту",
+  "workoutAssignSelectClient": "Выберите клиента",
+  "workoutAssigned": "Тренировка назначена",
+  "workoutAssignError": "Не удалось назначить тренировку",
   "typeRecovery": "Восстановительная",
   "typeTempo": "Темповая",
   "typeFunctional": "Функциональная",

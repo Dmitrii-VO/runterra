@@ -14,10 +14,12 @@ import {
   getUsersRepository,
   getWorkoutsRepository,
   getClubMembersRepository,
+  getMessagesRepository,
 } from '../db/repositories';
 import { CreateWorkoutSchema, UpdateWorkoutSchema } from '../modules/workout';
 import { isTrainerInAnyClub, isTrainerOrLeaderInClub } from './helpers/trainer-role';
 import { logger } from '../shared/logger';
+import { isValidUuid } from '../shared/validation';
 
 const router = Router();
 
@@ -49,8 +51,14 @@ router.get('/', async (req: Request, res: Response) => {
     const userId = await resolveUserId(req, res);
     if (!userId) return;
 
-    const { clubId } = req.query as { clubId?: string };
+    const { clubId, assigned } = req.query as { clubId?: string; assigned?: string };
     const repo = getWorkoutsRepository();
+
+    // GET /api/workouts?assigned=true — workouts assigned to me by a trainer
+    if (assigned === 'true') {
+      const assignedWorkouts = await repo.findAssignedToUser(userId);
+      return res.status(200).json(assignedWorkouts);
+    }
 
     if (clubId) {
       // Verify user is a member of the club
@@ -245,6 +253,74 @@ router.delete('/:id', async (req: Request, res: Response) => {
         .json({ code: 'workout_in_use', message: 'Workout is linked to events' });
     }
     logger.error('Error deleting workout', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+// POST /api/workouts/:id/assign — assign workout template to a client
+router.post('/:id/assign', async (req: Request, res: Response) => {
+  try {
+    const userId = await resolveUserId(req, res);
+    if (!userId) return;
+
+    const { clientId, note } = req.body as { clientId?: string; note?: string };
+
+    if (!clientId || !isValidUuid(clientId)) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'clientId must be a valid UUID',
+        details: { fields: [{ field: 'clientId', message: 'Invalid UUID', code: 'invalid_uuid' }] },
+      });
+    }
+
+    const repo = getWorkoutsRepository();
+    const workout = await repo.findById(req.params.id);
+    if (!workout) {
+      return res.status(404).json({ code: 'not_found', message: 'Workout not found' });
+    }
+
+    // Only the workout author can assign it
+    if (workout.authorId !== userId) {
+      return res.status(403).json({ code: 'forbidden', message: 'Only the author can assign this workout' });
+    }
+
+    // Client must be in trainer_clients for this trainer
+    const isClient = await getMessagesRepository().isTrainerClient(userId, clientId);
+    if (!isClient) {
+      return res.status(403).json({ code: 'forbidden', message: 'User is not your client' });
+    }
+
+    await repo.assignToClient(req.params.id, userId, clientId, note);
+    res.status(201).json({ ok: true });
+  } catch (error) {
+    logger.error('Error assigning workout', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+// DELETE /api/workouts/:id/assign/:clientId — remove workout assignment
+router.delete('/:id/assign/:clientId', async (req: Request, res: Response) => {
+  try {
+    const userId = await resolveUserId(req, res);
+    if (!userId) return;
+
+    const { clientId } = req.params;
+    if (!isValidUuid(clientId)) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'clientId must be a valid UUID',
+        details: { fields: [{ field: 'clientId', message: 'Invalid UUID', code: 'invalid_uuid' }] },
+      });
+    }
+
+    const repo = getWorkoutsRepository();
+    const removed = await repo.unassignFromClient(req.params.id, userId, clientId);
+    if (!removed) {
+      return res.status(404).json({ code: 'not_found', message: 'Assignment not found' });
+    }
+    res.status(200).json({ ok: true });
+  } catch (error) {
+    logger.error('Error removing workout assignment', { error });
     res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
   }
 });

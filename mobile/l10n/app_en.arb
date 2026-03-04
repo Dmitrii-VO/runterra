@@ -765,6 +765,18 @@
   "workoutDeleteAction": "Delete",
   "workoutInUse": "Cannot delete: linked to upcoming events",
   "workoutEmpty": "No workouts yet",
+  "workoutFromTrainer": "From Trainer",
+  "workoutAssignedEmpty": "No workouts assigned by trainer yet",
+  "workoutAssignedBy": "Trainer: {name}",
+  "@workoutAssignedBy": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "workoutAssignToClient": "Assign to client",
+  "workoutAssignSelectClient": "Select client",
+  "workoutAssigned": "Workout assigned",
+  "workoutAssignError": "Failed to assign workout",
   "typeRecovery": "Recovery",
   "typeTempo": "Tempo",
   "typeFunctional": "Functional",

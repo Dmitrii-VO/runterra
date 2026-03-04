@@ -68,6 +68,7 @@
 
                 // СЛОЙ 5: ГЕО И РЕЗУЛЬТАТЫ (Внизу)
                 { id: 'workout', label: 'WORKOUT (План)', x: 450, y: 250, group: 'groups' },
+                { id: 'workout_assignment', label: 'WORKOUT_ASSIGNMENT\n(Назначение)', x: 350, y: 380, group: 'pro', shape: 'diamond' },
                 { id: 'run', label: 'RUN (Трек)', x: 450, y: 500, group: 'groups', shape: 'hexagon' },
                 { id: 'territory', label: 'TERRITORY', x: 100, y: 500, group: 'map', shape: 'hexagon' }
             ]);
@@ -96,7 +97,8 @@
                 { from: 'trainer_client', to: 'chat_pro_l3' },
 
                 { from: 'workout', to: 'event' },
-                { from: 'workout', to: 'trainer_client', dashes: true },
+                { from: 'workout', to: 'workout_assignment', label: 'назначается (1:N)' },
+                { from: 'trainer_client', to: 'workout_assignment', label: 'получает (1:N)', color: '#ce9178' },
                 { from: 'event', to: 'run' },
                 { from: 'user', to: 'run' },
                 { from: 'run', to: 'club' },

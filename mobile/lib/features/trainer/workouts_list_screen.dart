@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/workout.dart';
+import '../../shared/models/assigned_workout.dart';
 import '../../shared/models/my_club_model.dart';
+import '../../shared/models/direct_chat_model.dart';
 import '../../shared/api/users_service.dart' show ApiException;
 import 'package:go_router/go_router.dart';
 
-/// Screen showing workout templates (personal and club)
+/// Screen showing workout templates (personal, club, and assigned by trainer)
 class WorkoutsListScreen extends StatefulWidget {
   const WorkoutsListScreen({super.key});
 
@@ -19,13 +21,15 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
   late TabController _tabController;
   late Future<List<Workout>> _personalFuture;
   late Future<List<Workout>> _clubFuture;
+  late Future<List<AssignedWorkout>> _assignedFuture;
   String? _currentClubId;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _personalFuture = _loadPersonalWorkouts();
+    _assignedFuture = ServiceLocator.workoutsService.getAssignedWorkouts();
     _currentClubId = ServiceLocator.currentClubService.currentClubId;
     _clubFuture = Future.value(<Workout>[]);
     _loadClubWithRefresh();
@@ -40,6 +44,7 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
   void _refresh() {
     setState(() {
       _personalFuture = _loadPersonalWorkouts();
+      _assignedFuture = ServiceLocator.workoutsService.getAssignedWorkouts();
     });
     _loadClubWithRefresh();
   }
@@ -111,7 +116,6 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
         clubScoped.where((workout) => workout.clubId == effectiveClubId).toList();
     if (exactClubWorkouts.isNotEmpty) return exactClubWorkouts;
 
-    // Last-resort fallback: show any club-scoped templates authored/visible to user.
     return clubScoped;
   }
 
@@ -167,6 +171,76 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
     }
   }
 
+  /// Show bottom sheet to pick a client and assign this workout to them
+  Future<void> _showAssignDialog(Workout workout) async {
+    final l10n = AppLocalizations.of(context)!;
+    final List<DirectChatModel> clients;
+
+    try {
+      clients = await ServiceLocator.messagesService.getTrainerClients();
+    } on ApiException {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.workoutAssignError)),
+        );
+      }
+      return;
+    }
+
+    if (!mounted) return;
+
+    if (clients.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.trainerNoPrivateClients)),
+      );
+      return;
+    }
+
+    final selected = await showModalBottomSheet<DirectChatModel>(
+      context: context,
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              l10n.workoutAssignSelectClient,
+              style: Theme.of(ctx).textTheme.titleMedium,
+            ),
+          ),
+          const Divider(height: 1),
+          Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: clients.length,
+              itemBuilder: (_, i) => ListTile(
+                title: Text(clients[i].userName),
+                onTap: () => Navigator.of(ctx).pop(clients[i]),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (selected == null || !mounted) return;
+
+    try {
+      await ServiceLocator.workoutsService.assignWorkout(workout.id, selected.userId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.workoutAssigned)),
+        );
+      }
+    } on ApiException {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.workoutAssignError)),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -179,6 +253,7 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
           tabs: [
             Tab(text: l10n.myWorkouts),
             Tab(text: l10n.workoutClub),
+            Tab(text: l10n.workoutFromTrainer),
           ],
         ),
       ),
@@ -186,9 +261,11 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
         controller: _tabController,
         children: [
           // Personal workouts tab
-          _buildWorkoutsList(_personalFuture, l10n),
+          _buildPersonalList(l10n),
           // Club workouts tab
-          _buildWorkoutsList(_clubFuture, l10n),
+          _buildWorkoutsList(_clubFuture, l10n, showAssign: false),
+          // Assigned-by-trainer tab
+          _buildAssignedList(l10n),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -201,10 +278,10 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
     );
   }
 
-  Widget _buildWorkoutsList(
-      Future<List<Workout>> future, AppLocalizations l10n) {
+  /// Personal workouts tab — shows assign button as trailing action
+  Widget _buildPersonalList(AppLocalizations l10n) {
     return FutureBuilder<List<Workout>>(
-      future: future,
+      future: _personalFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -216,10 +293,7 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
               children: [
                 Text(l10n.errorLoadTitle),
                 const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: _refresh,
-                  child: Text(l10n.retry),
-                ),
+                ElevatedButton(onPressed: _refresh, child: Text(l10n.retry)),
               ],
             ),
           );
@@ -245,7 +319,80 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
               ),
               confirmDismiss: (_) async {
                 await _deleteWorkout(w);
-                return false; // We handle refresh ourselves
+                return false;
+              },
+              child: ListTile(
+                title: Text(w.name),
+                subtitle: Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: [
+                    Chip(
+                      label: Text(_localizeType(l10n, w.type)),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.person_add_outlined),
+                  tooltip: l10n.workoutAssignToClient,
+                  onPressed: () => _showAssignDialog(w),
+                ),
+                onTap: () async {
+                  final result = await context.push('/workouts/${w.id}/edit', extra: w);
+                  if (result == true) _refresh();
+                },
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// Club workouts tab (no assign button)
+  Widget _buildWorkoutsList(
+      Future<List<Workout>> future, AppLocalizations l10n, {required bool showAssign}) {
+    return FutureBuilder<List<Workout>>(
+      future: future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(l10n.errorLoadTitle),
+                const SizedBox(height: 8),
+                ElevatedButton(onPressed: _refresh, child: Text(l10n.retry)),
+              ],
+            ),
+          );
+        }
+
+        final workouts = snapshot.data ?? [];
+        if (workouts.isEmpty) {
+          return Center(child: Text(l10n.workoutEmpty));
+        }
+
+        return ListView.builder(
+          itemCount: workouts.length,
+          itemBuilder: (context, index) {
+            final w = workouts[index];
+            return Dismissible(
+              key: Key(w.id),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                color: Colors.red,
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 16),
+                child: const Icon(Icons.delete, color: Colors.white),
+              ),
+              confirmDismiss: (_) async {
+                await _deleteWorkout(w);
+                return false;
               },
               child: ListTile(
                 title: Text(w.name),
@@ -260,11 +407,74 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
                   ],
                 ),
                 onTap: () async {
-                  final result =
-                      await context.push('/workouts/${w.id}/edit', extra: w);
+                  final result = await context.push('/workouts/${w.id}/edit', extra: w);
                   if (result == true) _refresh();
                 },
               ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// "From Trainer" tab — shows assigned workouts with trainer name
+  Widget _buildAssignedList(AppLocalizations l10n) {
+    return FutureBuilder<List<AssignedWorkout>>(
+      future: _assignedFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(l10n.errorLoadTitle),
+                const SizedBox(height: 8),
+                ElevatedButton(onPressed: _refresh, child: Text(l10n.retry)),
+              ],
+            ),
+          );
+        }
+
+        final workouts = snapshot.data ?? [];
+        if (workouts.isEmpty) {
+          return Center(child: Text(l10n.workoutAssignedEmpty));
+        }
+
+        return ListView.builder(
+          itemCount: workouts.length,
+          itemBuilder: (context, index) {
+            final w = workouts[index];
+            return ListTile(
+              title: Text(w.name),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 4,
+                    children: [
+                      Chip(
+                        label: Text(_localizeType(l10n, w.type)),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ],
+                  ),
+                  Text(
+                    l10n.workoutAssignedBy(w.trainerName),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  if (w.note != null && w.note!.isNotEmpty)
+                    Text(
+                      w.note!,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                ],
+              ),
+              onTap: () => context.push('/workouts/${w.id}/edit', extra: w),
             );
           },
         );
@@ -286,5 +496,4 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
         return type;
     }
   }
-
 }

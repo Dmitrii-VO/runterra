@@ -2660,6 +2660,48 @@ abstract class AppLocalizations {
   /// **'No workouts yet'**
   String get workoutEmpty;
 
+  /// No description provided for @workoutFromTrainer.
+  ///
+  /// In en, this message translates to:
+  /// **'From Trainer'**
+  String get workoutFromTrainer;
+
+  /// No description provided for @workoutAssignedEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No workouts assigned by trainer yet'**
+  String get workoutAssignedEmpty;
+
+  /// No description provided for @workoutAssignedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Trainer: {name}'**
+  String workoutAssignedBy(String name);
+
+  /// No description provided for @workoutAssignToClient.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign to client'**
+  String get workoutAssignToClient;
+
+  /// No description provided for @workoutAssignSelectClient.
+  ///
+  /// In en, this message translates to:
+  /// **'Select client'**
+  String get workoutAssignSelectClient;
+
+  /// No description provided for @workoutAssigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout assigned'**
+  String get workoutAssigned;
+
+  /// No description provided for @workoutAssignError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to assign workout'**
+  String get workoutAssignError;
+
   /// No description provided for @typeRecovery.
   ///
   /// In en, this message translates to:

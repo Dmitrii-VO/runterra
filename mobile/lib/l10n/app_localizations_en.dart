@@ -1403,6 +1403,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workoutEmpty => 'No workouts yet';
 
   @override
+  String get workoutFromTrainer => 'From Trainer';
+
+  @override
+  String get workoutAssignedEmpty => 'No workouts assigned by trainer yet';
+
+  @override
+  String workoutAssignedBy(String name) {
+    return 'Trainer: $name';
+  }
+
+  @override
+  String get workoutAssignToClient => 'Assign to client';
+
+  @override
+  String get workoutAssignSelectClient => 'Select client';
+
+  @override
+  String get workoutAssigned => 'Workout assigned';
+
+  @override
+  String get workoutAssignError => 'Failed to assign workout';
+
+  @override
   String get typeRecovery => 'Recovery';
 
   @override

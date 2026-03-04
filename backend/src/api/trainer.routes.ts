@@ -184,26 +184,33 @@ router.post('/clients/:userId', async (req: Request, res: Response) => {
       });
     }
 
-    // Verify caller has trainer or leader role in at least one club where target is also a member
-    const clubMembersRepo = getClubMembersRepository();
-    const trainerMemberships = await clubMembersRepo.findActiveClubsByUser(trainerId);
-    const trainerClubs = trainerMemberships.filter(
-      m => m.role === 'trainer' || m.role === 'leader',
-    );
+    // Private trainer: if acceptsPrivateClients=true, no shared-club requirement
+    const trainerProfileRepo = getTrainerProfilesRepository();
+    const trainerProfile = await trainerProfileRepo.findByUserId(trainerId);
+    const isPrivateTrainer = trainerProfile?.acceptsPrivateClients === true;
 
-    let hasSharedClub = false;
-    for (const tc of trainerClubs) {
-      const clientMembership = await clubMembersRepo.findByClubAndUser(tc.clubId, clientId);
-      if (clientMembership && clientMembership.status === 'active') {
-        hasSharedClub = true;
-        break;
+    let isAuthorized = isPrivateTrainer;
+
+    if (!isAuthorized) {
+      // Fallback: shared club check (trainer or leader in a club where client is active member)
+      const clubMembersRepo = getClubMembersRepository();
+      const trainerMemberships = await clubMembersRepo.findActiveClubsByUser(trainerId);
+      const trainerClubs = trainerMemberships.filter(
+        m => m.role === 'trainer' || m.role === 'leader',
+      );
+      for (const tc of trainerClubs) {
+        const clientMembership = await clubMembersRepo.findByClubAndUser(tc.clubId, clientId);
+        if (clientMembership && clientMembership.status === 'active') {
+          isAuthorized = true;
+          break;
+        }
       }
     }
 
-    if (!hasSharedClub) {
+    if (!isAuthorized) {
       return res.status(403).json({
         code: 'forbidden',
-        message: 'You must be a trainer or leader in a club where the target is a member',
+        message: 'You must have a private trainer profile or share a club with the target user',
       });
     }
 

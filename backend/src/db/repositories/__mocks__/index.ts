@@ -293,6 +293,9 @@ export const mockWorkoutsRepository = {
   }),
   delete: jest.fn().mockResolvedValue(true),
   hasUpcomingEvents: jest.fn().mockResolvedValue(false),
+  assignToClient: jest.fn().mockResolvedValue(undefined),
+  unassignFromClient: jest.fn().mockResolvedValue(true),
+  findAssignedToUser: jest.fn().mockResolvedValue([]),
 };
 
 // Mock TerritoriesRepository

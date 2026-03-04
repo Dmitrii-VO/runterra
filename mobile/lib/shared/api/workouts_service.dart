@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'api_client.dart';
 import 'users_service.dart' show ApiException;
 import '../models/workout.dart' show Workout;
+import '../models/assigned_workout.dart' show AssignedWorkout;
 
 /// Service for workouts API
 class WorkoutsService {
@@ -90,6 +91,38 @@ class WorkoutsService {
     final response = await _apiClient.delete('/api/workouts/$id');
     if (response.statusCode >= 200 && response.statusCode < 300) return;
     _throwApiException(response, 'delete_workout_error');
+  }
+
+  /// GET /api/workouts?assigned=true — workouts assigned to me by a trainer
+  Future<List<AssignedWorkout>> getAssignedWorkouts() async {
+    final response = await _apiClient.get('/api/workouts?assigned=true');
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final jsonData = jsonDecode(response.body) as List<dynamic>;
+      return jsonData
+          .map((json) => AssignedWorkout.fromJson(json as Map<String, dynamic>))
+          .toList();
+    }
+    _throwApiException(response, 'get_assigned_workouts_error');
+  }
+
+  /// POST /api/workouts/:id/assign — assign workout to a client
+  Future<void> assignWorkout(String workoutId, String clientId, {String? note}) async {
+    final response = await _apiClient.post(
+      '/api/workouts/$workoutId/assign',
+      body: {
+        'clientId': clientId,
+        if (note != null) 'note': note,
+      },
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    _throwApiException(response, 'assign_workout_error');
+  }
+
+  /// DELETE /api/workouts/:id/assign/:clientId — remove workout assignment
+  Future<void> unassignWorkout(String workoutId, String clientId) async {
+    final response = await _apiClient.delete('/api/workouts/$workoutId/assign/$clientId');
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    _throwApiException(response, 'unassign_workout_error');
   }
 
   Never _throwApiException(dynamic response, String fallbackCode) {

@@ -245,6 +245,46 @@ export class WorkoutsRepository extends BaseRepository {
     return (result?.rowCount ?? 0) > 0;
   }
 
+  /** Assign a workout template to a client */
+  async assignToClient(workoutId: string, trainerId: string, clientId: string, note?: string): Promise<void> {
+    await this.query(
+      `INSERT INTO workout_assignments (workout_id, trainer_id, client_id, note)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (workout_id, client_id) DO NOTHING`,
+      [workoutId, trainerId, clientId, note ?? null],
+    );
+  }
+
+  /** Remove a workout assignment */
+  async unassignFromClient(workoutId: string, trainerId: string, clientId: string): Promise<boolean> {
+    const result = await this.query(
+      `DELETE FROM workout_assignments
+       WHERE workout_id = $1 AND trainer_id = $2 AND client_id = $3`,
+      [workoutId, trainerId, clientId],
+    );
+    return (result?.rowCount ?? 0) > 0;
+  }
+
+  /** List workouts assigned to a client by their trainer(s) */
+  async findAssignedToUser(clientId: string): Promise<Array<Workout & { trainerId: string; trainerName: string; note: string | null; assignedAt: Date }>> {
+    const rows = await this.queryMany<WorkoutRow & { trainer_id: string; trainer_name: string; assignment_note: string | null; assigned_at: Date }>(
+      `SELECT w.*, wa.trainer_id, u.name AS trainer_name, wa.note AS assignment_note, wa.assigned_at
+       FROM workout_assignments wa
+       JOIN workouts w ON w.id = wa.workout_id
+       JOIN users u ON u.id = wa.trainer_id
+       WHERE wa.client_id = $1
+       ORDER BY wa.assigned_at DESC`,
+      [clientId],
+    );
+    return rows.map(row => ({
+      ...rowToWorkout(row),
+      trainerId: row.trainer_id,
+      trainerName: row.trainer_name,
+      note: row.assignment_note,
+      assignedAt: row.assigned_at,
+    }));
+  }
+
   async hasUpcomingEvents(workoutId: string): Promise<boolean> {
     const row = await this.queryOne<{ count: string }>(
       `SELECT COUNT(*)::text AS count FROM events

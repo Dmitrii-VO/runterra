@@ -1408,6 +1408,29 @@ class AppLocalizationsRu extends AppLocalizations {
   String get workoutEmpty => 'Тренировок пока нет';
 
   @override
+  String get workoutFromTrainer => 'От тренера';
+
+  @override
+  String get workoutAssignedEmpty => 'Тренер ещё не назначил тренировок';
+
+  @override
+  String workoutAssignedBy(String name) {
+    return 'Тренер: $name';
+  }
+
+  @override
+  String get workoutAssignToClient => 'Назначить клиенту';
+
+  @override
+  String get workoutAssignSelectClient => 'Выберите клиента';
+
+  @override
+  String get workoutAssigned => 'Тренировка назначена';
+
+  @override
+  String get workoutAssignError => 'Не удалось назначить тренировку';
+
+  @override
   String get typeRecovery => 'Восстановительная';
 
   @override
