@@ -56,6 +56,9 @@ imageslogs/
 Microsoft/
 ai/
 
+# Context engineering session state (ephemeral, local-only)
+PLAN.md
+
 # Temp files
 123.md
 _write_test_root.txt
