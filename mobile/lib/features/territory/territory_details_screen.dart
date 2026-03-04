@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/territory_model.dart';
@@ -50,6 +51,12 @@ class _TerritoryDetailsScreenState extends State<TerritoryDetailsScreen> {
   void initState() {
     super.initState();
     _territoryFuture = _fetchTerritory();
+
+    // Логируем просмотр территории
+    FirebaseAnalytics.instance.logEvent(
+      name: 'territory_view',
+      parameters: {'territory_id': widget.territoryId},
+    );
   }
 
   @override

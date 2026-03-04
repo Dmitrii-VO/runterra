@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/api/users_service.dart' show ApiException;
 import '../../shared/di/service_locator.dart';
@@ -43,6 +44,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final l10n = AppLocalizations.of(context)!;
     try {
       await ServiceLocator.eventsService.joinEvent(widget.eventId);
+
+      // Логируем участие в событии
+      FirebaseAnalytics.instance.logEvent(
+        name: 'event_join',
+        parameters: {'event_id': widget.eventId},
+      );
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.eventJoinSuccess)),
@@ -64,6 +72,13 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final l10n = AppLocalizations.of(context)!;
     try {
       await ServiceLocator.eventsService.leaveEvent(widget.eventId);
+
+      // Логируем выход из события
+      FirebaseAnalytics.instance.logEvent(
+        name: 'event_leave',
+        parameters: {'event_id': widget.eventId},
+      );
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.eventLeaveSuccess)),

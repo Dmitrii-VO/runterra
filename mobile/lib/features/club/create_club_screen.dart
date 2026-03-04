@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/api/users_service.dart' show ApiException;
@@ -65,6 +66,16 @@ class _CreateClubScreenState extends State<CreateClubScreen> {
         description: description.isEmpty ? null : description,
         cityId: cityId,
       );
+
+      // Логируем создание клуба
+      FirebaseAnalytics.instance.logEvent(
+        name: 'club_create',
+        parameters: {
+          'club_id': club.id,
+          'city_id': cityId,
+        },
+      );
+
       if (!mounted) return;
       context.go('/club/${club.id}');
     } on ApiException catch (e) {

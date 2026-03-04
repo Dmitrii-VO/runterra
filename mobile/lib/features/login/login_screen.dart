@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/auth/auth_service.dart';
 import '../../shared/di/service_locator.dart';
@@ -28,6 +29,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       await AuthService.instance.signInWithGoogle();
+      
+      // Логируем событие входа
+      FirebaseAnalytics.instance.logLogin(loginMethod: 'google');
       
       // Обновляем токен в ApiClient
       await ServiceLocator.refreshAuthToken();

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/event_start_location.dart';
@@ -205,6 +206,17 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             : _descriptionController.text.trim(),
         participantLimit: participantLimit,
         workoutId: _selectedWorkoutId,
+      );
+
+      // Логируем создание мероприятия
+      FirebaseAnalytics.instance.logEvent(
+        name: 'event_create',
+        parameters: {
+          'event_id': event.id,
+          'type': _eventType,
+          'organizer_type': _organizerType,
+          'city_id': _cityId!,
+        },
       );
 
       if (!mounted) return;

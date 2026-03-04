@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'l10n/app_localizations.dart';
 import 'features/activity/activity_details_screen.dart';
 import 'features/city/city_details_screen.dart';
@@ -62,6 +63,9 @@ class RunterraApp extends StatelessWidget {
   static final GoRouter _router = GoRouter(
     initialLocation: '/', // Profile — entry point
     refreshListenable: authRefreshNotifier,
+    observers: [
+      FirebaseAnalyticsObserver(analytics: FirebaseAnalytics.instance),
+    ],
     redirect: (context, state) async {
       final isAuthenticated = AuthService.instance.isAuthenticated;
       final isLoginRoute = state.matchedLocation == '/login';

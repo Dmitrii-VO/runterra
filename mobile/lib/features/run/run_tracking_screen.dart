@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/api/users_service.dart' show ApiException;
 import '../../shared/di/service_locator.dart';
@@ -176,6 +177,16 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
         scoringClubId: _selectedScoringClub?.id,
       );
 
+      // Логируем начало пробежки
+      FirebaseAnalytics.instance.logEvent(
+        name: 'run_start',
+        parameters: {
+          'activity_id': widget.activityId ?? 'none',
+          'scheduled_item_id': widget.scheduledItemId ?? 'none',
+          'club_id': _selectedScoringClub?.id ?? 'none',
+        },
+      );
+
       setState(() {
         _session = session;
         _state = _TrackingState.running;
@@ -285,6 +296,16 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
       _gpsSubscription?.cancel();
 
       final completedSession = await _runService.stopRun();
+
+      // Логируем завершение записи пробежки
+      FirebaseAnalytics.instance.logEvent(
+        name: 'run_finish',
+        parameters: {
+          'distance': completedSession.distance,
+          'duration': completedSession.duration.inSeconds,
+        },
+      );
+
       if (mounted) {
         setState(() {
           _session = completedSession;
@@ -316,6 +337,16 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
 
     try {
       await _runService.submitRun(rpe: _rpe, notes: _notesController.text);
+
+      // Логируем отправку результата
+      FirebaseAnalytics.instance.logEvent(
+        name: 'run_submit',
+        parameters: {
+          'rpe': _rpe,
+          'has_notes': _notesController.text.isNotEmpty,
+        },
+      );
+
       if (mounted) {
         _backToIdle();
       }

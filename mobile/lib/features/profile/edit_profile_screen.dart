@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/profile_model.dart';
@@ -97,6 +98,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         avatarUrl: avatarUrl.isEmpty ? '' : avatarUrl,
         profileVisible: _profileVisible,
       );
+
+      // Логируем редактирование профиля
+      FirebaseAnalytics.instance.logEvent(name: 'profile_edit');
+
       if (!mounted) return;
       context.pop(true);
     } catch (e) {

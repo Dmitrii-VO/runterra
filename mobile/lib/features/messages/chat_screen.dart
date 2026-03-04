@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../shared/auth/auth_service.dart';
@@ -287,6 +288,15 @@ class _ChatScreenState extends State<ChatScreen> {
       } else {
         throw UnimplementedError();
       }
+
+      // Логируем отправку сообщения
+      FirebaseAnalytics.instance.logEvent(
+        name: 'message_send',
+        parameters: {
+          'channel_type': widget.channelType,
+          'channel_id': widget.channelId,
+        },
+      );
       
       if (!mounted) return;
 

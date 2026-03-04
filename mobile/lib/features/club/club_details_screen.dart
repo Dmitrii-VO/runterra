@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/api/users_service.dart' show ApiException;
 import '../../shared/di/service_locator.dart';
@@ -648,6 +649,13 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
     final l10n = AppLocalizations.of(context)!;
     try {
       await ServiceLocator.clubsService.joinClub(widget.clubId);
+
+      // Логируем запрос на вступление
+      FirebaseAnalytics.instance.logEvent(
+        name: 'club_join_request',
+        parameters: {'club_id': widget.clubId},
+      );
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.clubRequestPending)),
