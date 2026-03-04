@@ -214,6 +214,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         SliverList(
           delegate: SliverChildListDelegate([
+            ProfileStatsSection(stats: profile.stats),
             ProfilePersonalInfoSection(user: profile.user),
             if (activeClubId != null && activeClubId.isNotEmpty)
               Card(
@@ -228,7 +229,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onTap: () => context.push('/club/$activeClubId'),
                 ),
               ),
-            ProfileStatsSection(stats: profile.stats),
             _CitySection(
               currentCityId: profile.user.cityId,
               currentCityName: profile.user.cityName ?? profile.user.cityId,
@@ -263,6 +263,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onTap: () => context.push('/trainer/${profile.user.id}'),
                 ),
               ),
+            Card(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: ListTile(
+                leading: const Icon(Icons.person_search_outlined),
+                title: Text(l10n.findPeople),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/people'),
+              ),
+            ),
             ProfileNotificationsSection(notifications: profile.notifications),
             const SizedBox(height: 24),
           ]),

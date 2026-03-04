@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../navigation/user_action.dart';
 import '../../navigation/navigation_handler.dart';
+import 'package:go_router/go_router.dart';
 
-/// Секция быстрых действий (CTA)
-/// 
-/// Отображает кнопки для быстрого доступа к ключевым функциям:
-/// - Открыть карту (большая, основная)
-/// - Найти клуб / Создать клуб — только если !hasClub && !isMercenary (явная логика).
+/// Секция быстрых действий (CTA) — только для новых пользователей без клуба.
+///
+/// Показывает "Найти клуб" и "Создать клуб".
+/// Скрывается если пользователь уже в клубе или является наёмником.
 class ProfileQuickActionsSection extends StatelessWidget {
   /// true если profile.club != null
   final bool hasClub;
@@ -22,8 +21,11 @@ class ProfileQuickActionsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (hasClub || isMercenary) return const SizedBox.shrink();
+
     final router = GoRouter.of(context);
     final handler = NavigationHandler(router: router);
+    final l10n = AppLocalizations.of(context)!;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -32,39 +34,16 @@ class ProfileQuickActionsSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Основная кнопка - Открыть карту
-            ElevatedButton.icon(
-              onPressed: () => handler.handle(const OpenMapAction()),
-              icon: const Icon(Icons.map),
-              label: Text(AppLocalizations.of(context)!.quickOpenMap),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
+            OutlinedButton.icon(
+              onPressed: () => handler.handle(const FindClubAction()),
+              icon: const Icon(Icons.group),
+              label: Text(l10n.quickFindClub),
             ),
-            const SizedBox(height: 12),
-            // Вторичные действия
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                if (!hasClub && !isMercenary) ...[
-                  OutlinedButton.icon(
-                    onPressed: () => handler.handle(const FindClubAction()),
-                    icon: const Icon(Icons.group),
-                    label: Text(AppLocalizations.of(context)!.quickFindClub),
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: () => handler.handle(const CreateClubAction()),
-                    icon: const Icon(Icons.add),
-                    label: Text(AppLocalizations.of(context)!.quickCreateClub),
-                  ),
-                ],
-                OutlinedButton.icon(
-                  onPressed: () => GoRouter.of(context).push('/people'),
-                  icon: const Icon(Icons.person_search_outlined),
-                  label: Text(AppLocalizations.of(context)!.findPeople),
-                ),
-              ],
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () => handler.handle(const CreateClubAction()),
+              icon: const Icon(Icons.add),
+              label: Text(l10n.quickCreateClub),
             ),
           ],
         ),
