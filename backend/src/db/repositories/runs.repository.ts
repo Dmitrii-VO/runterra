@@ -273,6 +273,15 @@ export class RunsRepository extends BaseRepository {
   /**
    * Get user statistics
    */
+  async getLastRun(userId: string): Promise<{
+    id: string; started_at: string; status: string; distance: number;
+  } | null> {
+    return this.queryOne<{ id: string; started_at: string; status: string; distance: number }>(
+      `SELECT id, started_at, status, distance FROM runs WHERE user_id = $1 ORDER BY started_at DESC LIMIT 1`,
+      [userId],
+    );
+  }
+
   async getUserStats(userId: string): Promise<{
     totalRuns: number;
     totalDistance: number;

@@ -596,6 +596,22 @@ export class EventsRepository extends BaseRepository {
     return parseInt(result.rows[0]?.count ?? '0', 10);
   }
 
+  async getNextEventForUser(userId: string): Promise<{
+    id: string; name: string; start_date_time: string; ep_status: string;
+  } | null> {
+    return this.queryOne<{ id: string; name: string; start_date_time: string; ep_status: string }>(
+      `SELECT e.id, e.name, e.start_date_time, ep.status AS ep_status
+       FROM event_participants ep
+       JOIN events e ON e.id = ep.event_id
+       WHERE ep.user_id = $1::uuid
+         AND ep.status IN ('registered', 'checked_in')
+         AND e.start_date_time > NOW()
+       ORDER BY e.start_date_time ASC
+       LIMIT 1`,
+      [userId],
+    );
+  }
+
   async getParticipant(eventId: string, userId: string): Promise<EventParticipant | null> {
     const row = await this.queryOne<ParticipantRow>(
       'SELECT * FROM event_participants WHERE event_id = $1 AND user_id = $2',

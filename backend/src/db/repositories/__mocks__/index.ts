@@ -97,6 +97,7 @@ export const mockEventsRepository = {
     .mockResolvedValue({ participant: { ...mockParticipant, status: 'checked_in' as const } }),
   getParticipant: jest.fn().mockResolvedValue(null),
   getParticipants: jest.fn().mockResolvedValue([]),
+  getNextEventForUser: jest.fn().mockResolvedValue(null),
   update: jest.fn().mockResolvedValue(mockEvent),
   updateTrainerFields: jest.fn().mockResolvedValue(mockEvent),
 };
@@ -107,6 +108,7 @@ export const mockRunsRepository = {
   findByUserId: jest.fn().mockResolvedValue([]),
   create: jest.fn().mockResolvedValue({ id: 'run-1' }),
   getUserStats: jest.fn().mockResolvedValue(mockRunStats),
+  getLastRun: jest.fn().mockResolvedValue(null),
   getGpsPoints: jest.fn().mockResolvedValue([]),
 };
 

@@ -17,6 +17,7 @@ import {
   CreateUserSchema,
   userToViewDto,
   ProfileDto,
+  ProfileActivityDto,
   UpdateProfileSchema,
   UserSearchResultDto,
   PublicProfileDto,
@@ -28,7 +29,9 @@ import {
   getRunsRepository,
   getClubMembersRepository,
   getClubsRepository,
+  getEventsRepository,
 } from '../db/repositories';
+import { ActivityStatus } from '../modules/activities';
 import { findCityById } from '../modules/cities/cities.config';
 import { ClubRole } from '../modules/clubs';
 import { logger } from '../shared/logger';
@@ -121,6 +124,30 @@ router.get('/me/profile', async (req: Request, res: Response) => {
         }
       : null;
 
+    const eventsRepo = getEventsRepository();
+
+    // nextActivity: next upcoming event the user is registered for
+    const nextEvent = await eventsRepo.getNextEventForUser(user.id);
+    const nextActivity: ProfileActivityDto | undefined = nextEvent
+      ? {
+          id: nextEvent.id,
+          name: nextEvent.name,
+          dateTime: nextEvent.start_date_time,
+          status: nextEvent.ep_status === 'checked_in' ? ActivityStatus.IN_PROGRESS : ActivityStatus.PLANNED,
+        }
+      : undefined;
+
+    // lastActivity: most recent run
+    const lastRun = await runsRepo.getLastRun(user.id);
+    const lastActivity: ProfileActivityDto | undefined = lastRun
+      ? {
+          id: lastRun.id,
+          dateTime: lastRun.started_at,
+          status: ActivityStatus.COMPLETED,
+          result: lastRun.status === 'completed' ? 'counted' : 'not_counted',
+        }
+      : undefined;
+
     const profile: ProfileDto = {
       user: {
         id: user.id,
@@ -144,9 +171,8 @@ router.get('/me/profile', async (req: Request, res: Response) => {
         territoriesParticipated: 0, // TODO: из territories
         contributionPoints: Math.floor(runStats.totalDistance / 100), // 1 балл за 100м
       },
-      // TODO: получить из events/activities
-      nextActivity: undefined,
-      lastActivity: undefined,
+      nextActivity,
+      lastActivity,
       // TODO: получить из notifications
       notifications: [],
     };

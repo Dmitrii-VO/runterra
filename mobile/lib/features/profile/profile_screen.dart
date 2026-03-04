@@ -8,7 +8,6 @@ import '../../shared/auth/auth_service.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/profile_model.dart';
 import '../../shared/models/trainer_profile.dart';
-import '../../shared/ui/profile/header_section.dart';
 import '../../shared/ui/profile/stats_section.dart';
 import '../../shared/ui/profile/activity_section.dart';
 import '../../shared/ui/profile/quick_actions_section.dart';
@@ -16,15 +15,7 @@ import '../../shared/ui/profile/personal_info_section.dart';
 import '../../shared/ui/profile/notifications_section.dart';
 import '../city/city_picker_dialog.dart';
 
-/// Profile screen - Личный кабинет пользователя
-///
-/// Отображает все данные личного кабинета согласно требованиям MVP:
-/// 1. Идентификация пользователя (имя, фото, статус, клуб)
-/// 2. Мини-статистика (тренировки, территории, баллы)
-/// 3. Ближайшая и последняя активности
-/// 4. Быстрые действия (CTA)
-/// 5. Уведомления
-/// Настройки (геолокация, видимость, выход, удаление) — в «Редактирование профиля».
+/// Profile screen — personal account of the current user.
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -37,7 +28,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   TrainerProfile? _trainerProfile;
 
   Future<ProfileModel> _loadAll() {
-    // Fire both requests concurrently; _loadTrainerProfile handles its own state
     _loadTrainerProfile();
     return _fetchProfile();
   }
@@ -53,22 +43,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final p = await ServiceLocator.trainerService.getMyProfile();
       if (mounted) setState(() => _trainerProfile = p);
     } on ApiException catch (_) {
-      // If unauthorized even after _fetchProfile refresh attempt,
-      // it will be handled by the redirect in _fetchProfile.
-      // We only hide the section if it's really not found (404) or on other errors.
       if (mounted) setState(() => _trainerProfile = null);
     } catch (_) {
       if (mounted) setState(() => _trainerProfile = null);
     }
   }
 
-  /// Создает Future для получения данных профиля
   Future<ProfileModel> _fetchProfile() async {
     try {
       final profile = await ServiceLocator.usersService.getProfile();
 
-      // Keep local currentClubId in sync with backend profile contract:
-      // if backend does not return club object, user is considered not in a club.
       final currentClubId = ServiceLocator.currentClubService.currentClubId;
       if (profile.club != null &&
           (currentClubId == null || currentClubId != profile.club!.id)) {
@@ -89,7 +73,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         } on ApiException catch (retryErr) {
           if (retryErr.code == 'unauthorized' && mounted) {
             context.go('/login');
-            // Return a dummy future that will never complete or just throw
             rethrow;
           }
         }
@@ -97,8 +80,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       rethrow;
     }
   }
-  
-  /// Reload profile data
+
   void _retry() {
     setState(() {
       _profileFuture = _loadAll();
@@ -122,24 +104,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final profile = snapshot.data;
 
         return Scaffold(
-          appBar: AppBar(
-            title: Text(l10n.profileTitle),
-            actions: [
-              if (hasData && profile != null)
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  tooltip: l10n.editProfileEditAction,
-                  onPressed: () async {
-                    final result = await context.push<bool>(
-                      '/profile/edit',
-                      extra: profile.user,
-                    );
-                    if (result == true && context.mounted) _retry();
-                  },
-                ),
-            ],
-          ),
-          body: _buildBody(context, snapshot, l10n),
+          body: _buildBody(context, snapshot, l10n, hasData, profile),
         );
       },
     );
@@ -149,6 +114,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     BuildContext context,
     AsyncSnapshot<ProfileModel> snapshot,
     AppLocalizations l10n,
+    bool hasData,
+    ProfileModel? profile,
   ) {
     if (snapshot.connectionState == ConnectionState.waiting) {
       return const Center(child: CircularProgressIndicator());
@@ -212,75 +179,200 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     }
 
-    if (!snapshot.hasData) {
+    if (!hasData || profile == null) {
       return Center(child: Text(l10n.profileNotFound));
     }
 
-    final profile = snapshot.data!;
     final activeClubId = profile.club?.id ?? ServiceLocator.currentClubService.currentClubId;
     final activeClubName = profile.club?.name;
     final myClubLabel = l10n.profileMyClub;
 
-    return ListView(
-      children: [
-        ProfileHeaderSection(user: profile.user),
-        ProfilePersonalInfoSection(user: profile.user),
-        if (activeClubId != null && activeClubId.isNotEmpty)
-          Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: ListTile(
-              leading: const Icon(Icons.groups),
-              title: Text(myClubLabel),
-              subtitle: activeClubName != null && activeClubName.isNotEmpty
-                  ? Text(activeClubName)
-                  : null,
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push('/club/$activeClubId'),
+    return CustomScrollView(
+      slivers: [
+        SliverAppBar(
+          expandedHeight: 200,
+          pinned: true,
+          floating: false,
+          flexibleSpace: FlexibleSpaceBar(
+            collapseMode: CollapseMode.pin,
+            background: _ProfileHeroHeader(user: profile.user),
+          ),
+          title: Text(l10n.profileTitle),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.edit),
+              tooltip: l10n.editProfileEditAction,
+              onPressed: () async {
+                final result = await context.push<bool>(
+                  '/profile/edit',
+                  extra: profile.user,
+                );
+                if (result == true && context.mounted) _retry();
+              },
             ),
-          ),
-        ProfileStatsSection(stats: profile.stats),
-        _CitySection(
-          currentCityId: profile.user.cityId,
-          currentCityName: profile.user.cityName ?? profile.user.cityId,
-          onCitySelected: () => _retry(),
+          ],
         ),
-        ProfileActivitySection(
-          nextActivity: profile.nextActivity,
-          lastActivity: profile.lastActivity,
-        ),
-        ProfileQuickActionsSection(
-          hasClub: profile.club != null,
-          isMercenary: profile.user.isMercenary,
-        ),
-        Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: ListTile(
-            leading: const Icon(Icons.fitness_center),
-            title: Text(l10n.workouts),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push('/workouts'),
-          ),
-        ),
-        if (_trainerProfile?.acceptsPrivateClients == true ||
-            profile.club?.role == 'trainer' ||
-            profile.club?.role == 'leader')
-          Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: ListTile(
-              leading: const Icon(Icons.sports),
-              title: Text(l10n.trainerProfile),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push('/trainer/${profile.user.id}'),
+        SliverList(
+          delegate: SliverChildListDelegate([
+            ProfilePersonalInfoSection(user: profile.user),
+            if (activeClubId != null && activeClubId.isNotEmpty)
+              Card(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: ListTile(
+                  leading: const Icon(Icons.groups),
+                  title: Text(myClubLabel),
+                  subtitle: activeClubName != null && activeClubName.isNotEmpty
+                      ? Text(activeClubName)
+                      : null,
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/club/$activeClubId'),
+                ),
+              ),
+            ProfileStatsSection(stats: profile.stats),
+            _CitySection(
+              currentCityId: profile.user.cityId,
+              currentCityName: profile.user.cityName ?? profile.user.cityId,
+              onCitySelected: () => _retry(),
             ),
-          ),
-        ProfileNotificationsSection(notifications: profile.notifications),
+            ProfileActivitySection(
+              nextActivity: profile.nextActivity,
+              lastActivity: profile.lastActivity,
+            ),
+            ProfileQuickActionsSection(
+              hasClub: profile.club != null,
+              isMercenary: profile.user.isMercenary,
+            ),
+            Card(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: ListTile(
+                leading: const Icon(Icons.fitness_center),
+                title: Text(l10n.workouts),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/workouts'),
+              ),
+            ),
+            if (_trainerProfile?.acceptsPrivateClients == true ||
+                profile.club?.role == 'trainer' ||
+                profile.club?.role == 'leader')
+              Card(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: ListTile(
+                  leading: const Icon(Icons.sports),
+                  title: Text(l10n.trainerProfile),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/trainer/${profile.user.id}'),
+                ),
+              ),
+            ProfileNotificationsSection(notifications: profile.notifications),
+            const SizedBox(height: 24),
+          ]),
+        ),
       ],
     );
   }
-
 }
 
-/// Блок «Город» в личном кабинете: отображает текущий город, по нажатию — выбор города.
+/// Expandable hero header shown in SliverAppBar.flexibleSpace.
+/// Displays avatar, display name, and optional status chip.
+class _ProfileHeroHeader extends StatelessWidget {
+  const _ProfileHeroHeader({required this.user});
+
+  final ProfileUserData user;
+
+  String get _displayName {
+    final parts = <String>[];
+    if (user.firstName != null && user.firstName!.isNotEmpty) parts.add(user.firstName!);
+    if (user.lastName != null && user.lastName!.isNotEmpty) parts.add(user.lastName!);
+    return parts.isNotEmpty ? parts.join(' ') : user.name;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            colorScheme.primary,
+            colorScheme.primary.withValues(alpha: 0.8),
+          ],
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Dark gradient overlay at the bottom for text legibility
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.45),
+                  ],
+                  stops: const [0.5, 1.0],
+                ),
+              ),
+            ),
+          ),
+          // Content: avatar + name
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 16, top: 48),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircleAvatar(
+                    radius: 36,
+                    backgroundColor: colorScheme.primaryContainer,
+                    foregroundImage:
+                        user.avatarUrl != null ? NetworkImage(user.avatarUrl!) : null,
+                    onForegroundImageError:
+                        user.avatarUrl != null ? (_, __) {} : null,
+                    child: Text(
+                      user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                      style: TextStyle(
+                        fontSize: 28,
+                        color: colorScheme.onPrimaryContainer,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _displayName,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  if (user.status.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Chip(
+                      label: Text(
+                        user.status,
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                      padding: EdgeInsets.zero,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      backgroundColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.8),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// City selection tile in the profile.
 class _CitySection extends StatelessWidget {
   const _CitySection({
     required this.currentCityId,
