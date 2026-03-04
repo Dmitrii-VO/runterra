@@ -306,7 +306,7 @@ class _ProfileHeroHeader extends StatelessWidget {
           end: Alignment.bottomCenter,
           colors: [
             colorScheme.primary,
-            colorScheme.primary.withValues(alpha: 0.8),
+            colorScheme.primary.withOpacity(0.8),
           ],
         ),
       ),
@@ -321,7 +321,7 @@ class _ProfileHeroHeader extends StatelessWidget {
                   end: Alignment.bottomCenter,
                   colors: [
                     Colors.transparent,
-                    Colors.black.withValues(alpha: 0.45),
+                    Colors.black.withOpacity(0.45),
                   ],
                   stops: const [0.5, 1.0],
                 ),
@@ -368,7 +368,7 @@ class _ProfileHeroHeader extends StatelessWidget {
                       ),
                       padding: EdgeInsets.zero,
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      backgroundColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.8),
+                      backgroundColor: colorScheme.surfaceContainerHighest.withOpacity(0.8),
                     ),
                   ],
                 ],
