@@ -88,7 +88,7 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     super.initState();
     _createEventMarkerIcon();
-    _ensureCityAndLoad();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _ensureCityAndLoad());
     _loadActiveClub();
   }
 

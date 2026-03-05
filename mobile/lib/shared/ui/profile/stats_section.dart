@@ -3,10 +3,10 @@ import '../../../l10n/app_localizations.dart';
 import '../../models/user_stats_model.dart';
 
 /// Секция мини-статистики
-/// 
+///
 /// Отображает 3 карточки с ключевыми метриками:
 /// - Количество участий в тренировках
-/// - Территории, в захвате которых участвовал
+/// - Суммарная дистанция в км
 /// - Баллы личного вклада
 class ProfileStatsSection extends StatelessWidget {
   final UserStatsModel stats;
@@ -31,9 +31,9 @@ class ProfileStatsSection extends StatelessWidget {
               value: stats.trainingCount.toString(),
             ),
             _StatCard(
-              icon: Icons.map,
-              label: AppLocalizations.of(context)!.statsTerritories,
-              value: stats.territoriesParticipated.toString(),
+              icon: Icons.directions_run,
+              label: AppLocalizations.of(context)!.statsKm,
+              value: stats.totalDistanceKm.toStringAsFixed(1),
             ),
             _StatCard(
               icon: Icons.star,

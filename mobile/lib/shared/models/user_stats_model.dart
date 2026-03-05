@@ -9,15 +9,15 @@ class UserStatsModel {
   /// Количество участий в тренировках
   final int trainingCount;
   
-  /// Количество территорий, в захвате которых пользователь участвовал
-  final int territoriesParticipated;
+  /// Суммарная дистанция пробежек в км
+  final double totalDistanceKm;
   
   /// Баллы личного вклада
   final int contributionPoints;
 
   UserStatsModel({
     required this.trainingCount,
-    required this.territoriesParticipated,
+    required this.totalDistanceKm,
     required this.contributionPoints,
   });
 
@@ -27,9 +27,9 @@ class UserStatsModel {
   /// Не выполняет валидацию данных.
   factory UserStatsModel.fromJson(Map<String, dynamic> json) {
     return UserStatsModel(
-      trainingCount: (json['trainingCount'] as num).toInt(),
-      territoriesParticipated: (json['territoriesParticipated'] as num).toInt(),
-      contributionPoints: (json['contributionPoints'] as num).toInt(),
+      trainingCount: (json['trainingCount'] as num?)?.toInt() ?? 0,
+      totalDistanceKm: (json['totalDistanceKm'] as num?)?.toDouble() ?? 0.0,
+      contributionPoints: (json['contributionPoints'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -39,7 +39,7 @@ class UserStatsModel {
   Map<String, dynamic> toJson() {
     return {
       'trainingCount': trainingCount,
-      'territoriesParticipated': territoriesParticipated,
+      'totalDistanceKm': totalDistanceKm,
       'contributionPoints': contributionPoints,
     };
   }

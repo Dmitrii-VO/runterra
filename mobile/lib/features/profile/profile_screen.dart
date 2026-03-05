@@ -361,18 +361,6 @@ class _ProfileHeroHeader extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                   ),
-                  if (user.status.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Chip(
-                      label: Text(
-                        user.status,
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                      padding: EdgeInsets.zero,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      backgroundColor: colorScheme.surfaceContainerHighest.withOpacity(0.8),
-                    ),
-                  ],
                 ],
               ),
             ),

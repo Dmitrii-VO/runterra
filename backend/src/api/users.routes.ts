@@ -168,7 +168,7 @@ router.get('/me/profile', async (req: Request, res: Response) => {
       club,
       stats: {
         trainingCount: runStats.totalRuns,
-        territoriesParticipated: 0, // TODO: из territories
+        totalDistanceKm: Math.round(runStats.totalDistance / 100) / 10, // meters → km, 1 decimal
         contributionPoints: Math.floor(runStats.totalDistance / 100), // 1 балл за 100м
       },
       nextActivity,

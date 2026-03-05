@@ -22,8 +22,8 @@ export interface UserStats {
   /** Количество участий в тренировках */
   trainingCount: number;
 
-  /** Количество территорий, в захвате которых пользователь участвовал */
-  territoriesParticipated: number;
+  /** Суммарная дистанция пробежек в км */
+  totalDistanceKm: number;
 
   /** Баллы личного вклада */
   contributionPoints: number;
