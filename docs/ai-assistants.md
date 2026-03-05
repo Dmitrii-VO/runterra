@@ -86,3 +86,16 @@ powershell -ExecutionPolicy Bypass -File scripts/ai-auto.ps1 --print "Compare 3 
   - Use only in trusted local environments.
 - Codex uses your existing `codex login` state.
 - Agent uses your existing `agent login` state.
+
+## Context loop (recommended)
+
+```powershell
+npm run ctx:start -- "Короткая формулировка задачи"
+npm run ctx:plan
+npm run ctx:checkpoint
+npm run ctx:restore
+npm run ctx:prune
+npm run ctx:done
+```
+
+Подробно: `docs/context-engineering-loop.md`.

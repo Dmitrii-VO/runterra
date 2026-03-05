@@ -58,6 +58,11 @@ ai/
 
 # Context engineering session state (ephemeral, local-only)
 PLAN.md
+TODO.md
+DECISIONS.md
+EVIDENCE.md
+RESTORE.md
+.tmp/context-loop/
 
 # Temp files
 123.md

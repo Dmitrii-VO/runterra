@@ -114,12 +114,13 @@ Runs on push/PR to `main`: backend typecheck + tests + build; mobile analyze + t
 ## Workflow
 
 ### Session State (Context Engineering)
-- **Active task lives in `PLAN.md`** (gitignored, ephemeral). Chat is NOT the source of truth.
-- Session commands: `/ctx-start [task]` → `/ctx-plan` → `/ctx-done`
-- After `/compact`: run `/ctx-restore` to re-orient without re-reading source files
+- **Active task lives in local session files** (`PLAN.md`, `TODO.md`, `DECISIONS.md`, `EVIDENCE.md`, `RESTORE.md`; gitignored). Chat is NOT the source of truth.
+- Session commands: `npm run ctx:start -- "<task>"` → `npm run ctx:plan` → `npm run ctx:done`
+- Before `/compact`: run `npm run ctx:checkpoint` (or rely on hook); after `/compact` run `npm run ctx:restore`
 - **JIT file reading:** open max 5 files (~200 lines each) → summarize → next step. Never bulk-read.
 - **Log discipline:** store full command output in `logs/`; return only 5–8 line summaries to chat
 - Between unrelated tasks: use `/clear` to reset context instead of accumulating noise
+- Periodically run `npm run ctx:prune` to keep only high-signal context
 
 ### Planning
 - Use plan mode (EnterPlanMode) for any non-trivial task: 3+ steps, multiple files, or architectural decisions
