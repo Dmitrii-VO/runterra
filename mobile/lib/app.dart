@@ -43,6 +43,7 @@ import 'shared/models/club_member_model.dart';
 import 'shared/models/trainer_group_model.dart';
 import 'shared/models/workout.dart';
 import 'shared/models/trainer_profile.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'shared/api/version_service.dart';
 import 'shared/auth/auth_service.dart';
 import 'shared/di/service_locator.dart';
@@ -68,10 +69,15 @@ class RunterraApp extends StatefulWidget {
 }
 
 class _RunterraAppState extends State<RunterraApp> {
+  String _appVersion = '';
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkForUpdate());
+    PackageInfo.fromPlatform().then((info) {
+      if (mounted) setState(() => _appVersion = 'v${info.version}');
+    });
   }
 
   Future<void> _checkForUpdate() async {
@@ -420,6 +426,28 @@ class _RunterraAppState extends State<RunterraApp> {
       supportedLocales: AppLocalizations.supportedLocales,
       locale: const Locale('ru'), // Forced Russian locale
       routerConfig: _router,
+      builder: (context, child) {
+        final statusBarHeight = MediaQuery.of(context).padding.top;
+        return Stack(
+          children: [
+            child!,
+            if (_appVersion.isNotEmpty)
+              Positioned(
+                top: statusBarHeight > 0 ? (statusBarHeight - 14) / 2 : 4,
+                right: 8,
+                child: Text(
+                  _appVersion,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.black45,
+                    fontWeight: FontWeight.w500,
+                    decoration: TextDecoration.none,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
