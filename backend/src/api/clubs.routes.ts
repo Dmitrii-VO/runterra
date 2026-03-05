@@ -32,6 +32,7 @@ import {
   getEventsRepository,
   getActivitiesRepository,
 } from '../db/repositories';
+import { createDbPool } from '../db/client';
 import { logger } from '../shared/logger';
 import { isValidClubId } from '../shared/clubId';
 import {
@@ -748,6 +749,382 @@ router.get('/:id/members', async (req: Request, res: Response) => {
     });
   }
 });
+
+const AssignTrainerSchema = z.object({ trainerId: z.string().uuid() });
+const AssignGroupSchema = z.object({ groupId: z.string().uuid() });
+
+/**
+ * GET /api/clubs/:id/trainer-assignments
+ *
+ * Returns trainer assignment structure: trainers with personal clients and groups,
+ * plus unassigned members. currentUserRole is included for permission checks.
+ */
+router.get('/:id/trainer-assignments', async (req: Request, res: Response) => {
+  const { id: clubId } = req.params;
+  if (!isValidClubId(clubId)) return respondInvalidClubId(res);
+
+  const uid = req.authUser?.uid;
+  if (!uid) return res.status(401).json({ code: 'unauthorized', message: 'Unauthorized' });
+
+  try {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) return res.status(401).json({ code: 'unauthorized', message: 'User not found' });
+
+    const clubMembersRepo = getClubMembersRepository();
+    const clubsRepo = getClubsRepository();
+    const club = await clubsRepo.findById(clubId);
+    if (!club) return res.status(404).json({ code: 'not_found', message: 'Club not found' });
+
+    const requesterMembership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
+    if (!requesterMembership || requesterMembership.status !== 'active') {
+      return res
+        .status(403)
+        .json({ code: 'forbidden', message: 'Only active club members can view assignments' });
+    }
+
+    const pool = createDbPool();
+
+    // All active club members with display names and roles
+    const membersRes = await pool.query<{ user_id: string; display_name: string; role: string }>(
+      `SELECT cm.user_id,
+              COALESCE(NULLIF(TRIM(CONCAT(u.first_name, ' ', u.last_name)), ''), u.name) AS display_name,
+              cm.role
+       FROM club_members cm
+       JOIN users u ON u.id = cm.user_id
+       WHERE cm.club_id = $1 AND cm.status = 'active'`,
+      [clubId],
+    );
+    const allMembers = membersRes.rows;
+    const memberIds = allMembers.map(m => m.user_id);
+    const memberIdSet = new Set(memberIds);
+
+    const trainerIds = allMembers
+      .filter(m => m.role === 'trainer' || m.role === 'leader')
+      .map(m => m.user_id);
+
+    // Personal trainer-client relations: only those where both sides are club members
+    const personalClientsRes =
+      trainerIds.length > 0
+        ? await pool.query<{ trainer_id: string; client_id: string }>(
+            `SELECT tc.trainer_id, tc.client_id
+             FROM trainer_clients tc
+             WHERE tc.trainer_id = ANY($1::uuid[])
+               AND tc.client_id = ANY($2::uuid[])`,
+            [trainerIds, memberIds],
+          )
+        : { rows: [] as { trainer_id: string; client_id: string }[] };
+    const personalClients = personalClientsRes.rows;
+
+    // Trainer groups with members for this club
+    const groupsRes = await pool.query<{
+      group_id: string;
+      trainer_id: string;
+      group_name: string;
+      member_id: string | null;
+    }>(
+      `SELECT tg.id AS group_id, tg.trainer_id, tg.name AS group_name, tgm.user_id AS member_id
+       FROM trainer_groups tg
+       LEFT JOIN trainer_group_members tgm ON tgm.group_id = tg.id
+       WHERE tg.club_id = $1`,
+      [clubId],
+    );
+
+    // Build assigned set
+    const assignedUserIds = new Set<string>();
+    for (const pc of personalClients) assignedUserIds.add(pc.client_id);
+    for (const gr of groupsRes.rows) {
+      if (gr.member_id && memberIdSet.has(gr.member_id)) assignedUserIds.add(gr.member_id);
+    }
+
+    const memberMap = new Map(allMembers.map(m => [m.user_id, m.display_name]));
+
+    type MemberRef = { userId: string; displayName: string };
+    type GroupRef = { groupId: string; groupName: string; members: MemberRef[] };
+    type TrainerEntry = {
+      trainerId: string;
+      trainerName: string;
+      personalClients: MemberRef[];
+      groups: GroupRef[];
+    };
+
+    const trainerEntries: TrainerEntry[] = trainerIds.map(trainerId => {
+      const myClients: MemberRef[] = personalClients
+        .filter(pc => pc.trainer_id === trainerId)
+        .map(pc => ({ userId: pc.client_id, displayName: memberMap.get(pc.client_id) ?? '' }));
+
+      const groupMap = new Map<string, GroupRef>();
+      for (const gr of groupsRes.rows.filter(g => g.trainer_id === trainerId)) {
+        if (!groupMap.has(gr.group_id)) {
+          groupMap.set(gr.group_id, {
+            groupId: gr.group_id,
+            groupName: gr.group_name,
+            members: [],
+          });
+        }
+        if (gr.member_id && memberIdSet.has(gr.member_id)) {
+          groupMap.get(gr.group_id)!.members.push({
+            userId: gr.member_id,
+            displayName: memberMap.get(gr.member_id) ?? '',
+          });
+        }
+      }
+
+      return {
+        trainerId,
+        trainerName: memberMap.get(trainerId) ?? '',
+        personalClients: myClients,
+        groups: Array.from(groupMap.values()),
+      };
+    });
+
+    const unassigned: MemberRef[] = allMembers
+      .filter(m => m.role === 'member' && !assignedUserIds.has(m.user_id))
+      .map(m => ({ userId: m.user_id, displayName: m.display_name }));
+
+    return res.status(200).json({
+      currentUserRole: requesterMembership.role,
+      trainers: trainerEntries,
+      unassigned,
+    });
+  } catch (error) {
+    logger.error('Error fetching trainer assignments', { clubId, error });
+    return res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /api/clubs/:id/members/:userId/assign-trainer
+ *
+ * Assign a personal trainer to a club member. Only leaders can do this.
+ * Replaces any existing personal trainer from this club for the target user.
+ */
+router.post(
+  '/:id/members/:userId/assign-trainer',
+  validateBody(AssignTrainerSchema),
+  async (req: Request, res: Response) => {
+    const { id: clubId, userId: targetUserId } = req.params;
+    if (!isValidClubId(clubId)) return respondInvalidClubId(res);
+
+    const uid = req.authUser?.uid;
+    if (!uid) return res.status(401).json({ code: 'unauthorized', message: 'Unauthorized' });
+
+    try {
+      const usersRepo = getUsersRepository();
+      const user = await usersRepo.findByFirebaseUid(uid);
+      if (!user) return res.status(401).json({ code: 'unauthorized', message: 'User not found' });
+
+      const clubMembersRepo = getClubMembersRepository();
+      const requesterMembership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
+      if (!requesterMembership || requesterMembership.role !== 'leader') {
+        return res
+          .status(403)
+          .json({ code: 'forbidden', message: 'Only leaders can manage assignments' });
+      }
+
+      const { trainerId } = req.body as z.infer<typeof AssignTrainerSchema>;
+
+      // Validate trainer is an active trainer/leader in this club
+      const trainerMembership = await clubMembersRepo.findByClubAndUser(clubId, trainerId);
+      if (
+        !trainerMembership ||
+        trainerMembership.status !== 'active' ||
+        !['trainer', 'leader'].includes(trainerMembership.role)
+      ) {
+        return res
+          .status(400)
+          .json({ code: 'invalid_trainer', message: 'Trainer not found in this club' });
+      }
+
+      // Validate target is an active member
+      const targetMembership = await clubMembersRepo.findByClubAndUser(clubId, targetUserId);
+      if (!targetMembership || targetMembership.status !== 'active') {
+        return res.status(404).json({ code: 'not_found', message: 'Member not found in this club' });
+      }
+
+      const pool = createDbPool();
+
+      // Remove existing personal trainer relationship from any club trainer
+      const clubTrainersRes = await pool.query<{ user_id: string }>(
+        `SELECT user_id FROM club_members WHERE club_id = $1 AND status = 'active' AND role IN ('trainer', 'leader')`,
+        [clubId],
+      );
+      const clubTrainerIds = clubTrainersRes.rows.map(r => r.user_id);
+      if (clubTrainerIds.length > 0) {
+        await pool.query(
+          `DELETE FROM trainer_clients WHERE client_id = $1 AND trainer_id = ANY($2::uuid[])`,
+          [targetUserId, clubTrainerIds],
+        );
+      }
+
+      await pool.query(
+        `INSERT INTO trainer_clients (trainer_id, client_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+        [trainerId, targetUserId],
+      );
+
+      return res.status(200).json({ ok: true });
+    } catch (error) {
+      logger.error('Error assigning trainer', { clubId, targetUserId, error });
+      return res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+    }
+  },
+);
+
+/**
+ * DELETE /api/clubs/:id/members/:userId/assign-trainer
+ *
+ * Remove personal trainer assignment for a club member. Only leaders can do this.
+ */
+router.delete('/:id/members/:userId/assign-trainer', async (req: Request, res: Response) => {
+  const { id: clubId, userId: targetUserId } = req.params;
+  if (!isValidClubId(clubId)) return respondInvalidClubId(res);
+
+  const uid = req.authUser?.uid;
+  if (!uid) return res.status(401).json({ code: 'unauthorized', message: 'Unauthorized' });
+
+  try {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(uid);
+    if (!user) return res.status(401).json({ code: 'unauthorized', message: 'User not found' });
+
+    const clubMembersRepo = getClubMembersRepository();
+    const requesterMembership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
+    if (!requesterMembership || requesterMembership.role !== 'leader') {
+      return res
+        .status(403)
+        .json({ code: 'forbidden', message: 'Only leaders can manage assignments' });
+    }
+
+    const pool = createDbPool();
+    const clubTrainersRes = await pool.query<{ user_id: string }>(
+      `SELECT user_id FROM club_members WHERE club_id = $1 AND status = 'active' AND role IN ('trainer', 'leader')`,
+      [clubId],
+    );
+    const clubTrainerIds = clubTrainersRes.rows.map(r => r.user_id);
+    if (clubTrainerIds.length > 0) {
+      await pool.query(
+        `DELETE FROM trainer_clients WHERE client_id = $1 AND trainer_id = ANY($2::uuid[])`,
+        [targetUserId, clubTrainerIds],
+      );
+    }
+
+    return res.status(200).json({ ok: true });
+  } catch (error) {
+    logger.error('Error removing trainer assignment', { clubId, targetUserId, error });
+    return res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /api/clubs/:id/members/:userId/assign-group
+ *
+ * Add a club member to a trainer group. Only leaders can do this.
+ */
+router.post(
+  '/:id/members/:userId/assign-group',
+  validateBody(AssignGroupSchema),
+  async (req: Request, res: Response) => {
+    const { id: clubId, userId: targetUserId } = req.params;
+    if (!isValidClubId(clubId)) return respondInvalidClubId(res);
+
+    const uid = req.authUser?.uid;
+    if (!uid) return res.status(401).json({ code: 'unauthorized', message: 'Unauthorized' });
+
+    try {
+      const usersRepo = getUsersRepository();
+      const user = await usersRepo.findByFirebaseUid(uid);
+      if (!user) return res.status(401).json({ code: 'unauthorized', message: 'User not found' });
+
+      const clubMembersRepo = getClubMembersRepository();
+      const requesterMembership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
+      if (!requesterMembership || requesterMembership.role !== 'leader') {
+        return res
+          .status(403)
+          .json({ code: 'forbidden', message: 'Only leaders can manage assignments' });
+      }
+
+      const { groupId } = req.body as z.infer<typeof AssignGroupSchema>;
+
+      const pool = createDbPool();
+
+      // Validate group belongs to this club
+      const groupRes = await pool.query<{ id: string }>(
+        `SELECT id FROM trainer_groups WHERE id = $1::uuid AND club_id = $2::uuid`,
+        [groupId, clubId],
+      );
+      if ((groupRes.rowCount ?? 0) === 0) {
+        return res.status(404).json({ code: 'not_found', message: 'Group not found in this club' });
+      }
+
+      // Validate target is an active member
+      const targetMembership = await clubMembersRepo.findByClubAndUser(clubId, targetUserId);
+      if (!targetMembership || targetMembership.status !== 'active') {
+        return res.status(404).json({ code: 'not_found', message: 'Member not found in this club' });
+      }
+
+      await pool.query(
+        `INSERT INTO trainer_group_members (group_id, user_id) VALUES ($1::uuid, $2::uuid) ON CONFLICT DO NOTHING`,
+        [groupId, targetUserId],
+      );
+
+      return res.status(200).json({ ok: true });
+    } catch (error) {
+      logger.error('Error assigning group', { clubId, targetUserId, error });
+      return res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+    }
+  },
+);
+
+/**
+ * DELETE /api/clubs/:id/members/:userId/assign-group/:groupId
+ *
+ * Remove a club member from a trainer group. Only leaders can do this.
+ */
+router.delete(
+  '/:id/members/:userId/assign-group/:groupId',
+  async (req: Request, res: Response) => {
+    const { id: clubId, userId: targetUserId, groupId } = req.params;
+    if (!isValidClubId(clubId)) return respondInvalidClubId(res);
+
+    const uid = req.authUser?.uid;
+    if (!uid) return res.status(401).json({ code: 'unauthorized', message: 'Unauthorized' });
+
+    try {
+      const usersRepo = getUsersRepository();
+      const user = await usersRepo.findByFirebaseUid(uid);
+      if (!user) return res.status(401).json({ code: 'unauthorized', message: 'User not found' });
+
+      const clubMembersRepo = getClubMembersRepository();
+      const requesterMembership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
+      if (!requesterMembership || requesterMembership.role !== 'leader') {
+        return res
+          .status(403)
+          .json({ code: 'forbidden', message: 'Only leaders can manage assignments' });
+      }
+
+      const pool = createDbPool();
+
+      // Validate group belongs to this club
+      const groupRes = await pool.query<{ id: string }>(
+        `SELECT id FROM trainer_groups WHERE id = $1::uuid AND club_id = $2::uuid`,
+        [groupId, clubId],
+      );
+      if ((groupRes.rowCount ?? 0) === 0) {
+        return res.status(404).json({ code: 'not_found', message: 'Group not found in this club' });
+      }
+
+      await pool.query(
+        `DELETE FROM trainer_group_members WHERE group_id = $1::uuid AND user_id = $2::uuid`,
+        [groupId, targetUserId],
+      );
+
+      return res.status(200).json({ ok: true });
+    } catch (error) {
+      logger.error('Error removing group assignment', { clubId, targetUserId, groupId, error });
+      return res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+    }
+  },
+);
 
 const UpdateMemberRoleSchema = z.object({
   role: z.enum(['member', 'trainer', 'leader']),

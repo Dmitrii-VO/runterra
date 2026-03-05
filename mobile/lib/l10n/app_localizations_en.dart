@@ -244,7 +244,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statsTrainings => 'Workouts';
 
   @override
-  String get statsTerritories => 'Territories';
+  String get statsKm => 'Km';
 
   @override
   String get statsPoints => 'Points';
@@ -1069,6 +1069,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rosterTitle => 'Club Roster';
+
+  @override
+  String get rosterNoTrainer => 'No trainer';
+
+  @override
+  String get rosterPersonalClient => 'Personal client';
+
+  @override
+  String get rosterAssignTrainer => 'Assign trainer';
+
+  @override
+  String get rosterRemoveTrainer => 'Remove trainer';
+
+  @override
+  String get rosterAddToGroup => 'Add to group';
+
+  @override
+  String get rosterRemoveFromGroup => 'Remove from group';
+
+  @override
+  String get rosterSelectTrainer => 'Select trainer';
+
+  @override
+  String get rosterSelectGroup => 'Select group';
+
+  @override
+  String get rosterAssignmentUpdated => 'Assignment updated';
 
   @override
   String get scheduleTitle => 'Schedule Template';

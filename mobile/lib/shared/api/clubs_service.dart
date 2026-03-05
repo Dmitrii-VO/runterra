@@ -7,6 +7,7 @@ import '../models/my_club_model.dart';
 import '../models/schedule_model.dart';
 import '../models/calendar_model.dart';
 import '../models/city_leaderboard_entry.dart';
+import '../models/trainer_assignment_model.dart';
 import '../navigation/nav_status_provider.dart';
 
 class ClubsService {
@@ -376,5 +377,66 @@ class ClubsService {
           jsonDecode(response.body) as Map<String, dynamic>);
     }
     throw ApiException('update_club_error', 'Failed to update club');
+  }
+
+  /// GET /api/clubs/:id/trainer-assignments
+  Future<TrainerAssignmentsModel> getTrainerAssignments(String clubId) async {
+    final response = await _apiClient
+        .get('/api/clubs/${Uri.encodeComponent(clubId)}/trainer-assignments');
+    if (response.statusCode == 200) {
+      return TrainerAssignmentsModel.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
+    }
+    throw ApiException('assignments_fetch_error',
+        'Failed to load assignments (${response.statusCode})');
+  }
+
+  /// POST /api/clubs/:id/members/:userId/assign-trainer
+  Future<void> assignTrainer(
+      String clubId, String userId, String trainerId) async {
+    final response = await _apiClient.post(
+      '/api/clubs/${Uri.encodeComponent(clubId)}/members/${Uri.encodeComponent(userId)}/assign-trainer',
+      body: {'trainerId': trainerId},
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+          'assign_trainer_error', 'Failed to assign trainer (${response.statusCode})');
+    }
+  }
+
+  /// DELETE /api/clubs/:id/members/:userId/assign-trainer
+  Future<void> removeTrainer(String clubId, String userId) async {
+    final response = await _apiClient.delete(
+      '/api/clubs/${Uri.encodeComponent(clubId)}/members/${Uri.encodeComponent(userId)}/assign-trainer',
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+          'remove_trainer_error', 'Failed to remove trainer (${response.statusCode})');
+    }
+  }
+
+  /// POST /api/clubs/:id/members/:userId/assign-group
+  Future<void> assignGroup(
+      String clubId, String userId, String groupId) async {
+    final response = await _apiClient.post(
+      '/api/clubs/${Uri.encodeComponent(clubId)}/members/${Uri.encodeComponent(userId)}/assign-group',
+      body: {'groupId': groupId},
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+          'assign_group_error', 'Failed to assign group (${response.statusCode})');
+    }
+  }
+
+  /// DELETE /api/clubs/:id/members/:userId/assign-group/:groupId
+  Future<void> removeFromGroup(
+      String clubId, String userId, String groupId) async {
+    final response = await _apiClient.delete(
+      '/api/clubs/${Uri.encodeComponent(clubId)}/members/${Uri.encodeComponent(userId)}/assign-group/${Uri.encodeComponent(groupId)}',
+    );
+    if (response.statusCode != 200) {
+      throw ApiException(
+          'remove_group_error', 'Failed to remove from group (${response.statusCode})');
+    }
   }
 }

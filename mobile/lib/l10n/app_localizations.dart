@@ -536,11 +536,11 @@ abstract class AppLocalizations {
   /// **'Workouts'**
   String get statsTrainings;
 
-  /// No description provided for @statsTerritories.
+  /// No description provided for @statsKm.
   ///
   /// In en, this message translates to:
-  /// **'Territories'**
-  String get statsTerritories;
+  /// **'Km'**
+  String get statsKm;
 
   /// No description provided for @statsPoints.
   ///
@@ -2041,6 +2041,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Club Roster'**
   String get rosterTitle;
+
+  /// No description provided for @rosterNoTrainer.
+  ///
+  /// In en, this message translates to:
+  /// **'No trainer'**
+  String get rosterNoTrainer;
+
+  /// No description provided for @rosterPersonalClient.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal client'**
+  String get rosterPersonalClient;
+
+  /// No description provided for @rosterAssignTrainer.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign trainer'**
+  String get rosterAssignTrainer;
+
+  /// No description provided for @rosterRemoveTrainer.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove trainer'**
+  String get rosterRemoveTrainer;
+
+  /// No description provided for @rosterAddToGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to group'**
+  String get rosterAddToGroup;
+
+  /// No description provided for @rosterRemoveFromGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from group'**
+  String get rosterRemoveFromGroup;
+
+  /// No description provided for @rosterSelectTrainer.
+  ///
+  /// In en, this message translates to:
+  /// **'Select trainer'**
+  String get rosterSelectTrainer;
+
+  /// No description provided for @rosterSelectGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Select group'**
+  String get rosterSelectGroup;
+
+  /// No description provided for @rosterAssignmentUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignment updated'**
+  String get rosterAssignmentUpdated;
 
   /// No description provided for @scheduleTitle.
   ///

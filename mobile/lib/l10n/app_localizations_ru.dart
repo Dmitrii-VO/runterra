@@ -245,7 +245,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get statsTrainings => 'Тренировки';
 
   @override
-  String get statsTerritories => 'Территории';
+  String get statsKm => 'Км';
 
   @override
   String get statsPoints => 'Баллы';
@@ -1072,6 +1072,33 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get rosterTitle => 'Состав клуба';
+
+  @override
+  String get rosterNoTrainer => 'Без тренера';
+
+  @override
+  String get rosterPersonalClient => 'Личный клиент';
+
+  @override
+  String get rosterAssignTrainer => 'Назначить тренера';
+
+  @override
+  String get rosterRemoveTrainer => 'Убрать тренера';
+
+  @override
+  String get rosterAddToGroup => 'Добавить в группу';
+
+  @override
+  String get rosterRemoveFromGroup => 'Убрать из группы';
+
+  @override
+  String get rosterSelectTrainer => 'Выберите тренера';
+
+  @override
+  String get rosterSelectGroup => 'Выберите группу';
+
+  @override
+  String get rosterAssignmentUpdated => 'Назначение обновлено';
 
   @override
   String get scheduleTitle => 'Шаблон расписания';
