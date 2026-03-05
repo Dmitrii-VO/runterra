@@ -69,7 +69,10 @@ class ServiceLocator {
       citiesService: _citiesService,
     );
     _currentClubService = CurrentClubService(usersService: _usersService);
-    _watchService = WatchService(runService: _runService);
+    _watchService = WatchService(
+      runService: _runService,
+      currentClubService: _currentClubService,
+    );
     _watchService.init();
     _initialized = true;
   }

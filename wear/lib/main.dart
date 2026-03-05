@@ -72,24 +72,31 @@ class _WatchHomeState extends State<WatchHome> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isRunning) {
-      return WatchRunningScreen(
-        runState: _runState,
-        isPaused: _isPaused,
-        onPause: () => _connectivityService.sendCommand('pause'),
-        onResume: () => _connectivityService.sendCommand('resume'),
-        onStop: () {
-          _connectivityService.sendCommand('stop');
-          setState(() {
-            _isRunning = false;
-            _isPaused = false;
-            _runState = {};
-          });
-        },
-      );
-    }
-    return WatchIdleScreen(
-      onStart: () => _connectivityService.sendCommand('start'),
+    return WatchShape(
+      builder: (context, shape, child) {
+        final isRound = shape == WearShape.round;
+        if (_isRunning) {
+          return WatchRunningScreen(
+            runState: _runState,
+            isPaused: _isPaused,
+            isRound: isRound,
+            onPause: () => _connectivityService.sendCommand('pause'),
+            onResume: () => _connectivityService.sendCommand('resume'),
+            onStop: () {
+              _connectivityService.sendCommand('stop');
+              setState(() {
+                _isRunning = false;
+                _isPaused = false;
+                _runState = {};
+              });
+            },
+          );
+        }
+        return WatchIdleScreen(
+          onStart: () => _connectivityService.sendCommand('start'),
+          isRound: isRound,
+        );
+      },
     );
   }
 }

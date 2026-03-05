@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:watch_connectivity/watch_connectivity.dart';
 import '../api/run_service.dart';
 import '../models/run_session.dart';
+import 'current_club_service.dart';
 
 /// Bridge between the Wear OS watch app and RunService.
 ///
@@ -10,12 +11,16 @@ import '../models/run_session.dart';
 /// while a run is active.
 class WatchService {
   final RunService _runService;
+  final CurrentClubService _currentClubService;
   final WatchConnectivity _wc;
   StreamSubscription<Map<String, dynamic>>? _messageSubscription;
   Timer? _broadcastTimer;
 
-  WatchService({required RunService runService})
-      : _runService = runService,
+  WatchService({
+    required RunService runService,
+    required CurrentClubService currentClubService,
+  })  : _runService = runService,
+        _currentClubService = currentClubService,
         _wc = WatchConnectivity();
 
   /// Start listening for watch messages. Call once after ServiceLocator.init().
@@ -28,7 +33,7 @@ class WatchService {
     switch (cmd) {
       case 'start':
         _runService
-            .startRun()
+            .startRun(scoringClubId: _currentClubService.currentClubId)
             .then((_) => _startBroadcasting())
             .catchError((_) {});
       case 'pause':
@@ -43,6 +48,13 @@ class WatchService {
             .stopRun()
             .then((_) => _stopBroadcasting())
             .catchError((_) {});
+      case 'getState':
+        // Watch just booted — send current state immediately if run is active
+        final current = _runService.currentSession;
+        if (current != null) {
+          _broadcastRunState();
+          if (current.status == RunSessionStatus.running) _startBroadcasting();
+        }
       case 'hr':
         final bpm = message['bpm'];
         if (bpm is int) _runService.updateHeartRate(bpm);
@@ -66,7 +78,15 @@ class WatchService {
     if (session == null) return;
 
     final distanceM = session.distance;
-    final durationSec = session.duration.inSeconds;
+    // Calculate effective duration: accumulated + time since last resume (if running)
+    final Duration effectiveDuration;
+    if (session.status == RunSessionStatus.running && session.lastResumedAt != null) {
+      effectiveDuration = session.accumulatedDuration +
+          DateTime.now().difference(session.lastResumedAt!);
+    } else {
+      effectiveDuration = session.accumulatedDuration;
+    }
+    final durationSec = effectiveDuration.inSeconds;
     int? paceSecPerKm;
     if (distanceM > 50) {
       paceSecPerKm = (durationSec / (distanceM / 1000)).round();

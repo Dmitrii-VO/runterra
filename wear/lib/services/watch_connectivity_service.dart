@@ -19,6 +19,8 @@ class WatchConnectivityService {
         _runStateController.add(message);
       }
     });
+    // Request current run state immediately after watch boots
+    sendCommand('getState');
   }
 
   /// Send a run control command to the phone.

@@ -26,25 +26,23 @@ if ($args -contains "-SkipTests") { $SkipTests = $true }
 if ($env:DEPLOY_SKIP_CI -eq "1") { $SkipCI = $true; $SkipGitCheck = $true }
 if ($env:DEPLOY_SKIP_FIREBASE -eq "1") { $SkipFirebase = $true }
 
-# Detect Wear OS changes early (before backend push)
-# Skip if: no commits ahead of origin/main touching wear/, no staged/unstaged wear changes
-$SkipWear = $false
-if (-not (Test-Path "$ProjectRoot/wear")) {
-    $SkipWear = $true
-} else {
+# Helper: detect if a directory has any changes vs origin/main
+function HasChanges([string]$dir) {
     try {
-        $committedWear   = git diff --name-only origin/main..HEAD -- wear/ 2>$null
-        $uncommittedWear = git diff --name-only -- wear/ 2>$null
-        $stagedWear      = git diff --staged --name-only -- wear/ 2>$null
-        if ([string]::IsNullOrWhiteSpace($committedWear) -and
-            [string]::IsNullOrWhiteSpace($uncommittedWear) -and
-            [string]::IsNullOrWhiteSpace($stagedWear)) {
-            $SkipWear = $true
-        }
+        $committed   = git diff --name-only origin/main..HEAD -- $dir 2>$null
+        $uncommitted = git diff --name-only -- $dir 2>$null
+        $staged      = git diff --staged --name-only -- $dir 2>$null
+        return -not ([string]::IsNullOrWhiteSpace($committed) -and
+                     [string]::IsNullOrWhiteSpace($uncommitted) -and
+                     [string]::IsNullOrWhiteSpace($staged))
     } catch {
-        $SkipWear = $false # Fallback: deploy if git check fails
+        return $true # Fallback: deploy if git check fails
     }
 }
+
+$SkipBackend = -not (HasChanges "backend/")
+$SkipMobile  = -not (HasChanges "mobile/")
+$SkipWear    = (-not (Test-Path "$ProjectRoot/wear")) -or (-not (HasChanges "wear/"))
 
 Write-Host "========================================" -ForegroundColor Magenta
 Write-Host "        DEPLOY ALL: Backend + Mobile   " -ForegroundColor Magenta
@@ -52,26 +50,35 @@ Write-Host "========================================" -ForegroundColor Magenta
 Write-Host ""
 
 # 1. Deploy backend
-Write-Host ">>> BACKEND <<<" -ForegroundColor Magenta
-$backendArgs = @()
-if ($SkipCI) { $backendArgs += "-SkipCI" }
-if ($SkipGitCheck -or $SkipFirebase) { $backendArgs += "-SkipGitCheck" }
-& "$ScriptDir\deploy-backend.ps1" @backendArgs
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+if (-not $SkipBackend) {
+    Write-Host ">>> BACKEND <<<" -ForegroundColor Magenta
+    $backendArgs = @()
+    if ($SkipCI) { $backendArgs += "-SkipCI" }
+    if ($SkipGitCheck -or $SkipFirebase) { $backendArgs += "-SkipGitCheck" }
+    & "$ScriptDir\deploy-backend.ps1" @backendArgs
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+} else {
+    Write-Host ">>> BACKEND (Skipped: no changes) <<<" -ForegroundColor Gray
+}
 
 Write-Host ""
-Write-Host ">>> MOBILE <<<" -ForegroundColor Magenta
 
 # 2. Deploy mobile
-$mobileArgs = @()
-if ($ReleaseNotes) { $mobileArgs += $ReleaseNotes }
-if ($SkipTests) { $mobileArgs += "-SkipTests" }
-if ($SkipFirebase) { $mobileArgs += "-SkipFirebase" }
-
-& "$ScriptDir\deploy-mobile.ps1" @mobileArgs
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+if (-not $SkipMobile) {
+    Write-Host ">>> MOBILE <<<" -ForegroundColor Magenta
+    $mobileArgs = @()
+    if ($ReleaseNotes) { $mobileArgs += $ReleaseNotes }
+    if ($SkipTests) { $mobileArgs += "-SkipTests" }
+    if ($SkipFirebase) { $mobileArgs += "-SkipFirebase" }
+    & "$ScriptDir\deploy-mobile.ps1" @mobileArgs
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+} else {
+    Write-Host ">>> MOBILE (Skipped: no changes) <<<" -ForegroundColor Gray
+}
 
 Write-Host ""
+
+# 3. Deploy Wear OS
 if (-not $SkipWear) {
     Write-Host ">>> WEAR OS <<<" -ForegroundColor Magenta
 

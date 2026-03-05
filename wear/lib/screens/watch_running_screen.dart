@@ -6,6 +6,7 @@ import 'package:wear/wear.dart';
 class WatchRunningScreen extends StatelessWidget {
   final Map<String, dynamic> runState;
   final bool isPaused;
+  final bool isRound;
   final VoidCallback onPause;
   final VoidCallback onResume;
   final VoidCallback onStop;
@@ -17,6 +18,7 @@ class WatchRunningScreen extends StatelessWidget {
     required this.onPause,
     required this.onResume,
     required this.onStop,
+    this.isRound = false,
   });
 
   String _formatDuration(int totalSeconds) {
@@ -50,10 +52,14 @@ class WatchRunningScreen extends StatelessWidget {
     return AmbientMode(
       builder: (context, mode, child) {
         final isAmbient = mode == WearMode.ambient;
+        // Round screens need extra padding to avoid content clipping at corners
+        final padding = isRound
+            ? const EdgeInsets.all(28)
+            : const EdgeInsets.symmetric(horizontal: 8, vertical: 12);
         return Scaffold(
           backgroundColor: Colors.black,
           body: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+            padding: padding,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -92,6 +98,14 @@ class WatchRunningScreen extends StatelessWidget {
                         style: const TextStyle(fontSize: 12, color: Colors.red),
                       ),
                     ],
+                  ),
+                ],
+                // Show pause indicator in ambient mode
+                if (isAmbient && isPaused) ...[
+                  const SizedBox(height: 4),
+                  const Text(
+                    'PAUSED',
+                    style: TextStyle(fontSize: 10, color: Colors.amber),
                   ),
                 ],
                 if (!isAmbient) ...[

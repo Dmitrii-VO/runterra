@@ -193,6 +193,7 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
       });
 
       _startTimerAndGps();
+      ServiceLocator.watchService.maybeResumeBroadcasting();
     } catch (e) {
       if (mounted) {
         final l10n = AppLocalizations.of(context)!;
