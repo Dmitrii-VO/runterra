@@ -31,6 +31,7 @@ class _CreateTrainerGroupScreenState extends State<CreateTrainerGroupScreen> {
   String? _currentUserId;
   bool _isLoadingMembers = true;
   bool _isSaving = false;
+  bool _isDeleting = false;
   String? _error;
   bool get _isCreateMode => widget.existingGroup == null;
 
@@ -140,6 +141,51 @@ class _CreateTrainerGroupScreenState extends State<CreateTrainerGroupScreen> {
     }
   }
 
+  Future<void> _deleteGroup() async {
+    if (_isCreateMode || widget.existingGroup == null) return;
+    final l10n = AppLocalizations.of(context)!;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.workoutDeleteConfirm),
+        content: Text(widget.existingGroup!.name),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              l10n.workoutDeleteAction,
+              style: const TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() {
+      _isDeleting = true;
+      _error = null;
+    });
+
+    try {
+      await ServiceLocator.trainerService.deleteGroup(widget.existingGroup!.id);
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _isDeleting = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -155,7 +201,7 @@ class _CreateTrainerGroupScreenState extends State<CreateTrainerGroupScreen> {
       appBar: AppBar(
         title: Text(widget.existingGroup != null ? l10n.editProfileEditAction : l10n.trainerCreateGroup),
         actions: [
-          if (_isSaving)
+          if (_isDeleting || _isSaving)
             const Center(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
@@ -166,7 +212,13 @@ class _CreateTrainerGroupScreenState extends State<CreateTrainerGroupScreen> {
                 ),
               ),
             )
-          else
+          else ...[
+            if (!_isCreateMode)
+              IconButton(
+                onPressed: _deleteGroup,
+                icon: const Icon(Icons.delete_outline),
+                tooltip: l10n.workoutDeleteAction,
+              ),
             TextButton(
               onPressed: (_nameController.text.trim().isNotEmpty &&
                       (_isCreateMode || _selectedMemberIds.isNotEmpty))
@@ -174,6 +226,7 @@ class _CreateTrainerGroupScreenState extends State<CreateTrainerGroupScreen> {
                   : null,
               child: Text(l10n.editProfileSave),
             ),
+          ],
         ],
       ),
       body: Column(
