@@ -7,7 +7,7 @@ import { z } from 'zod';
 export const CreateTrainerGroupSchema = z.object({
   clubId: z.string().uuid(),
   name: z.string().min(1).max(100),
-  memberIds: z.array(z.string().uuid()).min(1),
+  memberIds: z.array(z.string().uuid()).optional(),
   trainerId: z.string().uuid().optional(),
 });
 

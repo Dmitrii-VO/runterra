@@ -304,7 +304,13 @@ router.post(
       const trainerId = await resolveUserId(req, res);
       if (!trainerId) return;
 
-      const { clubId, name, memberIds, trainerId: requestedTrainerId } = req.body;
+      const {
+        clubId,
+        name,
+        memberIds: rawMemberIds,
+        trainerId: requestedTrainerId,
+      } = req.body;
+      const memberIds = Array.isArray(rawMemberIds) ? rawMemberIds : [];
 
       // Verify requester is trainer/leader in this club
       const clubMembersRepo = getClubMembersRepository();

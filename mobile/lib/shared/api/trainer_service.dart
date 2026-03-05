@@ -28,7 +28,7 @@ class TrainerService {
   Future<TrainerGroupModel> createGroup({
     required String clubId,
     required String name,
-    required List<String> memberIds,
+    List<String> memberIds = const [],
     String? trainerId,
   }) async {
     final response = await _apiClient.post(

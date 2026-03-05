@@ -32,6 +32,7 @@ class _CreateTrainerGroupScreenState extends State<CreateTrainerGroupScreen> {
   bool _isLoadingMembers = true;
   bool _isSaving = false;
   String? _error;
+  bool get _isCreateMode => widget.existingGroup == null;
 
   @override
   void initState() {
@@ -49,6 +50,14 @@ class _CreateTrainerGroupScreenState extends State<CreateTrainerGroupScreen> {
   }
 
   Future<void> _loadInitialData() async {
+    if (_isCreateMode) {
+      setState(() {
+        _isLoadingMembers = false;
+        _error = null;
+      });
+      return;
+    }
+
     setState(() {
       _isLoadingMembers = true;
       _error = null;
@@ -111,7 +120,6 @@ class _CreateTrainerGroupScreenState extends State<CreateTrainerGroupScreen> {
         await ServiceLocator.trainerService.createGroup(
           clubId: widget.clubId,
           name: name,
-          memberIds: _selectedMemberIds.toList(),
           trainerId: widget.forcedTrainerId,
         );
       }
@@ -140,7 +148,8 @@ class _CreateTrainerGroupScreenState extends State<CreateTrainerGroupScreen> {
     // Filter members to exclude the group's trainer
     final excludedTrainerId =
         widget.existingGroup?.trainerId ?? widget.forcedTrainerId ?? _currentUserId;
-    final filteredMembers = _members?.where((m) => m.userId != excludedTrainerId).toList();
+    final filteredMembers =
+        _members?.where((m) => m.userId != excludedTrainerId).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -159,7 +168,8 @@ class _CreateTrainerGroupScreenState extends State<CreateTrainerGroupScreen> {
             )
           else
             TextButton(
-              onPressed: (_nameController.text.trim().isNotEmpty && _selectedMemberIds.isNotEmpty)
+              onPressed: (_nameController.text.trim().isNotEmpty &&
+                      (_isCreateMode || _selectedMemberIds.isNotEmpty))
                   ? _save
                   : null,
               child: Text(l10n.editProfileSave),
@@ -197,54 +207,56 @@ class _CreateTrainerGroupScreenState extends State<CreateTrainerGroupScreen> {
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                Text(
-                  l10n.trainerSelectMembers,
-                  style: theme.textTheme.titleMedium,
-                ),
-                const Spacer(),
-                Text(
-                  '${_selectedMemberIds.length}',
-                  style: theme.textTheme.titleMedium?.copyWith(color: theme.primaryColor),
-                ),
-              ],
+          if (!_isCreateMode)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  Text(
+                    l10n.trainerSelectMembers,
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${_selectedMemberIds.length}',
+                    style: theme.textTheme.titleMedium?.copyWith(color: theme.primaryColor),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Expanded(
-            child: _isLoadingMembers
-                ? const Center(child: CircularProgressIndicator())
-                : filteredMembers == null || filteredMembers.isEmpty
-                    ? Center(child: Text(l10n.noData))
-                    : ListView.builder(
-                        itemCount: filteredMembers.length,
-                        itemBuilder: (context, index) {
-                          final member = filteredMembers[index];
-                          final isSelected = _selectedMemberIds.contains(member.userId);
-                          return ListTile(
-                            leading: CircleAvatar(
-                              child: Text(member.displayName.isNotEmpty ? member.displayName[0] : '?'),
-                            ),
-                            title: Text(member.displayName),
-                            subtitle: Text(member.role),
-                            trailing: isSelected
-                                ? const Icon(Icons.check_circle, color: Colors.green)
-                                : const Icon(Icons.add_circle_outline),
-                            onTap: () {
-                              setState(() {
-                                if (isSelected) {
-                                  _selectedMemberIds.remove(member.userId);
-                                } else {
-                                  _selectedMemberIds.add(member.userId);
-                                }
-                              });
-                            },
-                          );
-                        },
-                      ),
-          ),
+          if (!_isCreateMode)
+            Expanded(
+              child: _isLoadingMembers
+                  ? const Center(child: CircularProgressIndicator())
+                  : filteredMembers == null || filteredMembers.isEmpty
+                      ? Center(child: Text(l10n.noData))
+                      : ListView.builder(
+                          itemCount: filteredMembers.length,
+                          itemBuilder: (context, index) {
+                            final member = filteredMembers[index];
+                            final isSelected = _selectedMemberIds.contains(member.userId);
+                            return ListTile(
+                              leading: CircleAvatar(
+                                child: Text(member.displayName.isNotEmpty ? member.displayName[0] : '?'),
+                              ),
+                              title: Text(member.displayName),
+                              subtitle: Text(member.role),
+                              trailing: isSelected
+                                  ? const Icon(Icons.check_circle, color: Colors.green)
+                                  : const Icon(Icons.add_circle_outline),
+                              onTap: () {
+                                setState(() {
+                                  if (isSelected) {
+                                    _selectedMemberIds.remove(member.userId);
+                                  } else {
+                                    _selectedMemberIds.add(member.userId);
+                                  }
+                                });
+                              },
+                            );
+                          },
+                        ),
+            ),
         ],
       ),
     );
