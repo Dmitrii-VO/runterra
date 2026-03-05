@@ -119,15 +119,33 @@ function Normalize-ReleaseNotes {
     return ($text.Substring(0, $maxLen - 20) + "`n- ... (truncated)")
 }
 
-# --- Compute version & release notes ---
+# --- Auto-bump patch version and create git tag ---
+function Get-NextVersion {
+    param([string]$Current)
+    $parts = $Current -split '\.'
+    while ($parts.Count -lt 3) { $parts += "0" }
+    $major = [int]$parts[0]
+    $minor = [int]$parts[1]
+    $patch = [int]$parts[2] + 1
+    return "$major.$minor.$patch"
+}
+
 $versionInfo = Get-VersionFromGit
-$buildName = $versionInfo.Version
-$buildNumber = $versionInfo.BuildNumber
+$nextVersion = Get-NextVersion -Current $versionInfo.Version
+$newTag = "v$nextVersion"
 
 Write-Host "=== Version ===" -ForegroundColor Cyan
-$tagDisplay = if ($versionInfo.Tag) { $versionInfo.Tag } else { "(none, using default 0.1.0)" }
-Write-Host "  Tag:          $tagDisplay" -ForegroundColor White
-Write-Host "  Version:      $buildName+$buildNumber" -ForegroundColor White
+Write-Host "  Previous:     $($versionInfo.Version)" -ForegroundColor Gray
+Write-Host "  Next:         $nextVersion  (tag: $newTag)" -ForegroundColor White
+
+git tag $newTag 2>$null
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "  WARNING: Could not create tag $newTag (already exists?). Using existing." -ForegroundColor Yellow
+}
+
+$buildName = $nextVersion
+$buildNumber = 1
+Write-Host "  Build:        $buildName+$buildNumber" -ForegroundColor White
 
 if ([string]::IsNullOrWhiteSpace($ReleaseNotes)) {
     $ReleaseNotes = Get-ReleaseNotesFromGit -SinceTag $versionInfo.Tag
