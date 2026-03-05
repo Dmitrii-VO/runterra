@@ -80,6 +80,7 @@
   "deleteAccountConfirm": "Удалить аккаунт безвозвратно? Это действие нельзя отменить. Все ваши данные будут удалены.",
   "deleteAccountConfirmButton": "Удалить",
   "statsTrainings": "Тренировки",
+  "statsTerritories": "Территории",
   "statsKm": "Км",
   "statsPoints": "Баллы",
   "notificationsSectionTitle": "Уведомления",

@@ -536,6 +536,12 @@ abstract class AppLocalizations {
   /// **'Workouts'**
   String get statsTrainings;
 
+  /// No description provided for @statsTerritories.
+  ///
+  /// In en, this message translates to:
+  /// **'Territories'**
+  String get statsTerritories;
+
   /// No description provided for @statsKm.
   ///
   /// In en, this message translates to:

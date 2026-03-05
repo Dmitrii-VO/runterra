@@ -244,6 +244,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statsTrainings => 'Workouts';
 
   @override
+  String get statsTerritories => 'Territories';
+
+  @override
   String get statsKm => 'Km';
 
   @override

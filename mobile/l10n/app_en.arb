@@ -108,6 +108,7 @@
   "deleteAccountConfirm": "Delete your account permanently? This cannot be undone. All your data will be removed.",
   "deleteAccountConfirmButton": "Delete",
   "statsTrainings": "Workouts",
+  "statsTerritories": "Territories",
   "statsKm": "Km",
   "statsPoints": "Points",
   "notificationsSectionTitle": "Notifications",
