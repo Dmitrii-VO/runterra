@@ -434,14 +434,17 @@ class _RunterraAppState extends State<RunterraApp> {
             if (_appVersion.isNotEmpty)
               Positioned(
                 top: statusBarHeight > 0 ? (statusBarHeight - 14) / 2 : 4,
-                right: 8,
-                child: Text(
-                  _appVersion,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Colors.black45,
-                    fontWeight: FontWeight.w500,
-                    decoration: TextDecoration.none,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Text(
+                    _appVersion,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Colors.black45,
+                      fontWeight: FontWeight.w500,
+                      decoration: TextDecoration.none,
+                    ),
                   ),
                 ),
               ),
