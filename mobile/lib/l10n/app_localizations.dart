@@ -3571,6 +3571,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Update'**
   String get updateInstall;
+
+  /// No description provided for @calendarTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Training schedule'**
+  String get calendarTitle;
+
+  /// No description provided for @calendarRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Run'**
+  String get calendarRun;
+
+  /// No description provided for @calendarEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Event'**
+  String get calendarEvent;
+
+  /// No description provided for @calendarChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get calendarChoose;
 }
 
 class _AppLocalizationsDelegate

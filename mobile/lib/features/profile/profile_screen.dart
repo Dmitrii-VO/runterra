@@ -13,6 +13,7 @@ import '../../shared/ui/profile/activity_section.dart';
 import '../../shared/ui/profile/quick_actions_section.dart';
 import '../../shared/ui/profile/personal_info_section.dart';
 import '../../shared/ui/profile/notifications_section.dart';
+import '../../shared/ui/profile/training_calendar_widget.dart';
 import '../city/city_picker_dialog.dart';
 
 /// Profile screen — personal account of the current user.
@@ -272,6 +273,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: () => context.push('/people'),
               ),
             ),
+            const TrainingCalendarWidget(),
             ProfileNotificationsSection(notifications: profile.notifications),
             const SizedBox(height: 24),
           ]),

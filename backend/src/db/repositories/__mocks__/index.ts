@@ -100,6 +100,7 @@ export const mockEventsRepository = {
   getNextEventForUser: jest.fn().mockResolvedValue(null),
   update: jest.fn().mockResolvedValue(mockEvent),
   updateTrainerFields: jest.fn().mockResolvedValue(mockEvent),
+  getRegisteredEventsForMonth: jest.fn().mockResolvedValue([]),
 };
 
 // Mock RunsRepository
@@ -110,6 +111,7 @@ export const mockRunsRepository = {
   getUserStats: jest.fn().mockResolvedValue(mockRunStats),
   getLastRun: jest.fn().mockResolvedValue(null),
   getGpsPoints: jest.fn().mockResolvedValue([]),
+  getRunsForMonth: jest.fn().mockResolvedValue([]),
 };
 
 export const mockClubMembersRepository = {

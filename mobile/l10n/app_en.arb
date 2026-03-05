@@ -995,5 +995,9 @@
   "updateCurrentVersionLabel": "Current version",
   "updateLatestVersionLabel": "New version",
   "updateClose": "Close",
-  "updateInstall": "Update"
+  "updateInstall": "Update",
+  "calendarTitle": "Training schedule",
+  "calendarRun": "Run",
+  "calendarEvent": "Event",
+  "calendarChoose": "Open"
 }

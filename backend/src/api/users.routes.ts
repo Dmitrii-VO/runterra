@@ -567,4 +567,71 @@ router.delete('/me', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * GET /api/users/me/calendar?year=2026&month=3
+ *
+ * Returns training calendar for the current month: completed runs + registered events.
+ * Only non-empty days are returned.
+ * Query params: year (2000-2100), month (1-12). Defaults to current UTC month.
+ */
+router.get('/me/calendar', async (req: Request, res: Response) => {
+  const firebaseUid = req.authUser?.uid;
+  if (!firebaseUid) {
+    res.status(401).json({ code: 'unauthorized', message: 'Authorization required' });
+    return;
+  }
+
+  const now = new Date();
+  const yearRaw = req.query.year ? parseInt(req.query.year as string, 10) : now.getUTCFullYear();
+  const monthRaw = req.query.month ? parseInt(req.query.month as string, 10) : now.getUTCMonth() + 1;
+
+  if (isNaN(yearRaw) || yearRaw < 2000 || yearRaw > 2100) {
+    res.status(400).json({ code: 'validation_error', message: 'Invalid year', details: { fields: [{ field: 'year', message: 'Must be between 2000 and 2100', code: 'invalid' }] } });
+    return;
+  }
+  if (isNaN(monthRaw) || monthRaw < 1 || monthRaw > 12) {
+    res.status(400).json({ code: 'validation_error', message: 'Invalid month', details: { fields: [{ field: 'month', message: 'Must be between 1 and 12', code: 'invalid' }] } });
+    return;
+  }
+
+  try {
+    const usersRepo = getUsersRepository();
+    const user = await usersRepo.findByFirebaseUid(firebaseUid);
+    if (!user) {
+      res.status(404).json({ code: 'not_found', message: 'User not found' });
+      return;
+    }
+
+    const [runs, events] = await Promise.all([
+      getRunsRepository().getRunsForMonth(user.id, yearRaw, monthRaw),
+      getEventsRepository().getRegisteredEventsForMonth(user.id, yearRaw, monthRaw),
+    ]);
+
+    // Group by date
+    const dayMap = new Map<string, { date: string; runs: typeof runs; events: typeof events }>();
+
+    for (const run of runs) {
+      if (!dayMap.has(run.date)) dayMap.set(run.date, { date: run.date, runs: [], events: [] });
+      dayMap.get(run.date)!.runs.push(run);
+    }
+    for (const event of events) {
+      if (!dayMap.has(event.date)) dayMap.set(event.date, { date: event.date, runs: [], events: [] });
+      dayMap.get(event.date)!.events.push(event);
+    }
+
+    const days = Array.from(dayMap.values())
+      .map(d => ({
+        date: d.date,
+        runs: d.runs.map(r => ({ id: r.id, distanceM: r.distanceM, durationS: r.durationS })),
+        events: d.events.map(e => ({ id: e.id, name: e.name })),
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    res.json({ days });
+  } catch (error) {
+    logger.error('Error fetching calendar', { firebaseUid, error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
 export default router;

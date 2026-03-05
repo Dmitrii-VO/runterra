@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'api_client.dart';
+import '../models/calendar_model.dart';
 import '../models/profile_model.dart';
 import '../models/public_profile_model.dart';
 import '../models/user_nav_status.dart';
@@ -204,6 +205,31 @@ class UsersService {
     final list = jsonDecode(response.body) as List<dynamic>;
     return list
         .map((e) => UserSearchResult.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// GET /api/users/me/calendar?year=&month=
+  /// Returns training calendar days for the given month.
+  Future<List<CalendarDayModel>> getCalendar(int year, int month) async {
+    final response = await _apiClient.get(
+      '/api/users/me/calendar?year=$year&month=$month',
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      String code = 'http_${response.statusCode}';
+      String message = 'Failed to load calendar';
+      try {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        if (json['code'] != null) code = json['code'] as String;
+        if (json['message'] != null) message = json['message'] as String;
+      } catch (_) {}
+      throw ApiException(code, message);
+    }
+
+    final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+    final days = jsonData['days'] as List<dynamic>;
+    return days
+        .map((e) => CalendarDayModel.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 

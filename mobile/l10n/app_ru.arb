@@ -821,5 +821,9 @@
   "updateCurrentVersionLabel": "Текущая версия",
   "updateLatestVersionLabel": "Новая версия",
   "updateClose": "Закрыть",
-  "updateInstall": "Обновить"
+  "updateInstall": "Обновить",
+  "calendarTitle": "График тренировок",
+  "calendarRun": "Пробежка",
+  "calendarEvent": "Событие",
+  "calendarChoose": "Открыть"
 }

@@ -4,7 +4,8 @@
 
 param(
     [switch]$SkipCI,
-    [switch]$SkipGitCheck
+    [switch]$SkipGitCheck,
+    [switch]$SkipPush   # Set by deploy-all.ps1 when push already happened
 )
 
 $ErrorActionPreference = "Stop"
@@ -19,12 +20,23 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 if ($args -contains "-SkipCI") { $SkipCI = $true }
 if ($args -contains "-SkipGitCheck") { $SkipGitCheck = $true }
+if ($args -contains "-SkipPush") { $SkipPush = $true }
 if ($env:DEPLOY_SKIP_CI -eq "1") { $SkipCI = $true; $SkipGitCheck = $true }
 
 $SSHHost = "runterra"
 $RemoteScript = "~/runterra/backend/update.sh"
 
 Set-Location $ProjectRoot
+
+if ($SkipPush) {
+    Write-Host "=== 1. Push (skipped — already done by deploy-all) ===" -ForegroundColor Gray
+    Write-Host "`n=== 2. SSH: update backend on server ===" -ForegroundColor Cyan
+    Write-Host "Running: ssh $SSHHost `"$RemoteScript`""
+    ssh $SSHHost $RemoteScript
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    Write-Host "`nBackend deployed successfully!" -ForegroundColor Green
+    exit 0
+}
 
 Write-Host "=== 1. Check git status ===" -ForegroundColor Cyan
 $status = git status --porcelain

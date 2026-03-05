@@ -746,6 +746,35 @@ export class EventsRepository extends BaseRepository {
   }
 
   /**
+   * Get events where user is registered/checked_in for a given month (UTC)
+   */
+  async getRegisteredEventsForMonth(
+    userId: string,
+    year: number,
+    month: number,
+  ): Promise<Array<{ id: string; date: string; name: string }>> {
+    const startDate = new Date(Date.UTC(year, month - 1, 1));
+    const endDate = new Date(Date.UTC(year, month, 1));
+    const rows = await this.queryMany<{ id: string; name: string; start_date_time: Date }>(
+      `SELECT e.id, e.name, e.start_date_time
+       FROM events e
+       JOIN event_participants ep ON ep.event_id = e.id
+       WHERE ep.user_id = $1::uuid
+         AND ep.status IN ('registered', 'checked_in')
+         AND e.start_date_time >= $2
+         AND e.start_date_time < $3
+         AND e.type != 'training'
+       ORDER BY e.start_date_time ASC`,
+      [userId, startDate, endDate],
+    );
+    return rows.map(row => ({
+      id: row.id,
+      date: row.start_date_time.toISOString().slice(0, 10),
+      name: row.name,
+    }));
+  }
+
+  /**
    * Получить события клуба за месяц
    */
   async findByClubAndMonth(clubId: string, yearMonth: string): Promise<Event[]> {

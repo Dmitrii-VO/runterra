@@ -1882,4 +1882,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updateInstall => 'Update';
+
+  @override
+  String get calendarTitle => 'Training schedule';
+
+  @override
+  String get calendarRun => 'Run';
+
+  @override
+  String get calendarEvent => 'Event';
+
+  @override
+  String get calendarChoose => 'Open';
 }

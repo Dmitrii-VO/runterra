@@ -282,6 +282,39 @@ export class RunsRepository extends BaseRepository {
     );
   }
 
+  /**
+   * Get completed runs for a user in a given month (UTC)
+   */
+  async getRunsForMonth(
+    userId: string,
+    year: number,
+    month: number,
+  ): Promise<Array<{ id: string; date: string; distanceM: number; durationS: number }>> {
+    const startDate = new Date(Date.UTC(year, month - 1, 1));
+    const endDate = new Date(Date.UTC(year, month, 1));
+    const rows = await this.queryMany<{
+      id: string;
+      started_at: Date;
+      distance: number;
+      duration: number;
+    }>(
+      `SELECT id, started_at, distance, duration
+       FROM runs
+       WHERE user_id = $1
+         AND status = 'completed'
+         AND started_at >= $2
+         AND started_at < $3
+       ORDER BY started_at ASC`,
+      [userId, startDate, endDate],
+    );
+    return rows.map(row => ({
+      id: row.id,
+      date: row.started_at.toISOString().slice(0, 10),
+      distanceM: row.distance,
+      durationS: row.duration,
+    }));
+  }
+
   async getUserStats(userId: string): Promise<{
     totalRuns: number;
     totalDistance: number;

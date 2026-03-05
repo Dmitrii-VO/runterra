@@ -1888,4 +1888,16 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get updateInstall => 'Обновить';
+
+  @override
+  String get calendarTitle => 'График тренировок';
+
+  @override
+  String get calendarRun => 'Пробежка';
+
+  @override
+  String get calendarEvent => 'Событие';
+
+  @override
+  String get calendarChoose => 'Открыть';
 }

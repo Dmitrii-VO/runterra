@@ -1299,4 +1299,68 @@ describe('API Routes', () => {
       expect(res.body.every((t: { cityId: string }) => t.cityId === 'spb')).toBe(true);
     });
   });
+
+  describe('GET /api/users/me/calendar', () => {
+    const { mockUsersRepository, mockRunsRepository, mockEventsRepository } =
+      require('../db/repositories');
+
+    beforeEach(() => {
+      mockUsersRepository.findByFirebaseUid.mockClear();
+      mockRunsRepository.getRunsForMonth.mockClear();
+      mockEventsRepository.getRegisteredEventsForMonth.mockClear();
+    });
+
+    it('returns 401 without Authorization', async () => {
+      const res = await request(app).get('/api/users/me/calendar?year=2026&month=3');
+      expect(res.status).toBe(401);
+    });
+
+    it('returns 200 with days array on happy path', async () => {
+      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({
+        id: 'test-user-id',
+        firebaseUid: 'firebase-uid-1',
+        email: 'test@example.com',
+        name: 'Test User',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      mockRunsRepository.getRunsForMonth.mockResolvedValueOnce([
+        { id: 'run-1', date: '2026-03-09', distanceM: 5000, durationS: 1800 },
+      ]);
+      mockEventsRepository.getRegisteredEventsForMonth.mockResolvedValueOnce([
+        { id: 'evt-1', date: '2026-03-09', name: 'Park Run' },
+      ]);
+
+      const res = await request(app)
+        .get('/api/users/me/calendar?year=2026&month=3')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body.days).toBeDefined();
+      expect(res.body.days).toHaveLength(1);
+      expect(res.body.days[0].date).toBe('2026-03-09');
+      expect(res.body.days[0].runs).toHaveLength(1);
+      expect(res.body.days[0].runs[0].distanceM).toBe(5000);
+      expect(res.body.days[0].events).toHaveLength(1);
+      expect(res.body.days[0].events[0].name).toBe('Park Run');
+    });
+
+    it('returns 400 for invalid month', async () => {
+      const res = await request(app)
+        .get('/api/users/me/calendar?year=2026&month=13')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('validation_error');
+    });
+
+    it('returns 400 for invalid year', async () => {
+      const res = await request(app)
+        .get('/api/users/me/calendar?year=1999&month=3')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('validation_error');
+    });
+  });
 });
