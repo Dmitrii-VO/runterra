@@ -29,7 +29,7 @@ $RemoteScript = "~/runterra/backend/update.sh"
 Set-Location $ProjectRoot
 
 if ($SkipPush) {
-    Write-Host "=== 1. Push (skipped — already done by deploy-all) ===" -ForegroundColor Gray
+    Write-Host "=== 1. Push (skipped - already done by deploy-all) ===" -ForegroundColor Gray
     Write-Host "`n=== 2. SSH: update backend on server ===" -ForegroundColor Cyan
     Write-Host "Running: ssh $SSHHost `"$RemoteScript`""
     ssh $SSHHost $RemoteScript

@@ -102,7 +102,7 @@ if ($ahead -gt 0) {
         } else {
             $ciConclusion = gh run list --workflow=ci.yml --limit=1 --json conclusion --jq ".[0].conclusion"
             if ($ciConclusion -ne "success") {
-                Write-Host "Latest CI status: $ciConclusion — fix before deploying." -ForegroundColor Red
+                Write-Host "Latest CI status: $ciConclusion - fix before deploying." -ForegroundColor Red
                 exit 1
             }
             Write-Host "Latest CI passed." -ForegroundColor Green
@@ -112,7 +112,7 @@ if ($ahead -gt 0) {
 
 Write-Host ""
 
-# 1. Deploy backend (SSH only — push already done above)
+# 1. Deploy backend (SSH only - push already done above)
 if (-not $SkipBackend) {
     Write-Host ">>> BACKEND <<<" -ForegroundColor Magenta
     $backendArgs = @("-SkipPush")
