@@ -298,7 +298,10 @@ router.get('/:id', async (req: Request, res: Response) => {
         if (event.organizerType === 'trainer') {
           isOrganizer = event.organizerId === resolvedUser.id;
         } else {
-          isOrganizer = await isTrainerOrLeaderInClub(resolvedUser.id, event.organizerId);
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (uuidRegex.test(event.organizerId)) {
+            isOrganizer = await isTrainerOrLeaderInClub(resolvedUser.id, event.organizerId);
+          }
         }
       }
     }
