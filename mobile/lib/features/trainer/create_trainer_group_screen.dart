@@ -8,12 +8,16 @@ class CreateTrainerGroupScreen extends StatefulWidget {
   final String clubId;
   final String clubName;
   final TrainerGroupModel? existingGroup;
+  final String? forcedTrainerId;
+  final String? forcedTrainerName;
 
   const CreateTrainerGroupScreen({
     super.key,
     required this.clubId,
     required this.clubName,
     this.existingGroup,
+    this.forcedTrainerId,
+    this.forcedTrainerName,
   });
 
   @override
@@ -108,6 +112,7 @@ class _CreateTrainerGroupScreenState extends State<CreateTrainerGroupScreen> {
           clubId: widget.clubId,
           name: name,
           memberIds: _selectedMemberIds.toList(),
+          trainerId: widget.forcedTrainerId,
         );
       }
       
@@ -132,8 +137,10 @@ class _CreateTrainerGroupScreenState extends State<CreateTrainerGroupScreen> {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
-    // Filter members to exclude the trainer
-    final filteredMembers = _members?.where((m) => m.userId != _currentUserId).toList();
+    // Filter members to exclude the group's trainer
+    final excludedTrainerId =
+        widget.existingGroup?.trainerId ?? widget.forcedTrainerId ?? _currentUserId;
+    final filteredMembers = _members?.where((m) => m.userId != excludedTrainerId).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -168,14 +175,26 @@ class _CreateTrainerGroupScreenState extends State<CreateTrainerGroupScreen> {
             ),
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                labelText: l10n.trainerGroupName,
-                hintText: l10n.trainerGroupNameHint,
-                border: const OutlineInputBorder(),
-              ),
-              onChanged: (_) => setState(() {}),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (widget.existingGroup == null && widget.forcedTrainerName != null) ...[
+                  Text(
+                    '${l10n.roleTrainer}: ${widget.forcedTrainerName!}',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                TextField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    labelText: l10n.trainerGroupName,
+                    hintText: l10n.trainerGroupNameHint,
+                    border: const OutlineInputBorder(),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ],
             ),
           ),
           Padding(

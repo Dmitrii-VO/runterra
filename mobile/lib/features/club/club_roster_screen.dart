@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/trainer_assignment_model.dart';
@@ -15,6 +16,15 @@ class ClubRosterScreen extends StatefulWidget {
 class _ClubRosterScreenState extends State<ClubRosterScreen> {
   TrainerAssignmentsModel? _data;
   bool _loading = true;
+
+  int _compareNames(String a, String b) =>
+      a.toLowerCase().compareTo(b.toLowerCase());
+
+  List<MemberRef> _sortedMembers(Iterable<MemberRef> members) {
+    final list = members.toList();
+    list.sort((a, b) => _compareNames(a.displayName, b.displayName));
+    return list;
+  }
 
   @override
   void initState() {
@@ -250,6 +260,42 @@ class _ClubRosterScreenState extends State<ClubRosterScreen> {
     }
   }
 
+  Future<void> _createGroupFromRoster() async {
+    final data = _data;
+    if (data == null || data.trainers.isEmpty || !mounted) return;
+
+    final l10n = AppLocalizations.of(context)!;
+    final trainers = [...data.trainers]
+      ..sort((a, b) => _compareNames(a.trainerName, b.trainerName));
+
+    final pickedTrainerId = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text(l10n.rosterSelectTrainer),
+        children: trainers
+            .map(
+              (t) => SimpleDialogOption(
+                onPressed: () => Navigator.pop(ctx, t.trainerId),
+                child: Text(t.trainerName),
+              ),
+            )
+            .toList(),
+      ),
+    );
+    if (pickedTrainerId == null || !mounted) return;
+
+    final pickedTrainer = trainers.firstWhere((t) => t.trainerId == pickedTrainerId);
+    final result = await context.push<bool>(
+      '/trainer/groups/create?clubId=${Uri.encodeComponent(widget.clubId)}'
+      '&clubName=${Uri.encodeComponent(l10n.rosterTitle)}'
+      '&trainerId=${Uri.encodeComponent(pickedTrainerId)}'
+      '&trainerName=${Uri.encodeComponent(pickedTrainer.trainerName)}',
+    );
+    if (result == true && mounted) {
+      await _load();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -258,6 +304,12 @@ class _ClubRosterScreenState extends State<ClubRosterScreen> {
       appBar: AppBar(
         title: Text(l10n.rosterTitle),
         actions: [
+          if (_isLeader)
+            IconButton(
+              onPressed: _createGroupFromRoster,
+              icon: const Icon(Icons.group_add),
+              tooltip: l10n.trainerCreateGroup,
+            ),
           IconButton(
             onPressed: _load,
             icon: const Icon(Icons.refresh),
@@ -280,11 +332,51 @@ class _ClubRosterScreenState extends State<ClubRosterScreen> {
     final data = _data!;
     final items = <Widget>[];
 
-    // Trainer sections
-    for (final trainer in data.trainers) {
-      items.add(_SectionHeader(title: trainer.trainerName));
+    final unassignedMembers = _sortedMembers(data.unassigned);
+    if (unassignedMembers.isNotEmpty) {
+      items.add(
+        _SectionHeader(
+          title: '${l10n.rosterNoTrainer} (${unassignedMembers.length})',
+        ),
+      );
+      for (final m in unassignedMembers) {
+        items.add(_MemberTile(
+          member: m,
+          onTap: _isLeader
+              ? () => _showMemberActions(context, m)
+              : null,
+        ));
+      }
+    }
 
-      for (final client in trainer.personalClients) {
+    final trainers = [...data.trainers]
+      ..sort((a, b) => _compareNames(a.trainerName, b.trainerName));
+
+    // Trainer sections
+    for (final trainer in trainers) {
+      final personalClients = _sortedMembers(trainer.personalClients);
+      final groups = [...trainer.groups]
+        ..sort((a, b) => _compareNames(a.groupName, b.groupName));
+
+      final uniqueAssignedIds = <String>{
+        ...personalClients.map((m) => m.userId),
+      };
+      for (final group in groups) {
+        uniqueAssignedIds.addAll(group.members.map((m) => m.userId));
+      }
+
+      items.add(
+        _SectionHeader(
+          title: '${trainer.trainerName} (${uniqueAssignedIds.length})',
+        ),
+      );
+
+      if (personalClients.isEmpty && groups.isEmpty) {
+        items.add(_InfoRow(text: l10n.noData));
+        continue;
+      }
+
+      for (final client in personalClients) {
         items.add(_MemberTile(
           member: client,
           subtitle: l10n.rosterPersonalClient,
@@ -295,9 +387,12 @@ class _ClubRosterScreenState extends State<ClubRosterScreen> {
         ));
       }
 
-      for (final group in trainer.groups) {
-        items.add(_GroupSubHeader(name: group.groupName));
-        for (final gm in group.members) {
+      for (final group in groups) {
+        final groupMembers = _sortedMembers(group.members);
+        items.add(
+          _GroupSubHeader(name: '${group.groupName} (${groupMembers.length})'),
+        );
+        for (final gm in groupMembers) {
           items.add(_MemberTile(
             member: gm,
             onTap: _isLeader
@@ -305,19 +400,6 @@ class _ClubRosterScreenState extends State<ClubRosterScreen> {
                 : null,
           ));
         }
-      }
-    }
-
-    // Unassigned section
-    if (data.unassigned.isNotEmpty) {
-      items.add(_SectionHeader(title: l10n.rosterNoTrainer));
-      for (final m in data.unassigned) {
-        items.add(_MemberTile(
-          member: m,
-          onTap: _isLeader
-              ? () => _showMemberActions(context, m)
-              : null,
-        ));
       }
     }
 
@@ -360,6 +442,24 @@ class _GroupSubHeader extends StatelessWidget {
         name,
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
               color: Theme.of(context).colorScheme.primary,
+            ),
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final String text;
+  const _InfoRow({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 32, top: 6, bottom: 8),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).hintColor,
             ),
       ),
     );

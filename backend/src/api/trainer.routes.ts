@@ -304,9 +304,9 @@ router.post(
       const trainerId = await resolveUserId(req, res);
       if (!trainerId) return;
 
-      const { clubId, name, memberIds } = req.body;
+      const { clubId, name, memberIds, trainerId: requestedTrainerId } = req.body;
 
-      // Verify trainer is indeed a trainer/leader in this club
+      // Verify requester is trainer/leader in this club
       const clubMembersRepo = getClubMembersRepository();
       const membership = await clubMembersRepo.findByClubAndUser(clubId, trainerId);
       if (
@@ -317,6 +317,31 @@ router.post(
         return res.status(403).json({
           code: 'forbidden',
           message: 'You must be a trainer or leader in this club to create groups',
+        });
+      }
+
+      const selectedTrainerId = requestedTrainerId ?? trainerId;
+      if (selectedTrainerId !== trainerId && membership.role !== 'leader') {
+        return res.status(403).json({
+          code: 'forbidden',
+          message: 'Only leaders can select another trainer for the group',
+        });
+      }
+
+      // Validate selected trainer in club
+      const selectedTrainerMembership = await clubMembersRepo.findByClubAndUser(
+        clubId,
+        selectedTrainerId,
+      );
+      if (
+        !selectedTrainerMembership ||
+        selectedTrainerMembership.status !== 'active' ||
+        (selectedTrainerMembership.role !== 'trainer' &&
+          selectedTrainerMembership.role !== 'leader')
+      ) {
+        return res.status(400).json({
+          code: 'validation_error',
+          message: 'Selected trainer must be an active trainer/leader in this club',
         });
       }
 
@@ -332,7 +357,7 @@ router.post(
       const repo = getTrainerGroupsRepository();
       const group = await repo.create({
         clubId,
-        trainerId,
+        trainerId: selectedTrainerId,
         name,
         memberIds,
       });

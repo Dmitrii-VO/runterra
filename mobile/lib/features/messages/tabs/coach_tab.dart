@@ -5,6 +5,8 @@ import '../../../l10n/app_localizations.dart';
 import '../../../shared/di/service_locator.dart';
 import '../../../shared/models/my_club_model.dart';
 import '../../../shared/models/direct_chat_model.dart';
+import '../../../shared/models/trainer_assignment_model.dart';
+import '../../../shared/models/profile_model.dart';
 import '../direct_chat_screen.dart';
 import 'trainer_groups_tab.dart';
 
@@ -18,13 +20,10 @@ class CoachTab extends StatefulWidget {
 
 class _CoachTabState extends State<CoachTab> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final GlobalKey<TrainerGroupsTabState> _groupsKey = GlobalKey();
   List<DirectChatModel>? _trainerClients;
   DirectChatModel? _myTrainer;
-  List<MyClubModel>? _myClubs;
   bool _isLoading = true;
 
-  bool _canCreateGroups = false;
   bool _isTrainerRole = false;
 
   @override
@@ -46,6 +45,11 @@ class _CoachTabState extends State<CoachTab> with SingleTickerProviderStateMixin
     
     try {
       final results = await Future.wait([
+        ServiceLocator.usersService.getProfile(),
+        ServiceLocator.clubsService.getMyClubs().catchError((e) {
+          debugPrint('CoachTab: Error loading my clubs: $e');
+          return <MyClubModel>[];
+        }),
         ServiceLocator.messagesService.getTrainerClients().catchError((e) {
           debugPrint('CoachTab: Error loading clients: $e');
           return <DirectChatModel>[];
@@ -54,21 +58,36 @@ class _CoachTabState extends State<CoachTab> with SingleTickerProviderStateMixin
           debugPrint('CoachTab: Error loading my trainer: $e');
           return null;
         }),
-        ServiceLocator.clubsService.getMyClubs().catchError((e) {
-          debugPrint('CoachTab: Error loading my clubs: $e');
-          return <MyClubModel>[];
-        }),
       ]);
 
       if (!mounted) return;
+
+      final profile = results[0] as ProfileModel;
+      final currentUserId = profile.user.id;
+      final clubs = results[1] as List<MyClubModel>;
+      final apiTrainerClients = results[2] as List<DirectChatModel>;
+      final apiMyTrainer = results[3] as DirectChatModel?;
+
+      final trainerClubs = clubs
+          .where((c) => c.role == 'trainer' || c.role == 'leader')
+          .toList();
+      final fallbackAssignments = await _loadAssignmentsForClubs(clubs);
+      final rosterTrainerClients = _extractOwnTrainerClients(
+        currentUserId,
+        fallbackAssignments,
+      );
+      final mergedTrainerClients = _mergeClients(
+        primary: apiTrainerClients,
+        fallback: rosterTrainerClients,
+      );
+      final resolvedMyTrainer =
+          apiMyTrainer ?? _extractMyTrainer(currentUserId, fallbackAssignments);
       
       setState(() {
-        _trainerClients = results[0] as List<DirectChatModel>?;
-        _myTrainer = results[1] as DirectChatModel?;
-        _myClubs = results[2] as List<MyClubModel>;
+        _trainerClients = mergedTrainerClients;
+        _myTrainer = resolvedMyTrainer;
         
-        _canCreateGroups = _myClubs?.any((c) => c.role == 'trainer' || c.role == 'leader') ?? false;
-        _isTrainerRole = (_trainerClients != null && _trainerClients!.isNotEmpty) || _canCreateGroups;
+        _isTrainerRole = trainerClubs.isNotEmpty;
         
         _isLoading = false;
       });
@@ -77,6 +96,79 @@ class _CoachTabState extends State<CoachTab> with SingleTickerProviderStateMixin
       if (!mounted) return;
       setState(() => _isLoading = false);
     }
+  }
+
+  Future<Map<String, TrainerAssignmentsModel>> _loadAssignmentsForClubs(
+    List<MyClubModel> clubs,
+  ) async {
+    final Map<String, TrainerAssignmentsModel> map = {};
+    await Future.wait(clubs.map((club) async {
+      try {
+        final assignments =
+            await ServiceLocator.clubsService.getTrainerAssignments(club.id);
+        map[club.id] = assignments;
+      } catch (e) {
+        debugPrint('CoachTab: Error loading assignments for club ${club.id}: $e');
+      }
+    }));
+    return map;
+  }
+
+  List<DirectChatModel> _extractOwnTrainerClients(
+    String currentUserId,
+    Map<String, TrainerAssignmentsModel> assignmentsByClub,
+  ) {
+    final Map<String, DirectChatModel> byUserId = {};
+
+    for (final assignments in assignmentsByClub.values) {
+      for (final trainer in assignments.trainers) {
+        if (trainer.trainerId != currentUserId) continue;
+        for (final member in trainer.personalClients) {
+          byUserId[member.userId] = DirectChatModel(
+            userId: member.userId,
+            userName: member.displayName,
+          );
+        }
+      }
+    }
+
+    return byUserId.values.toList();
+  }
+
+  DirectChatModel? _extractMyTrainer(
+    String currentUserId,
+    Map<String, TrainerAssignmentsModel> assignmentsByClub,
+  ) {
+    for (final assignments in assignmentsByClub.values) {
+      for (final trainer in assignments.trainers) {
+        final isMePersonalClient =
+            trainer.personalClients.any((m) => m.userId == currentUserId);
+        if (isMePersonalClient) {
+          return DirectChatModel(
+            userId: trainer.trainerId,
+            userName: trainer.trainerName,
+          );
+        }
+      }
+    }
+    return null;
+  }
+
+  List<DirectChatModel> _mergeClients({
+    required List<DirectChatModel> primary,
+    required List<DirectChatModel> fallback,
+  }) {
+    final Map<String, DirectChatModel> byUserId = {
+      for (final client in fallback) client.userId: client,
+    };
+
+    for (final client in primary) {
+      byUserId[client.userId] = client;
+    }
+
+    final merged = byUserId.values.toList();
+    merged.sort((a, b) => a.userName.toLowerCase().compareTo(b.userName.toLowerCase()));
+    return merged;
   }
 
   @override
@@ -109,56 +201,14 @@ class _CoachTabState extends State<CoachTab> with SingleTickerProviderStateMixin
             child: TabBarView(
               controller: _tabController,
               children: [
-                TrainerGroupsTab(key: _groupsKey),
+                const TrainerGroupsTab(),
                 _buildPersonalTab(l10n, Theme.of(context)),
               ],
             ),
           ),
         ],
       ),
-      floatingActionButton: _canCreateGroups
-          ? FloatingActionButton(
-              onPressed: _showCreateGroupDialog,
-              child: const Icon(Icons.group_add),
-            )
-          : null,
     );
-  }
-
-  void _showCreateGroupDialog() async {
-    final l10n = AppLocalizations.of(context)!;
-    final trainerClubs = _myClubs?.where((c) => c.role == 'trainer' || c.role == 'leader').toList() ?? [];
-
-    if (trainerClubs.isEmpty) return;
-
-    String? selectedClubId;
-    if (trainerClubs.length == 1) {
-      selectedClubId = trainerClubs.first.id;
-    } else {
-      selectedClubId = await showDialog<String>(
-        context: context,
-        builder: (context) => SimpleDialog(
-          title: Text(l10n.selectClub),
-          children: trainerClubs
-              .map((c) => SimpleDialogOption(
-                    onPressed: () => Navigator.pop(context, c.id),
-                    child: Text(c.name),
-                  ))
-              .toList(),
-        ),
-      );
-    }
-
-    if (selectedClubId != null && mounted) {
-      final club = trainerClubs.firstWhere((c) => c.id == selectedClubId);
-      final result = await context.push<bool>(
-        '/trainer/groups/create?clubId=$selectedClubId&clubName=${Uri.encodeComponent(club.name)}',
-      );
-      if (result == true) {
-        _loadData();
-        _groupsKey.currentState?.loadData();
-      }
-    }
   }
 
   Widget _buildPersonalTab(AppLocalizations l10n, ThemeData theme) {

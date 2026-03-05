@@ -8,6 +8,7 @@ export const CreateTrainerGroupSchema = z.object({
   clubId: z.string().uuid(),
   name: z.string().min(1).max(100),
   memberIds: z.array(z.string().uuid()).min(1),
+  trainerId: z.string().uuid().optional(),
 });
 
 export type CreateTrainerGroupDto = z.infer<typeof CreateTrainerGroupSchema>;

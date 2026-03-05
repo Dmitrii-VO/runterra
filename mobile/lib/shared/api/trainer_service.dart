@@ -29,6 +29,7 @@ class TrainerService {
     required String clubId,
     required String name,
     required List<String> memberIds,
+    String? trainerId,
   }) async {
     final response = await _apiClient.post(
       '/api/trainer/groups',
@@ -36,6 +37,7 @@ class TrainerService {
         'clubId': clubId,
         'name': name,
         'memberIds': memberIds,
+        if (trainerId != null) 'trainerId': trainerId,
       },
     );
     if (response.statusCode >= 200 && response.statusCode < 300) {

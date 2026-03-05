@@ -2051,7 +2051,7 @@ abstract class AppLocalizations {
   /// No description provided for @rosterNoTrainer.
   ///
   /// In en, this message translates to:
-  /// **'No trainer'**
+  /// **'Unassigned'**
   String get rosterNoTrainer;
 
   /// No description provided for @rosterPersonalClient.

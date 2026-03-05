@@ -372,11 +372,15 @@ class _RunterraAppState extends State<RunterraApp> {
         builder: (context, state) {
           final clubId = state.uri.queryParameters['clubId'] ?? '';
           final clubName = state.uri.queryParameters['clubName'] ?? '';
+          final trainerId = state.uri.queryParameters['trainerId'];
+          final trainerName = state.uri.queryParameters['trainerName'];
           final group = state.extra as TrainerGroupModel?;
           return CreateTrainerGroupScreen(
             clubId: clubId,
             clubName: clubName,
             existingGroup: group,
+            forcedTrainerId: trainerId,
+            forcedTrainerName: trainerName,
           );
         },
       ),
