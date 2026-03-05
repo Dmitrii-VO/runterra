@@ -384,3 +384,6 @@ TODO для будущей реализации:
 - GPS координаты и маршрут
 - Check-in точки
 - Расчёты дистанции, времени, скорости
+## Deploy Trigger Note
+
+- 2026-03-05: no-op documentation touch to force `deploy-all` to detect backend changes.

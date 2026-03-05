@@ -47,3 +47,7 @@ adb -s <watch_serial> install build/app/outputs/flutter-apk/app-debug.apk
 ## Protocol
 
 See `docs/changes/2026-02-24-wear-os-support.md` for full message protocol.
+
+## Deploy Trigger Note
+
+- 2026-03-05: no-op documentation touch to force `deploy-all` to detect wear changes.

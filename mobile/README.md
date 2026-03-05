@@ -161,3 +161,6 @@ flutter run -d windows
 - НЕ реализует фоновую работу
 - НЕ сохраняет данные о позиции
 - НЕ выполняет вычисления
+## Deploy Trigger Note
+
+- 2026-03-05: no-op documentation touch to force `deploy-all` to detect mobile changes.
