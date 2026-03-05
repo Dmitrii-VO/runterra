@@ -1074,7 +1074,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rosterTitle => 'Club Roster';
 
   @override
-  String get rosterNoTrainer => 'No trainer';
+  String get rosterNoTrainer => 'Unassigned';
 
   @override
   String get rosterPersonalClient => 'Personal client';

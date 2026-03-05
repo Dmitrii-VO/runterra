@@ -1077,7 +1077,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get rosterTitle => 'Состав клуба';
 
   @override
-  String get rosterNoTrainer => 'Без тренера';
+  String get rosterNoTrainer => 'Не назначены';
 
   @override
   String get rosterPersonalClient => 'Личный клиент';

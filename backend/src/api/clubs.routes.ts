@@ -796,8 +796,8 @@ router.get('/:id/trainer-assignments', async (req: Request, res: Response) => {
       [clubId],
     );
     const allMembers = membersRes.rows;
-    const memberIds = allMembers.map(m => m.user_id);
-    const memberIdSet = new Set(memberIds);
+    const clientMemberIds = allMembers.filter(m => m.role === 'member').map(m => m.user_id);
+    const clientMemberIdSet = new Set(clientMemberIds);
 
     const trainerIds = allMembers
       .filter(m => m.role === 'trainer' || m.role === 'leader')
@@ -805,13 +805,13 @@ router.get('/:id/trainer-assignments', async (req: Request, res: Response) => {
 
     // Personal trainer-client relations: only those where both sides are club members
     const personalClientsRes =
-      trainerIds.length > 0
+      trainerIds.length > 0 && clientMemberIds.length > 0
         ? await pool.query<{ trainer_id: string; client_id: string }>(
             `SELECT tc.trainer_id, tc.client_id
              FROM trainer_clients tc
              WHERE tc.trainer_id = ANY($1::uuid[])
                AND tc.client_id = ANY($2::uuid[])`,
-            [trainerIds, memberIds],
+            [trainerIds, clientMemberIds],
           )
         : { rows: [] as { trainer_id: string; client_id: string }[] };
     const personalClients = personalClientsRes.rows;
@@ -834,7 +834,7 @@ router.get('/:id/trainer-assignments', async (req: Request, res: Response) => {
     const assignedUserIds = new Set<string>();
     for (const pc of personalClients) assignedUserIds.add(pc.client_id);
     for (const gr of groupsRes.rows) {
-      if (gr.member_id && memberIdSet.has(gr.member_id)) assignedUserIds.add(gr.member_id);
+      if (gr.member_id && clientMemberIdSet.has(gr.member_id)) assignedUserIds.add(gr.member_id);
     }
 
     const memberMap = new Map(allMembers.map(m => [m.user_id, m.display_name]));
@@ -862,7 +862,7 @@ router.get('/:id/trainer-assignments', async (req: Request, res: Response) => {
             members: [],
           });
         }
-        if (gr.member_id && memberIdSet.has(gr.member_id)) {
+        if (gr.member_id && clientMemberIdSet.has(gr.member_id)) {
           groupMap.get(gr.group_id)!.members.push({
             userId: gr.member_id,
             displayName: memberMap.get(gr.member_id) ?? '',
@@ -941,6 +941,12 @@ router.post(
       if (!targetMembership || targetMembership.status !== 'active') {
         return res.status(404).json({ code: 'not_found', message: 'Member not found in this club' });
       }
+      if (targetMembership.role !== 'member') {
+        return res.status(400).json({
+          code: 'invalid_target_role',
+          message: 'Only members can be assigned as clients',
+        });
+      }
 
       const pool = createDbPool();
 
@@ -993,6 +999,16 @@ router.delete('/:id/members/:userId/assign-trainer', async (req: Request, res: R
       return res
         .status(403)
         .json({ code: 'forbidden', message: 'Only leaders can manage assignments' });
+    }
+    const targetMembership = await clubMembersRepo.findByClubAndUser(clubId, targetUserId);
+    if (!targetMembership || targetMembership.status !== 'active') {
+      return res.status(404).json({ code: 'not_found', message: 'Member not found in this club' });
+    }
+    if (targetMembership.role !== 'member') {
+      return res.status(400).json({
+        code: 'invalid_target_role',
+        message: 'Only members can be assigned as clients',
+      });
     }
 
     const pool = createDbPool();
@@ -1061,6 +1077,12 @@ router.post(
       if (!targetMembership || targetMembership.status !== 'active') {
         return res.status(404).json({ code: 'not_found', message: 'Member not found in this club' });
       }
+      if (targetMembership.role !== 'member') {
+        return res.status(400).json({
+          code: 'invalid_target_role',
+          message: 'Only members can be assigned to trainer groups',
+        });
+      }
 
       await pool.query(
         `INSERT INTO trainer_group_members (group_id, user_id) VALUES ($1::uuid, $2::uuid) ON CONFLICT DO NOTHING`,
@@ -1100,6 +1122,16 @@ router.delete(
         return res
           .status(403)
           .json({ code: 'forbidden', message: 'Only leaders can manage assignments' });
+      }
+      const targetMembership = await clubMembersRepo.findByClubAndUser(clubId, targetUserId);
+      if (!targetMembership || targetMembership.status !== 'active') {
+        return res.status(404).json({ code: 'not_found', message: 'Member not found in this club' });
+      }
+      if (targetMembership.role !== 'member') {
+        return res.status(400).json({
+          code: 'invalid_target_role',
+          message: 'Only members can be assigned to trainer groups',
+        });
       }
 
       const pool = createDbPool();

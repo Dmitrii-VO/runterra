@@ -406,7 +406,7 @@
   "clubMemberRoleChangeSuccess": "Роль обновлена",
   "clubMemberRoleChangeError": "Не удалось обновить роль: {message}",
   "rosterTitle": "Состав клуба",
-  "rosterNoTrainer": "Без тренера",
+  "rosterNoTrainer": "Не назначены",
   "rosterPersonalClient": "Личный клиент",
   "rosterAssignTrainer": "Назначить тренера",
   "rosterRemoveTrainer": "Убрать тренера",

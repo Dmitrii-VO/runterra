@@ -580,7 +580,7 @@
   "clubMemberRoleChangeSuccess": "Role updated",
   "clubMemberRoleChangeError": "Could not update role: {message}",
   "rosterTitle": "Club Roster",
-  "rosterNoTrainer": "No trainer",
+  "rosterNoTrainer": "Unassigned",
   "rosterPersonalClient": "Personal client",
   "rosterAssignTrainer": "Assign trainer",
   "rosterRemoveTrainer": "Remove trainer",
