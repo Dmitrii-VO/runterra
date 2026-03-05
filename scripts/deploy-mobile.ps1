@@ -284,4 +284,17 @@ if ($SkipFirebase) {
     }
 
     Write-Host "`nDone ($buildName+$buildNumber). Testers will receive an email: $testers" -ForegroundColor Green
+
+    # Auto-sync APP_VERSION on server so existing users see the update dialog.
+    Write-Host "`n=== 4. Sync APP_VERSION on server ($buildName) ===" -ForegroundColor Cyan
+    try {
+        ssh runterra "sed -i 's/^APP_VERSION=.*/APP_VERSION=$buildName/' /home/user1/runterra/backend/.env && sudo systemctl restart runterra-backend"
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "  APP_VERSION=$buildName set on server and backend restarted." -ForegroundColor Green
+        } else {
+            Write-Host "  WARNING: Failed to update APP_VERSION on server. Update manually: APP_VERSION=$buildName" -ForegroundColor Yellow
+        }
+    } catch {
+        Write-Host "  WARNING: SSH failed. Update manually: APP_VERSION=$buildName" -ForegroundColor Yellow
+    }
 }
