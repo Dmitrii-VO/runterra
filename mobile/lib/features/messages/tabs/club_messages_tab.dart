@@ -305,18 +305,21 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
   }
 
   void _onScrollNotification(ScrollNotification notification) {
+    // Only react to user-initiated scrolls, not programmatic jumpTo/animateTo
+    if (notification is ScrollUpdateNotification) {
+      if (notification.dragDetails == null) return;
+    } else if (notification is! ScrollEndNotification) {
+      return;
+    }
+
     if (!_scrollController.hasClients) return;
     final position = _scrollController.position;
     final distFromBottom = position.maxScrollExtent - position.pixels;
     final scrolledAway = distFromBottom > 200;
     if (_userScrolledAway != scrolledAway || _showScrollToBottom != scrolledAway) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            _userScrolledAway = scrolledAway;
-            _showScrollToBottom = scrolledAway;
-          });
-        }
+      setState(() {
+        _userScrolledAway = scrolledAway;
+        _showScrollToBottom = scrolledAway;
       });
     }
   }
@@ -455,10 +458,8 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
       setState(() {
         _messages = <MessageModel>[..._messages, sent];
         _historyOffset += 1;
-        _userScrolledAway = false; // own message — always scroll down
-        _showScrollToBottom = false;
       });
-      _scrollToBottomDeferred(animated: true); // own message — always scroll to show it
+      if (!_userScrolledAway) _scrollToBottomDeferred(animated: true);
     } catch (error) {
       if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;

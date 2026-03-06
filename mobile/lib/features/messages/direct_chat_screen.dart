@@ -179,6 +179,11 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
 
   Future<void> _loadOlderMessages() async {
     if (_isLoadingMoreHistory || !_hasMoreHistory) return;
+
+    final hasScroll = _scrollController.hasClients;
+    final previousMaxExtent = hasScroll ? _scrollController.position.maxScrollExtent : 0.0;
+    final previousOffset = hasScroll ? _scrollController.position.pixels : 0.0;
+
     setState(() => _isLoadingMoreHistory = true);
 
     try {
@@ -188,14 +193,25 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
         offset: _historyOffset,
       );
       if (!mounted) return;
+
+      final existingIds = _messages.map((m) => m.id).toSet();
+      final unique = older.reversed.where((m) => !existingIds.contains(m.id)).toList();
+
       setState(() {
-        final existingIds = _messages.map((m) => m.id).toSet();
-        final unique = older.reversed.where((m) => !existingIds.contains(m.id)).toList();
         _messages.insertAll(0, unique);
         _historyOffset += older.length;
         _hasMoreHistory = older.length >= _pageSize;
         _isLoadingMoreHistory = false;
       });
+
+      if (hasScroll && unique.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!_scrollController.hasClients) return;
+          final newMaxExtent = _scrollController.position.maxScrollExtent;
+          final delta = newMaxExtent - previousMaxExtent;
+          _scrollController.jumpTo(previousOffset + delta);
+        });
+      }
     } catch (_) {
       if (mounted) setState(() => _isLoadingMoreHistory = false);
     }
@@ -219,7 +235,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
           _messages.add(msg);
         });
       }
-      _scrollToBottomDeferred();
+      if (!_userScrolledAway) _scrollToBottomDeferred();
     } catch (_) {
       // Error is shown via snackbar if needed
     } finally {
@@ -241,18 +257,21 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   }
 
   void _onScrollNotification(ScrollNotification notification) {
-    if (notification is! ScrollUpdateNotification) return;
-    final metrics = notification.metrics;
-    final isAtBottom = metrics.pixels >= metrics.maxScrollExtent - 48;
-    if (isAtBottom && _userScrolledAway) {
+    // Only react to user-initiated scrolls, not programmatic jumpTo/animateTo
+    if (notification is ScrollUpdateNotification) {
+      if (notification.dragDetails == null) return;
+    } else if (notification is! ScrollEndNotification) {
+      return;
+    }
+
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    final distFromBottom = position.maxScrollExtent - position.pixels;
+    final scrolledAway = distFromBottom > 200;
+    if (_userScrolledAway != scrolledAway || _showScrollToBottom != scrolledAway) {
       setState(() {
-        _userScrolledAway = false;
-        _showScrollToBottom = false;
-      });
-    } else if (!isAtBottom && !_userScrolledAway) {
-      setState(() {
-        _userScrolledAway = true;
-        _showScrollToBottom = true;
+        _userScrolledAway = scrolledAway;
+        _showScrollToBottom = scrolledAway;
       });
     }
   }

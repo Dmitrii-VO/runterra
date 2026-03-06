@@ -171,6 +171,13 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _onScrollNotification(ScrollNotification notification) {
+    // Only react to user-initiated scrolls, not programmatic jumpTo/animateTo
+    if (notification is ScrollUpdateNotification) {
+      if (notification.dragDetails == null) return;
+    } else if (notification is! ScrollEndNotification) {
+      return;
+    }
+
     if (!_scrollController.hasClients) return;
     final position = _scrollController.position;
     final distFromBottom = position.maxScrollExtent - position.pixels;
@@ -307,10 +314,8 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {
         _messages = <MessageModel>[..._messages, sent];
         _historyOffset += 1;
-        _userScrolledAway = false;
-        _showScrollToBottom = false;
       });
-      _scrollToBottomDeferred(animated: true);
+      if (!_userScrolledAway) _scrollToBottomDeferred(animated: true);
     } catch (error) {
       if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
