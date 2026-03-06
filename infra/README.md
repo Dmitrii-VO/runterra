@@ -1,164 +1,146 @@
 # Infrastructure
 
-Инфраструктура проекта Runterra.
+Операционная документация Runterra: сервер, deploy, CI/CD и release-проверки.
 
-## Сервер backend (Cloud.ru)
+## Beta Scope
 
-- **SSH алиас:** `runterra` (настроен в `~/.ssh/config`)
-- **IP:** `<SERVER_IP>`
-- **Порт backend:** `3000`
-- **Путь к репо:** `/home/<SSH_USER>/runterra`
-- **Путь к backend:** `/home/<SSH_USER>/runterra/backend`
+Ближайшая закрытая бета = `mobile + backend`.
 
-### SSH подключение к backend
+- `admin` не входит в ближайший beta/release gate.
+- `wear` остаётся вторичным активным направлением, но не обязателен для текущего release gate.
 
-Рекомендуемый способ (без зависимости от `~/.ssh/config`):
+## Backend Server
 
-```powershell
-ssh -i <PATH_TO_SSH_KEY> <SSH_USER>@<SERVER_IP>
-```
+- SSH alias: `runterra`
+- Public server IP: `85.208.85.13`
+- Backend repo path: `/home/<SSH_USER>/runterra/backend`
+- systemd service: `runterra-backend`
 
-Проверка подключения:
+Подключение:
 
 ```powershell
-ssh -i <PATH_TO_SSH_KEY> <SSH_USER>@<SERVER_IP> "echo ok"
+ssh -i <PATH_TO_SSH_KEY> <SSH_USER>@85.208.85.13
 ```
 
-Если настроен алиас `runterra` в `~/.ssh/config`, можно так:
+Если alias настроен:
 
 ```bash
 ssh runterra
 ```
 
-### Systemd сервис
+Управление сервисом:
 
-```
-runterra-backend.service
-```
-
-Управление:
 ```bash
 ssh runterra "systemctl status runterra-backend"
 ssh runterra "systemctl restart runterra-backend"
-ssh runterra "journalctl -u runterra-backend -f"  # логи
+ssh runterra "journalctl -u runterra-backend -f"
 ```
 
-### Обновление backend
+## Current Networking
 
-На сервере есть скрипт `~/runterra/backend/update.sh`:
-```bash
-git pull → npm ci → npm run build → npm run migrate:prod → systemctl restart
-```
+Текущее удалённое mobile/backend взаимодействие использует IP-конфигурацию вокруг `85.208.85.13:3000`.
 
-**Локально** (из корня репо):
-```bash
-npm run deploy:backend   # push + SSH + update.sh
-npm run deploy           # backend + mobile
-```
+Отдельный инфраструктурный переход на:
 
-## База данных (PostgreSQL)
+- домен,
+- HTTPS,
+- reverse proxy,
+- backend за `localhost`
 
-- **Host:** localhost
-- **Port:** 5432
-- **Database:** runterra
-- **User:** runterra
+считается `deferred` и пока не реализуется в этом цикле.
 
-### Таблицы
+## Deploy
 
-| Таблица | Назначение |
-|---------|------------|
-| `users` | Пользователи (связь с Firebase Auth) |
-| `events` | События (тренировки, забеги) |
-| `event_participants` | Участники событий (join/check-in) |
-| `runs` | Пробежки пользователей |
-| `run_gps_points` | GPS точки пробежек |
-| `migrations` | Трекинг применённых миграций |
-
-### Миграции
-
-Миграции хранятся в `backend/src/db/migrations/*.sql`
+Backend обновляется через серверный `update.sh`:
 
 ```bash
-# Локально (dev)
-cd backend && npm run migrate
-
-# На сервере (prod) — запускается автоматически при деплое
+git pull
+npm ci
+npm run build
 npm run migrate:prod
+systemctl restart runterra-backend
 ```
 
-### Подключение к БД
+Локальные entrypoints из корня репозитория:
+
+```bash
+npm run deploy:backend
+npm run deploy:mobile
+npm run deploy
+```
+
+## Database
+
+PostgreSQL работает локально на сервере:
+
+- Host: `localhost`
+- Port: `5432`
+- Database: `runterra`
+- User: `runterra`
+
+Подключение:
 
 ```bash
 ssh runterra "PGPASSWORD=... psql -h localhost -U runterra -d runterra"
 ```
 
-## Firebase App Distribution (mobile)
-
-Тестировщики получают email с новой сборкой.
+Миграции:
 
 ```bash
-npm run deploy:mobile    # tests + build APK + upload + notify
+cd backend
+npm run migrate
+npm run migrate:prod
 ```
-
-Конфиг: `scripts/app-distribution.config.json`
 
 ## CI/CD
 
-GitHub Actions CI (`ci.yml`) запускается на каждый push/PR в main:
-- **Backend:** typecheck, tests, build
-- **Mobile:** analyze, tests, build APK
+Текущий обязательный GitHub Actions CI покрывает только:
 
-Скрипт `npm run deploy` автоматически ждёт прохождения CI перед деплоем.
+- `backend`: install, lint, typecheck, test, build
+- `mobile`: `flutter pub get`, analyze, test, debug APK build
 
-### Verification (2026-02-12)
+`admin` и `wear` сейчас не входят в обязательный release gate.
 
-- Выполнен полный `npm run deploy` (backend + mobile): CI passed, backend обновлён по SSH, mobile debug APK собран и опубликован в Firebase App Distribution (0.1.0+97).
-- CI run (GitHub Actions): `21961188876` (success).
-- Примечание: CI валит `flutter analyze` на warnings. После изменения ARB нужно прогонять `flutter gen-l10n`, а также не оставлять предупреждения уровня warning.
+`npm run deploy` ожидает успешный CI перед backend deploy, если проверка не отключена флагами.
 
-### Verification (2026-02-13)
+## Firebase And Distribution
 
-- Messages: removed legacy mixing, added DB backfill + constraint + index. Details: `docs/changes/2026-02-13-messages-channels-optimization.md`.
+- Для mobile distribution используется Firebase App Distribution.
+- Для production backend auth используется Firebase Admin SDK через env-конфигурацию.
+- Service-account JSON и другие секреты не хранить в корне репозитория; использовать локальную защищённую директорию, например `.secrets/`.
 
-## TODO
+## Post-Deploy Smoke Checklist
 
-> Выполненные задачи и закрытые баги теперь фиксируются в `docs/progress.md` и `docs/changes/*`. Ниже остаются только актуальные открытые пункты.
+Минимальная обязательная проверка после deploy:
 
-### Инфраструктура
-- [ ] Docker для backend
-- [ ] Автодеплой после merge в main
-- [ ] Staging окружение
-- [ ] HTTPS / домен
+### Backend
 
-### Backend (критично для MVP)
-- [ ] Firebase Auth — сейчас mock, нужна реальная проверка токенов
-
-### Backend (важно)
-Открытых задач нет; все реализованные пункты задокументированы в `docs/progress.md` и соответствующих файлах `docs/changes/*`.
+- `GET /health`
+- `GET /api/version`
+- один авторизованный API-запрос
 
 ### Mobile
-Открытых задач нет; статус и детали см. в `docs/progress.md` (блоки про Run, Events, Messages, Map).
 
-### Продукт (фичи)
+- запуск приложения
+- вход в аккаунт
+- открытие карты
+- открытие профиля
 
-Все перечисленные продуктовые фичи (тренировки, профиль, чаты, карта, клубы) реализованы и подробно описаны в `docs/progress.md` и тематических файлах `docs/changes/*`.
+Если есть время на один ключевой сценарий, приоритет:
 
-**Слои карты (по аналогии с Яндекс: пробки/транспорт — включаемые слои)**
-- [ ] **A) Базовый слой:** на главном экране карты всегда — захваченные территории и владельцы
-- [ ] **B) Слой «Клубы»** — настройка отображения: один из слоёв — клубы
-- [ ] **C) Слой «Стадионы/манежи»** — описание, дистанции, рекорды («попробуй обогнать болта»), ачивки, закрытый/открытый, цена и т.д.
-- [ ] **D) Слой «Популярные маршруты»** — маршруты с рекордами
-- [ ] **E) Слой «Пробежки»** — пробежки сегодня/завтра/на дату; заявка на присоединение или создание пробежки (функция присоединения/создания должна быть доступна и без этого слоя)
+- вход в событие или
+- старт/завершение пробежки
 
-### Ошибки (требуют исправления)
+## Active Infra TODO
 
-#### Общие
-- [ ] Вылет при «Начать пробежку» в Nox — краш на эмуляторе при старте foreground service (GPS). Нужно определить стратегию поддержки/ограничений для Nox и добавить guard-ы/обработку ошибок вокруг старта сервиса.
-- [ ] Firebase App Distribution 403 — тестер не может скачать APK; проверить роли/группы тестировщиков и настройки дистрибуции в Firebase Console.
+- [ ] Автодеплой после merge в `main`
+- [ ] Staging окружение
+- [ ] Docker для backend
+- [ ] Завести домен + HTTPS + reverse proxy для backend (`deferred`, не текущий цикл)
+- [ ] Разобраться с `Firebase App Distribution 403`, если проблема воспроизводится у тестеров
 
-### Real Territory Capture & Private Events (2026-02-17)
-- [x] Backend: Real GPS scoring (Ray Casting)
-- [x] Backend: Transactional run creation
-- [x] Backend: Private events visibility
-- [x] Mobile: Club selection for scoring
-- [x] Mobile: Private event toggle
+## Source Of Truth
+
+- repo overview: [README.md](../README.md)
+- backend runtime/env: [backend/README.md](../backend/README.md)
+- mobile build/distribution: [docs/build-and-share.md](../docs/build-and-share.md)

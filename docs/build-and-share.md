@@ -1,8 +1,12 @@
 # Сборка и отправка приложения для тестирования
 
-Инструкция по сборке APK файла и отправке приложения друзьям/тестировщикам.
+Рабочая инструкция по mobile build и Firebase App Distribution.
 
-## Одна команда: деплой всего (backend + mobile)
+## Scope
+
+Этот документ покрывает только mobile release-поток. Общий deploy/runtime контекст см. в [infra/README.md](../infra/README.md).
+
+## Основные команды
 
 Из корня репозитория:
 
@@ -10,278 +14,179 @@
 npm run deploy
 ```
 
-Это запускает **`deploy-all.ps1`**, который по порядку:
+Это запускает полный цикл:
 
-### Backend (на сервере runterra)
-1. Проверка что нет незакоммиченных изменений
-2. `git push` в origin (если есть новые коммиты)
-3. SSH → `~/runterra/backend/update.sh` на сервере:
-   - `git pull`
-   - `npm ci`
-   - `npm run build`
-   - `systemctl restart runterra-backend`
+- backend deploy
+- mobile build
+- upload в Firebase App Distribution
 
-### Mobile (Firebase App Distribution)
-1. **Тесты** — `flutter test`
-2. **Сборка** — `flutter build apk --debug`
-3. **Деплой** — загрузка APK в Firebase App Distribution
-4. **Уведомление** — тестировщикам уходит email
+Отдельно:
 
----
-
-## Отдельные команды
-
-**Только backend:**
 ```bash
 npm run deploy:backend
-```
-
-**Только mobile:**
-```bash
 npm run deploy:mobile
 ```
 
-**С release-notes:**
-```bash
+С release notes:
+
+```powershell
 .\scripts\deploy-mobile.ps1 "Исправлен вход через Google"
 .\scripts\deploy-all.ps1 "Новая фича"
 ```
 
-**Без тестов (быстрее):**
-```bash
+Без тестов:
+
+```powershell
 .\scripts\deploy-mobile.ps1 -SkipTests
 .\scripts\deploy-all.ps1 -SkipTests
-.\scripts\deploy-all.ps1 "Быстрый билд" -SkipTests
 ```
 
----
+## Firebase App Distribution
 
-## Конфигурация
+Конфиг тестировщиков хранится в `scripts/app-distribution.config.json`.
 
-**Список тестировщиков** — `scripts/app-distribution.config.json`:
+Пример:
+
 ```json
 {
   "firebaseAppId": "1:718457871498:android:adbf0a55f96734f85b6173",
-  "testers": ["luckyleeop@gmail.com", "другой@email.com"]
+  "testers": ["luckyleeop@gmail.com"]
 }
 ```
 
-**SSH хост** — в скриптах используется алиас `runterra` (настроен в `~/.ssh/config`).
+Для mobile deploy предпочтителен service account через `GOOGLE_APPLICATION_CREDENTIALS`.
 
-**Перед первым запуском:**
-- **Firebase auth** (для mobile): предпочтительно `GOOGLE_APPLICATION_CREDENTIALS` — путь к JSON ключу service account (Firebase Console → Project settings → Service accounts → Generate new private key). Пример: `$env:GOOGLE_APPLICATION_CREDENTIALS = "D:\myprojects\Runterra\firebase-service-account.json"`. Альтернатива: `firebase login` или `FIREBASE_TOKEN` (deprecated).
-- SSH ключ должен быть настроен для хоста `runterra`
-
-Проверка SSH (рабочий прямой вариант для текущего проекта):
+Рекомендуемый локальный путь:
 
 ```powershell
-ssh -i <PATH_TO_SSH_KEY> <SSH_USER>@<SERVER_IP> "echo ok"
+$env:GOOGLE_APPLICATION_CREDENTIALS = "D:\myprojects\Runterra\.secrets\firebase\app-distribution.json"
 ```
 
----
+Не хранить service-account JSON в корне репозитория.
 
-## Сборка APK файла
+Fallback-варианты:
 
-### Вариант 1: Debug APK (быстро, для тестирования)
+- `firebase login`
+- `FIREBASE_TOKEN` (legacy fallback)
+
+## Mobile Build
+
+Быстрая debug-сборка:
 
 ```bash
 cd mobile
 flutter build apk --debug
 ```
 
-**Результат:** Файл будет в `mobile/build/app/outputs/flutter-apk/app-debug.apk`
-
-**Особенности:**
-- Быстрая сборка
-- Больший размер файла (включает отладочную информацию)
-- Подходит для тестирования функциональности
-- Не требует настройки подписи
-
-### Вариант 2: Release APK (оптимизированный)
+Release-сборка:
 
 ```bash
 cd mobile
 flutter build apk --release
 ```
 
-**Результат:** Файл будет в `mobile/build/app/outputs/flutter-apk/app-release.apk`
+Результат:
 
-**Особенности:**
-- Меньший размер файла
-- Оптимизированный код
-- Требует настройки подписи (сейчас используется debug подпись)
-- Подходит для более стабильного тестирования
+- debug: `mobile/build/app/outputs/flutter-apk/app-debug.apk`
+- release: `mobile/build/app/outputs/flutter-apk/app-release.apk`
 
-## Размер файла
+## Карта
 
-- **Debug APK:** ~50-100 МБ (зависит от зависимостей)
-- **Release APK:** ~20-40 МБ
+Приложение использует `Yandex MapKit`, а не Mapbox.
 
-## Отправка APK другу
+Если тестируется карта:
 
-### Способ 1: Прямая отправка файла
+- убедиться, что Yandex MapKit API key настроен в `mobile/android/app/src/main/AndroidManifest.xml`;
+- проверить, что карта открывается и не падает при старте.
 
-1. Найдите собранный APK файл:
-   - Debug: `mobile/build/app/outputs/flutter-apk/app-debug.apk`
-   - Release: `mobile/build/app/outputs/flutter-apk/app-release.apk`
+Подробности настройки карты см. в `mobile/README.md`.
 
-2. Отправьте файл через:
-   - **Telegram** (до 2 ГБ)
-   - **Email** (если файл < 25 МБ)
-   - **Google Drive / Dropbox** (создайте ссылку для скачивания)
-   - **Облачное хранилище** (Яндекс.Диск, OneDrive и т.д.)
+## Backend Для Mobile
 
-### Способ 2: Через файлообменник
+Mobile использует `ApiConfig` и может работать:
 
-1. Загрузите APK на файлообменник:
-   - [SendAnywhere](https://send-anywhere.com/)
-   - [WeTransfer](https://wetransfer.com/)
-   - [File.io](https://www.file.io/)
+- против локального backend через `--dart-define=API_BASE_URL=...`;
+- против текущего удалённого backend по IP-конфигурации `85.208.85.13:3000`.
 
-2. Отправьте ссылку другу
+Примеры:
 
-## Установка APK на Android устройство
+```bash
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000
+flutter run --dart-define=API_BASE_URL=http://85.208.85.13:3000
+```
 
-### Инструкция для друга:
+Инфраструктурный переход на домен + HTTPS + reverse proxy отложен и в этот документ не входит.
 
-1. **Скачать APK файл** на Android устройство
+## Альтернативы Распространения
 
-2. **Разрешить установку из неизвестных источников:**
-   - Открыть **Настройки** → **Безопасность** (или **Приложения**)
-   - Включить **"Установка из неизвестных источников"** или **"Неизвестные источники"**
-   - На Android 8+: при установке система спросит разрешение для конкретного приложения
+### Через Firebase App Distribution
 
-3. **Установить APK:**
-   - Открыть файловый менеджер
-   - Найти скачанный APK файл
-   - Нажать на файл → **Установить**
-   - Подтвердить установку
+Предпочтительный способ для закрытой беты.
 
-4. **Запустить приложение:**
-   - Найти иконку "Runterra" в списке приложений
-   - Запустить
+Тестировщики получают email, устанавливают Firebase App Tester и обновляют сборки оттуда.
 
-## Важные замечания
+### Прямая передача APK
 
-### Для тестирования приложения нужно:
+Если нужен ручной сценарий:
 
-1. **Mapbox токен** (если тестируете карту):
-   - Убедитесь, что в `AndroidManifest.xml` указан реальный Mapbox токен
-   - Без токена карта не будет работать
+- Telegram
+- облако
+- email для маленьких файлов
 
-2. **Backend сервер** (если тестируете API):
-   - Backend должен быть запущен и доступен
-   - Для тестирования с другого устройства нужно:
-     - Узнать IP адрес компьютера в локальной сети
-     - Обновить `ApiConfig.getBaseUrl()` в коде (или использовать переменные окружения)
-     - Убедиться, что устройства в одной сети
-
-3. **Firebase** (если тестируете авторизацию):
-   - Firebase уже настроен и будет работать
-   - Но экраны логина ещё не реализованы (skeleton стадия)
-
-### Ограничения skeleton стадии:
-
-- Большинство функций возвращают заглушки (mock-данные)
-- Нет реальной авторизации (только архитектура)
-- Нет сохранения данных (всё в памяти)
-- Карта работает только если есть Mapbox токен
-
-## Альтернативные способы тестирования
-
-### 1. Через USB отладку (ADB)
-
-Если друг рядом и есть USB кабель:
+### Через USB / ADB
 
 ```bash
 cd mobile
 flutter install
 ```
 
-Приложение установится напрямую на подключённое устройство.
+## Минимальный Smoke Checklist
 
-### 2. Через Firebase App Distribution (рекомендуется)
+Перед отправкой сборки:
 
-Используйте одну команду из корня: **`npm run deploy`** (см. раздел выше).
+- [ ] приложение собирается
+- [ ] работает вход
+- [ ] открывается карта
+- [ ] открывается профиль
+- [ ] backend доступен
 
-Тестировщики получают email от Firebase, устанавливают приложение **Firebase App Tester**, после чего видят все новые сборки и могут обновляться в один тап. Добавление новых тестировщиков — в Firebase Console → App Distribution → Testers или через `scripts/app-distribution.config.json`.
+После deploy:
 
-## Проверка перед отправкой
-
-Перед отправкой APK другу убедитесь:
-
-- [ ] Приложение собирается без ошибок
-- [ ] Основные экраны открываются
-- [ ] Нет критических ошибок при запуске
-- [ ] Mapbox токен настроен (если нужна карта)
-- [ ] Backend доступен (если тестируете API)
-
-## Размер файла и оптимизация
-
-Если APK файл слишком большой:
-
-1. **Использовать release сборку:**
-   ```bash
-   flutter build apk --release
-   ```
-
-2. **Разделить по архитектурам:**
-   ```bash
-   flutter build apk --split-per-abi
-   ```
-   Создаст отдельные APK для разных архитектур (меньше размер)
-
-3. **Проверить зависимости:**
-   - Убедитесь, что не подключены лишние пакеты
-   - Используйте `flutter pub deps` для анализа зависимостей
+- [ ] `GET /health`
+- [ ] `GET /api/version`
+- [ ] один авторизованный API-запрос
+- [ ] запуск mobile-сборки на устройстве/эмуляторе
 
 ## Troubleshooting
 
-### Друг не может установить APK
+### Upload в Firebase App Distribution зависает
 
-**Проблема:** "Установка заблокирована"
+Что проверить:
 
-**Решение:**
-- Убедитесь, что включена установка из неизвестных источников
-- На Android 8+ нужно разрешить установку для конкретного приложения/браузера
+1. Подождать 5-15 минут: debug APK может загружаться без видимого прогресса.
+2. Проверить сеть, VPN и firewall.
+3. Включить debug-лог:
 
-### Приложение не запускается
+```powershell
+$env:FIREBASE_DEBUG="*"
+.\scripts\deploy-mobile.ps1
+```
 
-**Проблема:** Крэш при запуске
+4. Проверить авторизацию Firebase CLI.
+5. Попробовать release APK вместо debug APK.
 
-**Решение:**
-- Проверьте логи: `adb logcat` (если устройство подключено)
-- Убедитесь, что все зависимости установлены
-- Проверьте, что Firebase инициализирован корректно
+### Тестер не может скачать сборку
+
+Проверить:
+
+- включён ли тестировщик в Firebase App Distribution;
+- нет ли ошибки `403`;
+- актуальны ли группы и email тестировщиков.
 
 ### Карта не работает
 
-**Проблема:** Пустая карта или ошибка
+Проверить:
 
-**Решение:**
-- Проверьте, что Mapbox токен указан в `AndroidManifest.xml`
-- Убедитесь, что есть интернет-соединение
-
-### Deploy зависает на «Upload to Firebase App Distribution» / «uploading binary...»
-
-**Проблема:** Скрипт деплоя останавливается на шаге загрузки бинарника в Firebase App Distribution, прогресс не отображается.
-
-**Что попробовать:**
-
-1. **Подождать 5–15 минут** — debug APK может быть 50–100 МБ; загрузка идёт, но CLI не всегда показывает прогресс.
-2. **Проверить сеть** — отключить VPN, попробовать другой Wi‑Fi; корпоративный прокси/файрвол может резать или блокировать загрузку.
-3. **Запуск с отладкой** (увидеть, что происходит):
-   - PowerShell: `$env:FIREBASE_DEBUG="*"; .\scripts\deploy-mobile.ps1`
-   - Или: `$env:DEPLOY_DEBUG="1"; .\scripts\deploy-mobile.ps1` (если скрипт поддерживает).
-4. **Обновить Firebase CLI:** `npm install -g firebase-tools`
-5. **Проверить авторизацию:** `firebase login` (перелогиниться при необходимости).
-6. **Собрать release APK** (меньше размер) — в скрипте заменить `flutter build apk --debug` на `--release` и путь на `app-release.apk`; затем запустить деплой.
-7. **Ручная загрузка:** Firebase Console → App Distribution → выбрать приложение → «Release» → загрузить APK вручную; тестеров уведомить отдельно.
-
-## Следующие шаги
-
-После тестирования skeleton:
-
-1. Собрать обратную связь от тестировщиков
-2. Определить приоритеты для следующих этапов разработки
-3. Реализовать основные функции согласно feedback
+- Yandex MapKit API key;
+- интернет-соединение;
+- что проблема не связана с конкретным эмулятором/устройством.

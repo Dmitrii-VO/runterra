@@ -1,48 +1,37 @@
 # Runterra
 
-Платформа для локальных беговых сообществ с геймификацией захвата территорий.
+Платформа для локальных беговых сообществ с картой, событиями, пробежками, клубами и тренерскими сценариями.
 
-Текущее состояние: **MVP в активной разработке** (часть механик территорий пока на mock-данных; см. “Статус территорий” ниже).
+## Beta Scope
 
----
+Ближайшая закрытая бета проекта = `mobile + backend`.
 
-## Что уже реализовано (в общих чертах)
+- `mobile/` и `backend/` считаются обязательной beta-поверхностью.
+- `admin/` отложен и не входит в ближайший release gate.
+- `wear/` остаётся активным вторичным направлением, но не входит в обязательный beta gate.
 
-- Авторизация: Firebase Authentication
-- Карта: Yandex MapKit, полигоны территорий, события на карте
-- События: список/детали/создание, участие (join/leave), GPS check-in, Swipe-to-run
-- Пробежки: GPS-трекинг, сохранение `runs` + `run_gps_points`, история и детали пробежки
-- Клубы: создание/редактирование, членство (в т.ч. заявки), роли `member/trainer/leader`, клубные чаты (каналы)
-- Тренер: профиль тренера + библиотека тренировок (workouts), привязка к событиям
-- i18n (RU/EN), multi-city (базовая поддержка)
+## Current State
 
-## Статус территорий (важно)
+Сейчас в рабочем контуре есть:
 
-Сейчас территории визуализируются из статического конфига (геометрия полигонов), а лидерборды/захват в значительной части **mock**. Переход на реальный захват по GPS-треку описан в:
+- Firebase Authentication на клиенте и Firebase Admin SDK на backend для production-проверки токенов.
+- Flutter mobile-приложение на Yandex MapKit.
+- Node.js + TypeScript backend с PostgreSQL, миграциями и WebSocket для чатов.
+- Клубы, события, тренировки, история пробежек, GPS check-in, чат и профиль.
 
-- `docs/territory-capture-real-gps-implementation-spec.md`
+Отдельный инфраструктурный переход на `домен + HTTPS + reverse proxy` осознанно отложен. Текущее удалённое подключение к backend использует IP-конфигурацию; детали и follow-up см. в [infra/README.md](infra/README.md).
 
----
+## Repo Layout
 
-## Стек (зафиксирован)
+- `backend/` - API, миграции PostgreSQL, WebSocket, серверная логика.
+- `mobile/` - Flutter-приложение.
+- `wear/` - companion-направление для часов.
+- `admin/` - отложенная админка.
+- `infra/` - operational-документация по серверу, deploy и CI/CD.
+- `docs/` - продуктовые и инженерные документы, история изменений.
+- `scripts/` - deploy и вспомогательные скрипты.
 
-- **Mobile:** Flutter (Android-first), Yandex MapKit, GoRouter, Firebase Auth
-- **Backend:** Node.js + TypeScript, Express, PostgreSQL (pg), WebSocket (ws), Zod, Firebase Admin SDK
-- **Admin:** Next.js 14 (минимально, не основной фокус)
-
----
-
-## Структура репозитория
-
-- `backend/` — API + PostgreSQL migrations + WebSocket
-- `mobile/` — Flutter приложение
-- `admin/` — Next.js админка
-- `docs/` — документация и история изменений
-- `scripts/` — деплой/утилиты/AI-скрипты
-
----
-
-## Быстрый старт (локально)
+## Quick Start
 
 Backend:
 
@@ -61,32 +50,25 @@ flutter pub get
 flutter run
 ```
 
-Подробнее и про окружение:
+## CI And Release Gate
 
-- `docs/firebase-setup.md`
-- `docs/build-and-share.md`
+Обязательный CI сейчас покрывает только:
 
----
+- `backend`
+- `mobile`
 
-## Local Secrets / Tokens (Repo-Local)
+`admin` и `wear` пока не входят в обязательный release gate. Точный operational status см. в [infra/README.md](infra/README.md).
 
-If you run deploy scripts from the project root and want to avoid relying on user-profile configs under `C:\Users\...`,
-put local-only variables into `.env.local` (not committed).
+## Canonical Docs
 
-- Template: `.env.local.example`
-- Common variables:
-  - `FIREBASE_TOKEN` for Firebase App Distribution (from `firebase login:ci`)
-  - `GH_TOKEN` or `GITHUB_TOKEN` for `gh` CI checks (optional)
-  - `DEPLOY_SKIP_CI=1` and/or `DEPLOY_SKIP_FIREBASE=1` (optional toggles)
+- [infra/README.md](infra/README.md) - сервер, deploy, CI/CD, smoke-checks, infra TODO.
+- [backend/README.md](backend/README.md) - backend runtime, env, auth, миграции, локальный запуск.
+- [docs/build-and-share.md](docs/build-and-share.md) - mobile build, distribution и release checklist.
+- [docs/progress.md](docs/progress.md) - хронология изменений.
+- `docs/changes/` - тематические change logs по модулям.
+- `docs/adr/` - архитектурные решения.
 
-Deploy scripts auto-load `.env.local` via `scripts/load-env.ps1`.
+## Secrets
 
----
-
-## Документация (source of truth)
-
-- `docs/progress.md` — хронология разработки
-- `docs/changes/` — изменения по модулям (runs/clubs/events/territories/etc.)
-- `docs/features/README.md` — функционал вкладок мобильного приложения
-- `docs/product_spec.md` — продуктовая спецификация (длинный документ)
-- `docs/adr/` — архитектурные решения (ADR)
+- Репо-локальные переменные для deploy-скриптов можно держать в `.env.local` по шаблону `.env.local.example`.
+- Service-account JSON и другие чувствительные ключи не хранить в корне репозитория; использовать локальную защищённую директорию, например `.secrets/`.
