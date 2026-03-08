@@ -35,7 +35,7 @@ import {
   getOrganizerDisplayName,
   getOrganizerDisplayNamesBatch,
 } from './helpers/organizer-display';
-import { isTrainerOrLeaderInClub, isLeaderInClub } from './helpers/trainer-role';
+import { isTrainerInAnyClub, isTrainerOrLeaderInClub, isLeaderInClub } from './helpers/trainer-role';
 
 const router = Router();
 
@@ -524,6 +524,13 @@ router.post(
             message: 'Trainer event organizerId must match authenticated user',
           });
         }
+        const isApprovedTrainer = await isTrainerInAnyClub(authUser.id);
+        if (!isApprovedTrainer) {
+          return res.status(403).json({
+            code: 'forbidden',
+            message: 'Only active approved trainers can create trainer events',
+          });
+        }
         const trainerProfile = await getTrainerProfilesRepository().findByUserId(authUser.id);
         if (!trainerProfile || !trainerProfile.acceptsPrivateClients) {
           return res.status(403).json({
@@ -902,11 +909,14 @@ router.patch('/:id', validateBody(UpdateEventSchema), async (req: Request, res: 
         });
       }
     } else {
-      // trainer event — only the organizer can edit
-      if (event.organizerId !== userId) {
+      // trainer event — only the active approved organizer can edit
+      if (event.organizerId !== userId || !(await isTrainerInAnyClub(userId))) {
         return res
           .status(403)
-          .json({ code: 'forbidden', message: 'Only the event organizer can edit this event' });
+          .json({
+            code: 'forbidden',
+            message: 'Only the active approved trainer organizer can edit this event',
+          });
       }
     }
 

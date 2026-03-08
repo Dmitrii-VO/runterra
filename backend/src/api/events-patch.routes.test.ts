@@ -89,6 +89,16 @@ describe('PATCH /api/events/:id', () => {
       email: 'test@example.com',
       name: 'Test User',
     });
+    mockClubMembersRepository.findActiveClubsByUser.mockResolvedValue([
+      {
+        clubId: TEST_CLUB_1,
+        clubName: 'Club A',
+        clubCityId: 'spb',
+        clubStatus: 'active',
+        role: 'trainer',
+        joinedAt: new Date(),
+      },
+    ]);
   });
 
   it('returns 200 when workoutId is set by trainer', async () => {
@@ -250,5 +260,20 @@ describe('PATCH /api/events/:id', () => {
 
     expect(res.status).toBe(403);
     expect(res.body).toHaveProperty('code', 'forbidden');
+  });
+
+  it('returns 403 when trainer event organizer is no longer an active approved trainer', async () => {
+    mockEventsRepository.findById.mockResolvedValueOnce(mockUserEvent);
+    mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([]);
+
+    const res = await request(app)
+      .patch('/api/events/event-user')
+      .set('Authorization', 'Bearer test-token')
+      .send({ name: 'Updated Trainer Event' });
+
+    expect(res.status).toBe(403);
+    expect(res.body).toHaveProperty('code', 'forbidden');
+    expect(res.body.message).toMatch(/active approved trainer organizer/i);
+    expect(mockEventsRepository.update).not.toHaveBeenCalled();
   });
 });

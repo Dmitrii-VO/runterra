@@ -602,6 +602,51 @@ describe('API Routes', () => {
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty('code', 'validation_error');
     });
+
+    it('returns 403 for trainer event creation when organizer is not an active approved trainer', async () => {
+      const {
+        mockUsersRepository,
+        mockTrainerProfilesRepository,
+        mockClubMembersRepository,
+        mockEventsRepository,
+      } = require('../db/repositories');
+
+      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({
+        id: 'user-1',
+        firebaseUid: 'uid-1',
+        email: 'test@example.com',
+        name: 'Test User',
+      });
+      mockTrainerProfilesRepository.findByUserId.mockResolvedValueOnce({
+        userId: 'user-1',
+        bio: 'Coach bio',
+        specialization: ['GENERAL'],
+        experienceYears: 5,
+        certificates: [],
+        acceptsPrivateClients: true,
+        createdAt: new Date(),
+      });
+      mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([]);
+      mockEventsRepository.create.mockClear();
+
+      const res = await request(app)
+        .post('/api/events')
+        .set('Authorization', 'Bearer test-token')
+        .send({
+          name: 'Private Coach Session',
+          type: 'training',
+          startDateTime: '2026-03-10T10:00:00.000Z',
+          startLocation: { longitude: 30.3351, latitude: 59.9343 },
+          organizerId: 'user-1',
+          organizerType: 'trainer',
+          cityId: 'spb',
+        });
+
+      expect(res.status).toBe(403);
+      expect(res.body).toHaveProperty('code', 'forbidden');
+      expect(res.body.message).toMatch(/active approved trainers/i);
+      expect(mockEventsRepository.create).not.toHaveBeenCalled();
+    });
   });
 
   describe('GET by ID', () => {

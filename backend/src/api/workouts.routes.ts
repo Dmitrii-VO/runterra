@@ -18,7 +18,7 @@ import {
   getTrainerGroupsRepository,
 } from '../db/repositories';
 import { CreateWorkoutSchema, UpdateWorkoutSchema } from '../modules/workout';
-import { isTrainerInAnyClub, isTrainerOrLeaderInClub } from './helpers/trainer-role';
+import { isTrainerOrLeaderInClub } from './helpers/trainer-role';
 import { logger } from '../shared/logger';
 import { isValidUuid } from '../shared/validation';
 
@@ -195,7 +195,7 @@ router.patch('/:id', validateBody(UpdateWorkoutSchema), async (req: Request, res
     }
     // Club workouts require trainer/leader role
     if (workout.clubId) {
-      const hasRole = await isTrainerInAnyClub(userId);
+      const hasRole = await isTrainerOrLeaderInClub(userId, workout.clubId);
       if (!hasRole) {
         return res
           .status(403)
@@ -229,7 +229,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     }
     // Club workouts require trainer/leader role
     if (workout.clubId) {
-      const hasRole = await isTrainerInAnyClub(userId);
+      const hasRole = await isTrainerOrLeaderInClub(userId, workout.clubId);
       if (!hasRole) {
         return res
           .status(403)

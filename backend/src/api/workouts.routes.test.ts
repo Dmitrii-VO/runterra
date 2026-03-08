@@ -36,6 +36,7 @@ describe('Workouts Routes', () => {
     mockUsersRepository,
     mockWorkoutsRepository,
     mockClubMembersRepository,
+    mockTrainerGroupsRepository,
   } = require('../db/repositories');
 
   const mockWorkout = {
@@ -71,8 +72,11 @@ describe('Workouts Routes', () => {
     mockWorkoutsRepository.update.mockClear();
     mockWorkoutsRepository.delete.mockClear();
     mockWorkoutsRepository.hasUpcomingEvents.mockClear();
+    mockWorkoutsRepository.assignToClients.mockClear();
     mockClubMembersRepository.findByClubAndUser.mockClear();
     mockClubMembersRepository.findActiveClubsByUser.mockClear();
+    mockTrainerGroupsRepository.findById.mockClear();
+    mockTrainerGroupsRepository.findMemberIds.mockClear();
 
     // Default: user exists
     mockUsersRepository.findByFirebaseUid.mockResolvedValue({
@@ -371,6 +375,20 @@ describe('Workouts Routes', () => {
       expect(res.body).toHaveProperty('name', 'Updated Name');
       expect(mockWorkoutsRepository.update).toHaveBeenCalled();
     });
+
+    it('returns 403 when author is trainer in another club but not in the workout club', async () => {
+      mockWorkoutsRepository.findById.mockResolvedValueOnce(mockClubWorkout);
+      mockClubMembersRepository.findByClubAndUser.mockResolvedValueOnce(null);
+
+      const res = await request(app)
+        .patch('/api/workouts/workout-club-1')
+        .set('Authorization', 'Bearer test-token')
+        .send({ name: 'Updated Name' });
+
+      expect(res.status).toBe(403);
+      expect(res.body).toHaveProperty('code', 'forbidden');
+      expect(mockWorkoutsRepository.update).not.toHaveBeenCalled();
+    });
   });
 
   describe('DELETE /api/workouts/:id', () => {
@@ -438,6 +456,35 @@ describe('Workouts Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('success', true);
       expect(mockWorkoutsRepository.delete).toHaveBeenCalledWith('workout-1');
+    });
+
+    it('returns 403 when author is trainer elsewhere but not in the workout club', async () => {
+      mockWorkoutsRepository.findById.mockResolvedValueOnce(mockClubWorkout);
+      mockClubMembersRepository.findByClubAndUser.mockResolvedValueOnce(null);
+
+      const res = await request(app)
+        .delete('/api/workouts/workout-club-1')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(403);
+      expect(res.body).toHaveProperty('code', 'forbidden');
+      expect(mockWorkoutsRepository.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('POST /api/workouts/:id/assign-group', () => {
+    it('returns 404 when trainer group is stale or inactive', async () => {
+      mockWorkoutsRepository.findById.mockResolvedValueOnce(mockWorkout);
+      mockTrainerGroupsRepository.findById.mockResolvedValueOnce(null);
+
+      const res = await request(app)
+        .post('/api/workouts/workout-1/assign-group')
+        .set('Authorization', 'Bearer test-token')
+        .send({ groupId: '770e8400-e29b-41d4-a716-446655440001' });
+
+      expect(res.status).toBe(404);
+      expect(res.body).toHaveProperty('code', 'not_found');
+      expect(mockWorkoutsRepository.assignToClients).not.toHaveBeenCalled();
     });
   });
 });

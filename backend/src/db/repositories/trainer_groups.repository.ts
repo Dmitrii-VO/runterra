@@ -42,6 +42,17 @@ function rowToTrainerGroupViewDto(row: TrainerGroupViewRow): TrainerGroupViewDto
 }
 
 export class TrainerGroupsRepository extends BaseRepository {
+  private getActiveGroupTrainerExistsSql(groupAlias = 'tg'): string {
+    return `EXISTS (
+      SELECT 1
+      FROM club_members trainer_cm
+      WHERE trainer_cm.club_id = ${groupAlias}.club_id
+        AND trainer_cm.user_id = ${groupAlias}.trainer_id
+        AND trainer_cm.status = 'active'
+        AND trainer_cm.role IN ('trainer', 'leader')
+    )`;
+  }
+
   async create(data: {
     clubId: string;
     trainerId: string;
@@ -125,11 +136,17 @@ export class TrainerGroupsRepository extends BaseRepository {
   }
 
   async findByTrainerAndClub(trainerId: string, clubId: string): Promise<TrainerGroupViewDto[]> {
+    const activeGroupTrainerSql = this.getActiveGroupTrainerExistsSql('tg');
     const rows = await this.queryMany<TrainerGroupViewRow>(
-      `SELECT tg.*, COUNT(tgm.user_id) as member_count
+      `SELECT tg.*, COUNT(member_cm.user_id) as member_count
        FROM trainer_groups tg
        LEFT JOIN trainer_group_members tgm ON tgm.group_id = tg.id
+       LEFT JOIN club_members member_cm
+         ON member_cm.club_id = tg.club_id
+        AND member_cm.user_id = tgm.user_id
+        AND member_cm.status = 'active'
        WHERE tg.trainer_id = $1 AND tg.club_id = $2
+         AND ${activeGroupTrainerSql}
        GROUP BY tg.id
        ORDER BY tg.created_at DESC`,
       [trainerId, clubId],
@@ -138,12 +155,22 @@ export class TrainerGroupsRepository extends BaseRepository {
   }
 
   async findByMemberAndClub(userId: string, clubId: string): Promise<TrainerGroupViewDto[]> {
+    const activeGroupTrainerSql = this.getActiveGroupTrainerExistsSql('tg');
     const rows = await this.queryMany<TrainerGroupViewRow>(
-      `SELECT tg.*, COUNT(tgm2.user_id) as member_count
+      `SELECT tg.*, COUNT(member_cm2.user_id) as member_count
        FROM trainer_groups tg
        JOIN trainer_group_members tgm ON tgm.group_id = tg.id
+       JOIN club_members requester_cm
+         ON requester_cm.club_id = tg.club_id
+        AND requester_cm.user_id = $1
+        AND requester_cm.status = 'active'
        LEFT JOIN trainer_group_members tgm2 ON tgm2.group_id = tg.id
+       LEFT JOIN club_members member_cm2
+         ON member_cm2.club_id = tg.club_id
+        AND member_cm2.user_id = tgm2.user_id
+        AND member_cm2.status = 'active'
        WHERE tgm.user_id = $1 AND tg.club_id = $2
+         AND ${activeGroupTrainerSql}
        GROUP BY tg.id
        ORDER BY tg.created_at DESC`,
       [userId, clubId],
@@ -152,15 +179,29 @@ export class TrainerGroupsRepository extends BaseRepository {
   }
 
   async findById(id: string): Promise<TrainerGroup | null> {
-    const row = await this.queryOne<TrainerGroupRow>('SELECT * FROM trainer_groups WHERE id = $1', [
-      id,
-    ]);
+    const activeGroupTrainerSql = this.getActiveGroupTrainerExistsSql('tg');
+    const row = await this.queryOne<TrainerGroupRow>(
+      `SELECT tg.*
+       FROM trainer_groups tg
+       WHERE tg.id = $1
+         AND ${activeGroupTrainerSql}`,
+      [id],
+    );
     return row ? rowToTrainerGroup(row) : null;
   }
 
   async isMember(groupId: string, userId: string): Promise<boolean> {
     const row = await this.queryOne(
-      'SELECT 1 FROM trainer_group_members WHERE group_id = $1 AND user_id = $2',
+      `SELECT 1
+       FROM trainer_group_members tgm
+       JOIN trainer_groups tg ON tg.id = tgm.group_id
+       JOIN club_members member_cm
+         ON member_cm.club_id = tg.club_id
+        AND member_cm.user_id = tgm.user_id
+        AND member_cm.status = 'active'
+       WHERE tgm.group_id = $1
+         AND tgm.user_id = $2
+         AND ${this.getActiveGroupTrainerExistsSql('tg')}`,
       [groupId, userId],
     );
     return !!row;
@@ -168,7 +209,15 @@ export class TrainerGroupsRepository extends BaseRepository {
 
   async findMemberIds(groupId: string): Promise<string[]> {
     const rows = await this.queryMany<{ user_id: string }>(
-      'SELECT user_id FROM trainer_group_members WHERE group_id = $1',
+      `SELECT tgm.user_id
+       FROM trainer_group_members tgm
+       JOIN trainer_groups tg ON tg.id = tgm.group_id
+       JOIN club_members member_cm
+         ON member_cm.club_id = tg.club_id
+        AND member_cm.user_id = tgm.user_id
+        AND member_cm.status = 'active'
+       WHERE tgm.group_id = $1
+         AND ${this.getActiveGroupTrainerExistsSql('tg')}`,
       [groupId],
     );
     return rows.map(r => r.user_id);

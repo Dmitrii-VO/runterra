@@ -298,8 +298,27 @@ export const mockWorkoutsRepository = {
   delete: jest.fn().mockResolvedValue(true),
   hasUpcomingEvents: jest.fn().mockResolvedValue(false),
   assignToClient: jest.fn().mockResolvedValue(undefined),
+  assignToClients: jest.fn().mockResolvedValue(0),
   unassignFromClient: jest.fn().mockResolvedValue(true),
   findAssignedToUser: jest.fn().mockResolvedValue([]),
+};
+
+export const mockTrainerGroupsRepository = {
+  create: jest.fn().mockResolvedValue({
+    id: 'group-1',
+    clubId: 'a0000000-0000-4000-8000-000000000001',
+    trainerId: 'test-user-id',
+    name: 'Test Group',
+    createdAt: new Date(),
+  }),
+  updateName: jest.fn().mockResolvedValue(true),
+  updateMembers: jest.fn().mockResolvedValue(undefined),
+  findByTrainerAndClub: jest.fn().mockResolvedValue([]),
+  findByMemberAndClub: jest.fn().mockResolvedValue([]),
+  findById: jest.fn().mockResolvedValue(null),
+  isMember: jest.fn().mockResolvedValue(false),
+  findMemberIds: jest.fn().mockResolvedValue([]),
+  delete: jest.fn().mockResolvedValue(true),
 };
 
 // Mock TerritoriesRepository
@@ -321,6 +340,7 @@ export const getMessagesRepository = jest.fn(() => mockMessagesRepository);
 export const getClubChannelsRepository = jest.fn(() => mockClubChannelsRepository);
 export const getTrainerProfilesRepository = jest.fn(() => mockTrainerProfilesRepository);
 export const getWorkoutsRepository = jest.fn(() => mockWorkoutsRepository);
+export const getTrainerGroupsRepository = jest.fn(() => mockTrainerGroupsRepository);
 export const getTerritoriesRepository = jest.fn(() => mockTerritoriesRepository);
 
 // Mock ActivitiesRepository (GET /api/activities uses findByUserId)
@@ -352,6 +372,7 @@ export class MessagesRepository {}
 export class ClubChannelsRepository {}
 export class TrainerProfilesRepository {}
 export class WorkoutsRepository {}
+export class TrainerGroupsRepository {}
 export class TerritoriesRepository {}
 export class ActivitiesRepository {}
 export type EventParticipant = { id: string };

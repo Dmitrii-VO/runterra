@@ -31,6 +31,7 @@ import {
   getScheduleRepository,
   getEventsRepository,
   getActivitiesRepository,
+  getTrainerGroupsRepository,
 } from '../db/repositories';
 import { createDbPool } from '../db/client';
 import { logger } from '../shared/logger';
@@ -1069,13 +1070,9 @@ router.post(
       const { groupId } = req.body as z.infer<typeof AssignGroupSchema>;
 
       const pool = createDbPool();
-
-      // Validate group belongs to this club
-      const groupRes = await pool.query<{ id: string }>(
-        `SELECT id FROM trainer_groups WHERE id = $1::uuid AND club_id = $2::uuid`,
-        [groupId, clubId],
-      );
-      if ((groupRes.rowCount ?? 0) === 0) {
+      const trainerGroupsRepo = getTrainerGroupsRepository();
+      const group = await trainerGroupsRepo.findById(groupId);
+      if (!group || group.clubId !== clubId) {
         return res.status(404).json({ code: 'not_found', message: 'Group not found in this club' });
       }
 
@@ -1142,13 +1139,9 @@ router.delete(
       }
 
       const pool = createDbPool();
-
-      // Validate group belongs to this club
-      const groupRes = await pool.query<{ id: string }>(
-        `SELECT id FROM trainer_groups WHERE id = $1::uuid AND club_id = $2::uuid`,
-        [groupId, clubId],
-      );
-      if ((groupRes.rowCount ?? 0) === 0) {
+      const trainerGroupsRepo = getTrainerGroupsRepository();
+      const group = await trainerGroupsRepo.findById(groupId);
+      if (!group || group.clubId !== clubId) {
         return res.status(404).json({ code: 'not_found', message: 'Group not found in this club' });
       }
 
