@@ -30,7 +30,7 @@ if ($nonSwitchArgs.Count -gt 0) { $ReleaseNotes = ($ReleaseNotes, $nonSwitchArgs
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
 $ConfigPath = Join-Path $ProjectRoot "scripts\app-distribution.config.json"
-$ApkPath = Join-Path $ProjectRoot "mobile\build\app\outputs\flutter-apk\app-debug.apk"
+$ApkPath = Join-Path $ProjectRoot "mobile\build\app\outputs\flutter-apk\app-release.apk"
 
 Set-Location $ProjectRoot
 
@@ -205,7 +205,7 @@ if (-not $SkipTests) {
 
 Write-Host "`n=== 2. Build APK ($buildName+$buildNumber) ===" -ForegroundColor Cyan
 Set-Location (Join-Path $ProjectRoot "mobile")
-flutter build apk --debug --build-name=$buildName --build-number=$buildNumber
+flutter build apk --release --build-name=$buildName --build-number=$buildNumber
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 Set-Location $ProjectRoot
 
