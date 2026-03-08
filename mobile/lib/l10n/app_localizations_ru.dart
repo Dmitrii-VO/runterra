@@ -1930,4 +1930,22 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get calendarChoose => 'Открыть';
+
+  @override
+  String get mapLayerTerritories => 'Территории';
+
+  @override
+  String get mapLayerRaces => 'Соревнования';
+
+  @override
+  String get mapLayerLocal => 'Местные события';
+
+  @override
+  String get mapLayerVenues => 'Где бегать';
+
+  @override
+  String get mapLayerRoutes => 'Маршруты';
+
+  @override
+  String get mapLayerRoutesComingSoon => 'Скоро';
 }

@@ -835,5 +835,11 @@
   "calendarTitle": "График тренировок",
   "calendarRun": "Пробежка",
   "calendarEvent": "Событие",
-  "calendarChoose": "Открыть"
+  "calendarChoose": "Открыть",
+  "mapLayerTerritories": "Территории",
+  "mapLayerRaces": "Соревнования",
+  "mapLayerLocal": "Местные события",
+  "mapLayerVenues": "Где бегать",
+  "mapLayerRoutes": "Маршруты",
+  "mapLayerRoutesComingSoon": "Скоро"
 }

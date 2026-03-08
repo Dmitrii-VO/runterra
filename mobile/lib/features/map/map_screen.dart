@@ -19,6 +19,8 @@ import 'widgets/territory_bottom_sheet.dart';
 import '../../shared/models/club_model.dart';
 import '../../shared/models/event_list_item_model.dart';
 import '../../shared/utils/map_style.dart';
+import '../../shared/models/map_layer_model.dart';
+import 'widgets/map_layers_panel.dart';
 import 'package:intl/intl.dart';
 
 /// Экран карты (MVP)
@@ -83,6 +85,12 @@ class _MapScreenState extends State<MapScreen> {
   final Map<String, BitmapDescriptor> _eventMarkerIcons = {};
   final Map<int, BitmapDescriptor> _groupMarkerIconCache = {};
   double _currentZoom = _defaultZoom;
+
+  // Layer visibility state
+  MapLayerState _layerState = MapLayerState.defaults();
+  // Venue markers (layer Г)
+  List<PlacemarkMapObject> _venueMarkers = [];
+  BitmapDescriptor? _venueMarkerIcon;
 
   @override
   void initState() {
@@ -168,6 +176,11 @@ class _MapScreenState extends State<MapScreen> {
     });
     if (_mapData != null && _isMapReady) {
       _updateEventMarkers();
+    }
+    _venueMarkerIcon = await _renderMarkerIcon(_drawVenueIcon);
+    if (!mounted) return;
+    if (_mapData != null && _isMapReady && _layerState.isEnabled(MapLayer.venues)) {
+      _updateVenueMarkers();
     }
   }
 
@@ -257,6 +270,23 @@ class _MapScreenState extends State<MapScreen> {
     canvas.drawLine(const Offset(31, 28), const Offset(38, 25), p);
     canvas.drawLine(const Offset(30, 34), const Offset(24, 44), p);
     canvas.drawLine(const Offset(30, 34), const Offset(36, 45), p);
+    canvas.restore();
+  }
+
+  // Teal circle + location pin → venue (stadium/track)
+  void _drawVenueIcon(Canvas canvas, double size) {
+    _drawCircleBase(canvas, size, Colors.teal.shade600);
+    canvas.save();
+    canvas.scale(size / 64.0);
+    final p = Paint()..color = Colors.white;
+    canvas.drawCircle(const Offset(32, 26), 11, p);
+    final path = Path()
+      ..moveTo(21, 28)
+      ..quadraticBezierTo(20, 46, 32, 52)
+      ..quadraticBezierTo(44, 46, 43, 28)
+      ..close();
+    canvas.drawPath(path, p);
+    canvas.drawCircle(const Offset(32, 26), 5, Paint()..color = Colors.teal.shade600);
     canvas.restore();
   }
 
@@ -584,6 +614,7 @@ class _MapScreenState extends State<MapScreen> {
       _updateTerritoryMapObjects();
       _updateCaptureLabels();
       _updateEventMarkers();
+      _updateVenueMarkers();
     } catch (e) {
       debugPrint('Error updating map objects: $e');
       DevRemoteLogger.logError(
@@ -596,6 +627,10 @@ class _MapScreenState extends State<MapScreen> {
   /// Обновляет объекты территорий (полигоны при наличии geometry, иначе круги)
   void _updateTerritoryMapObjects() {
     if (_mapData == null) return;
+    if (!_layerState.isEnabled(MapLayer.territories)) {
+      setState(() => _territoryMapObjects = []);
+      return;
+    }
 
     final objects = <MapObject>[];
     for (var i = 0; i < _mapData!.territories.length; i++) {
@@ -669,6 +704,10 @@ class _MapScreenState extends State<MapScreen> {
   /// Creates PlacemarkMapObjects with club initials at the centroid of captured territories
   Future<void> _updateCaptureLabels() async {
     if (_mapData == null) return;
+    if (!_layerState.isEnabled(MapLayer.territories)) {
+      if (mounted) setState(() => _captureLabels = []);
+      return;
+    }
 
     final labels = <PlacemarkMapObject>[];
     for (var i = 0; i < _mapData!.territories.length; i++) {
@@ -711,6 +750,8 @@ class _MapScreenState extends State<MapScreen> {
       ));
     }
 
+    // Re-check layer state: user may have toggled territories off while we were awaiting
+    if (!_layerState.isEnabled(MapLayer.territories)) return;
     if (mounted) {
       setState(() {
         _captureLabels = labels;
@@ -788,9 +829,23 @@ class _MapScreenState extends State<MapScreen> {
   void _updateEventMarkers() {
     if (_mapData == null || _eventMarkerIcon == null) return;
 
+    final layerBEnabled = _layerState.isEnabled(MapLayer.races);
+    final layerCEnabled = _layerState.isEnabled(MapLayer.local);
+    if (!layerBEnabled && !layerCEnabled) {
+      setState(() => _eventMarkers = []);
+      return;
+    }
+
+    const localTypes = {'group_run', 'training', 'club_event'};
+    final visibleEvents = _mapData!.events.where((e) {
+      if (e.type == 'open_event') return layerBEnabled;
+      if (localTypes.contains(e.type)) return layerCEnabled;
+      return false; // unknown types are hidden until explicitly classified
+    }).toList();
+
     final precision = _groupingPrecision;
     final groups = <String, List<EventListItemModel>>{};
-    for (final event in _mapData!.events) {
+    for (final event in visibleEvents) {
       if (event.startLocation == null) continue;
       final key =
           '${event.startLocation!.latitude.toStringAsFixed(precision)},${event.startLocation!.longitude.toStringAsFixed(precision)}';
@@ -836,6 +891,40 @@ class _MapScreenState extends State<MapScreen> {
     }
 
     setState(() => _eventMarkers = markers);
+  }
+
+  static const List<({String name, double lat, double lon})> _spbVenues = [
+    (name: 'Парк Победы', lat: 59.8684, lon: 30.3226),
+    (name: 'ЦПКиО им. Кирова', lat: 59.9801, lon: 30.2615),
+    (name: 'Удельный парк', lat: 60.0164, lon: 30.3170),
+    (name: 'Парк 300-летия', lat: 60.0001, lon: 30.1753),
+    (name: 'Петровский стадион', lat: 59.9536, lon: 30.2580),
+    (name: 'Южно-Приморский парк', lat: 59.9370, lon: 30.1399),
+  ];
+
+  void _updateVenueMarkers() {
+    if (_venueMarkerIcon == null ||
+        !_layerState.isEnabled(MapLayer.venues) ||
+        _currentCity?.id != 'spb') {
+      setState(() => _venueMarkers = []);
+      return;
+    }
+    final markers = _spbVenues
+        .map((v) => PlacemarkMapObject(
+              mapId: MapObjectId('venue_${v.name}'),
+              point: Point(latitude: v.lat, longitude: v.lon),
+              icon: PlacemarkIcon.single(PlacemarkIconStyle(
+                image: _venueMarkerIcon!,
+                scale: 0.55,
+              )),
+            ))
+        .toList();
+    setState(() => _venueMarkers = markers);
+  }
+
+  void _onLayerToggled(MapLayer layer) {
+    setState(() => _layerState = _layerState.withToggled(layer));
+    _updateMapObjects();
   }
 
   // Dark blue circle + white count number → event group
@@ -1411,7 +1500,8 @@ class _MapScreenState extends State<MapScreen> {
                 mapObjects: [
                   ..._territoryMapObjects,
                   ..._captureLabels,
-                  ..._eventMarkers
+                  ..._eventMarkers,
+                  ..._venueMarkers,
                 ],
               );
             },
@@ -1457,6 +1547,22 @@ class _MapScreenState extends State<MapScreen> {
                       _buildClubTerritoryBanner(AppLocalizations.of(context)!),
                     ],
                   ],
+                ),
+              ),
+            ),
+          ),
+
+          // Map layers panel (top right, floats over city banner)
+          Positioned(
+            top: 0,
+            right: 8,
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: MapLayersPanel(
+                  layerState: _layerState,
+                  onToggle: _onLayerToggled,
                 ),
               ),
             ),

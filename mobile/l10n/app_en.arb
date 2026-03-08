@@ -1009,5 +1009,11 @@
   "calendarTitle": "Training schedule",
   "calendarRun": "Run",
   "calendarEvent": "Event",
-  "calendarChoose": "Open"
+  "calendarChoose": "Open",
+  "mapLayerTerritories": "Territories",
+  "mapLayerRaces": "Races",
+  "mapLayerLocal": "Local events",
+  "mapLayerVenues": "Where to run",
+  "mapLayerRoutes": "Routes",
+  "mapLayerRoutesComingSoon": "Coming soon"
 }

@@ -1924,4 +1924,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarChoose => 'Open';
+
+  @override
+  String get mapLayerTerritories => 'Territories';
+
+  @override
+  String get mapLayerRaces => 'Races';
+
+  @override
+  String get mapLayerLocal => 'Local events';
+
+  @override
+  String get mapLayerVenues => 'Where to run';
+
+  @override
+  String get mapLayerRoutes => 'Routes';
+
+  @override
+  String get mapLayerRoutesComingSoon => 'Coming soon';
 }

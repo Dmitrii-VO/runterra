@@ -3655,6 +3655,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open'**
   String get calendarChoose;
+
+  /// No description provided for @mapLayerTerritories.
+  ///
+  /// In en, this message translates to:
+  /// **'Territories'**
+  String get mapLayerTerritories;
+
+  /// No description provided for @mapLayerRaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Races'**
+  String get mapLayerRaces;
+
+  /// No description provided for @mapLayerLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Local events'**
+  String get mapLayerLocal;
+
+  /// No description provided for @mapLayerVenues.
+  ///
+  /// In en, this message translates to:
+  /// **'Where to run'**
+  String get mapLayerVenues;
+
+  /// No description provided for @mapLayerRoutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Routes'**
+  String get mapLayerRoutes;
+
+  /// No description provided for @mapLayerRoutesComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon'**
+  String get mapLayerRoutesComingSoon;
 }
 
 class _AppLocalizationsDelegate
