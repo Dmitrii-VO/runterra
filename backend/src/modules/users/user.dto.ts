@@ -18,9 +18,6 @@ import { User, UserStatus } from './user.entity';
  * Связывает пользователя с Firebase Authentication через firebaseUid.
  */
 export interface CreateUserDto {
-  /** Уникальный идентификатор пользователя в Firebase Authentication */
-  firebaseUid: string;
-
   /** Email пользователя */
   email: string;
 
@@ -46,13 +43,11 @@ export interface CreateUserDto {
  * NOTE: Only technical shape/type validation, no business rules.
  */
 export const CreateUserSchema = z.object({
-  firebaseUid: z.string(),
-  email: z.string(),
-  name: z.string(),
+  email: z.string().email(),
+  name: z.string().min(1).max(100),
   avatarUrl: z.string().optional(),
   cityId: z.string().optional(),
   isMercenary: z.boolean().optional(),
-  status: z.nativeEnum(UserStatus).optional(),
 });
 
 /**

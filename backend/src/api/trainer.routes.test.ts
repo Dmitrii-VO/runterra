@@ -1,7 +1,9 @@
 import request from 'supertest';
 import { createApp } from '../app';
+import { getAuthProvider } from '../modules/auth';
 
 // Mock the repositories module
+jest.mock('../modules/auth');
 jest.mock('../db/repositories');
 
 const app = createApp();
@@ -29,7 +31,11 @@ describe('Trainer Routes', () => {
     process.env.NODE_ENV = originalEnv;
   });
 
-  const { mockUsersRepository, mockTrainerProfilesRepository } = require('../db/repositories');
+  const {
+    mockUsersRepository,
+    mockTrainerProfilesRepository,
+    mockClubMembersRepository,
+  } = require('../db/repositories');
 
   const mockProfile = {
     userId,
@@ -42,11 +48,18 @@ describe('Trainer Routes', () => {
   };
 
   beforeEach(() => {
+    (getAuthProvider as jest.Mock).mockReturnValue({
+      verifyToken: jest.fn().mockResolvedValue({
+        valid: true,
+        user: { uid: 'uid-1', email: 'test@example.com' },
+      }),
+    });
     mockUsersRepository.findByFirebaseUid.mockClear();
     mockTrainerProfilesRepository.findByUserId.mockClear();
     mockTrainerProfilesRepository.create.mockClear();
     mockTrainerProfilesRepository.update.mockClear();
     mockTrainerProfilesRepository.findPublicTrainers.mockClear();
+    mockClubMembersRepository.findActiveClubsByUser.mockClear();
 
     // Default: user exists
     mockUsersRepository.findByFirebaseUid.mockResolvedValue({
@@ -55,6 +68,16 @@ describe('Trainer Routes', () => {
       email: 'test@example.com',
       name: 'Test User',
     });
+    mockClubMembersRepository.findActiveClubsByUser.mockResolvedValue([
+      {
+        clubId: 'club-1',
+        clubName: 'Club A',
+        clubCityId: 'spb',
+        clubStatus: 'active',
+        role: 'trainer',
+        joinedAt: new Date(),
+      },
+    ]);
   });
 
   describe('GET /api/trainer', () => {
@@ -113,6 +136,17 @@ describe('Trainer Routes', () => {
       expect(res.status).toBe(404);
       expect(res.body).toHaveProperty('code', 'not_found');
       expect(res.body).toHaveProperty('message');
+    });
+
+    it('returns 403 when user is not an active trainer or leader', async () => {
+      mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([]);
+
+      const res = await request(app)
+        .get('/api/trainer/profile')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(403);
+      expect(res.body.message).toMatch(/active club trainers or leaders/i);
     });
   });
 
@@ -178,22 +212,6 @@ describe('Trainer Routes', () => {
       );
     });
 
-    it('returns 201 with acceptsPrivateClients when specified', async () => {
-      const profileWithPrivate = { ...mockProfile, acceptsPrivateClients: true };
-      mockTrainerProfilesRepository.findByUserId.mockResolvedValueOnce(null);
-      mockTrainerProfilesRepository.create.mockResolvedValueOnce(profileWithPrivate);
-
-      const res = await request(app)
-        .post('/api/trainer/profile')
-        .set('Authorization', 'Bearer test-token')
-        .send({ ...validBody, acceptsPrivateClients: true });
-
-      expect(res.status).toBe(201);
-      expect(mockTrainerProfilesRepository.create).toHaveBeenCalledWith(
-        expect.objectContaining({ acceptsPrivateClients: true }),
-      );
-    });
-
     it('returns 409 when trainer profile already exists', async () => {
       mockTrainerProfilesRepository.findByUserId.mockResolvedValueOnce(mockProfile);
 
@@ -216,6 +234,18 @@ describe('Trainer Routes', () => {
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty('code', 'validation_error');
     });
+
+    it('returns 403 when requester is not an active trainer or leader', async () => {
+      mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([]);
+
+      const res = await request(app)
+        .post('/api/trainer/profile')
+        .set('Authorization', 'Bearer test-token')
+        .send(validBody);
+
+      expect(res.status).toBe(403);
+      expect(mockTrainerProfilesRepository.create).not.toHaveBeenCalled();
+    });
   });
 
   describe('PATCH /api/trainer/profile', () => {
@@ -236,19 +266,6 @@ describe('Trainer Routes', () => {
       );
     });
 
-    it('returns 200 when updating acceptsPrivateClients', async () => {
-      const updatedProfile = { ...mockProfile, acceptsPrivateClients: true };
-      mockTrainerProfilesRepository.update.mockResolvedValueOnce(updatedProfile);
-
-      const res = await request(app)
-        .patch('/api/trainer/profile')
-        .set('Authorization', 'Bearer test-token')
-        .send({ acceptsPrivateClients: true });
-
-      expect(res.status).toBe(200);
-      expect(res.body).toHaveProperty('acceptsPrivateClients', true);
-    });
-
     it('returns 404 when profile does not exist for update', async () => {
       mockTrainerProfilesRepository.update.mockResolvedValueOnce(null);
 
@@ -259,6 +276,17 @@ describe('Trainer Routes', () => {
 
       expect(res.status).toBe(404);
       expect(res.body).toHaveProperty('code', 'not_found');
+    });
+  });
+
+  describe('POST /api/trainer/clients/:userId', () => {
+    it('returns 403 because direct trainer-client linking is disabled', async () => {
+      const res = await request(app)
+        .post(`/api/trainer/clients/${otherUserId}`)
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(403);
+      expect(res.body.message).toMatch(/disabled/i);
     });
   });
 });

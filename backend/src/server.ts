@@ -10,9 +10,7 @@ import { closeDbPool } from './db/client';
 import { logger } from './shared/logger';
 import { initChatWs, closeChatWs } from './ws/chatWs';
 
-// SECURITY: Startup-check для авторизации
-// В production сервер не должен запускаться, пока заглушка Firebase авторизации
-// не будет заменена реальной интеграцией через Firebase Admin SDK.
+// SECURITY: server must fail closed if Firebase Admin auth is not configured.
 assertFirebaseAuthConfigured();
 
 const { port: PORT } = getEnvConfig();

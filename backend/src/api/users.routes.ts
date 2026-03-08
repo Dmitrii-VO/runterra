@@ -481,6 +481,16 @@ router.post(
   validateBody(CreateUserSchema),
   async (req: Request<{}, User, CreateUserDto>, res: Response) => {
     const dto = req.body;
+    const firebaseUid = req.authUser?.uid;
+
+    if (!firebaseUid) {
+      res.status(401).json({
+        code: 'unauthorized',
+        message: 'Authorization required',
+        details: { reason: 'missing_header' },
+      });
+      return;
+    }
 
     try {
       const cityId = dto.cityId?.trim();
@@ -503,18 +513,15 @@ router.post(
 
       const repo = getUsersRepository();
 
-      // Проверяем уникальность firebaseUid
-      const existing = await repo.findByFirebaseUid(dto.firebaseUid);
+      const existing = await repo.findByFirebaseUid(firebaseUid);
       if (existing) {
-        res
-          .status(409)
-          .json({ code: 'conflict', message: 'User with this firebaseUid already exists' });
+        res.status(200).json(userToViewDto(existing));
         return;
       }
 
       const user = await repo.create({
-        firebaseUid: dto.firebaseUid,
-        email: dto.email,
+        firebaseUid,
+        email: req.authUser?.email ?? dto.email,
         name: dto.name,
         avatarUrl: dto.avatarUrl,
         cityId: cityId || undefined,

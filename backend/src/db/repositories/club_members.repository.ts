@@ -131,9 +131,10 @@ export class ClubMembersRepository extends BaseRepository {
     userId: string,
     status: 'pending' | 'active' | 'inactive' | 'suspended',
   ): Promise<ClubMembershipRow | null> {
+    const roleSql = status === 'active' ? 'role' : `'member'`;
     const row = await this.queryOne<ClubMemberRow>(
       `UPDATE club_members
-       SET status = $3, updated_at = NOW()
+       SET status = $3, role = ${roleSql}, updated_at = NOW()
        WHERE club_id = $1 AND user_id = $2
        RETURNING *`,
       [clubId, userId, status],
@@ -144,7 +145,7 @@ export class ClubMembersRepository extends BaseRepository {
   async deactivate(clubId: string, userId: string): Promise<ClubMembershipRow | null> {
     const row = await this.queryOne<ClubMemberRow>(
       `UPDATE club_members
-       SET status = 'inactive', updated_at = NOW()
+       SET status = 'inactive', role = 'member', updated_at = NOW()
        WHERE club_id = $1 AND user_id = $2
        RETURNING *`,
       [clubId, userId],
@@ -310,7 +311,9 @@ export class ClubMembersRepository extends BaseRepository {
   /** Deactivate all members of a club (used when disbanding) */
   async deactivateAllMembers(clubId: string): Promise<void> {
     await this.query(
-      `UPDATE club_members SET status = 'inactive', updated_at = NOW() WHERE club_id = $1 AND status = 'active'`,
+      `UPDATE club_members
+       SET status = 'inactive', role = 'member', updated_at = NOW()
+       WHERE club_id = $1 AND status = 'active'`,
       [clubId],
     );
   }

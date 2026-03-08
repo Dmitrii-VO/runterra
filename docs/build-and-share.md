@@ -25,6 +25,7 @@ npm run deploy
 ```bash
 npm run deploy:backend
 npm run deploy:mobile
+npm run deploy:rustore
 ```
 
 С release notes:
@@ -39,7 +40,66 @@ npm run deploy:mobile
 ```powershell
 .\scripts\deploy-mobile.ps1 -SkipTests
 .\scripts\deploy-all.ps1 -SkipTests
+.\scripts\deploy-rustore.ps1 -SkipTests
 ```
+
+## RuStore
+
+Для отправки релизной Android-сборки в RuStore:
+
+```bash
+npm run deploy:rustore
+```
+
+Что делает скрипт:
+
+- запускает `flutter test` в `mobile/`;
+- собирает release `APK` по умолчанию;
+- создаёт draft версии через RuStore Public API;
+- загружает артефакт;
+- отправляет draft на модерацию.
+
+Поддерживаемые флаги:
+
+```powershell
+.\scripts\deploy-rustore.ps1 "Новая версия для RuStore"
+.\scripts\deploy-rustore.ps1 -SkipTests
+.\scripts\deploy-rustore.ps1 -ArtifactType aab
+.\scripts\deploy-rustore.ps1 -SkipCommit
+```
+
+Нужные env-переменные:
+
+```powershell
+$env:RUSTORE_PUBLIC_TOKEN = "..."
+$env:RUSTORE_PACKAGE_NAME = "com.runterra.runterra"
+```
+
+Опционально:
+
+- `RUSTORE_ARTIFACT_TYPE=apk|aab`
+- `RUSTORE_PUBLISH_TYPE=MANUAL|INSTANTLY|DELAYED`
+- `RUSTORE_PUBLISH_DATE_TIME=2026-03-08T12:00:00+03:00` для `DELAYED`
+- `RUSTORE_MIN_ANDROID_VERSION=8`
+- `RUSTORE_PRIORITY_UPDATE=0`
+- `RUSTORE_MODER_INFO=Комментарий для модератора`
+
+Ограничения и замечания:
+
+- по умолчанию используется `APK`, потому что для `AAB` нужен заранее загруженный signing key в RuStore Console;
+- release signing должен быть настроен отдельно: `mobile/android/key.properties` или env `ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`;
+- `versionCode` для RuStore берётся из общего числа git-коммитов, чтобы он монотонно рос между публикациями.
+
+Пример `mobile/android/key.properties`:
+
+```properties
+storeFile=D:\\myprojects\\Runterra\\.secrets\\android\\upload-keystore.jks
+storePassword=...
+keyAlias=upload
+keyPassword=...
+```
+
+`key.properties` и файлы keystore не коммитятся в git.
 
 ## Firebase App Distribution
 

@@ -108,6 +108,19 @@ export function getMessagesRepository(): MessagesRepository {
 }
 
 export class MessagesRepository extends BaseRepository {
+  private getActiveTrainerClientExistsSql(): string {
+    return `EXISTS (
+      SELECT 1
+      FROM club_members trainer_cm
+      JOIN club_members client_cm ON client_cm.club_id = trainer_cm.club_id
+      WHERE trainer_cm.user_id = tc.trainer_id
+        AND trainer_cm.status = 'active'
+        AND trainer_cm.role IN ('trainer', 'leader')
+        AND client_cm.user_id = tc.client_id
+        AND client_cm.status = 'active'
+    )`;
+  }
+
   async create(data: {
     channelType: MessageChannelType;
     channelId: string;
@@ -212,8 +225,13 @@ export class MessagesRepository extends BaseRepository {
 
   /** Check if trainer-client relationship exists */
   async isTrainerClient(trainerId: string, clientId: string): Promise<boolean> {
+    const activeRelationshipSql = this.getActiveTrainerClientExistsSql();
     const row = await this.queryOne(
-      `SELECT 1 FROM trainer_clients WHERE trainer_id = $1::uuid AND client_id = $2::uuid`,
+      `SELECT 1
+       FROM trainer_clients tc
+       WHERE tc.trainer_id = $1::uuid
+         AND tc.client_id = $2::uuid
+         AND ${activeRelationshipSql}`,
       [trainerId, clientId],
     );
     return !!row;
@@ -221,6 +239,7 @@ export class MessagesRepository extends BaseRepository {
 
   /** Get list of trainer's clients with last message info */
   async getTrainerClients(trainerId: string): Promise<DirectChatViewDto[]> {
+    const activeRelationshipSql = this.getActiveTrainerClientExistsSql();
     const rows = await this.queryMany<DirectChatRow>(
       `SELECT tc.client_id AS user_id, u.name AS user_name, u.avatar_url AS user_avatar,
               dm.text AS last_message_text, dm.created_at AS last_message_at
@@ -233,6 +252,7 @@ export class MessagesRepository extends BaseRepository {
          ORDER BY created_at DESC LIMIT 1
        ) dm ON true
        WHERE tc.trainer_id = $1::uuid
+         AND ${activeRelationshipSql}
        ORDER BY dm.created_at DESC NULLS LAST, u.name ASC`,
       [trainerId],
     );
@@ -241,6 +261,7 @@ export class MessagesRepository extends BaseRepository {
 
   /** Get trainer for a client (or null) */
   async getMyTrainer(clientId: string): Promise<DirectChatViewDto | null> {
+    const activeRelationshipSql = this.getActiveTrainerClientExistsSql();
     const row = await this.queryOne<DirectChatRow>(
       `SELECT tc.trainer_id AS user_id, u.name AS user_name, u.avatar_url AS user_avatar,
               dm.text AS last_message_text, dm.created_at AS last_message_at
@@ -253,6 +274,7 @@ export class MessagesRepository extends BaseRepository {
          ORDER BY created_at DESC LIMIT 1
        ) dm ON true
        WHERE tc.client_id = $1::uuid
+         AND ${activeRelationshipSql}
        ORDER BY dm.created_at DESC NULLS LAST
        LIMIT 1`,
       [clientId],
@@ -262,10 +284,15 @@ export class MessagesRepository extends BaseRepository {
 
   /** Check if trainer_clients relationship exists between two users (in either direction) */
   async hasTrainerClientRelationship(userA: string, userB: string): Promise<boolean> {
+    const activeRelationshipSql = this.getActiveTrainerClientExistsSql();
     const row = await this.queryOne(
-      `SELECT 1 FROM trainer_clients
-       WHERE (trainer_id = $1::uuid AND client_id = $2::uuid)
-          OR (trainer_id = $2::uuid AND client_id = $1::uuid)`,
+      `SELECT 1
+       FROM trainer_clients tc
+       WHERE (
+         (tc.trainer_id = $1::uuid AND tc.client_id = $2::uuid)
+         OR (tc.trainer_id = $2::uuid AND tc.client_id = $1::uuid)
+       )
+         AND ${activeRelationshipSql}`,
       [userA, userB],
     );
     return !!row;
@@ -273,10 +300,15 @@ export class MessagesRepository extends BaseRepository {
 
   /** Get trainer_id for a pair (needed to check who initiates) */
   async getTrainerIdForPair(userA: string, userB: string): Promise<string | null> {
+    const activeRelationshipSql = this.getActiveTrainerClientExistsSql();
     const row = await this.queryOne<{ trainer_id: string }>(
-      `SELECT trainer_id FROM trainer_clients
-       WHERE (trainer_id = $1::uuid AND client_id = $2::uuid)
-          OR (trainer_id = $2::uuid AND client_id = $1::uuid)
+      `SELECT tc.trainer_id
+       FROM trainer_clients tc
+       WHERE (
+         (tc.trainer_id = $1::uuid AND tc.client_id = $2::uuid)
+         OR (tc.trainer_id = $2::uuid AND tc.client_id = $1::uuid)
+       )
+         AND ${activeRelationshipSql}
        LIMIT 1`,
       [userA, userB],
     );

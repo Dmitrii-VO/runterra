@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../auth/auth_service.dart';
@@ -48,13 +49,13 @@ class ChatWebSocketService {
   /// Build WebSocket URL from API base URL.
   /// http://host:port -> ws://host:port/ws
   /// https://host:port -> wss://host:port/ws
-  static String _buildWsUrl(String token) {
+  static String _buildWsUrl() {
     final base = ApiConfig.getBaseUrl();
     final uri = Uri.parse(base);
     final scheme = uri.scheme == 'https' ? 'wss' : 'ws';
     final host = uri.host;
     final port = uri.hasPort ? ':${uri.port}' : '';
-    return '$scheme://$host$port$_wsPath?token=${Uri.encodeComponent(token)}';
+    return '$scheme://$host$port$_wsPath';
   }
 
   /// Connect and subscribe to a club chat channel.
@@ -82,8 +83,11 @@ class ChatWebSocketService {
     }
 
     try {
-      final url = _buildWsUrl(token);
-      _channel = WebSocketChannel.connect(Uri.parse(url));
+      final url = _buildWsUrl();
+      _channel = IOWebSocketChannel.connect(
+        Uri.parse(url),
+        headers: {'Authorization': 'Bearer $token'},
+      );
 
       _subscription = _channel!.stream.listen(
         _onMessage,

@@ -1,41 +1,5 @@
 import { AuthProvider, TokenVerificationResult, AuthUser } from './auth.provider';
-import crypto from 'crypto';
 import admin from 'firebase-admin';
-
-function decodeJwtPayload(token: string): Record<string, unknown> | null {
-  const parts = token.split('.');
-  if (parts.length !== 3) return null;
-  const payload = parts[1];
-  try {
-    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
-    const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
-    const json = Buffer.from(padded, 'base64').toString('utf8');
-    return JSON.parse(json) as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
-
-function getString(payload: Record<string, unknown> | null, key: string): string | undefined {
-  if (!payload) return undefined;
-  const value = payload[key];
-  return typeof value === 'string' && value.trim() !== '' ? value : undefined;
-}
-
-function getBoolean(payload: Record<string, unknown> | null, key: string): boolean | undefined {
-  if (!payload) return undefined;
-  const value = payload[key];
-  if (typeof value === 'boolean') return value;
-  if (typeof value === 'string') {
-    if (value.toLowerCase() === 'true') return true;
-    if (value.toLowerCase() === 'false') return false;
-  }
-  return undefined;
-}
-
-function hashToken(token: string): string {
-  return crypto.createHash('sha256').update(token).digest('hex').slice(0, 32);
-}
 
 let firebaseAdminApp: admin.app.App | null = null;
 
@@ -94,46 +58,15 @@ function mapDecodedTokenToAuthUser(decoded: admin.auth.DecodedIdToken): AuthUser
   };
 }
 
-function deriveAuthUserFromToken(token: string): AuthUser {
-  const payload = decodeJwtPayload(token);
-  const uid =
-    getString(payload, 'user_id') ||
-    getString(payload, 'uid') ||
-    getString(payload, 'sub') ||
-    `stub-${hashToken(token)}`;
-  const email = getString(payload, 'email');
-  const displayName =
-    getString(payload, 'name') ||
-    getString(payload, 'displayName') ||
-    getString(payload, 'preferred_username') ||
-    email;
-  const emailVerified =
-    getBoolean(payload, 'email_verified') ?? getBoolean(payload, 'emailVerified');
-  const photoURL = getString(payload, 'picture') || getString(payload, 'photoURL');
-
-  return {
-    uid,
-    email,
-    emailVerified,
-    displayName,
-    photoURL,
-  };
-}
-
 /**
  * Провайдер авторизации через Firebase Authentication
  *
- * Реализация поверх Firebase Admin SDK с fallback-заглушкой в non-production.
- *
- * В production среде ожидается корректная настройка Firebase Admin SDK
- * через переменные окружения, иначе сервер не стартует.
+ * Реализация поверх Firebase Admin SDK без каких-либо runtime fallback'ов.
+ * Если Firebase Admin не сконфигурирован, сервер должен fail closed.
  */
 export class FirebaseAuthProvider implements AuthProvider {
   /**
    * Проверка токена Firebase ID Token
-   *
-   * В non-production, если Firebase Admin не сконфигурирован, используется
-   * безопасная заглушка, которая детерминированно derive-ит uid из токена.
    *
    * @param token - Firebase ID Token из заголовка Authorization
    * @returns Результат проверки
@@ -155,35 +88,9 @@ export class FirebaseAuthProvider implements AuthProvider {
       };
     } catch (error) {
       const err = error as { code?: string; message?: string };
-
-      // Для production — любая ошибка верификации считается невалидным токеном
-      if (process.env.NODE_ENV === 'production') {
-        return {
-          valid: false,
-          error: 'Firebase ID token verification failed',
-          details: {
-            code: err.code,
-          },
-        };
-      }
-
-      // В non-production, если нет конфигурации Admin SDK, используем заглушку
-      const message = String(err.message || '');
-      const misconfig =
-        message.includes('FIREBASE_PROJECT_ID') ||
-        message.includes('FIREBASE_CLIENT_EMAIL') ||
-        message.includes('FIREBASE_PRIVATE_KEY');
-
-      if (misconfig) {
-        return {
-          valid: true,
-          user: deriveAuthUserFromToken(token),
-        };
-      }
-
       return {
         valid: false,
-        error: 'Firebase ID token verification failed (non-production)',
+        error: 'Firebase ID token verification failed',
         details: {
           code: err.code,
         },
@@ -195,27 +102,23 @@ export class FirebaseAuthProvider implements AuthProvider {
 /**
  * Startup-check для модуля авторизации.
  *
- * В production окружении гарантирует наличие корректной конфигурации
- * Firebase Admin SDK (credentials через env). В non-production только
- * выполняет лёгкую проверку без падения.
+ * Во всех runtime окружениях гарантирует наличие корректной конфигурации
+ * Firebase Admin SDK (credentials через env).
  */
 export function assertFirebaseAuthConfigured(): void {
-  if (process.env.NODE_ENV === 'production') {
-    // В production сразу проверяем, что все env для Firebase заданы.
-    const projectId = process.env.FIREBASE_PROJECT_ID;
-    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-    const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
-    if (!projectId || !clientEmail || !privateKey) {
-      throw new Error(
-        'SECURITY: Firebase Admin SDK is not initialized. ' +
-          'Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY for production.',
-      );
-    }
-
-    // Пробуем лениво инициализировать Admin SDK, чтобы поймать ошибки конфигурации на старте.
-    getFirebaseAdminApp();
+  if (!projectId || !clientEmail || !privateKey) {
+    throw new Error(
+      'SECURITY: Firebase Admin SDK is not initialized. ' +
+        'Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY.',
+    );
   }
+
+  // Пробуем лениво инициализировать Admin SDK, чтобы поймать ошибки конфигурации на старте.
+  getFirebaseAdminApp();
 }
 
 let authProviderInstance: AuthProvider | null = null;

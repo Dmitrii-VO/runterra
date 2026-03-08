@@ -1,7 +1,9 @@
 import request from 'supertest';
 import { createApp } from '../app';
+import { getAuthProvider } from '../modules/auth';
 
 // Mock the repositories module
+jest.mock('../modules/auth');
 jest.mock('../db/repositories');
 
 const app = createApp();
@@ -66,6 +68,12 @@ describe('PATCH /api/events/:id', () => {
   };
 
   beforeEach(() => {
+    (getAuthProvider as jest.Mock).mockReturnValue({
+      verifyToken: jest.fn().mockResolvedValue({
+        valid: true,
+        user: { uid: 'uid-1', email: 'test@example.com' },
+      }),
+    });
     mockUsersRepository.findByFirebaseUid.mockClear();
     mockEventsRepository.findById.mockClear();
     mockEventsRepository.update.mockClear();

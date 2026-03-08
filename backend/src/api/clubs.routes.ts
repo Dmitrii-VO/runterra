@@ -65,6 +65,13 @@ function respondInvalidClubId(res: Response): Response {
   });
 }
 
+function hasActiveClubRole(
+  membership: { status: string; role: string } | null | undefined,
+  roles: string[],
+): boolean {
+  return !!membership && membership.status === 'active' && roles.includes(membership.role);
+}
+
 /**
  * Helper to compute city leaderboard
  */
@@ -916,7 +923,7 @@ router.post(
 
       const clubMembersRepo = getClubMembersRepository();
       const requesterMembership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
-      if (!requesterMembership || requesterMembership.role !== 'leader') {
+      if (!hasActiveClubRole(requesterMembership, ['leader'])) {
         return res
           .status(403)
           .json({ code: 'forbidden', message: 'Only leaders can manage assignments' });
@@ -995,7 +1002,7 @@ router.delete('/:id/members/:userId/assign-trainer', async (req: Request, res: R
 
     const clubMembersRepo = getClubMembersRepository();
     const requesterMembership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
-    if (!requesterMembership || requesterMembership.role !== 'leader') {
+    if (!hasActiveClubRole(requesterMembership, ['leader'])) {
       return res
         .status(403)
         .json({ code: 'forbidden', message: 'Only leaders can manage assignments' });
@@ -1053,7 +1060,7 @@ router.post(
 
       const clubMembersRepo = getClubMembersRepository();
       const requesterMembership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
-      if (!requesterMembership || requesterMembership.role !== 'leader') {
+      if (!hasActiveClubRole(requesterMembership, ['leader'])) {
         return res
           .status(403)
           .json({ code: 'forbidden', message: 'Only leaders can manage assignments' });
@@ -1118,7 +1125,7 @@ router.delete(
 
       const clubMembersRepo = getClubMembersRepository();
       const requesterMembership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
-      if (!requesterMembership || requesterMembership.role !== 'leader') {
+      if (!hasActiveClubRole(requesterMembership, ['leader'])) {
         return res
           .status(403)
           .json({ code: 'forbidden', message: 'Only leaders can manage assignments' });
@@ -1217,7 +1224,7 @@ router.patch(
       // Check if requester is a leader
       const clubMembersRepo = getClubMembersRepository();
       const requesterMembership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
-      if (!requesterMembership || requesterMembership.role !== 'leader') {
+      if (!hasActiveClubRole(requesterMembership, ['leader'])) {
         return res.status(403).json({
           code: 'forbidden',
           message: 'Only club leaders can change member roles',
@@ -1335,7 +1342,7 @@ router.patch(
       // Check if user is a leader
       const clubMembersRepo = getClubMembersRepository();
       const membership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
-      if (!membership || membership.role !== 'leader') {
+      if (!hasActiveClubRole(membership, ['leader'])) {
         return res.status(403).json({
           code: 'forbidden',
           message: 'Only club leaders can edit the club',
@@ -1428,7 +1435,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     // Verify leader role
     const clubMembersRepo = getClubMembersRepository();
     const membership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
-    if (!membership || membership.role !== 'leader') {
+    if (!hasActiveClubRole(membership, ['leader'])) {
       return res.status(403).json({
         code: 'forbidden',
         message: 'Only club leaders can disband the club',
@@ -1572,7 +1579,7 @@ router.post('/:id/channels', async (req: Request, res: Response) => {
 
     const clubMembersRepo = getClubMembersRepository();
     const membership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
-    if (!membership || !['leader', 'trainer'].includes(membership.role)) {
+    if (!hasActiveClubRole(membership, ['leader', 'trainer'])) {
       return res.status(403).json({
         code: 'forbidden',
         message: 'Only leaders and trainers can create channels',
@@ -1638,7 +1645,7 @@ router.get('/:id/membership-requests', async (req: Request, res: Response) => {
 
     const clubMembersRepo = getClubMembersRepository();
     const requesterMembership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
-    if (!requesterMembership || !['leader', 'trainer'].includes(requesterMembership.role)) {
+    if (!hasActiveClubRole(requesterMembership, ['leader', 'trainer'])) {
       return res.status(403).json({
         code: 'forbidden',
         message: 'Only leaders and trainers can view membership requests',
@@ -1695,7 +1702,7 @@ router.post('/:id/membership-requests/:userId/approve', async (req: Request, res
 
     const clubMembersRepo = getClubMembersRepository();
     const requesterMembership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
-    if (!requesterMembership || !['leader', 'trainer'].includes(requesterMembership.role)) {
+    if (!hasActiveClubRole(requesterMembership, ['leader', 'trainer'])) {
       return res.status(403).json({
         code: 'forbidden',
         message: 'Only leaders and trainers can approve membership requests',
@@ -1772,7 +1779,7 @@ router.post('/:id/membership-requests/:userId/reject', async (req: Request, res:
 
     const clubMembersRepo = getClubMembersRepository();
     const requesterMembership = await clubMembersRepo.findByClubAndUser(clubId, user.id);
-    if (!requesterMembership || !['leader', 'trainer'].includes(requesterMembership.role)) {
+    if (!hasActiveClubRole(requesterMembership, ['leader', 'trainer'])) {
       return res.status(403).json({
         code: 'forbidden',
         message: 'Only leaders and trainers can reject membership requests',
@@ -1924,7 +1931,7 @@ router.delete('/:id/schedule/:itemId', async (req: Request, res: Response) => {
     }
 
     const scheduleRepo = getScheduleRepository();
-    const deleted = await scheduleRepo.deleteWeeklyItem(itemId);
+    const deleted = await scheduleRepo.deleteWeeklyItem(clubId, itemId);
     if (!deleted) {
       return res.status(404).json({
         code: 'not_found',
@@ -1990,7 +1997,7 @@ router.patch(
       }
 
       const scheduleRepo = getScheduleRepository();
-      const updated = await scheduleRepo.updateWeeklyItem(itemId, dto);
+      const updated = await scheduleRepo.updateWeeklyItem(clubId, itemId, dto);
       if (!updated) {
         return res.status(404).json({ code: 'not_found', message: 'Schedule item not found' });
       }

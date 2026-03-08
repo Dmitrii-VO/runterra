@@ -26,6 +26,7 @@ import {
 } from '../modules/trainer';
 import { logger } from '../shared/logger';
 import { isValidUuid } from '../shared/validation';
+import { isTrainerInAnyClub } from './helpers/trainer-role';
 
 const router = Router();
 
@@ -52,6 +53,19 @@ async function resolveUserId(req: Request, res: Response): Promise<string | null
   return user.id;
 }
 
+async function ensureApprovedTrainer(userId: string, res: Response): Promise<boolean> {
+  const approved = await isTrainerInAnyClub(userId);
+  if (approved) {
+    return true;
+  }
+
+  res.status(403).json({
+    code: 'forbidden',
+    message: 'Only active club trainers or leaders can manage trainer profiles',
+  });
+  return false;
+}
+
 // GET /api/trainers — public trainer discovery
 router.get('/', async (req: Request, res: Response) => {
   try {
@@ -70,6 +84,7 @@ router.get('/profile', async (req: Request, res: Response) => {
   try {
     const userId = await resolveUserId(req, res);
     if (!userId) return;
+    if (!(await ensureApprovedTrainer(userId, res))) return;
 
     const repo = getTrainerProfilesRepository();
     const profile = await repo.findByUserId(userId);
@@ -96,7 +111,7 @@ router.get('/profile/:userId', async (req: Request, res: Response) => {
     }
     const repo = getTrainerProfilesRepository();
     const profile = await repo.findByUserId(userId);
-    if (!profile) {
+    if (!profile || !(await isTrainerInAnyClub(userId))) {
       return res.status(404).json({ code: 'not_found', message: 'Trainer profile not found' });
     }
     res.status(200).json(profile);
@@ -106,7 +121,7 @@ router.get('/profile/:userId', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/trainer/profile — create (any authenticated user with bio + specialization)
+// POST /api/trainer/profile — create (only active club trainer/leader)
 router.post(
   '/profile',
   validateBody(CreateTrainerProfileSchema),
@@ -114,6 +129,7 @@ router.post(
     try {
       const userId = await resolveUserId(req, res);
       if (!userId) return;
+      if (!(await ensureApprovedTrainer(userId, res))) return;
 
       const repo = getTrainerProfilesRepository();
       const existing = await repo.findByUserId(userId);
@@ -147,6 +163,7 @@ router.patch(
     try {
       const userId = await resolveUserId(req, res);
       if (!userId) return;
+      if (!(await ensureApprovedTrainer(userId, res))) return;
 
       const repo = getTrainerProfilesRepository();
       const profile = await repo.update(userId, req.body);
@@ -166,58 +183,13 @@ router.patch(
  */
 router.post('/clients/:userId', async (req: Request, res: Response) => {
   try {
-    const trainerId = await resolveUserId(req, res);
-    if (!trainerId) return;
+    if (!(await resolveUserId(req, res))) return;
 
-    const { userId: clientId } = req.params;
-    if (!isValidUuid(clientId)) {
-      return res.status(400).json({
-        code: 'validation_error',
-        message: 'userId must be a valid UUID',
-        details: { fields: [{ field: 'userId', message: 'Invalid UUID', code: 'invalid_uuid' }] },
-      });
-    }
-
-    if (trainerId === clientId) {
-      return res.status(400).json({
-        code: 'validation_error',
-        message: 'Cannot add yourself as a client',
-      });
-    }
-
-    // Private trainer: if acceptsPrivateClients=true, no shared-club requirement
-    const trainerProfileRepo = getTrainerProfilesRepository();
-    const trainerProfile = await trainerProfileRepo.findByUserId(trainerId);
-    const isPrivateTrainer = trainerProfile?.acceptsPrivateClients === true;
-
-    let isAuthorized = isPrivateTrainer;
-
-    if (!isAuthorized) {
-      // Fallback: shared club check (trainer or leader in a club where client is active member)
-      const clubMembersRepo = getClubMembersRepository();
-      const trainerMemberships = await clubMembersRepo.findActiveClubsByUser(trainerId);
-      const trainerClubs = trainerMemberships.filter(
-        m => m.role === 'trainer' || m.role === 'leader',
-      );
-      for (const tc of trainerClubs) {
-        const clientMembership = await clubMembersRepo.findByClubAndUser(tc.clubId, clientId);
-        if (clientMembership && clientMembership.status === 'active') {
-          isAuthorized = true;
-          break;
-        }
-      }
-    }
-
-    if (!isAuthorized) {
-      return res.status(403).json({
-        code: 'forbidden',
-        message: 'You must have a private trainer profile or share a club with the target user',
-      });
-    }
-
-    const messagesRepo = getMessagesRepository();
-    await messagesRepo.addTrainerClient(trainerId, clientId);
-    res.status(201).json({ ok: true });
+    return res.status(403).json({
+      code: 'forbidden',
+      message:
+        'Direct trainer-client linking is disabled. Use club leader assignment flow instead.',
+    });
   } catch (error) {
     logger.error('Error adding trainer client', { error });
     res.status(500).json({ code: 'internal_error', message: 'Internal server error' });

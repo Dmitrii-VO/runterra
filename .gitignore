@@ -33,6 +33,9 @@ admin/.next/
 .build/
 .dart_tool/
 mobile/android/local.properties
+mobile/android/key.properties
+*.jks
+*.keystore
 mobile/android/.gradle/
 
 # Logs

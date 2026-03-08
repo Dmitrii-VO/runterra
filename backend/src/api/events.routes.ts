@@ -123,6 +123,40 @@ async function resolveEventIntegrationFields(
   return result;
 }
 
+async function canAccessPrivateEvent(
+  req: Request,
+  event: Awaited<ReturnType<ReturnType<typeof getEventsRepository>['findById']>>,
+): Promise<boolean> {
+  if (!event || event.visibility !== 'private') {
+    return true;
+  }
+
+  const uid = req.authUser?.uid;
+  if (!uid) {
+    return false;
+  }
+
+  const usersRepo = getUsersRepository();
+  const resolvedUser = await usersRepo.findByFirebaseUid(uid);
+  if (!resolvedUser) {
+    return false;
+  }
+
+  const eventsRepo = getEventsRepository();
+  const participant = await eventsRepo.getParticipant(event.id, resolvedUser.id);
+  const isParticipant =
+    participant?.status === 'registered' || participant?.status === 'checked_in';
+  if (isParticipant) {
+    return true;
+  }
+
+  if (event.organizerType === 'trainer') {
+    return event.organizerId === resolvedUser.id;
+  }
+
+  return isTrainerOrLeaderInClub(resolvedUser.id, event.organizerId);
+}
+
 /**
  * GET /api/events
  *
@@ -307,15 +341,13 @@ router.get('/:id', async (req: Request, res: Response) => {
     }
 
     // Private events: only participants and organizers can view
-    if (event.visibility === 'private') {
-      if (!isParticipant && !isOrganizer) {
-        res.status(404).json({
-          code: 'not_found',
-          message: 'Event not found',
-          details: { eventId: id },
-        });
-        return;
-      }
+    if (event.visibility === 'private' && !isParticipant && !isOrganizer) {
+      res.status(404).json({
+        code: 'not_found',
+        message: 'Event not found',
+        details: { eventId: id },
+      });
+      return;
     }
 
     const organizerDisplayName = await getOrganizerDisplayName(
@@ -378,6 +410,15 @@ router.get('/:id/participants', async (req: Request, res: Response) => {
     const repo = getEventsRepository();
     const event = await repo.findById(id);
     if (!event) {
+      res.status(404).json({
+        code: 'not_found',
+        message: 'Event not found',
+        details: { eventId: id },
+      });
+      return;
+    }
+
+    if (!(await canAccessPrivateEvent(req, event))) {
       res.status(404).json({
         code: 'not_found',
         message: 'Event not found',

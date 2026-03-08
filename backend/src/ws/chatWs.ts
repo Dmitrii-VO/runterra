@@ -1,6 +1,7 @@
 /**
  * WebSocket server for real-time chat.
- * Path: /ws. Auth via query token. Client sends { type: 'subscribe', channel: 'club:clubId' }.
+ * Path: /ws. Auth via Authorization header. Client sends
+ * { type: 'subscribe', channel: 'club:clubId' }.
  * Server broadcasts { type: 'message', payload: MessageViewDto } to subscribers of the channel.
  */
 
@@ -112,7 +113,7 @@ async function canSubscribe(uid: string, channelKey: string): Promise<boolean> {
 
 /**
  * Attach WebSocket server to HTTP server at path /ws.
- * Validates token from query (?token=...) on connect; handles subscribe messages.
+ * Validates bearer token from Authorization header on connect; handles subscribe messages.
  */
 export function initChatWs(server: HttpServer): void {
   wss = new WebSocketServer({ noServer: true });
@@ -124,10 +125,11 @@ export function initChatWs(server: HttpServer): void {
       return;
     }
 
-    const query = parseUrl(request.url || '', true).query;
-    const token = typeof query.token === 'string' ? query.token : undefined;
+    const authHeader = request.headers.authorization;
+    const [scheme, token] =
+      typeof authHeader === 'string' ? authHeader.split(' ') : [undefined, undefined];
 
-    if (!token) {
+    if (scheme !== 'Bearer' || !token) {
       socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
       socket.destroy();
       return;

@@ -132,7 +132,16 @@ export class TrainerProfilesRepository extends BaseRepository {
     cityId?: string;
     specialization?: string;
   }): Promise<PublicTrainerEntry[]> {
-    const conditions: string[] = ['tp.accepts_private_clients = true'];
+    const conditions: string[] = [
+      'tp.accepts_private_clients = true',
+      `EXISTS (
+         SELECT 1
+         FROM club_members cm
+         WHERE cm.user_id = tp.user_id
+           AND cm.status = 'active'
+           AND cm.role IN ('trainer', 'leader')
+       )`,
+    ];
     const params: unknown[] = [];
     let idx = 1;
 

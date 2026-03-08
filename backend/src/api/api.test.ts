@@ -1,7 +1,9 @@
 import request from 'supertest';
 import { createApp } from '../app';
+import { getAuthProvider } from '../modules/auth';
 
 // Mock the repositories module
+jest.mock('../modules/auth');
 jest.mock('../db/repositories');
 
 const app = createApp();
@@ -18,20 +20,31 @@ const TEST_CLUB_NEW = '550e8400-e29b-41d4-a716-446655440003';
  * - Auth middleware blocks unauthenticated requests
  * - Endpoints exist and respond correctly
  *
- * NOTE: These tests use stub auth. In dev mode, any Bearer token is accepted.
- * Set NODE_ENV=test to allow stub auth.
+ * NOTE: Auth is mocked explicitly in these tests.
  */
 describe('API Routes', () => {
   // Store original NODE_ENV
   const originalEnv = process.env.NODE_ENV;
 
   beforeAll(() => {
-    // Allow stub auth for tests
     process.env.NODE_ENV = 'test';
   });
 
   afterAll(() => {
     process.env.NODE_ENV = originalEnv;
+  });
+
+  beforeEach(() => {
+    (getAuthProvider as jest.Mock).mockReturnValue({
+      verifyToken: jest.fn().mockResolvedValue({
+        valid: true,
+        user: {
+          uid: 'uid-1',
+          email: 'test@example.com',
+          displayName: 'Test User',
+        },
+      }),
+    });
   });
 
   describe('Auth middleware', () => {
@@ -48,10 +61,9 @@ describe('API Routes', () => {
       expect(res.status).toBe(401);
     });
 
-    it('accepts Bearer token (stub mode)', async () => {
+    it('accepts Bearer token when auth provider validates it', async () => {
       const res = await request(app).get('/api/users').set('Authorization', 'Bearer test-token');
 
-      // Should pass auth (stub accepts any token in non-production)
       expect(res.status).not.toBe(401);
     });
   });
@@ -339,6 +351,29 @@ describe('API Routes', () => {
         trainerName: 'Trainer One',
       });
     });
+
+    it('returns 404 for private participant list when requester is not participant or organizer', async () => {
+      mockEventsRepository.findById.mockResolvedValueOnce({
+        id: 'private-event-1',
+        visibility: 'private',
+        organizerId: TEST_CLUB_1,
+        organizerType: 'club',
+      });
+      mockEventsRepository.getParticipant.mockResolvedValueOnce(null);
+      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({
+        id: 'user-1',
+        firebaseUid: 'uid-1',
+        email: 'u@example.com',
+        name: 'User One',
+      });
+
+      const res = await request(app)
+        .get('/api/events/private-event-1/participants')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(404);
+      expect(mockEventsRepository.getParticipants).not.toHaveBeenCalled();
+    });
   });
 
   describe('GET /api/activities', () => {
@@ -586,7 +621,7 @@ describe('API Routes', () => {
     // NOTE: Stubs return 200 with mock data for any ID.
     // TODO: Update tests when real DB integration is added.
 
-    it('GET /api/users/:id returns 200 (stub)', async () => {
+    it('GET /api/users/:id returns 200', async () => {
       const res = await request(app)
         .get('/api/users/any-id')
         .set('Authorization', 'Bearer test-token');
@@ -594,7 +629,7 @@ describe('API Routes', () => {
       expect(res.status).toBe(200);
     });
 
-    it('GET /api/events/:id returns 200 with organizerDisplayName (stub)', async () => {
+    it('GET /api/events/:id returns 200 with organizerDisplayName', async () => {
       const res = await request(app)
         .get('/api/events/any-id')
         .set('Authorization', 'Bearer test-token');
@@ -673,7 +708,7 @@ describe('API Routes', () => {
       });
     });
 
-    it('GET /api/clubs/:id returns 200 (stub)', async () => {
+    it('GET /api/clubs/:id returns 200', async () => {
       const res = await request(app)
         .get(`/api/clubs/${TEST_CLUB_1}`)
         .set('Authorization', 'Bearer test-token');
@@ -1176,10 +1211,23 @@ describe('API Routes', () => {
   describe('POST /api/users', () => {
     const { mockUsersRepository } = require('../db/repositories');
 
-    it('should return 409 when user with firebaseUid already exists', async () => {
+    beforeEach(() => {
+      (getAuthProvider as jest.Mock).mockReturnValue({
+        verifyToken: jest.fn().mockResolvedValue({
+          valid: true,
+          user: {
+            uid: 'auth-uid-1',
+            email: 'auth@example.com',
+            displayName: 'Auth User',
+          },
+        }),
+      });
+    });
+
+    it('returns existing self user when record already exists', async () => {
       mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({
         id: 'existing-id',
-        firebaseUid: 'existing-uid',
+        firebaseUid: 'auth-uid-1',
         email: 'existing@example.com',
         name: 'Existing',
         createdAt: new Date(),
@@ -1191,14 +1239,45 @@ describe('API Routes', () => {
         .post('/api/users')
         .set('Authorization', 'Bearer test-token')
         .send({
-          firebaseUid: 'existing-uid',
           email: 'existing@example.com',
           name: 'Existing',
         });
 
-      expect(res.status).toBe(409);
-      expect(res.body.message).toMatch(/already exists/i);
+      expect(res.status).toBe(200);
+      expect(res.body.name).toBe('Existing');
       expect(mockUsersRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('creates self user with firebase uid from verified token, ignoring client-supplied uid', async () => {
+      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce(null);
+      mockUsersRepository.create.mockResolvedValueOnce({
+        id: 'created-id',
+        firebaseUid: 'auth-uid-1',
+        email: 'auth@example.com',
+        name: 'Created User',
+        isMercenary: false,
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const res = await request(app)
+        .post('/api/users')
+        .set('Authorization', 'Bearer test-token')
+        .send({
+          firebaseUid: 'attacker-controlled-uid',
+          email: 'existing@example.com',
+          name: 'Created User',
+        });
+
+      expect(res.status).toBe(201);
+      expect(mockUsersRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          firebaseUid: 'auth-uid-1',
+          email: 'auth@example.com',
+          name: 'Created User',
+        }),
+      );
     });
   });
 

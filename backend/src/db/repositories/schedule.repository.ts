@@ -141,8 +141,11 @@ export class ScheduleRepository extends BaseRepository {
   /**
    * Удалить элемент из расписания
    */
-  async deleteWeeklyItem(itemId: string): Promise<boolean> {
-    const result = await this.query('DELETE FROM weekly_schedule_items WHERE id = $1', [itemId]);
+  async deleteWeeklyItem(clubId: string, itemId: string): Promise<boolean> {
+    const result = await this.query(
+      'DELETE FROM weekly_schedule_items WHERE id = $1 AND club_id = $2',
+      [itemId, clubId],
+    );
     return (result.rowCount ?? 0) > 0;
   }
 
@@ -150,6 +153,7 @@ export class ScheduleRepository extends BaseRepository {
    * Обновить элемент шаблона
    */
   async updateWeeklyItem(
+    clubId: string,
     itemId: string,
     item: Partial<Omit<WeeklyScheduleItemDto, 'id' | 'clubId'>>,
   ): Promise<WeeklyScheduleItemDto | null> {
@@ -186,11 +190,17 @@ export class ScheduleRepository extends BaseRepository {
       values.push(item.trainerId || null);
     }
 
-    if (fields.length === 0) return this.findWeeklyItemById(itemId);
+    if (fields.length === 0) {
+      const current = await this.findWeeklyItemById(itemId);
+      return current?.clubId === clubId ? current : null;
+    }
 
-    values.push(itemId);
+    values.push(itemId, clubId);
     const row = await this.queryOne<WeeklyScheduleItemRow>(
-      `UPDATE weekly_schedule_items SET ${fields.join(', ')}, updated_at = NOW() WHERE id = $${i} RETURNING *`,
+      `UPDATE weekly_schedule_items
+       SET ${fields.join(', ')}, updated_at = NOW()
+       WHERE id = $${i} AND club_id = $${i + 1}
+       RETURNING *`,
       values,
     );
     return row ? rowToWeeklyItem(row) : null;
