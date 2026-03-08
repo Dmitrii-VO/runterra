@@ -75,11 +75,18 @@ android {
 
     buildTypes {
         release {
-            if (!hasReleaseSigning) {
-                throw new GradleException("Release signing is not configured. Provide mobile/android/key.properties or ANDROID_KEYSTORE_PATH, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD.")
-            }
             signingConfig signingConfigs.release
         }
+    }
+}
+
+gradle.taskGraph.whenReady { taskGraph ->
+    def releaseTasks = ['assembleRelease', 'bundleRelease', 'packageRelease']
+    def buildingRelease = taskGraph.allTasks.any { task ->
+        releaseTasks.any { task.name.contains(it) }
+    }
+    if (buildingRelease && !hasReleaseSigning) {
+        throw new GradleException("Release signing is not configured. Provide mobile/android/key.properties or ANDROID_KEYSTORE_PATH, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD.")
     }
 }
 
