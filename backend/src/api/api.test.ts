@@ -647,6 +647,156 @@ describe('API Routes', () => {
       expect(res.body.message).toMatch(/active approved trainers/i);
       expect(mockEventsRepository.create).not.toHaveBeenCalled();
     });
+
+    it('returns 400 when trainer fields are set on trainer events', async () => {
+      const {
+        mockUsersRepository,
+        mockTrainerProfilesRepository,
+        mockClubMembersRepository,
+        mockEventsRepository,
+      } = require('../db/repositories');
+
+      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({
+        id: 'user-1',
+        firebaseUid: 'uid-1',
+        email: 'test@example.com',
+        name: 'Test User',
+      });
+      mockTrainerProfilesRepository.findByUserId.mockResolvedValueOnce({
+        userId: 'user-1',
+        bio: 'Coach bio',
+        specialization: ['GENERAL'],
+        experienceYears: 5,
+        certificates: [],
+        acceptsPrivateClients: true,
+        createdAt: new Date(),
+      });
+      mockClubMembersRepository.findActiveClubsByUser.mockResolvedValueOnce([
+        {
+          clubId: TEST_CLUB_1,
+          clubName: 'Test Club',
+          clubCityId: 'spb',
+          clubStatus: 'active',
+          role: 'trainer',
+          joinedAt: new Date(),
+        },
+      ]);
+      mockEventsRepository.create.mockClear();
+
+      const res = await request(app)
+        .post('/api/events')
+        .set('Authorization', 'Bearer test-token')
+        .send({
+          name: 'Private Coach Session',
+          type: 'training',
+          startDateTime: '2026-03-10T10:00:00.000Z',
+          startLocation: { longitude: 30.3351, latitude: 59.9343 },
+          organizerId: 'user-1',
+          organizerType: 'trainer',
+          cityId: 'spb',
+          workoutId: '550e8400-e29b-41d4-a716-446655440099',
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('code', 'validation_error');
+      expect(res.body.message).toMatch(/club events/i);
+      expect(mockEventsRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 when non-leader tries to assign trainerId on club event creation', async () => {
+      const {
+        mockUsersRepository,
+        mockClubMembersRepository,
+        mockEventsRepository,
+      } = require('../db/repositories');
+
+      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({
+        id: 'user-1',
+        firebaseUid: 'uid-1',
+        email: 'test@example.com',
+        name: 'Test User',
+      });
+      mockClubMembersRepository.findByClubAndUser.mockResolvedValueOnce({
+        id: 'cm-1',
+        clubId: TEST_CLUB_1,
+        userId: 'user-1',
+        status: 'active',
+        role: 'trainer',
+      });
+      mockEventsRepository.create.mockClear();
+
+      const res = await request(app)
+        .post('/api/events')
+        .set('Authorization', 'Bearer test-token')
+        .send({
+          name: 'Club Session',
+          type: 'training',
+          startDateTime: '2026-03-10T10:00:00.000Z',
+          startLocation: { longitude: 30.3351, latitude: 59.9343 },
+          organizerId: TEST_CLUB_1,
+          organizerType: 'club',
+          cityId: 'spb',
+          trainerId: '550e8400-e29b-41d4-a716-446655440098',
+        });
+
+      expect(res.status).toBe(403);
+      expect(res.body).toHaveProperty('code', 'forbidden');
+      expect(res.body.message).toMatch(/only club leader/i);
+      expect(mockEventsRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('returns 400 when workout does not belong to club or author on club event creation', async () => {
+      const {
+        mockUsersRepository,
+        mockClubMembersRepository,
+        mockWorkoutsRepository,
+        mockEventsRepository,
+      } = require('../db/repositories');
+
+      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({
+        id: 'user-1',
+        firebaseUid: 'uid-1',
+        email: 'test@example.com',
+        name: 'Test User',
+      });
+      mockClubMembersRepository.findByClubAndUser.mockResolvedValueOnce({
+        id: 'cm-1',
+        clubId: TEST_CLUB_1,
+        userId: 'user-1',
+        status: 'active',
+        role: 'leader',
+      });
+      mockWorkoutsRepository.findById.mockResolvedValueOnce({
+        id: 'workout-foreign',
+        authorId: 'other-user',
+        clubId: '550e8400-e29b-41d4-a716-446655440077',
+        name: 'Foreign Workout',
+        type: 'TEMPO',
+        difficulty: 'INTERMEDIATE',
+        targetMetric: 'DISTANCE',
+        createdAt: new Date(),
+      });
+      mockEventsRepository.create.mockClear();
+
+      const res = await request(app)
+        .post('/api/events')
+        .set('Authorization', 'Bearer test-token')
+        .send({
+          name: 'Club Session',
+          type: 'training',
+          startDateTime: '2026-03-10T10:00:00.000Z',
+          startLocation: { longitude: 30.3351, latitude: 59.9343 },
+          organizerId: TEST_CLUB_1,
+          organizerType: 'club',
+          cityId: 'spb',
+          workoutId: '550e8400-e29b-41d4-a716-446655440097',
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('code', 'validation_error');
+      expect(res.body.message).toMatch(/does not belong to this club or author/i);
+      expect(mockEventsRepository.create).not.toHaveBeenCalled();
+    });
   });
 
   describe('GET by ID', () => {
@@ -672,6 +822,34 @@ describe('API Routes', () => {
         .set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(200);
+    });
+
+    it('GET /api/users/:id returns 404 for hidden profile of another user', async () => {
+      mockUsersRepository.findById.mockResolvedValueOnce({
+        id: 'hidden-user-id',
+        firebaseUid: 'hidden-uid',
+        email: 'hidden@example.com',
+        name: 'Hidden User',
+        profileVisible: false,
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({
+        id: 'requester-id',
+        firebaseUid: 'uid-1',
+        email: 'test@example.com',
+        name: 'Requester',
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const res = await request(app)
+        .get('/api/users/hidden-user-id')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(404);
     });
 
     it('GET /api/events/:id returns 200 with organizerDisplayName', async () => {
@@ -940,9 +1118,14 @@ describe('API Routes', () => {
   });
 
   describe('POST /api/events/:id/join', () => {
-    const { mockEventsRepository } = require('../db/repositories');
+    const { mockEventsRepository, mockUsersRepository, mockClubMembersRepository } =
+      require('../db/repositories');
 
     beforeEach(() => {
+      mockUsersRepository.findByFirebaseUid.mockClear();
+      mockClubMembersRepository.findByClubAndUser.mockClear();
+      mockEventsRepository.findById.mockClear();
+      mockEventsRepository.getParticipant.mockClear();
       mockEventsRepository.joinEvent.mockResolvedValue({
         participant: {
           id: 'p-1',
@@ -976,6 +1159,41 @@ describe('API Routes', () => {
       expect(res.body.code).toBe('event_full');
       expect(res.body.message).toBe('Event is full');
       expect(res.body.details).toEqual({ eventId: 'ev-1' });
+    });
+
+    it('returns 404 and does not join hidden private event for outsider', async () => {
+      mockUsersRepository.findByFirebaseUid.mockResolvedValueOnce({
+        id: 'user-1',
+        firebaseUid: 'uid-1',
+        email: 'test@example.com',
+        name: 'Test User',
+      });
+      mockEventsRepository.findById.mockResolvedValueOnce({
+        id: 'ev-private',
+        name: 'Private Event',
+        type: 'training',
+        status: 'open',
+        visibility: 'private',
+        startDateTime: new Date(),
+        startLocation: { longitude: 30.3351, latitude: 59.9343 },
+        organizerId: TEST_CLUB_1,
+        organizerType: 'club',
+        participantCount: 0,
+        cityId: 'spb',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      mockEventsRepository.getParticipant.mockResolvedValueOnce(null);
+      mockClubMembersRepository.findByClubAndUser.mockResolvedValueOnce(null);
+      mockEventsRepository.joinEvent.mockClear();
+
+      const res = await request(app)
+        .post('/api/events/ev-private/join')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(404);
+      expect(res.body).toHaveProperty('code', 'not_found');
+      expect(mockEventsRepository.joinEvent).not.toHaveBeenCalled();
     });
   });
 

@@ -203,6 +203,7 @@ router.delete('/clients/:userId', async (req: Request, res: Response) => {
   try {
     const trainerId = await resolveUserId(req, res);
     if (!trainerId) return;
+    if (!(await ensureApprovedTrainer(trainerId, res))) return;
 
     const { userId: clientId } = req.params;
     if (!isValidUuid(clientId)) {

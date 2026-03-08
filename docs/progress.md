@@ -3,6 +3,9 @@
 ## Обзор
 Документ отслеживает выполнение задач и прогресс разработки проекта Runterra.
 
+## 2026-03-09
+- **ACL Security Fixes — закрытие уязвимостей adversarial review (2026-03-09):** Закрыты критичные и средние ACL-уязвимости по результатам Codex adversarial review коммитов `0c041c4–ee3ce48`. (1) **F1 (КРИТИЧНО):** В `canAccessPrivateEvent` и в inline-проверку `GET /api/events/:id` добавлена проверка `isTrainerInAnyClub(resolvedUser.id)` для ветки тренера-организатора — приостановленный тренер больше не проходит как организатор приватного события. (2) **F2 (КРИТИЧНО, уже было):** `getActiveTrainerClientExistsSql()` в `messages.repository.ts` уже джойнит `club_members` и требует `status = 'active'` — отзыв доступа при приостановке тренера работает автоматически. (3) **F3 (СРЕДНЕ):** `DELETE /api/trainer/clients/:userId` защищён проверкой `ensureApprovedTrainer` — только активный тренер/лидер может удалять клиентов. (4) **F7 (СРЕДНЕ):** Из `club_details_screen.dart` удалены кнопка «Write as trainer», метод `_writeAsTrainer`, неиспользуемые импорты и переменная `isTrainerOrLeader`. Тренер работает только с клиентами, назначенными через club leader flow. 40/40 backend-тестов, `flutter analyze` — 0 issues. Подробности — `docs/changes/2026-03-09-acl-security-fixes.md`.
+
 ## 2026-03-05 (продолжение 4)
 - **Документация по последним коммитам (2026-03-05):** Зафиксирован свод изменений по коммитам `98e92eb..10c0aa4`: backend-валидации в событиях и назначениях тренеров, перенос создания тренерских групп в `ClubRosterScreen`, создание пустых групп и удаление группы с экрана редактирования, переход статистики профиля на `totalDistanceKm`, восстановление `statsTerritories` для CI-совместимости, авто-bump patch версии в `deploy-mobile.ps1`, автосинхронизация `APP_VERSION` на сервере и обновление NDK до `27.0.12077973`. Подробности — `docs/changes/2026-03-05-latest-commits-roundup.md`.
 

@@ -464,6 +464,17 @@ router.get('/:id', async (req: Request, res: Response) => {
       return;
     }
 
+    if (user.profileVisible === false) {
+      const requesterFirebaseUid = req.authUser?.uid;
+      const requester = requesterFirebaseUid
+        ? await repo.findByFirebaseUid(requesterFirebaseUid)
+        : null;
+      if (!requester || requester.id !== user.id) {
+        res.status(404).json({ code: 'not_found', message: 'User not found' });
+        return;
+      }
+    }
+
     res.status(200).json(userToViewDto(user));
   } catch (error) {
     logger.error('Error fetching user', { userId: id, error });

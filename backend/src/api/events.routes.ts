@@ -151,10 +151,75 @@ async function canAccessPrivateEvent(
   }
 
   if (event.organizerType === 'trainer') {
-    return event.organizerId === resolvedUser.id;
+    return (
+      event.organizerId === resolvedUser.id && (await isTrainerInAnyClub(resolvedUser.id))
+    );
   }
 
   return isTrainerOrLeaderInClub(resolvedUser.id, event.organizerId);
+}
+
+async function validateEventIntegrationFields(
+  actorUserId: string,
+  organizerType: 'club' | 'trainer',
+  organizerId: string,
+  workoutId?: string | null,
+  trainerId?: string | null,
+): Promise<{ code: string; message: string; status: number } | null> {
+  if (organizerType !== 'club') {
+    if (workoutId !== undefined || trainerId !== undefined) {
+      return {
+        code: 'validation_error',
+        message: 'Trainer fields can only be set on club events',
+        status: 400,
+      };
+    }
+    return null;
+  }
+
+  if (trainerId !== undefined) {
+    const userIsLeader = await isLeaderInClub(actorUserId, organizerId);
+    if (!userIsLeader) {
+      return {
+        code: 'forbidden',
+        message: 'Only club leader can assign a trainer',
+        status: 403,
+      };
+    }
+
+    if (trainerId !== null) {
+      const targetIsTrainer = await isTrainerOrLeaderInClub(trainerId, organizerId);
+      if (!targetIsTrainer) {
+        return {
+          code: 'validation_error',
+          message: 'Target user is not a trainer or leader in this club',
+          status: 400,
+        };
+      }
+    }
+  }
+
+  if (workoutId !== undefined && workoutId !== null) {
+    const workoutsRepo = getWorkoutsRepository();
+    const workout = await workoutsRepo.findById(workoutId);
+    if (!workout) {
+      return {
+        code: 'validation_error',
+        message: 'Workout not found',
+        status: 400,
+      };
+    }
+
+    if (workout.clubId !== organizerId && workout.authorId !== actorUserId) {
+      return {
+        code: 'validation_error',
+        message: 'Workout does not belong to this club or author',
+        status: 400,
+      };
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -330,7 +395,9 @@ router.get('/:id', async (req: Request, res: Response) => {
         }
         // Check if user is organizer (can edit this event)
         if (event.organizerType === 'trainer') {
-          isOrganizer = event.organizerId === resolvedUser.id;
+          isOrganizer =
+            event.organizerId === resolvedUser.id &&
+            (await isTrainerInAnyClub(resolvedUser.id));
         } else {
           const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
           if (uuidRegex.test(event.organizerId)) {
@@ -541,6 +608,20 @@ router.post(
         }
       }
 
+      const integrationValidationError = await validateEventIntegrationFields(
+        authUser.id,
+        dto.organizerType,
+        dto.organizerId,
+        dto.workoutId,
+        dto.trainerId,
+      );
+      if (integrationValidationError) {
+        return res.status(integrationValidationError.status).json({
+          code: integrationValidationError.code,
+          message: integrationValidationError.message,
+        });
+      }
+
       const repo = getEventsRepository();
       const event = await repo.create({
         name: dto.name,
@@ -643,6 +724,24 @@ router.post('/:id/join', async (req: Request, res: Response) => {
     const userId = user.id;
 
     const repo = getEventsRepository();
+    const event = await repo.findById(id);
+    if (event?.visibility === 'private') {
+      const participant = await repo.getParticipant(id, userId);
+      const isAllowedParticipant = !!participant;
+      const isAllowedOrganizer =
+        event.organizerType === 'trainer'
+          ? event.organizerId === userId
+          : await isTrainerOrLeaderInClub(userId, event.organizerId);
+
+      if (!isAllowedParticipant && !isAllowedOrganizer) {
+        return res.status(404).json({
+          code: 'not_found',
+          message: 'Event not found',
+          details: { eventId: id },
+        });
+      }
+    }
+
     const result = await repo.joinEvent(id, userId);
 
     if (result.error) {

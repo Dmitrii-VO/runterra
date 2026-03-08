@@ -45,10 +45,18 @@ logs/
 # Test coverage
 coverage/
 
-# Claude/Cursor/Gemini settings
+# Claude/Cursor/Gemini/Windsurf/Continue/Agent settings
 .claude/
 .cursor/
 .gemini/
+.windsurf/
+.continue/
+.agent/
+.agents/
+
+# Skills (Claude Code local skills)
+skills/
+skills-lock.json
 
 # Service and temp directories
 .gh-cli/

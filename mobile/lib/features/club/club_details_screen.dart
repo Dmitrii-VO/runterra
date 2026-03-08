@@ -6,14 +6,12 @@ import '../../shared/api/users_service.dart' show ApiException;
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/club_model.dart';
 import '../../shared/models/club_member_model.dart';
-import '../../shared/models/direct_chat_model.dart';
 import '../../shared/models/event_list_item_model.dart';
 import '../../shared/models/territory_model.dart';
 import '../../shared/models/city_leaderboard_entry.dart';
 import '../../shared/ui/details_scaffold.dart';
 import '../../shared/ui/error_display.dart';
 import '../events/widgets/event_card.dart';
-import '../messages/direct_chat_screen.dart';
 
 /// Р­РєСЂР°РЅ РґРµС‚Р°Р»РµР№ РєР»СѓР±Р°
 ///
@@ -191,7 +189,6 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
   void _showMemberActionSheet(ClubMemberModel member, ClubModel club) {
     final l10n = AppLocalizations.of(context)!;
     final isLeader = club.userRole == 'leader';
-    final isTrainerOrLeader = club.userRole == 'trainer' || isLeader;
 
     showModalBottomSheet(
       context: context,
@@ -207,15 +204,6 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
-              if (isTrainerOrLeader)
-                ListTile(
-                  leading: const Icon(Icons.fitness_center),
-                  title: Text(l10n.memberActionWriteAsTrainer),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _writeAsTrainer(member);
-                  },
-                ),
               if (isLeader)
                 ListTile(
                   leading: const Icon(Icons.swap_horiz),
@@ -245,32 +233,6 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
         );
       },
     );
-  }
-
-  /// Add client and open direct chat screen
-  Future<void> _writeAsTrainer(ClubMemberModel member) async {
-    try {
-      await ServiceLocator.trainerService.addClient(member.userId);
-      if (!mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => DirectChatScreen(
-            otherUser: DirectChatModel(
-              userId: member.userId,
-              userName: member.displayName,
-            ),
-            isTrainer: true,
-          ),
-        ),
-      );
-    } on ApiException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message)),
-        );
-      }
-    }
   }
 
   Widget _buildMetricChip(BuildContext context, String label, String value,
