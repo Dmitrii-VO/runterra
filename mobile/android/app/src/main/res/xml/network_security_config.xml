@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Allow cleartext HTTP to the backend server (no domain, self-signed cert not viable) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">85.208.85.13</domain>
+    </domain-config>
+</network-security-config>

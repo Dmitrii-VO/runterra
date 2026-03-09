@@ -33,7 +33,9 @@ class ApiConfig {
 
   /// Production backend base URL. Used for mobile/desktop in release builds
   /// when API_BASE_URL is not provided via --dart-define.
-  static const String _prodBaseUrl = 'https://85.208.85.13:3000';
+  /// Note: HTTP is used because server has no domain/SSL cert. Android cleartext
+  /// is allowed via network_security_config.xml for this IP only.
+  static const String _prodBaseUrl = 'http://85.208.85.13:3000';
 
   static String getBaseUrl() {
     final override = _envBaseUrl.trim();
