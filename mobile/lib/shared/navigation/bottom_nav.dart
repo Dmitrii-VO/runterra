@@ -30,7 +30,7 @@ class BottomNav extends StatelessWidget {
         ),
         items: [
           BottomNavigationBarItem(icon: const Icon(Icons.map), label: l10n.navMap),
-          BottomNavigationBarItem(icon: const Icon(Icons.directions_run), label: l10n.navRun),
+          BottomNavigationBarItem(icon: const Icon(Icons.fitness_center), label: l10n.navRun),
           BottomNavigationBarItem(icon: const Icon(Icons.message), label: l10n.navMessages),
           BottomNavigationBarItem(icon: const Icon(Icons.event), label: l10n.navEvents),
           BottomNavigationBarItem(icon: const Icon(Icons.person), label: l10n.navProfile),

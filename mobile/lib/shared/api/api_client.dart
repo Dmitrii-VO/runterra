@@ -77,18 +77,33 @@ class ApiClient {
     final uri = Uri.parse('$baseUrl$endpoint');
     final headers = _authHeaders;
 
-    final response = await _client.get(uri, headers: headers).timeout(
-      _timeout,
-      onTimeout: () {
-        throw TimeoutException(
+    try {
+      return await _client.get(uri, headers: headers).timeout(
+        _timeout,
+        onTimeout: () => throw TimeoutException(
           'Запрос к $uri превысил таймаут (${_timeout.inSeconds} секунд). '
           'Проверьте, что backend сервер запущен и доступен.',
           _timeout,
+        ),
+      );
+    } on http.ClientException {
+      // Stale keep-alive connection — retry once with a fresh local client.
+      // Do NOT close or replace the shared singleton _client: other in-flight
+      // requests are still using it and would get "Client is closed" errors.
+      final retryClient = http.Client();
+      try {
+        return await retryClient.get(uri, headers: headers).timeout(
+          _timeout,
+          onTimeout: () => throw TimeoutException(
+            'Запрос к $uri превысил таймаут (${_timeout.inSeconds} секунд). '
+            'Проверьте, что backend сервер запущен и доступен.',
+            _timeout,
+          ),
         );
-      },
-    );
-    
-    return response;
+      } finally {
+        retryClient.close();
+      }
+    }
   }
 
   /// Выполняет POST запрос к указанному endpoint
@@ -112,24 +127,24 @@ class ApiClient {
       if (headers != null) ...headers,
     };
     
-    final response = await _client
-        .post(
-          uri,
-          headers: requestHeaders,
-          body: body != null ? jsonEncode(body) : null,
-        )
-        .timeout(
-          _timeout,
-          onTimeout: () {
-            throw TimeoutException(
+    try {
+      return await _client
+          .post(
+            uri,
+            headers: requestHeaders,
+            body: body != null ? jsonEncode(body) : null,
+          )
+          .timeout(
+            _timeout,
+            onTimeout: () => throw TimeoutException(
               'Запрос к $uri превысил таймаут (${_timeout.inSeconds} секунд). '
               'Проверьте, что backend сервер запущен и доступен.',
               _timeout,
-            );
-          },
-        );
-    
-    return response;
+            ),
+          );
+    } on http.ClientException {
+      rethrow;
+    }
   }
 
   /// Выполняет PATCH запрос к указанному endpoint
@@ -144,23 +159,24 @@ class ApiClient {
       'Content-Type': 'application/json',
       if (headers != null) ...headers,
     };
-    final response = await _client
-        .patch(
-          uri,
-          headers: requestHeaders,
-          body: body != null ? jsonEncode(body) : null,
-        )
-        .timeout(
-          _timeout,
-          onTimeout: () {
-            throw TimeoutException(
+    try {
+      return await _client
+          .patch(
+            uri,
+            headers: requestHeaders,
+            body: body != null ? jsonEncode(body) : null,
+          )
+          .timeout(
+            _timeout,
+            onTimeout: () => throw TimeoutException(
               'Запрос к $uri превысил таймаут (${_timeout.inSeconds} секунд). '
               'Проверьте, что backend сервер запущен и доступен.',
               _timeout,
-            );
-          },
-        );
-    return response;
+            ),
+          );
+    } on http.ClientException {
+      rethrow;
+    }
   }
 
   Future<http.Response> delete(
@@ -172,22 +188,23 @@ class ApiClient {
       ..._authHeaders,
       if (headers != null) ...headers,
     };
-    final response = await _client
-        .delete(
-          uri,
-          headers: requestHeaders,
-        )
-        .timeout(
-          _timeout,
-          onTimeout: () {
-            throw TimeoutException(
+    try {
+      return await _client
+          .delete(
+            uri,
+            headers: requestHeaders,
+          )
+          .timeout(
+            _timeout,
+            onTimeout: () => throw TimeoutException(
               'Запрос к $uri превысил таймаут (${_timeout.inSeconds} секунд). '
               'Проверьте, что backend сервер запущен и доступен.',
               _timeout,
-            );
-          },
-        );
-    return response;
+            ),
+          );
+    } on http.ClientException {
+      rethrow;
+    }
   }
 
   /// Закрывает [http.Client], если он был создан этим экземпляром.

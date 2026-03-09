@@ -113,7 +113,7 @@ abstract class AppLocalizations {
   /// No description provided for @navRun.
   ///
   /// In en, this message translates to:
-  /// **'Run'**
+  /// **'Training'**
   String get navRun;
 
   /// No description provided for @navMessages.

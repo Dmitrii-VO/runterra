@@ -15,7 +15,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get navMap => 'Карта';
 
   @override
-  String get navRun => 'Тренировка';
+  String get navRun => 'Тренировки';
 
   @override
   String get navMessages => 'Сообщения';

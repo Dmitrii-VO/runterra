@@ -15,7 +15,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navMap => 'Map';
 
   @override
-  String get navRun => 'Run';
+  String get navRun => 'Training';
 
   @override
   String get navMessages => 'Messages';
