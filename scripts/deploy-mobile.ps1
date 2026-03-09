@@ -144,7 +144,8 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $buildName = $nextVersion
-$buildNumber = 1
+$buildNumber = [int](git rev-list --count HEAD 2>$null)
+if ($buildNumber -lt 1) { $buildNumber = 1 }
 Write-Host "  Build:        $buildName+$buildNumber" -ForegroundColor White
 
 if ([string]::IsNullOrWhiteSpace($ReleaseNotes)) {
