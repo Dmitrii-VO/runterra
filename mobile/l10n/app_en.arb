@@ -1037,5 +1037,14 @@
   "mapLayerLocal": "Local events",
   "mapLayerVenues": "Where to run",
   "mapLayerRoutes": "Routes",
-  "mapLayerRoutesComingSoon": "Coming soon"
+  "mapLayerRoutesComingSoon": "Coming soon",
+  "editProfileUsername": "Username",
+  "editProfileUsernameHint": "lowercase letters, digits, underscore • 3–30 chars",
+  "editProfileUsernameConflict": "This username is already taken",
+  "editProfilePhotoChange": "Change photo",
+  "editProfilePhotoSelected": "Photo selected",
+  "editProfilePhotoUploading": "Uploading photo...",
+  "myClubsMySection": "My clubs",
+  "myClubsFind": "Find a club",
+  "myClubsAsTrainer": "Clubs where I'm a trainer"
 }

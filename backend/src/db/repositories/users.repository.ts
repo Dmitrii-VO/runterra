@@ -10,6 +10,7 @@ interface UserRow {
   firebase_uid: string;
   email: string;
   name: string;
+  username: string | null;
   first_name: string | null;
   last_name: string | null;
   birth_date: Date | string | null;
@@ -30,6 +31,7 @@ function rowToUser(row: UserRow): User {
     firebaseUid: row.firebase_uid,
     email: row.email,
     name: row.name,
+    username: row.username || undefined,
     firstName: row.first_name || undefined,
     lastName: row.last_name || undefined,
     birthDate: toDateOnlyString(row.birth_date),
@@ -125,10 +127,11 @@ export class UsersRepository extends BaseRepository {
     id: string,
     data: Partial<{
       name: string;
+      username: string | null;
       firstName: string;
-      lastName: string;
+      lastName: string | null;
       birthDate: string | null;
-      country: string;
+      country: string | null;
       gender: User['gender'];
       avatarUrl: string;
       cityId: string | null;
@@ -144,6 +147,10 @@ export class UsersRepository extends BaseRepository {
     if (data.name !== undefined) {
       fields.push(`name = $${paramIndex++}`);
       values.push(data.name);
+    }
+    if (data.username !== undefined) {
+      fields.push(`username = $${paramIndex++}`);
+      values.push(data.username);
     }
     if (data.firstName !== undefined) {
       fields.push(`first_name = $${paramIndex++}`);

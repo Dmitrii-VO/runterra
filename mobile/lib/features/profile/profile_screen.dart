@@ -11,7 +11,6 @@ import '../../shared/models/trainer_profile.dart';
 import '../../shared/ui/profile/stats_section.dart';
 import '../../shared/ui/profile/activity_section.dart';
 import '../../shared/ui/profile/quick_actions_section.dart';
-import '../../shared/ui/profile/personal_info_section.dart';
 import '../../shared/ui/profile/notifications_section.dart';
 import '../city/city_picker_dialog.dart';
 
@@ -183,7 +182,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return Center(child: Text(l10n.profileNotFound));
     }
 
-    final activeClubId = profile.club?.id ?? ServiceLocator.currentClubService.currentClubId;
     final activeClubName = profile.club?.name;
     final myClubLabel = l10n.profileMyClub;
 
@@ -215,20 +213,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         SliverList(
           delegate: SliverChildListDelegate([
             ProfileStatsSection(stats: profile.stats),
-            ProfilePersonalInfoSection(user: profile.user),
-            if (activeClubId != null && activeClubId.isNotEmpty)
-              Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: ListTile(
-                  leading: const Icon(Icons.groups),
-                  title: Text(myClubLabel),
-                  subtitle: activeClubName != null && activeClubName.isNotEmpty
-                      ? Text(activeClubName)
-                      : null,
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/club/$activeClubId'),
-                ),
+            Card(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: ListTile(
+                leading: const Icon(Icons.groups),
+                title: Text(myClubLabel),
+                subtitle: activeClubName != null && activeClubName.isNotEmpty
+                    ? Text(activeClubName)
+                    : null,
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/profile/clubs'),
               ),
+            ),
             _CitySection(
               currentCityId: profile.user.cityId,
               currentCityName: profile.user.cityName ?? profile.user.cityId,
@@ -359,6 +355,13 @@ class _ProfileHeroHeader extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                   ),
+                  if (user.username != null && user.username!.isNotEmpty)
+                    Text(
+                      '@${user.username}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.white70,
+                          ),
+                    ),
                 ],
               ),
             ),

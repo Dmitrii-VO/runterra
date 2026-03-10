@@ -863,5 +863,14 @@
   "mapLayerLocal": "Местные события",
   "mapLayerVenues": "Где бегать",
   "mapLayerRoutes": "Маршруты",
-  "mapLayerRoutesComingSoon": "Скоро"
+  "mapLayerRoutesComingSoon": "Скоро",
+  "editProfileUsername": "Ник (username)",
+  "editProfileUsernameHint": "латиница, цифры, _ • 3–30 символов",
+  "editProfileUsernameConflict": "Этот ник уже занят",
+  "editProfilePhotoChange": "Изменить фото",
+  "editProfilePhotoSelected": "Фото выбрано",
+  "editProfilePhotoUploading": "Загрузка фото...",
+  "myClubsMySection": "Мои клубы",
+  "myClubsFind": "Найти клуб",
+  "myClubsAsTrainer": "Клубы, где я тренер"
 }

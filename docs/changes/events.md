@@ -1,16 +1,58 @@
 # Изменения: События (Events)
 
-## Текущее состояние фильтров (EventsScreen)
+## Текущее состояние фильтров (EventsScreen) — актуально с 2026-03-10
 
-**Дата-фильтры:** Сегодня | Завтра | 7 дней (взаимоисключающие чипы, `dateFilter`: `today` | `tomorrow` | `next7days`). Backend `EventsRepository.findAll()` применяет диапазоны: today = сегодня 00:00–завтра 00:00; tomorrow = завтра 00:00–послезавтра 00:00; next7days = сегодня 00:00–через 7 дней.
+**Календарь-полоса:** горизонтальный скролл, 61 день вперёд. Тап по дате фильтрует список; кнопка «Показать все» снимает фильтр.
 
-**Дополнительные фильтры:** Только открытые (`onlyOpen`, по умолчанию true — backend с 2026-02-14); Мой клуб (`clubId` из CurrentClubService); Участвую (`participantOnly`, backend `participantUserId`).
+**Категории (мульти-выбор):** Забеги (`group_run`), Соревнования (`open_event`), Открытые тренировки (`training`), Клубные (`club_event`). По умолчанию все включены.
 
-**См. также:** docs/changes/feedback-2026-02-14.md (перепроверка фильтров), docs/changes/2026-02-13-events-swipe-to-run-implementation.md (фильтр «Участвую»).
+**Сортировка:** По релевантности (дата ASC) | Дата ⬆ | Дата ⬇ | Цена ⬆ | Цена ⬇.
+
+**Удалены старые фильтры:** `onlyOpen`, `difficultyLevel`, `participantOnly`, `myClub`.
+
+**API:** `GET /api/events?cityId=&sortBy=&eventTypes=&dateFrom=&dateTo=&limit=&offset=`
 
 ---
 
 ## История изменений
+
+### 2026-03-10 — Переработка экрана «События»: календарь, пагинация, цена, баг-фиксы
+
+**Цель:** полный редизайн EventsScreen по новому продуктовому видению + фикс 8 проблем из adversarial review.
+
+**Backend:**
+- Миграция `040_events_price.sql`: `ALTER TABLE events ADD COLUMN IF NOT EXISTS price INTEGER NOT NULL DEFAULT 0`.
+- `event.entity.ts`, `event.dto.ts`: добавлено поле `price` во все DTO/entity.
+- `events.repository.ts`: `findAll` принимает `sortBy`, `eventTypes`, `dateFrom`, `dateTo`, `limit`, `offset`; динамический `ORDER BY`; `type = ANY($n)` для мульти-фильтра.
+- `events.routes.ts`: новые query params `sortBy` (whitelist-validated), `eventTypes` (comma-sep), `dateFrom`/`dateTo` (ISO timestamps), `limit`/`offset`. Лимит по умолчанию 20. Удалены старые параметры `date`, `onlyOpen`, `difficultyLevel`, `participantOnly`.
+- `map.routes.ts`: добавлен `price` в `EventListItemDto` mapping (был пропущен).
+
+**Mobile:**
+- `EventListItemModel`, `EventDetailsModel`: добавлено поле `price`.
+- `EventsService.getEvents()`: новые параметры `sortBy`, `eventTypes`, `date`, `clubId`, `limit`, `offset`. Дата отправляется как `dateFrom`/`dateTo` ISO timestamps от local midnight (фикс таймзоны).
+- `EventsScreen` — полный рефакторинг:
+  - Горизонтальный календарь-полоса (61 день, анимированный выбор).
+  - Кнопка «Показать все» при выбранной дате.
+  - 4 FilterChip категорий (мульти-выбор).
+  - DropdownButton сортировки в AppBar.
+  - Бесконечный скролл (ScrollController, pageSize=20).
+- `EventCard`: отображает цену («Бесплатно» / «N ₽»).
+- `create_event_screen.dart`, `edit_event_screen.dart`: добавлено поле «Цена».
+- L10n (EN + RU): 16 новых ключей (сортировка, категории, цена, no-city, retry).
+
+**Баг-фиксы (adversarial review):**
+- **F1 race condition:** generation counter — stale результаты отбрасываются.
+- **F2 таймзона:** `dateFrom`/`dateTo` ISO от local midnight вместо `date=YYYY-MM-DD` (UTC).
+- **F3 club filter:** `didChangeDependencies` читает `clubId` из GoRouter query params.
+- **F4 stale data:** `_events.clear()` перед `await` при refresh.
+- **F5 нет города:** `_hasMore=false` + сообщение вместо вечного спиннера.
+- **F6 pagination error:** `_hasMore=false` + кнопка «Повторить» вместо stuck spinner.
+- **F7 backend validation:** whitelist `sortBy`; валидация `dateFrom`/`dateTo` формата.
+- **F8 weekdays:** `DateFormat('EEE', locale)` через intl вместо хардкода русских дней.
+
+**Верификация:** `flutter analyze` — 0 issues; `npm test` — 173/173 passed.
+
+**Осталось:** применить миграцию на сервере + deploy (step 24, выполняется отдельно).
 
 ### 2026-02-09 — Мини-карта точки старта + переход на вкладку Карта
 

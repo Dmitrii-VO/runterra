@@ -3793,6 +3793,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Coming soon'**
   String get mapLayerRoutesComingSoon;
+
+  /// No description provided for @editProfileUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get editProfileUsername;
+
+  /// No description provided for @editProfileUsernameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'lowercase letters, digits, underscore • 3–30 chars'**
+  String get editProfileUsernameHint;
+
+  /// No description provided for @editProfileUsernameConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'This username is already taken'**
+  String get editProfileUsernameConflict;
+
+  /// No description provided for @editProfilePhotoChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change photo'**
+  String get editProfilePhotoChange;
+
+  /// No description provided for @editProfilePhotoSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo selected'**
+  String get editProfilePhotoSelected;
+
+  /// No description provided for @editProfilePhotoUploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading photo...'**
+  String get editProfilePhotoUploading;
+
+  /// No description provided for @myClubsMySection.
+  ///
+  /// In en, this message translates to:
+  /// **'My clubs'**
+  String get myClubsMySection;
+
+  /// No description provided for @myClubsFind.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a club'**
+  String get myClubsFind;
+
+  /// No description provided for @myClubsAsTrainer.
+  ///
+  /// In en, this message translates to:
+  /// **'Clubs where I\'m a trainer'**
+  String get myClubsAsTrainer;
 }
 
 class _AppLocalizationsDelegate

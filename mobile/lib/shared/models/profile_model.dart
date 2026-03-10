@@ -110,6 +110,9 @@ class ProfileUserData {
   /// Название города (опционально, для удобства)
   final String? cityName;
   
+  /// Уникальный ник пользователя (опционально, @username)
+  final String? username;
+
   /// Идентификатор основного клуба (для фильтра «Мой клуб»)
   final String? primaryClubId;
 
@@ -127,6 +130,7 @@ class ProfileUserData {
   ProfileUserData({
     required this.id,
     required this.name,
+    this.username,
     this.firstName,
     this.lastName,
     this.birthDate,
@@ -146,6 +150,7 @@ class ProfileUserData {
     return ProfileUserData(
       id: json['id'] as String,
       name: json['name'] as String,
+      username: json['username'] as String?,
       firstName: json['firstName'] as String?,
       lastName: json['lastName'] as String?,
       birthDate: json['birthDate'] != null

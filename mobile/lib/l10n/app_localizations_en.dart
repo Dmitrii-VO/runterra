@@ -1996,4 +1996,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mapLayerRoutesComingSoon => 'Coming soon';
+
+  @override
+  String get editProfileUsername => 'Username';
+
+  @override
+  String get editProfileUsernameHint =>
+      'lowercase letters, digits, underscore • 3–30 chars';
+
+  @override
+  String get editProfileUsernameConflict => 'This username is already taken';
+
+  @override
+  String get editProfilePhotoChange => 'Change photo';
+
+  @override
+  String get editProfilePhotoSelected => 'Photo selected';
+
+  @override
+  String get editProfilePhotoUploading => 'Uploading photo...';
+
+  @override
+  String get myClubsMySection => 'My clubs';
+
+  @override
+  String get myClubsFind => 'Find a club';
+
+  @override
+  String get myClubsAsTrainer => 'Clubs where I\'m a trainer';
 }

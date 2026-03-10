@@ -2002,4 +2002,31 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get mapLayerRoutesComingSoon => 'Скоро';
+
+  @override
+  String get editProfileUsername => 'Ник (username)';
+
+  @override
+  String get editProfileUsernameHint => 'латиница, цифры, _ • 3–30 символов';
+
+  @override
+  String get editProfileUsernameConflict => 'Этот ник уже занят';
+
+  @override
+  String get editProfilePhotoChange => 'Изменить фото';
+
+  @override
+  String get editProfilePhotoSelected => 'Фото выбрано';
+
+  @override
+  String get editProfilePhotoUploading => 'Загрузка фото...';
+
+  @override
+  String get myClubsMySection => 'Мои клубы';
+
+  @override
+  String get myClubsFind => 'Найти клуб';
+
+  @override
+  String get myClubsAsTrainer => 'Клубы, где я тренер';
 }

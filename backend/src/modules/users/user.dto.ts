@@ -133,6 +133,8 @@ export interface UpdateProfileDto {
   currentCityId?: string;
   /** Имя пользователя */
   name?: string;
+  /** Уникальный ник [a-z0-9_], 3–30 символов */
+  username?: string | null;
   /** Имя (раздельно, для профиля) */
   firstName?: string;
   /** Фамилия (раздельно, для профиля) */
@@ -145,7 +147,6 @@ export interface UpdateProfileDto {
   gender?: 'male' | 'female';
   /** URL фото профиля */
   avatarUrl?: string;
-
   /** Видимость профиля (false — скрыт от публичного поиска) */
   profileVisible?: boolean;
 }
@@ -171,13 +172,18 @@ export interface UserSearchResultDto {
 export const UpdateProfileSchema = z.object({
   currentCityId: z.string().optional(),
   name: z.string().min(1, 'Name is required').max(100).optional(),
+  username: z
+    .string()
+    .regex(/^[a-z0-9_]{3,30}$/, 'Username must be 3–30 chars: lowercase letters, digits, underscore')
+    .nullable()
+    .optional(),
   firstName: z.string().min(1).max(100).optional(),
-  lastName: z.string().min(1).max(100).optional(),
+  lastName: z.string().min(1).max(100).nullable().optional(),
   birthDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
-  country: z.string().max(100).optional(),
+  country: z.string().max(100).nullable().optional(),
   gender: z.enum(['male', 'female']).optional(),
   avatarUrl: z.union([z.string().url(), z.literal('')]).optional(),
   profileVisible: z.boolean().optional(),

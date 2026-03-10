@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:firebase_storage/firebase_storage.dart';
 import 'api_client.dart';
 import '../models/calendar_model.dart';
 import '../models/profile_model.dart';
@@ -90,11 +93,14 @@ class UsersService {
   /// [currentCityId] — идентификатор города из /api/cities.
   /// [name] — имя пользователя. [avatarUrl] — URL фото (omit to leave unchanged, '' to clear).
   /// [profileVisible] — видимость профиля (false — скрыт от публичного поиска).
+  /// [username] — ник (set to non-null string to update). [clearUsername] — pass true to remove username.
   Future<void> updateProfile({
     String? currentCityId,
     String? name,
     String? firstName,
     String? lastName,
+    String? username,
+    bool clearUsername = false,
     DateTime? birthDate,
     String? country,
     String? gender,
@@ -105,14 +111,19 @@ class UsersService {
     if (currentCityId != null) body['currentCityId'] = currentCityId;
     if (name != null) body['name'] = name;
     if (firstName != null) body['firstName'] = firstName;
-    if (lastName != null) body['lastName'] = lastName;
+    if (lastName != null) body['lastName'] = lastName.isEmpty ? null : lastName;
+    if (clearUsername) {
+      body['username'] = null;
+    } else if (username != null) {
+      body['username'] = username;
+    }
     if (birthDate != null) {
       body['birthDate'] =
           '${birthDate.year.toString().padLeft(4, '0')}-'
           '${birthDate.month.toString().padLeft(2, '0')}-'
           '${birthDate.day.toString().padLeft(2, '0')}';
     }
-    if (country != null) body['country'] = country;
+    if (country != null) body['country'] = country.isEmpty ? null : country;
     if (gender != null) body['gender'] = gender;
     if (avatarUrl != null) body['avatarUrl'] = avatarUrl;
     if (profileVisible != null) body['profileVisible'] = profileVisible;
@@ -123,12 +134,36 @@ class UsersService {
       body: body,
     );
 
+    if (response.statusCode == 409) {
+      String code = 'conflict';
+      String message = 'Conflict';
+      try {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        if (json['code'] != null) code = json['code'] as String;
+        if (json['message'] != null) message = json['message'] as String;
+      } catch (_) {}
+      throw ApiException(code, message);
+    }
+
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException(
         'HTTP ${response.statusCode}',
         'Не удалось обновить профиль: ${response.statusCode}. ${response.body}',
       );
     }
+  }
+
+  /// Uploads an avatar image to Firebase Storage and returns the download URL.
+  /// [filePath] — local file path from image_picker (XFile.path).
+  Future<String> uploadAvatar(String filePath) async {
+    final fbUser = fb_auth.FirebaseAuth.instance.currentUser;
+    if (fbUser == null) throw ApiException('unauthorized', 'Not signed in');
+
+    final ref = FirebaseStorage.instance.ref('users/${fbUser.uid}/avatar.jpg');
+    final uploadTask = await ref.putFile(File(filePath));
+    final url = await uploadTask.ref.getDownloadURL();
+    // Append timestamp to bust NetworkImage cache when avatar is updated
+    return '$url&t=${DateTime.now().millisecondsSinceEpoch}';
   }
 
   /// Возвращает флаги видимости вкладок навигации (hasClubs, hasTrainers).

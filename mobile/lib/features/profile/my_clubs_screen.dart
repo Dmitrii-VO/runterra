@@ -46,19 +46,11 @@ class _MyClubsScreenState extends State<MyClubsScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-
     final cityId = ServiceLocator.currentCityService.currentCityId;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.profileMyClubsTitle),
-        actions: [
-          if (cityId != null && cityId.isNotEmpty)
-            TextButton(
-              onPressed: () => context.push('/clubs?cityId=$cityId'),
-              child: Text(l10n.clubsListAllClubs),
-            ),
-        ],
       ),
       body: FutureBuilder<List<MyClubModel>>(
         future: _myClubsFuture,
@@ -80,10 +72,7 @@ class _MyClubsScreenState extends State<MyClubsScreen> {
                   children: [
                     const Icon(Icons.error_outline, size: 48, color: Colors.red),
                     const SizedBox(height: 16),
-                    Text(
-                      message,
-                      textAlign: TextAlign.center,
-                    ),
+                    Text(message, textAlign: TextAlign.center),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
                       onPressed: _retry,
@@ -96,40 +85,105 @@ class _MyClubsScreenState extends State<MyClubsScreen> {
             );
           }
 
-          final clubs = snapshot.data ?? const <MyClubModel>[];
-          if (clubs.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  l10n.profileMyClubsEmpty,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            );
-          }
+          final allClubs = snapshot.data ?? const <MyClubModel>[];
+          // Section A: member/leader clubs; Section C: trainer clubs
+          final memberClubs =
+              allClubs.where((c) => c.role != 'trainer').toList();
+          final trainerClubs =
+              allClubs.where((c) => c.role == 'trainer').toList();
 
-          return ListView.separated(
-            itemCount: clubs.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final club = clubs[index];
-              final city = club.cityName?.isNotEmpty == true
-                  ? club.cityName!
-                  : club.cityId;
-              final subtitle =
-                  '${city.isNotEmpty ? city : l10n.profileNotSpecified} • ${_roleLabel(l10n, club.role)}';
-              return ListTile(
-                leading: const Icon(Icons.groups),
-                title: Text(club.name),
-                subtitle: Text(subtitle),
+          return ListView(
+            children: [
+              // Section A — my clubs
+              _SectionHeader(title: l10n.myClubsMySection),
+              if (memberClubs.isEmpty)
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Text(
+                    l10n.profileMyClubsEmpty,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                )
+              else
+                ...memberClubs.map((club) => _ClubTile(
+                      club: club,
+                      roleLabel: _roleLabel(l10n, club.role),
+                    )),
+
+              // Section B — find a club
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.search),
+                title: Text(l10n.myClubsFind),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.push('/club/${club.id}'),
-              );
-            },
+                onTap: () {
+                  if (cityId != null && cityId.isNotEmpty) {
+                    context.push('/clubs?cityId=$cityId');
+                  } else {
+                    context.push('/clubs');
+                  }
+                },
+              ),
+
+              // Section C — clubs where I'm a trainer (only shown if non-empty)
+              if (trainerClubs.isNotEmpty) ...[
+                const Divider(height: 1),
+                _SectionHeader(title: l10n.myClubsAsTrainer),
+                ...trainerClubs.map((club) => _ClubTile(
+                      club: club,
+                      roleLabel: _roleLabel(l10n, club.role),
+                    )),
+              ],
+
+              const SizedBox(height: 16),
+            ],
           );
         },
       ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title});
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: Theme.of(context).colorScheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
+      ),
+    );
+  }
+}
+
+class _ClubTile extends StatelessWidget {
+  const _ClubTile({required this.club, required this.roleLabel});
+  final MyClubModel club;
+  final String roleLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final city = (club.cityName?.isNotEmpty == true)
+        ? club.cityName!
+        : club.cityId;
+    final l10n = AppLocalizations.of(context)!;
+    final subtitle =
+        '${city.isNotEmpty ? city : l10n.profileNotSpecified} • $roleLabel';
+
+    return ListTile(
+      leading: const Icon(Icons.groups),
+      title: Text(club.name),
+      subtitle: Text(subtitle),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => context.push('/club/${club.id}'),
     );
   }
 }

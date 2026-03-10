@@ -152,6 +152,7 @@ router.get('/me/profile', async (req: Request, res: Response) => {
       user: {
         id: user.id,
         name: user.name,
+        username: user.username,
         firstName: user.firstName,
         lastName: user.lastName,
         birthDate: user.birthDate,
@@ -218,10 +219,11 @@ router.patch(
       const body = req.body as {
         currentCityId?: string;
         name?: string;
+        username?: string | null;
         firstName?: string;
-        lastName?: string;
+        lastName?: string | null;
         birthDate?: string;
-        country?: string;
+        country?: string | null;
         gender?: 'male' | 'female';
         avatarUrl?: string;
         profileVisible?: boolean;
@@ -229,10 +231,11 @@ router.patch(
       const updates: {
         cityId?: string | null;
         name?: string;
+        username?: string | null;
         firstName?: string;
-        lastName?: string;
+        lastName?: string | null;
         birthDate?: string | null;
-        country?: string;
+        country?: string | null;
         gender?: 'male' | 'female';
         avatarUrl?: string;
         profileVisible?: boolean;
@@ -258,6 +261,7 @@ router.patch(
         updates.cityId = cityId || null;
       }
       if (body.name !== undefined) updates.name = body.name;
+      if (body.username !== undefined) updates.username = body.username ?? null;
       if (body.firstName !== undefined) updates.firstName = body.firstName;
       if (body.lastName !== undefined) updates.lastName = body.lastName;
       if (body.birthDate !== undefined) updates.birthDate = body.birthDate;
@@ -278,7 +282,23 @@ router.patch(
       }
 
       res.status(200).json({ success: true });
-    } catch (error) {
+    } catch (error: unknown) {
+      // Handle unique constraint violation on username
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code: string }).code === '23505' &&
+        'constraint' in error &&
+        String((error as { constraint: string }).constraint).includes('username')
+      ) {
+        res.status(409).json({
+          code: 'username_taken',
+          message: 'This username is already taken',
+          details: { fields: [{ field: 'username', message: 'Already taken', code: 'username_taken' }] },
+        });
+        return;
+      }
       logger.error('Error updating profile', { firebaseUid, error });
       res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
     }

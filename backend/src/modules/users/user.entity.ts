@@ -40,6 +40,8 @@ export interface User {
   name: string;
 
   /** Имя (раздельно, для профиля) */
+  /** Username (unique handle, e.g. @nickname) */
+  username?: string;
   firstName?: string;
 
   /** Фамилия (раздельно, для профиля) */
