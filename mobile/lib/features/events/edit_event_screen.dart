@@ -23,9 +23,11 @@ class _EditEventScreenState extends State<EditEventScreen> {
   final _descriptionController = TextEditingController();
   final _locationNameController = TextEditingController();
   final _participantLimitController = TextEditingController();
+  TextEditingController _priceController = TextEditingController(text: '0');
 
   late Future<EventDetailsModel> _loadFuture;
   EventDetailsModel? _event;
+  int _price = 0;
   String _eventType = 'training';
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = const TimeOfDay(hour: 9, minute: 0);
@@ -47,6 +49,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
     _descriptionController.dispose();
     _locationNameController.dispose();
     _participantLimitController.dispose();
+    _priceController.dispose();
     super.dispose();
   }
 
@@ -85,6 +88,8 @@ class _EditEventScreenState extends State<EditEventScreen> {
     _selectedLat = event.startLocation?.latitude;
     _selectedLon = event.startLocation?.longitude;
     _selectedWorkoutId = event.workoutId;
+    _price = event.price;
+    _priceController = TextEditingController(text: event.price.toString());
   }
 
   Future<void> _pickDate() async {
@@ -176,6 +181,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
             : _descriptionController.text.trim(),
         participantLimit: participantLimit,
         clearParticipantLimit: clearParticipantLimit,
+        price: _price,
       );
 
       if (_selectedWorkoutId != _event?.workoutId) {
@@ -361,6 +367,29 @@ class _EditEventScreenState extends State<EditEventScreen> {
                     ),
                     keyboardType: TextInputType.number,
                     enabled: !_saving,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _priceController,
+                    decoration: InputDecoration(
+                      labelText: l10n.eventCreatePrice,
+                      hintText: l10n.eventCreatePriceHint,
+                      border: const OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    enabled: !_saving,
+                    onChanged: (value) {
+                      final parsed = int.tryParse(value);
+                      if (parsed != null) setState(() => _price = parsed);
+                    },
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) return null;
+                      final parsed = int.tryParse(value.trim());
+                      if (parsed == null || parsed < 0) {
+                        return l10n.eventCreateLimitInvalid;
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
                   TextFormField(

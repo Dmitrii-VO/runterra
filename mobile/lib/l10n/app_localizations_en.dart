@@ -363,6 +363,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get filterOnlyOpen => 'Open only';
 
   @override
+  String get eventsNoCitySelected =>
+      'Select a city in your profile to see events';
+
+  @override
+  String get eventsRetry => 'Retry loading';
+
+  @override
+  String get eventsShowAll => 'Show all';
+
+  @override
+  String get eventsSortRelevance => 'By relevance';
+
+  @override
+  String get eventsSortDateAsc => 'Date ⬆';
+
+  @override
+  String get eventsSortDateDesc => 'Date ⬇';
+
+  @override
+  String get eventsSortPriceAsc => 'Price ⬆';
+
+  @override
+  String get eventsSortPriceDesc => 'Price ⬇';
+
+  @override
+  String get eventCategoryRaces => 'Races';
+
+  @override
+  String get eventCategoryCompetitions => 'Competitions';
+
+  @override
+  String get eventCategoryTrainingOpen => 'Open training';
+
+  @override
+  String get eventCategoryClub => 'Club';
+
+  @override
+  String get eventPriceFree => 'Free';
+
+  @override
+  String eventPriceRub(int price) {
+    return '$price ₽';
+  }
+
+  @override
+  String get eventCreatePrice => 'Price (0 = free)';
+
+  @override
+  String get eventCreatePriceHint => 'Participation fee in rubles';
+
+  @override
   String get filterParticipantOnly => 'Participating';
 
   @override

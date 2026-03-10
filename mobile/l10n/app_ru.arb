@@ -121,6 +121,27 @@
   "filterOnlyOpen": "Только открытые",
   "filterParticipantOnly": "Участвую",
   "filterAll": "Все",
+  "eventsNoCitySelected": "Выберите город в профиле, чтобы видеть события",
+  "eventsRetry": "Повторить загрузку",
+  "eventsShowAll": "Показать все",
+  "eventsSortRelevance": "По релевантности",
+  "eventsSortDateAsc": "Дата ⬆",
+  "eventsSortDateDesc": "Дата ⬇",
+  "eventsSortPriceAsc": "Цена ⬆",
+  "eventsSortPriceDesc": "Цена ⬇",
+  "eventCategoryRaces": "Забеги",
+  "eventCategoryCompetitions": "Соревнования",
+  "eventCategoryTrainingOpen": "Открытые тренировки",
+  "eventCategoryClub": "Клубные",
+  "eventPriceFree": "Бесплатно",
+  "eventPriceRub": "{price} ₽",
+  "@eventPriceRub": {
+    "placeholders": {
+      "price": {"type": "int"}
+    }
+  },
+  "eventCreatePrice": "Цена (0 = бесплатно)",
+  "eventCreatePriceHint": "Введите стоимость участия в рублях",
   "eventTypeTraining": "Тренировка",
   "eventTypeGroupRun": "Совместный бег",
   "eventTypeClubEvent": "Клубное событие",

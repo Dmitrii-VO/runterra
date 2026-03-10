@@ -116,6 +116,9 @@ class EventDetailsModel {
   /// Whether the current user is an organizer (can edit the event)
   final bool? isOrganizer;
 
+  /// Стоимость участия в рублях (0 = бесплатно)
+  final int price;
+
   EventDetailsModel({
     required this.id,
     required this.name,
@@ -145,6 +148,7 @@ class EventDetailsModel {
     this.isParticipant,
     this.participantStatus,
     this.isOrganizer,
+    this.price = 0,
   });
 
   /// Создает EventDetailsModel из JSON
@@ -185,6 +189,7 @@ class EventDetailsModel {
       isParticipant: json['isParticipant'] as bool?,
       participantStatus: json['participantStatus'] as String?,
       isOrganizer: json['isOrganizer'] as bool?,
+      price: (json['price'] as num?)?.toInt() ?? 0,
     );
   }
 

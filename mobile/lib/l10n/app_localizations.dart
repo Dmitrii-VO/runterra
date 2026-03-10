@@ -770,6 +770,102 @@ abstract class AppLocalizations {
   /// **'Open only'**
   String get filterOnlyOpen;
 
+  /// No description provided for @eventsNoCitySelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a city in your profile to see events'**
+  String get eventsNoCitySelected;
+
+  /// No description provided for @eventsRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry loading'**
+  String get eventsRetry;
+
+  /// No description provided for @eventsShowAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all'**
+  String get eventsShowAll;
+
+  /// No description provided for @eventsSortRelevance.
+  ///
+  /// In en, this message translates to:
+  /// **'By relevance'**
+  String get eventsSortRelevance;
+
+  /// No description provided for @eventsSortDateAsc.
+  ///
+  /// In en, this message translates to:
+  /// **'Date ⬆'**
+  String get eventsSortDateAsc;
+
+  /// No description provided for @eventsSortDateDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Date ⬇'**
+  String get eventsSortDateDesc;
+
+  /// No description provided for @eventsSortPriceAsc.
+  ///
+  /// In en, this message translates to:
+  /// **'Price ⬆'**
+  String get eventsSortPriceAsc;
+
+  /// No description provided for @eventsSortPriceDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Price ⬇'**
+  String get eventsSortPriceDesc;
+
+  /// No description provided for @eventCategoryRaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Races'**
+  String get eventCategoryRaces;
+
+  /// No description provided for @eventCategoryCompetitions.
+  ///
+  /// In en, this message translates to:
+  /// **'Competitions'**
+  String get eventCategoryCompetitions;
+
+  /// No description provided for @eventCategoryTrainingOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open training'**
+  String get eventCategoryTrainingOpen;
+
+  /// No description provided for @eventCategoryClub.
+  ///
+  /// In en, this message translates to:
+  /// **'Club'**
+  String get eventCategoryClub;
+
+  /// No description provided for @eventPriceFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get eventPriceFree;
+
+  /// No description provided for @eventPriceRub.
+  ///
+  /// In en, this message translates to:
+  /// **'{price} ₽'**
+  String eventPriceRub(int price);
+
+  /// No description provided for @eventCreatePrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Price (0 = free)'**
+  String get eventCreatePrice;
+
+  /// No description provided for @eventCreatePriceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Participation fee in rubles'**
+  String get eventCreatePriceHint;
+
   /// No description provided for @filterParticipantOnly.
   ///
   /// In en, this message translates to:

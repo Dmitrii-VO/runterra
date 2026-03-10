@@ -364,6 +364,57 @@ class AppLocalizationsRu extends AppLocalizations {
   String get filterOnlyOpen => 'Только открытые';
 
   @override
+  String get eventsNoCitySelected =>
+      'Выберите город в профиле, чтобы видеть события';
+
+  @override
+  String get eventsRetry => 'Повторить загрузку';
+
+  @override
+  String get eventsShowAll => 'Показать все';
+
+  @override
+  String get eventsSortRelevance => 'По релевантности';
+
+  @override
+  String get eventsSortDateAsc => 'Дата ⬆';
+
+  @override
+  String get eventsSortDateDesc => 'Дата ⬇';
+
+  @override
+  String get eventsSortPriceAsc => 'Цена ⬆';
+
+  @override
+  String get eventsSortPriceDesc => 'Цена ⬇';
+
+  @override
+  String get eventCategoryRaces => 'Забеги';
+
+  @override
+  String get eventCategoryCompetitions => 'Соревнования';
+
+  @override
+  String get eventCategoryTrainingOpen => 'Открытые тренировки';
+
+  @override
+  String get eventCategoryClub => 'Клубные';
+
+  @override
+  String get eventPriceFree => 'Бесплатно';
+
+  @override
+  String eventPriceRub(int price) {
+    return '$price ₽';
+  }
+
+  @override
+  String get eventCreatePrice => 'Цена (0 = бесплатно)';
+
+  @override
+  String get eventCreatePriceHint => 'Введите стоимость участия в рублях';
+
+  @override
   String get filterParticipantOnly => 'Участвую';
 
   @override

@@ -24,21 +24,33 @@ class EventsService {
   /// [filters] - параметры фильтрации, отправляются как query параметры
   Future<List<EventListItemModel>> getEvents({
     required String cityId,
-    String? dateFilter,
+    String? sortBy,
+    List<String>? eventTypes,
+    DateTime? date,
     String? clubId,
-    String? difficultyLevel,
-    String? eventType,
-    bool? onlyOpen,
-    bool? participantOnly,
+    int limit = 20,
+    int offset = 0,
   }) async {
     // Build query parameters
-    final queryParams = <String, String>{'cityId': cityId};
-    if (dateFilter != null) queryParams['dateFilter'] = dateFilter;
+    final queryParams = <String, String>{
+      'cityId': cityId,
+      'limit': limit.toString(),
+      'offset': offset.toString(),
+    };
+    if (sortBy != null) queryParams['sortBy'] = sortBy;
+    if (eventTypes != null && eventTypes.isNotEmpty) {
+      queryParams['eventTypes'] = eventTypes.join(',');
+    }
+    if (date != null) {
+      // Compute local midnight → next local midnight, convert to UTC ISO timestamps.
+      // This fixes timezone bug: if we sent YYYY-MM-DD backend treated it as UTC midnight,
+      // so events at local midnight–03:00 (UTC+3) would fall on the previous UTC day.
+      final localMidnight = DateTime(date.year, date.month, date.day);
+      final nextLocalMidnight = DateTime(date.year, date.month, date.day + 1);
+      queryParams['dateFrom'] = localMidnight.toUtc().toIso8601String();
+      queryParams['dateTo'] = nextLocalMidnight.toUtc().toIso8601String();
+    }
     if (clubId != null) queryParams['clubId'] = clubId;
-    if (difficultyLevel != null) queryParams['difficultyLevel'] = difficultyLevel;
-    if (eventType != null) queryParams['eventType'] = eventType;
-    if (onlyOpen == true) queryParams['onlyOpen'] = 'true';
-    if (participantOnly == true) queryParams['participantOnly'] = 'true';
     
     final endpoint = queryParams.isEmpty 
         ? '/api/events'
@@ -160,6 +172,7 @@ class EventsService {
     String? territoryId,
     String? visibility, // 'public' or 'private'
     String? workoutId,
+    int price = 0,
   }) async {
     final body = <String, dynamic>{
       'name': name,
@@ -195,6 +208,7 @@ class EventsService {
     if (workoutId != null) {
       body['workoutId'] = workoutId;
     }
+    body['price'] = price;
 
     final response = await _apiClient.post('/api/events', body: body);
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -288,6 +302,7 @@ class EventsService {
     bool clearParticipantLimit = false,
     String? difficultyLevel,
     bool clearDifficultyLevel = false,
+    int? price,
   }) async {
     final body = <String, dynamic>{};
     if (name != null) body['name'] = name;
@@ -300,6 +315,7 @@ class EventsService {
     if (clearParticipantLimit) body['participantLimit'] = null;
     if (difficultyLevel != null) body['difficultyLevel'] = difficultyLevel;
     if (clearDifficultyLevel) body['difficultyLevel'] = null;
+    if (price != null) body['price'] = price;
 
     final response = await _apiClient.patch('/api/events/$eventId', body: body);
     if (response.statusCode >= 200 && response.statusCode < 300) {

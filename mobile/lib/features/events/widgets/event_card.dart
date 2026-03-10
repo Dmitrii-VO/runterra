@@ -244,17 +244,30 @@ class EventCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  if (event.territoryId != null)
-                    Row(
-                      children: [
+                  Row(
+                    children: [
+                      if (event.territoryId != null) ...[
                         const Icon(Icons.map, size: 16, color: Colors.grey),
                         const SizedBox(width: 4),
                         Text(
                           AppLocalizations.of(context)!.eventTerritoryLabel,
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
+                        const SizedBox(width: 12),
                       ],
-                    ),
+                      Text(
+                        event.price == 0
+                            ? l10n.eventPriceFree
+                            : l10n.eventPriceRub(event.price),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: event.price == 0
+                                  ? Colors.green
+                                  : Theme.of(context).colorScheme.primary,
+                            ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ],

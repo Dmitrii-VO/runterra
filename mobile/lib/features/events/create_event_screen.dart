@@ -23,7 +23,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final _locationNameController = TextEditingController();
   final _organizerIdController = TextEditingController();
   final _participantLimitController = TextEditingController();
+  final TextEditingController _priceController = TextEditingController(text: '0');
 
+  int _price = 0;
   late String _eventType;
   String _organizerType = 'club';
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
@@ -53,6 +55,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     _locationNameController.dispose();
     _organizerIdController.dispose();
     _participantLimitController.dispose();
+    _priceController.dispose();
     super.dispose();
   }
 
@@ -206,6 +209,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             : _descriptionController.text.trim(),
         participantLimit: participantLimit,
         workoutId: _selectedWorkoutId,
+        price: _price,
       );
 
       // Логируем создание мероприятия
@@ -406,6 +410,29 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 ),
                 keyboardType: TextInputType.number,
                 enabled: !_saving,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _priceController,
+                decoration: InputDecoration(
+                  labelText: l10n.eventCreatePrice,
+                  hintText: l10n.eventCreatePriceHint,
+                  border: const OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+                enabled: !_saving,
+                onChanged: (value) {
+                  final parsed = int.tryParse(value);
+                  if (parsed != null) setState(() => _price = parsed);
+                },
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) return null;
+                  final parsed = int.tryParse(value.trim());
+                  if (parsed == null || parsed < 0) {
+                    return l10n.eventCreateLimitInvalid;
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               TextFormField(

@@ -34,6 +34,7 @@ interface EventRow {
   template_id: string | null;
   generated_for_date: Date | null;
   is_manually_edited: boolean;
+  price: number;
 }
 
 /**
@@ -99,6 +100,7 @@ function rowToEvent(row: EventRow): Event {
     workoutId: row.workout_id || undefined,
     trainerId: row.trainer_id || undefined,
     isManuallyEdited: row.is_manually_edited ?? false,
+    price: row.price ?? 0,
   };
 }
 
@@ -146,15 +148,19 @@ export class EventsRepository extends BaseRepository {
   async findAll(options?: {
     status?: EventStatus[];
     dateFilter?: 'today' | 'tomorrow' | 'next7days';
+    dateFrom?: Date;
+    dateTo?: Date;
     clubId?: string;
     cityId?: string;
     difficultyLevel?: string;
     eventType?: EventType;
+    eventTypes?: EventType[];
     organizerId?: string;
     participantOnly?: boolean;
     participantUserId?: string;
     onlyOpen?: boolean;
     currentUserId?: string;
+    sortBy?: 'relevance' | 'date_asc' | 'date_desc' | 'price_asc' | 'price_desc';
     limit?: number;
     offset?: number;
   }): Promise<Event[]> {
@@ -228,10 +234,26 @@ export class EventsRepository extends BaseRepository {
       params.push(options.difficultyLevel);
     }
 
-    // Event type filter
+    // Event type filter (single, legacy)
     if (options?.eventType) {
       conditions.push(`type = $${paramIndex++}`);
       params.push(options.eventType);
+    }
+
+    // Event types filter (multi-select)
+    if (options?.eventTypes && options.eventTypes.length > 0) {
+      conditions.push(`type = ANY($${paramIndex++})`);
+      params.push(options.eventTypes);
+    }
+
+    // Specific date range filter (for calendar day tap)
+    if (options?.dateFrom) {
+      conditions.push(`start_date_time >= $${paramIndex++}`);
+      params.push(options.dateFrom);
+    }
+    if (options?.dateTo) {
+      conditions.push(`start_date_time < $${paramIndex++}`);
+      params.push(options.dateTo);
     }
 
     // Organizer filter
@@ -275,7 +297,17 @@ export class EventsRepository extends BaseRepository {
     if (conditions.length > 0) {
       sql += ` WHERE ${conditions.join(' AND ')}`;
     }
-    sql += ` ORDER BY start_date_time ASC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
+
+    const orderBy = (() => {
+      switch (options?.sortBy) {
+        case 'date_asc': return 'start_date_time ASC';
+        case 'date_desc': return 'start_date_time DESC';
+        case 'price_asc': return 'price ASC, start_date_time ASC';
+        case 'price_desc': return 'price DESC, start_date_time ASC';
+        default: return 'start_date_time ASC'; // relevance = nearest first
+      }
+    })();
+    sql += ` ORDER BY ${orderBy} LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
     params.push(limit, offset);
 
     const rows = await this.queryMany<EventRow>(sql, params);
@@ -301,14 +333,15 @@ export class EventsRepository extends BaseRepository {
     generatedForDate?: string;
     workoutId?: string;
     trainerId?: string;
+    price?: number;
   }): Promise<Event> {
     const row = await this.queryOne<EventRow>(
       `INSERT INTO events (
         name, type, status, start_date_time, end_date_time, start_longitude, start_latitude,
         location_name, organizer_id, organizer_type, difficulty_level,
         description, participant_limit, territory_id, city_id, visibility,
-        template_id, generated_for_date, workout_id, trainer_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+        template_id, generated_for_date, workout_id, trainer_id, price
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
       RETURNING *`,
       [
         data.name,
@@ -331,6 +364,7 @@ export class EventsRepository extends BaseRepository {
         data.generatedForDate || null,
         data.workoutId || null,
         data.trainerId || null,
+        data.price ?? 0,
       ],
     );
     return rowToEvent(row!);
@@ -635,6 +669,7 @@ export class EventsRepository extends BaseRepository {
       trainerId?: string | null;
       isManuallyEdited?: boolean;
       deletedAt?: Date | null;
+      price?: number;
     },
   ): Promise<Event | null> {
     const sets: string[] = [];
@@ -690,6 +725,10 @@ export class EventsRepository extends BaseRepository {
     if (data.deletedAt !== undefined) {
       sets.push(`deleted_at = $${idx++}`);
       params.push(data.deletedAt);
+    }
+    if (data.price !== undefined) {
+      sets.push(`price = $${idx++}`);
+      params.push(data.price);
     }
 
     if (sets.length === 0) {

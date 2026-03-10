@@ -63,6 +63,9 @@ class EventListItemModel {
   /// Идентификатор города, в котором проходит событие
   final String cityId;
 
+  /// Стоимость участия в рублях (0 = бесплатно)
+  final int price;
+
   EventListItemModel({
     required this.id,
     required this.name,
@@ -78,6 +81,7 @@ class EventListItemModel {
     required this.participantCount,
     this.territoryId,
     required this.cityId,
+    this.price = 0,
   });
 
   /// Создает EventListItemModel из JSON
@@ -105,6 +109,7 @@ class EventListItemModel {
       participantCount: (json['participantCount'] as num).toInt(),
       territoryId: json['territoryId'] as String?,
       cityId: json['cityId'] as String? ?? '',
+      price: (json['price'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -127,6 +132,7 @@ class EventListItemModel {
       'participantCount': participantCount,
       if (territoryId != null) 'territoryId': territoryId,
       'cityId': cityId,
+      'price': price,
     };
   }
 }

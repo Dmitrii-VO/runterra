@@ -225,30 +225,25 @@ async function validateEventIntegrationFields(
 /**
  * GET /api/events
  *
- * Возвращает список событий с фильтрацией.
- *
- * Query параметры:
- * - cityId: string (обязателен) — идентификатор города
- * - dateFilter?: 'today' | 'tomorrow' | 'next7days'
- * - onlyOpen?: 'true' | '1' — only events with status 'open' (exclude 'full')
+ * Query params:
+ * - cityId: string (required)
+ * - sortBy?: 'relevance' | 'date_asc' | 'date_desc' | 'price_asc' | 'price_desc'
+ * - eventTypes?: comma-separated list, e.g. 'group_run,open_event'
+ * - dateFrom?: ISO timestamp — filter events starting on or after this moment
+ * - dateTo?: ISO timestamp — filter events starting before this moment
  * - clubId?: string
- * - difficultyLevel?: 'beginner' | 'intermediate' | 'advanced'
- * - eventType?: 'group_run' | 'training' | 'competition' | 'club_event'
- * - limit?: number (default 50)
+ * - limit?: number (default 20)
  * - offset?: number (default 0)
- *
- * По умолчанию возвращает только события со статусом OPEN или FULL.
  */
 router.get('/', async (req: Request, res: Response) => {
   const query = req.query as Record<string, string | undefined>;
   const {
     cityId,
-    dateFilter,
+    sortBy,
+    eventTypes,
+    dateFrom: dateFromStr,
+    dateTo: dateToStr,
     clubId,
-    difficultyLevel,
-    eventType,
-    participantOnly,
-    onlyOpen,
     limit,
     offset,
   } = query;
@@ -269,32 +264,19 @@ router.get('/', async (req: Request, res: Response) => {
     });
   }
 
-  try {
-    // participantOnly requires auth to resolve userId
-    let participantUserId: string | undefined;
-    if (participantOnly === 'true' || participantOnly === '1') {
-      const uid = req.authUser?.uid;
-      if (!uid) {
-        return res.status(401).json({
-          code: 'unauthorized',
-          message: 'Authorization required for participantOnly filter',
-          details: { reason: 'missing_header' },
-        });
-      }
-      const usersRepo = getUsersRepository();
-      const user = await usersRepo.findByFirebaseUid(uid);
-      if (!user) {
-        return res.status(400).json({
-          code: 'validation_error',
-          message: 'User not found for this token',
-          details: {
-            fields: [{ field: 'userId', message: 'User not found', code: 'invalid_user' }],
-          },
-        });
-      }
-      participantUserId = user.id;
-    }
+  // Whitelist sortBy to prevent silent fallbacks
+  const validSortBy = ['relevance', 'date_asc', 'date_desc', 'price_asc', 'price_desc'];
+  if (sortBy && !validSortBy.includes(sortBy)) {
+    return res.status(400).json({
+      code: 'validation_error',
+      message: 'Invalid sortBy value',
+      details: {
+        fields: [{ field: 'sortBy', message: `sortBy must be one of: ${validSortBy.join(', ')}`, code: 'invalid_value' }],
+      },
+    });
+  }
 
+  try {
     // Resolve current user for visibility filter (optional for public feed)
     let currentUserId: string | undefined;
     if (req.authUser?.uid) {
@@ -303,18 +285,47 @@ router.get('/', async (req: Request, res: Response) => {
       if (user) currentUserId = user.id;
     }
 
+    // Parse eventTypes comma-separated list
+    const parsedEventTypes = eventTypes
+      ? (eventTypes.split(',').filter(Boolean) as EventType[])
+      : undefined;
+
+    // Parse dateFrom/dateTo ISO timestamps
+    let dateFrom: Date | undefined;
+    let dateTo: Date | undefined;
+    if (dateFromStr) {
+      const parsed = new Date(dateFromStr);
+      if (isNaN(parsed.getTime())) {
+        return res.status(400).json({
+          code: 'validation_error',
+          message: 'Invalid dateFrom',
+          details: { fields: [{ field: 'dateFrom', message: 'Invalid date format', code: 'invalid_format' }] },
+        });
+      }
+      dateFrom = parsed;
+    }
+    if (dateToStr) {
+      const parsed = new Date(dateToStr);
+      if (isNaN(parsed.getTime())) {
+        return res.status(400).json({
+          code: 'validation_error',
+          message: 'Invalid dateTo',
+          details: { fields: [{ field: 'dateTo', message: 'Invalid date format', code: 'invalid_format' }] },
+        });
+      }
+      dateTo = parsed;
+    }
+
     const repo = getEventsRepository();
     const events = await repo.findAll({
       cityId,
-      dateFilter: dateFilter as 'today' | 'tomorrow' | 'next7days' | undefined,
       clubId,
-      difficultyLevel,
-      eventType: eventType as EventType | undefined,
-      participantOnly: participantOnly === 'true' || participantOnly === '1',
-      participantUserId,
+      sortBy: sortBy as 'relevance' | 'date_asc' | 'date_desc' | 'price_asc' | 'price_desc' | undefined,
+      eventTypes: parsedEventTypes,
+      dateFrom,
+      dateTo,
       currentUserId,
-      onlyOpen: onlyOpen === 'true' || onlyOpen === '1',
-      limit: limit ? parseInt(limit, 10) : 50,
+      limit: limit ? parseInt(limit, 10) : 20,
       offset: offset ? parseInt(offset, 10) : 0,
     });
 
@@ -344,6 +355,7 @@ router.get('/', async (req: Request, res: Response) => {
       workoutType: eventIntegration.get(event.id)?.workoutType,
       workoutDifficulty: eventIntegration.get(event.id)?.workoutDifficulty,
       trainerName: eventIntegration.get(event.id)?.trainerName,
+      price: event.price,
     }));
 
     res.status(200).json(eventsDto);
@@ -453,6 +465,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       isParticipant,
       participantStatus,
       isOrganizer,
+      price: event.price,
     };
 
     res.status(200).json(eventDto);
@@ -639,6 +652,7 @@ router.post(
         visibility: dto.visibility,
         workoutId: dto.workoutId,
         trainerId: dto.trainerId,
+        price: dto.price ?? 0,
       });
 
       const organizerDisplayName = await getOrganizerDisplayName(
@@ -674,6 +688,7 @@ router.post(
         workoutType: integration?.workoutType,
         workoutDifficulty: integration?.workoutDifficulty,
         trainerName: integration?.trainerName,
+        price: event.price,
       };
 
       res.status(201).json(eventDto);
@@ -1135,6 +1150,7 @@ router.patch('/:id', validateBody(UpdateEventSchema), async (req: Request, res: 
       workoutDifficulty: integration?.workoutDifficulty,
       trainerName: integration?.trainerName,
       isOrganizer: true,
+      price: updated.price,
     };
 
     res.status(200).json(eventDto);

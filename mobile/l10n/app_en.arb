@@ -147,6 +147,27 @@
   "filterTomorrow": "Tomorrow",
   "filter7days": "7 days",
   "filterOnlyOpen": "Open only",
+  "eventsNoCitySelected": "Select a city in your profile to see events",
+  "eventsRetry": "Retry loading",
+  "eventsShowAll": "Show all",
+  "eventsSortRelevance": "By relevance",
+  "eventsSortDateAsc": "Date ⬆",
+  "eventsSortDateDesc": "Date ⬇",
+  "eventsSortPriceAsc": "Price ⬆",
+  "eventsSortPriceDesc": "Price ⬇",
+  "eventCategoryRaces": "Races",
+  "eventCategoryCompetitions": "Competitions",
+  "eventCategoryTrainingOpen": "Open training",
+  "eventCategoryClub": "Club",
+  "eventPriceFree": "Free",
+  "eventPriceRub": "{price} ₽",
+  "@eventPriceRub": {
+    "placeholders": {
+      "price": {"type": "int"}
+    }
+  },
+  "eventCreatePrice": "Price (0 = free)",
+  "eventCreatePriceHint": "Participation fee in rubles",
   "filterParticipantOnly": "Participating",
   "filterAll": "All",
   "eventTypeTraining": "Workout",

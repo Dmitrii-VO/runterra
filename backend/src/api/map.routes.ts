@@ -120,6 +120,7 @@ router.get('/data', async (req: Request, res: Response) => {
       participantCount: event.participantCount,
       territoryId: event.territoryId,
       cityId: event.cityId,
+      price: event.price,
     }));
 
     // Viewport — центр выбранного города

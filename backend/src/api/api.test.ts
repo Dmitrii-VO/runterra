@@ -232,36 +232,36 @@ describe('API Routes', () => {
       );
     });
 
-    it('passes onlyOpen=true to repository when query onlyOpen=true', async () => {
+    it('passes sortBy to repository', async () => {
       const res = await request(app)
-        .get('/api/events?cityId=spb&onlyOpen=true')
+        .get('/api/events?cityId=spb&sortBy=price_asc')
         .set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(200);
       expect(mockEventsRepository.findAll).toHaveBeenCalledWith(
-        expect.objectContaining({ onlyOpen: true }),
+        expect.objectContaining({ sortBy: 'price_asc' }),
       );
     });
 
-    it('passes onlyOpen=true to repository when query onlyOpen=1', async () => {
+    it('passes eventTypes as array to repository', async () => {
       const res = await request(app)
-        .get('/api/events?cityId=spb&onlyOpen=1')
+        .get('/api/events?cityId=spb&eventTypes=group_run,open_event')
         .set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(200);
       expect(mockEventsRepository.findAll).toHaveBeenCalledWith(
-        expect.objectContaining({ onlyOpen: true }),
+        expect.objectContaining({ eventTypes: ['group_run', 'open_event'] }),
       );
     });
 
-    it('passes onlyOpen=false to repository when query onlyOpen is missing', async () => {
+    it('passes limit and offset to repository', async () => {
       const res = await request(app)
-        .get('/api/events?cityId=spb')
+        .get('/api/events?cityId=spb&limit=20&offset=40')
         .set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(200);
       expect(mockEventsRepository.findAll).toHaveBeenCalledWith(
-        expect.objectContaining({ onlyOpen: false }),
+        expect.objectContaining({ limit: 20, offset: 40 }),
       );
     });
 
@@ -302,6 +302,7 @@ describe('API Routes', () => {
           updatedAt: new Date(),
           workoutId: 'workout-1',
           trainerId: 'trainer-1',
+          price: 0,
         },
       ]);
       mockWorkoutsRepository.findByIds.mockResolvedValueOnce(

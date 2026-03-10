@@ -43,6 +43,7 @@ const mockEvent = {
   cityId: 'spb',
   createdAt: new Date(),
   updatedAt: new Date(),
+  price: 0,
 };
 
 const mockParticipant = {

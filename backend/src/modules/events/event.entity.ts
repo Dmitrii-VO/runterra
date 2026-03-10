@@ -112,4 +112,7 @@ export interface Event {
 
   /** Whether event was manually edited after generation (skip sync from template) */
   isManuallyEdited?: boolean;
+
+  /** Participation price in rubles (0 = free) */
+  price: number;
 }

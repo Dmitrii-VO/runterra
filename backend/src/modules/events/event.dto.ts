@@ -37,6 +37,7 @@ export const UpdateEventSchema = z.object({
   difficultyLevel: z.enum(['beginner', 'intermediate', 'advanced']).nullable().optional(),
   workoutId: z.string().uuid().nullable().optional(),
   trainerId: z.string().uuid().nullable().optional(),
+  price: z.number().int().min(0).optional(),
 });
 
 /**
@@ -94,6 +95,9 @@ export interface CreateEventDto {
 
   /** Event visibility: public (default) or private */
   visibility?: 'public' | 'private';
+
+  /** Participation price in rubles (0 = free) */
+  price?: number;
 }
 
 /**
@@ -119,6 +123,7 @@ export const CreateEventSchema = z.object({
   workoutId: z.string().uuid().optional(),
   trainerId: z.string().uuid().optional(),
   visibility: z.enum(['public', 'private']).default('public').optional(),
+  price: z.number().int().min(0).default(0).optional(),
 });
 
 /**
@@ -234,6 +239,9 @@ export interface EventDetailsDto {
 
   /** Whether the current user is an organizer (can edit the event) */
   isOrganizer?: boolean;
+
+  /** Participation price in rubles (0 = free) */
+  price: number;
 }
 
 /**
@@ -305,6 +313,9 @@ export interface EventListItemDto {
 
   /** Trainer display name (resolved for display) */
   trainerName?: string;
+
+  /** Participation price in rubles (0 = free) */
+  price: number;
 }
 
 /**
