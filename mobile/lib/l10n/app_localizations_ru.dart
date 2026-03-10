@@ -70,10 +70,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get tabClub => 'Клуб';
 
   @override
-  String get tabCoach => 'Тренер';
+  String get tabClubs => 'Клубы';
 
   @override
-  String get personalChatsEmpty => 'Личные чаты — в разработке';
+  String get personalChatsEmpty => 'Нет диалогов. Напишите кому-нибудь!';
+
+  @override
+  String get personalChatsNewChat => 'Новый диалог';
 
   @override
   String get coachMessagesEmpty => 'Сообщения тренера — в разработке';

@@ -70,10 +70,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabClub => 'Club';
 
   @override
-  String get tabCoach => 'Coach';
+  String get tabClubs => 'Clubs';
 
   @override
-  String get personalChatsEmpty => 'Personal chats — coming soon';
+  String get personalChatsEmpty => 'No conversations yet. Write to someone!';
+
+  @override
+  String get personalChatsNewChat => 'New conversation';
 
   @override
   String get coachMessagesEmpty => 'Coach messages — coming soon';

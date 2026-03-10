@@ -136,7 +136,8 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
         _clubChats = chats;
         _isListLoading = false;
       });
-      _openPreferredClubIfNeeded();
+      // Only auto-open if a specific club was requested via deep-link
+      if (widget.initialClubId != null) _openPreferredClubIfNeeded();
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -248,6 +249,19 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
     _disconnectWebSocket();
     setState(() {
       _channelId = null;
+      _messages = <MessageModel>[];
+      _historyOffset = 0;
+      _hasMoreHistory = false;
+    });
+  }
+
+  void _backToClubList() {
+    _stopPolling();
+    _disconnectWebSocket();
+    setState(() {
+      _clubId = null;
+      _channelId = null;
+      _channels = null;
       _messages = <MessageModel>[];
       _historyOffset = 0;
       _hasMoreHistory = false;
@@ -840,15 +854,13 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: Row(
                 children: [
-                  if (_channels != null && _channels!.length > 1)
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      onPressed: _backToChannelList,
-                      tooltip: MaterialLocalizations.of(context)
-                          .backButtonTooltip,
-                    )
-                  else
-                    const SizedBox(width: 48),
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: _channels != null && _channels!.length > 1
+                        ? _backToChannelList
+                        : _backToClubList,
+                    tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                  ),
                   Expanded(
                     child: Text(
                       title,
@@ -910,6 +922,28 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
     if (_clubChats == null || _clubChats!.isEmpty) {
       return _buildNoClubs(l10n, theme);
     }
-    return _buildListLoading();
+    return _buildClubList(l10n, theme);
+  }
+
+  Widget _buildClubList(AppLocalizations l10n, ThemeData theme) {
+    return RefreshIndicator(
+      onRefresh: _loadClubList,
+      child: ListView.separated(
+        itemCount: _clubChats!.length,
+        separatorBuilder: (_, __) => const Divider(height: 1, indent: 16),
+        itemBuilder: (context, index) {
+          final chat = _clubChats![index];
+          final initials = (chat.clubName?.isNotEmpty ?? false)
+              ? chat.clubName![0].toUpperCase()
+              : '?';
+          return ListTile(
+            leading: CircleAvatar(child: Text(initials)),
+            title: Text(chat.clubName ?? chat.clubId),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _openClubChat(chat.clubId),
+          );
+        },
+      ),
+    );
   }
 }

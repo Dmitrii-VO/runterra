@@ -18,6 +18,7 @@ export interface DirectChatViewDto {
   userAvatar: string | null;
   lastMessageText: string | null;
   lastMessageAt: string | null;
+  isTrainerRelation: boolean;
 }
 
 export interface CreateMessageDto {

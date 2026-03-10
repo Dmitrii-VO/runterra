@@ -135,6 +135,18 @@ class MessagesService {
     _throwApiException(response, 'send_channel_message_error');
   }
 
+  /// GET /api/messages/direct/conversations — all DM conversations for current user
+  Future<List<DirectChatModel>> getConversations() async {
+    final response = await _apiClient.get('/api/messages/direct/conversations');
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final jsonData = jsonDecode(response.body) as List<dynamic>;
+      return jsonData
+          .map((json) => DirectChatModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+    }
+    _throwApiException(response, 'get_conversations_error');
+  }
+
   /// GET /api/messages/trainer/clients — trainer's client list with last message
   Future<List<DirectChatModel>> getTrainerClients() async {
     final response = await _apiClient.get('/api/messages/trainer/clients');

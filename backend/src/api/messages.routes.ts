@@ -343,6 +343,24 @@ async function resolveUser(
 }
 
 /**
+ * GET /api/messages/direct/conversations
+ * Returns all DM conversations for the current user, sorted by last message time.
+ * Each entry includes isTrainerRelation flag for pinning/badging in the UI.
+ */
+router.get('/direct/conversations', async (req: Request, res: Response) => {
+  try {
+    const user = await resolveUser(req, res);
+    if (!user) return;
+    const messagesRepo = getMessagesRepository();
+    const conversations = await messagesRepo.getConversations(user.id);
+    res.status(200).json(conversations);
+  } catch (error) {
+    logger.error('Error fetching conversations', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
  * GET /api/messages/trainer/clients
  * Returns trainer's client list with last message info.
  */
@@ -410,14 +428,8 @@ router.get('/direct/:otherUserId', async (req: Request, res: Response) => {
     const user = await resolveUser(req, res);
     if (!user) return;
 
-    const messagesRepo = getMessagesRepository();
-    const hasRelationship = await messagesRepo.hasTrainerClientRelationship(user.id, otherUserId);
-    if (!hasRelationship) {
-      res.status(403).json({ code: 'forbidden', message: 'No trainer-client relationship' });
-      return;
-    }
-
     const { limit, offset } = parsePagination(req.query as { limit?: string; offset?: string });
+    const messagesRepo = getMessagesRepository();
     const messages = await messagesRepo.getDirectMessages(user.id, otherUserId, limit, offset);
     res.status(200).json(messages);
   } catch (error) {
@@ -452,25 +464,6 @@ router.post(
       if (!user) return;
 
       const messagesRepo = getMessagesRepository();
-      const hasRelationship = await messagesRepo.hasTrainerClientRelationship(user.id, otherUserId);
-      if (!hasRelationship) {
-        res.status(403).json({ code: 'forbidden', message: 'No trainer-client relationship' });
-        return;
-      }
-
-      // If no messages exist, only the trainer can initiate
-      const hasMessages = await messagesRepo.hasDirectMessages(user.id, otherUserId);
-      if (!hasMessages) {
-        const trainerId = await messagesRepo.getTrainerIdForPair(user.id, otherUserId);
-        if (trainerId !== user.id) {
-          res.status(403).json({
-            code: 'trainer_initiates_first',
-            message: 'Trainer must send the first message',
-          });
-          return;
-        }
-      }
-
       const { text } = req.body as { text: string };
       const dto = await messagesRepo.insertDirectMessage(user.id, otherUserId, text);
 

@@ -206,17 +206,23 @@ abstract class AppLocalizations {
   /// **'Club'**
   String get tabClub;
 
-  /// No description provided for @tabCoach.
+  /// No description provided for @tabClubs.
   ///
   /// In en, this message translates to:
-  /// **'Coach'**
-  String get tabCoach;
+  /// **'Clubs'**
+  String get tabClubs;
 
   /// No description provided for @personalChatsEmpty.
   ///
   /// In en, this message translates to:
-  /// **'Personal chats — coming soon'**
+  /// **'No conversations yet. Write to someone!'**
   String get personalChatsEmpty;
+
+  /// No description provided for @personalChatsNewChat.
+  ///
+  /// In en, this message translates to:
+  /// **'New conversation'**
+  String get personalChatsNewChat;
 
   /// No description provided for @coachMessagesEmpty.
   ///

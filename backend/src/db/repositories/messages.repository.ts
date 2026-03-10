@@ -52,6 +52,7 @@ interface DirectChatRow {
   user_avatar: string | null;
   last_message_text: string | null;
   last_message_at: Date | null;
+  is_trainer_relation?: boolean;
 }
 
 function rowToMessageViewDto(row: MessageWithUserNameRow): MessageViewDto {
@@ -95,6 +96,7 @@ function rowToDirectChatViewDto(row: DirectChatRow): DirectChatViewDto {
     userAvatar: row.user_avatar,
     lastMessageText: row.last_message_text,
     lastMessageAt: row.last_message_at ? row.last_message_at.toISOString() : null,
+    isTrainerRelation: row.is_trainer_relation ?? false,
   };
 }
 
@@ -134,7 +136,7 @@ export class MessagesRepository extends BaseRepository {
     }
 
     const row = await this.queryOne<MessageRow>(
-      `INSERT INTO messages (channel_type, channel_id, user_id, text, club_channel_id)
+      `INSERT INTO chat.messages (channel_type, channel_id, user_id, text, club_channel_id)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
       [data.channelType, data.channelId, data.userId, data.text, data.clubChannelId ?? null],
@@ -150,7 +152,7 @@ export class MessagesRepository extends BaseRepository {
   ): Promise<MessageViewDto[]> {
     const rows = await this.queryMany<MessageWithUserNameRow>(
       `SELECT m.id, m.channel_type, m.channel_id, m.user_id, m.text, m.created_at, m.updated_at, u.name AS user_name
-       FROM messages m
+       FROM chat.messages m
        JOIN users u ON u.id = m.user_id
        WHERE m.channel_type = $1 AND m.channel_id = $2
        ORDER BY m.created_at DESC
@@ -168,7 +170,7 @@ export class MessagesRepository extends BaseRepository {
   ): Promise<MessageViewDto[]> {
     const rows = await this.queryMany<MessageWithUserNameRow>(
       `SELECT m.id, m.channel_type, m.channel_id, m.user_id, m.text, m.created_at, m.updated_at, u.name AS user_name
-       FROM messages m
+       FROM chat.messages m
        JOIN users u ON u.id = m.user_id
        WHERE m.channel_type = 'club'
          AND m.channel_id = $1
@@ -190,7 +192,7 @@ export class MessagesRepository extends BaseRepository {
     const rows = await this.queryMany<MessageWithRoleRow>(
       `SELECT m.id, m.channel_type, m.channel_id, m.user_id, m.text, m.created_at, m.updated_at,
               u.name AS user_name, cm.role AS sender_role
-       FROM messages m
+       FROM chat.messages m
        JOIN users u ON u.id = m.user_id
        LEFT JOIN club_members cm ON cm.club_id = m.channel_id::uuid AND cm.user_id = m.user_id AND cm.status = 'active'
        WHERE m.channel_type = 'club'
@@ -246,7 +248,7 @@ export class MessagesRepository extends BaseRepository {
        FROM trainer_clients tc
        JOIN users u ON u.id = tc.client_id
        LEFT JOIN LATERAL (
-         SELECT text, created_at FROM direct_messages
+         SELECT text, created_at FROM chat.direct_messages
          WHERE (sender_id = tc.trainer_id::uuid AND receiver_id = tc.client_id::uuid)
             OR (sender_id = tc.client_id::uuid AND receiver_id = tc.trainer_id::uuid)
          ORDER BY created_at DESC LIMIT 1
@@ -268,7 +270,7 @@ export class MessagesRepository extends BaseRepository {
        FROM trainer_clients tc
        JOIN users u ON u.id = tc.trainer_id
        LEFT JOIN LATERAL (
-         SELECT text, created_at FROM direct_messages
+         SELECT text, created_at FROM chat.direct_messages
          WHERE (sender_id = tc.trainer_id::uuid AND receiver_id = tc.client_id::uuid)
             OR (sender_id = tc.client_id::uuid AND receiver_id = tc.trainer_id::uuid)
          ORDER BY created_at DESC LIMIT 1
@@ -327,7 +329,7 @@ export class MessagesRepository extends BaseRepository {
     const rows = await this.queryMany<DirectMessageRow>(
       `SELECT dm.id, dm.sender_id, dm.receiver_id, dm.text, dm.created_at, dm.updated_at,
               u.name AS user_name
-       FROM direct_messages dm
+       FROM chat.direct_messages dm
        JOIN users u ON u.id = dm.sender_id
        WHERE (dm.sender_id = $1::uuid AND dm.receiver_id = $2::uuid)
           OR (dm.sender_id = $2::uuid AND dm.receiver_id = $1::uuid)
@@ -346,7 +348,7 @@ export class MessagesRepository extends BaseRepository {
   ): Promise<MessageViewDto> {
     const row = await this.queryOne<DirectMessageRow>(
       `WITH ins AS (
-         INSERT INTO direct_messages (sender_id, receiver_id, text)
+         INSERT INTO chat.direct_messages (sender_id, receiver_id, text)
          VALUES ($1::uuid, $2::uuid, $3)
          RETURNING *
        )
@@ -359,10 +361,43 @@ export class MessagesRepository extends BaseRepository {
     return directRowToMessageViewDto(row!);
   }
 
+  /** Get all DM conversations for a user, sorted by last message time */
+  async getConversations(userId: string): Promise<DirectChatViewDto[]> {
+    const rows = await this.queryMany<DirectChatRow>(
+      `SELECT
+         other_user.id          AS user_id,
+         other_user.name        AS user_name,
+         other_user.avatar_url  AS user_avatar,
+         last_dm.text           AS last_message_text,
+         last_dm.created_at     AS last_message_at,
+         EXISTS (
+           SELECT 1 FROM trainer_clients tc
+           WHERE (tc.trainer_id = other_user.id AND tc.client_id = $1::uuid)
+              OR (tc.trainer_id = $1::uuid        AND tc.client_id = other_user.id)
+         ) AS is_trainer_relation
+       FROM (
+         SELECT DISTINCT
+           CASE WHEN sender_id = $1::uuid THEN receiver_id ELSE sender_id END AS other_user_id
+         FROM chat.direct_messages
+         WHERE sender_id = $1::uuid OR receiver_id = $1::uuid
+       ) conv
+       JOIN users other_user ON other_user.id = conv.other_user_id
+       LEFT JOIN LATERAL (
+         SELECT text, created_at FROM chat.direct_messages
+         WHERE (sender_id = $1::uuid AND receiver_id = conv.other_user_id)
+            OR (sender_id = conv.other_user_id AND receiver_id = $1::uuid)
+         ORDER BY created_at DESC LIMIT 1
+       ) last_dm ON true
+       ORDER BY last_dm.created_at DESC NULLS LAST, other_user.name ASC`,
+      [userId],
+    );
+    return rows.map(rowToDirectChatViewDto);
+  }
+
   /** Check if there are any direct messages between two users */
   async hasDirectMessages(userA: string, userB: string): Promise<boolean> {
     const row = await this.queryOne(
-      `SELECT 1 FROM direct_messages
+      `SELECT 1 FROM chat.direct_messages
        WHERE (sender_id = $1::uuid AND receiver_id = $2::uuid)
           OR (sender_id = $2::uuid AND receiver_id = $1::uuid)
        LIMIT 1`,

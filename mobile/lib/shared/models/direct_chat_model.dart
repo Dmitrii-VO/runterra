@@ -1,10 +1,11 @@
-/// Model for a direct chat contact (trainer client or trainer)
+/// Model for a direct chat contact (any user, trainer flagged separately)
 class DirectChatModel {
   final String userId;
   final String userName;
   final String? userAvatar;
   final String? lastMessageText;
   final DateTime? lastMessageAt;
+  final bool isTrainerRelation;
 
   DirectChatModel({
     required this.userId,
@@ -12,6 +13,7 @@ class DirectChatModel {
     this.userAvatar,
     this.lastMessageText,
     this.lastMessageAt,
+    this.isTrainerRelation = false,
   });
 
   factory DirectChatModel.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class DirectChatModel {
       lastMessageAt: json['lastMessageAt'] != null
           ? DateTime.parse(json['lastMessageAt'] as String)
           : null,
+      isTrainerRelation: (json['isTrainerRelation'] as bool?) ?? false,
     );
   }
 }
