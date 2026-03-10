@@ -6,10 +6,9 @@ let firebaseAdminApp: admin.app.App | null = null;
 /**
  * Lazily initializes and returns Firebase Admin app instance.
  *
- * Uses service-account style credentials from env:
- * - FIREBASE_PROJECT_ID
- * - FIREBASE_CLIENT_EMAIL
- * - FIREBASE_PRIVATE_KEY (\\n-separated, will be normalized)
+ * Credential resolution order:
+ * 1. GOOGLE_APPLICATION_CREDENTIALS — path to service account JSON file
+ * 2. FIREBASE_PROJECT_ID + FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY (\\n-separated)
  *
  * This is intentionally minimal and infrastructure-only; no product logic.
  */
@@ -23,6 +22,15 @@ function getFirebaseAdminApp(): admin.app.App {
     return firebaseAdminApp;
   }
 
+  // Option 1: JSON file via GOOGLE_APPLICATION_CREDENTIALS
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    firebaseAdminApp = admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
+    });
+    return firebaseAdminApp;
+  }
+
+  // Option 2: individual env vars
   const projectId = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   let privateKey = process.env.FIREBASE_PRIVATE_KEY;
@@ -106,11 +114,12 @@ export class FirebaseAuthProvider implements AuthProvider {
  * Firebase Admin SDK (credentials через env).
  */
 export function assertFirebaseAuthConfigured(): void {
+  const hasJsonFile = !!process.env.GOOGLE_APPLICATION_CREDENTIALS;
   const projectId = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
-  if (!projectId || !clientEmail || !privateKey) {
+  if (!hasJsonFile && (!projectId || !clientEmail || !privateKey)) {
     throw new Error(
       'SECURITY: Firebase Admin SDK is not initialized. ' +
         'Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY.',
