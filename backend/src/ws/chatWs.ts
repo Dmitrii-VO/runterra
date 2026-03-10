@@ -12,7 +12,6 @@ import { getAuthProvider } from '../modules/auth';
 import {
   getUsersRepository,
   getClubMembersRepository,
-  getMessagesRepository,
   getTrainerGroupsRepository,
 } from '../db/repositories';
 import { logger } from '../shared/logger';
@@ -78,12 +77,9 @@ async function canSubscribe(uid: string, channelKey: string): Promise<boolean> {
       const [id1, id2] = parts;
       if (!isValidUuid(id1) || !isValidUuid(id2)) return false;
 
-      // User must be one of the two participants
+      // User must be one of the two participants — any authenticated pair is allowed
       if (user.id !== id1 && user.id !== id2) return false;
-
-      // Trainer-client relationship must exist
-      const messagesRepo = getMessagesRepository();
-      return messagesRepo.hasTrainerClientRelationship(id1, id2);
+      return true;
     }
 
     if (channelKey.startsWith('trainer_group:')) {

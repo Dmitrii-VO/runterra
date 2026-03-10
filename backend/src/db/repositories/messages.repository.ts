@@ -284,39 +284,6 @@ export class MessagesRepository extends BaseRepository {
     return row ? rowToDirectChatViewDto(row) : null;
   }
 
-  /** Check if trainer_clients relationship exists between two users (in either direction) */
-  async hasTrainerClientRelationship(userA: string, userB: string): Promise<boolean> {
-    const activeRelationshipSql = this.getActiveTrainerClientExistsSql();
-    const row = await this.queryOne(
-      `SELECT 1
-       FROM trainer_clients tc
-       WHERE (
-         (tc.trainer_id = $1::uuid AND tc.client_id = $2::uuid)
-         OR (tc.trainer_id = $2::uuid AND tc.client_id = $1::uuid)
-       )
-         AND ${activeRelationshipSql}`,
-      [userA, userB],
-    );
-    return !!row;
-  }
-
-  /** Get trainer_id for a pair (needed to check who initiates) */
-  async getTrainerIdForPair(userA: string, userB: string): Promise<string | null> {
-    const activeRelationshipSql = this.getActiveTrainerClientExistsSql();
-    const row = await this.queryOne<{ trainer_id: string }>(
-      `SELECT tc.trainer_id
-       FROM trainer_clients tc
-       WHERE (
-         (tc.trainer_id = $1::uuid AND tc.client_id = $2::uuid)
-         OR (tc.trainer_id = $2::uuid AND tc.client_id = $1::uuid)
-       )
-         AND ${activeRelationshipSql}
-       LIMIT 1`,
-      [userA, userB],
-    );
-    return row ? row.trainer_id : null;
-  }
-
   // --- Direct messages ---
 
   /** Get direct messages between two users */
@@ -372,8 +339,14 @@ export class MessagesRepository extends BaseRepository {
          last_dm.created_at     AS last_message_at,
          EXISTS (
            SELECT 1 FROM trainer_clients tc
-           WHERE (tc.trainer_id = other_user.id AND tc.client_id = $1::uuid)
-              OR (tc.trainer_id = $1::uuid        AND tc.client_id = other_user.id)
+           JOIN club_members trainer_cm ON trainer_cm.user_id = tc.trainer_id
+           JOIN club_members client_cm  ON client_cm.club_id = trainer_cm.club_id
+                                       AND client_cm.user_id = tc.client_id
+           WHERE ((tc.trainer_id = other_user.id AND tc.client_id = $1::uuid)
+              OR  (tc.trainer_id = $1::uuid       AND tc.client_id = other_user.id))
+             AND trainer_cm.status = 'active'
+             AND trainer_cm.role IN ('trainer', 'leader')
+             AND client_cm.status = 'active'
          ) AS is_trainer_relation
        FROM (
          SELECT DISTINCT
@@ -394,15 +367,4 @@ export class MessagesRepository extends BaseRepository {
     return rows.map(rowToDirectChatViewDto);
   }
 
-  /** Check if there are any direct messages between two users */
-  async hasDirectMessages(userA: string, userB: string): Promise<boolean> {
-    const row = await this.queryOne(
-      `SELECT 1 FROM chat.direct_messages
-       WHERE (sender_id = $1::uuid AND receiver_id = $2::uuid)
-          OR (sender_id = $2::uuid AND receiver_id = $1::uuid)
-       LIMIT 1`,
-      [userA, userB],
-    );
-    return !!row;
-  }
 }

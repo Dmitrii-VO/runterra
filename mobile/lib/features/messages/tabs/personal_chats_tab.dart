@@ -41,7 +41,7 @@ class _PersonalChatsTabState extends State<PersonalChatsTab> {
       return '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
     }
     final diff = today.difference(msgDay).inDays;
-    if (diff == 1) return 'Вчера';
+    if (diff == 1) return AppLocalizations.of(context)!.runHistoryYesterday;
     return '${local.day.toString().padLeft(2, '0')}.${local.month.toString().padLeft(2, '0')}';
   }
 
@@ -89,6 +89,7 @@ class _PersonalChatsTabState extends State<PersonalChatsTab> {
               ? RefreshIndicator(
                   onRefresh: () async => _reload(),
                   child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     children: [
                       SizedBox(
                         height: MediaQuery.of(context).size.height * 0.5,
@@ -123,6 +124,7 @@ class _PersonalChatsTabState extends State<PersonalChatsTab> {
               : RefreshIndicator(
                   onRefresh: () async => _reload(),
                   child: ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     itemCount: sorted.length,
                     separatorBuilder: (_, __) =>
                         const Divider(height: 1, indent: 72),
@@ -141,6 +143,7 @@ class _PersonalChatsTabState extends State<PersonalChatsTab> {
                               ),
                             ),
                           );
+                          if (!mounted) return;
                           _reload();
                         },
                       );

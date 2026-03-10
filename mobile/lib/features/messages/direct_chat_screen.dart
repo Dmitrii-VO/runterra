@@ -49,12 +49,6 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   bool _userScrolledAway = false;
   bool _showScrollToBottom = false;
 
-  /// Whether chat is empty (no messages) — used to block client from sending first
-  bool get _chatIsEmpty => _messages.isEmpty;
-
-  /// Whether input should be blocked (client can't write first)
-  bool get _inputBlocked => !widget.isTrainer && _chatIsEmpty;
-
   @override
   void initState() {
     super.initState();
@@ -323,10 +317,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
           : Column(
               children: [
                 Expanded(child: _buildMessagesList(l10n, theme)),
-                if (_inputBlocked)
-                  _buildBlockedHint(l10n, theme)
-                else
-                  _buildComposer(l10n),
+                _buildComposer(l10n),
               ],
             ),
     );
@@ -349,9 +340,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(32),
                     child: Text(
-                      _inputBlocked
-                          ? l10n.directChatWaitForTrainer
-                          : l10n.messageHint,
+                      l10n.messageHint,
                       style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
                       textAlign: TextAlign.center,
                     ),
@@ -483,17 +472,4 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     );
   }
 
-  Widget _buildBlockedHint(AppLocalizations l10n, ThemeData theme) {
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: Text(
-          l10n.directChatWaitForTrainer,
-          style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
-          textAlign: TextAlign.center,
-        ),
-      ),
-    );
-  }
 }

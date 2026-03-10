@@ -265,6 +265,9 @@ class _ClubMessagesTabState extends State<ClubMessagesTab> {
       _messages = <MessageModel>[];
       _historyOffset = 0;
       _hasMoreHistory = false;
+      _messagesLoadError = null;
+      _userScrolledAway = false;
+      _showScrollToBottom = false;
     });
   }
 

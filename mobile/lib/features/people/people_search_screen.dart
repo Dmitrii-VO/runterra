@@ -1,12 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-
 import '../../l10n/app_localizations.dart';
 import '../../shared/api/users_service.dart';
 import '../../shared/di/service_locator.dart';
+import '../../shared/models/direct_chat_model.dart';
 import '../../shared/models/user_search_result_model.dart';
+import '../messages/direct_chat_screen.dart';
 
 class PeopleSearchScreen extends StatefulWidget {
   const PeopleSearchScreen({super.key});
@@ -195,10 +195,25 @@ class _PeopleSearchScreenState extends State<PeopleSearchScreen> {
         }
         return _UserSearchCard(
           result: _results[index],
-          onTap: () => context.push(
-            '/user/${_results[index].id}',
-            extra: _results[index],
-          ),
+          onTap: () {
+            final r = _results[index];
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => DirectChatScreen(
+                  otherUser: DirectChatModel(
+                    userId: r.id,
+                    userName: r.name,
+                    userAvatar: r.avatarUrl,
+                    lastMessageText: null,
+                    lastMessageAt: null,
+                    isTrainerRelation: false,
+                  ),
+                  isTrainer: false,
+                ),
+              ),
+            );
+          },
         );
       },
     );
