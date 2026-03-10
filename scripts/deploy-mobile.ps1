@@ -206,6 +206,8 @@ if (-not $SkipTests) {
 
 Write-Host "`n=== 2. Build APK ($buildName+$buildNumber) ===" -ForegroundColor Cyan
 Set-Location (Join-Path $ProjectRoot "mobile")
+# Sync pubspec.yaml so `flutter run` and IDE show the correct version
+(Get-Content pubspec.yaml) -replace '^version:.*', "version: $buildName+$buildNumber" | Set-Content pubspec.yaml
 flutter build apk --release --build-name=$buildName --build-number=$buildNumber
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 Set-Location $ProjectRoot
