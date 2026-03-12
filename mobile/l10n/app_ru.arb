@@ -886,5 +886,27 @@
   "editProfilePhotoUploading": "Загрузка фото...",
   "myClubsMySection": "Мои клубы",
   "myClubsFind": "Найти клуб",
-  "myClubsAsTrainer": "Клубы, где я тренер"
+  "myClubsAsTrainer": "Клубы, где я тренер",
+  "trainerBecomeStudent": "Стать учеником",
+  "trainerRequestSent": "Заявка отправлена",
+  "trainerCancelRequest": "Отозвать заявку",
+  "trainerYouAreStudent": "Вы ученик",
+  "trainerReapply": "Подать снова",
+  "trainerRequestsScreen": "Заявки клиентов",
+  "trainerIncomingRequests": "Входящие заявки",
+  "trainerActiveClients": "Активные клиенты",
+  "trainerAccept": "Принять",
+  "trainerReject": "Отклонить",
+  "trainerClientsCount": "{count} клиентов",
+  "@trainerClientsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "trainerNoRequests": "Нет входящих заявок",
+  "trainerNoClientsYet": "Активных клиентов пока нет",
+  "myTrainersScreen": "Мои тренеры",
+  "myTrainersEmpty": "Тренеров пока нет",
+  "trainerRequestAccepted": "Заявка принята",
+  "trainerRequestRejectedMsg": "Заявка отклонена"
 }

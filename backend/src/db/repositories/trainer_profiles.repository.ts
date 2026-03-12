@@ -37,6 +37,8 @@ function rowToProfile(row: TrainerProfileRow): TrainerProfile {
   };
 }
 
+export type TrainerRelationStatus = 'none' | 'pending' | 'active' | 'rejected';
+
 export interface PublicTrainerEntry {
   userId: string;
   name: string;
@@ -44,6 +46,8 @@ export interface PublicTrainerEntry {
   specialization: string[];
   experienceYears: number;
   acceptsPrivateClients: true;
+  activeClientsCount: number;
+  myStatus: TrainerRelationStatus;
 }
 
 export class TrainerProfilesRepository extends BaseRepository {
@@ -131,6 +135,7 @@ export class TrainerProfilesRepository extends BaseRepository {
   async findPublicTrainers(filters: {
     cityId?: string;
     specialization?: string;
+    currentUserId?: string;
   }): Promise<PublicTrainerEntry[]> {
     const conditions: string[] = [
       'tp.accepts_private_clients = true',
@@ -163,13 +168,17 @@ export class TrainerProfilesRepository extends BaseRepository {
       bio: string | null;
       specialization: string[];
       experience_years: number;
+      active_clients_count: string;
+      my_status: string | null;
     }>(
-      `SELECT tp.user_id, u.name, u.first_name, u.last_name, tp.bio, tp.specialization, tp.experience_years
+      `SELECT tp.user_id, u.name, u.first_name, u.last_name, tp.bio, tp.specialization, tp.experience_years,
+              (SELECT COUNT(*) FROM trainer_clients tc WHERE tc.trainer_id = tp.user_id AND tc.status = 'active') AS active_clients_count,
+              (SELECT tc.status FROM trainer_clients tc WHERE tc.trainer_id = tp.user_id AND tc.client_id = $${idx} LIMIT 1) AS my_status
        FROM trainer_profiles tp
        JOIN users u ON u.id = tp.user_id
        WHERE ${where}
        ORDER BY tp.created_at DESC`,
-      params,
+      [...params, filters.currentUserId ?? null],
     );
 
     return rows.map(row => {
@@ -183,6 +192,8 @@ export class TrainerProfilesRepository extends BaseRepository {
         specialization: row.specialization,
         experienceYears: row.experience_years,
         acceptsPrivateClients: true,
+        activeClientsCount: parseInt(row.active_clients_count, 10),
+        myStatus: (row.my_status ?? 'none') as TrainerRelationStatus,
       };
     });
   }

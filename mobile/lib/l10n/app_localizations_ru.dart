@@ -2071,4 +2071,57 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get myClubsAsTrainer => 'Клубы, где я тренер';
+
+  @override
+  String get trainerBecomeStudent => 'Стать учеником';
+
+  @override
+  String get trainerRequestSent => 'Заявка отправлена';
+
+  @override
+  String get trainerCancelRequest => 'Отозвать заявку';
+
+  @override
+  String get trainerYouAreStudent => 'Вы ученик';
+
+  @override
+  String get trainerReapply => 'Подать снова';
+
+  @override
+  String get trainerRequestsScreen => 'Заявки клиентов';
+
+  @override
+  String get trainerIncomingRequests => 'Входящие заявки';
+
+  @override
+  String get trainerActiveClients => 'Активные клиенты';
+
+  @override
+  String get trainerAccept => 'Принять';
+
+  @override
+  String get trainerReject => 'Отклонить';
+
+  @override
+  String trainerClientsCount(int count) {
+    return '$count клиентов';
+  }
+
+  @override
+  String get trainerNoRequests => 'Нет входящих заявок';
+
+  @override
+  String get trainerNoClientsYet => 'Активных клиентов пока нет';
+
+  @override
+  String get myTrainersScreen => 'Мои тренеры';
+
+  @override
+  String get myTrainersEmpty => 'Тренеров пока нет';
+
+  @override
+  String get trainerRequestAccepted => 'Заявка принята';
+
+  @override
+  String get trainerRequestRejectedMsg => 'Заявка отклонена';
 }

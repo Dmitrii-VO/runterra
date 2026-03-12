@@ -3931,6 +3931,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clubs where I\'m a trainer'**
   String get myClubsAsTrainer;
+
+  /// No description provided for @trainerBecomeStudent.
+  ///
+  /// In en, this message translates to:
+  /// **'Become a student'**
+  String get trainerBecomeStudent;
+
+  /// No description provided for @trainerRequestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Request sent'**
+  String get trainerRequestSent;
+
+  /// No description provided for @trainerCancelRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel request'**
+  String get trainerCancelRequest;
+
+  /// No description provided for @trainerYouAreStudent.
+  ///
+  /// In en, this message translates to:
+  /// **'You are a student'**
+  String get trainerYouAreStudent;
+
+  /// No description provided for @trainerReapply.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-apply'**
+  String get trainerReapply;
+
+  /// No description provided for @trainerRequestsScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Client Requests'**
+  String get trainerRequestsScreen;
+
+  /// No description provided for @trainerIncomingRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming requests'**
+  String get trainerIncomingRequests;
+
+  /// No description provided for @trainerActiveClients.
+  ///
+  /// In en, this message translates to:
+  /// **'Active clients'**
+  String get trainerActiveClients;
+
+  /// No description provided for @trainerAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get trainerAccept;
+
+  /// No description provided for @trainerReject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get trainerReject;
+
+  /// No description provided for @trainerClientsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} clients'**
+  String trainerClientsCount(int count);
+
+  /// No description provided for @trainerNoRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending requests'**
+  String get trainerNoRequests;
+
+  /// No description provided for @trainerNoClientsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No active clients yet'**
+  String get trainerNoClientsYet;
+
+  /// No description provided for @myTrainersScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'My Trainers'**
+  String get myTrainersScreen;
+
+  /// No description provided for @myTrainersEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No trainers yet'**
+  String get myTrainersEmpty;
+
+  /// No description provided for @trainerRequestAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Request accepted'**
+  String get trainerRequestAccepted;
+
+  /// No description provided for @trainerRequestRejectedMsg.
+  ///
+  /// In en, this message translates to:
+  /// **'Request rejected'**
+  String get trainerRequestRejectedMsg;
 }
 
 class _AppLocalizationsDelegate

@@ -6,6 +6,8 @@ import '../models/trainer_group_model.dart';
 import '../models/client_run_model.dart';
 import '../navigation/nav_status_provider.dart';
 
+export '../models/trainer_profile.dart' show TrainerClientRequest, MyTrainerEntry;
+
 /// Service for trainer profile API
 class TrainerService {
   final ApiClient _apiClient;
@@ -184,6 +186,80 @@ class TrainerService {
       return;
     }
     _throwApiException(response, 'add_client_error');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Trainer-client relationship (CTA flow)
+  // ---------------------------------------------------------------------------
+
+  /// POST /api/trainer/:userId/request — submit a join request
+  Future<void> requestToJoin(String trainerId) async {
+    final response = await _apiClient.post('/api/trainer/$trainerId/request', body: {});
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    _throwApiException(response, 'request_to_join_error');
+  }
+
+  /// DELETE /api/trainer/:userId/request — withdraw pending request
+  Future<void> cancelRequest(String trainerId) async {
+    final response = await _apiClient.delete('/api/trainer/$trainerId/request');
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    _throwApiException(response, 'cancel_request_error');
+  }
+
+  /// GET /api/trainer/:userId/request-status — current relationship status
+  Future<String> getRequestStatus(String trainerId) async {
+    final response = await _apiClient.get('/api/trainer/$trainerId/request-status');
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return json['status'] as String? ?? 'none';
+    }
+    _throwApiException(response, 'get_request_status_error');
+  }
+
+  /// GET /api/trainer/requests — trainer sees incoming pending requests
+  Future<List<TrainerClientRequest>> getTrainerRequests() async {
+    final response = await _apiClient.get('/api/trainer/requests');
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final list = jsonDecode(response.body) as List<dynamic>;
+      return list
+          .map((e) => TrainerClientRequest.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+    _throwApiException(response, 'get_trainer_requests_error');
+  }
+
+  /// PATCH /api/trainer/requests/:id — accept or reject a request
+  Future<void> respondToRequest(String id, String action) async {
+    final response = await _apiClient.patch(
+      '/api/trainer/requests/$id',
+      body: {'action': action},
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    _throwApiException(response, 'respond_to_request_error');
+  }
+
+  /// GET /api/trainer/clients — trainer's active clients
+  Future<List<TrainerClientRequest>> getTrainerClients() async {
+    final response = await _apiClient.get('/api/trainer/clients');
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final list = jsonDecode(response.body) as List<dynamic>;
+      return list
+          .map((e) => TrainerClientRequest.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+    _throwApiException(response, 'get_trainer_clients_error');
+  }
+
+  /// GET /api/trainer/my-trainers — client's active trainers
+  Future<List<MyTrainerEntry>> getMyTrainers() async {
+    final response = await _apiClient.get('/api/trainer/my-trainers');
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final list = jsonDecode(response.body) as List<dynamic>;
+      return list
+          .map((e) => MyTrainerEntry.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+    _throwApiException(response, 'get_my_trainers_error');
   }
 
   Never _throwApiException(dynamic response, String fallbackCode) {

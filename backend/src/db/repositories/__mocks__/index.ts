@@ -328,6 +328,21 @@ export const mockTerritoriesRepository = {
   addRunContribution: jest.fn().mockResolvedValue(undefined),
 };
 
+// Mock TrainerClientsRepository
+export const mockTrainerClientsRepository = {
+  findByTrainerAndClient: jest.fn().mockResolvedValue(null),
+  findById: jest.fn().mockResolvedValue(null),
+  create: jest.fn().mockResolvedValue({ id: 'tc-1', trainerId: 'trainer-1', clientId: 'user-1', status: 'pending', createdAt: new Date() }),
+  updateStatus: jest.fn().mockResolvedValue({ id: 'tc-1', trainerId: 'trainer-1', clientId: 'user-1', status: 'active', createdAt: new Date() }),
+  updateStatusIfPending: jest.fn().mockResolvedValue({ id: 'tc-1', trainerId: 'trainer-1', clientId: 'user-1', status: 'active', createdAt: new Date() }),
+  upsertPending: jest.fn().mockResolvedValue({ id: 'tc-1', trainerId: 'trainer-1', clientId: 'user-1', status: 'pending', createdAt: new Date() }),
+  delete: jest.fn().mockResolvedValue(true),
+  findPendingByTrainer: jest.fn().mockResolvedValue([]),
+  findActiveClientsByTrainer: jest.fn().mockResolvedValue([]),
+  findActiveTrainersByClient: jest.fn().mockResolvedValue([]),
+  countActiveClientsByTrainer: jest.fn().mockResolvedValue(0),
+};
+
 // Getter functions
 export const getUsersRepository = jest.fn(() => mockUsersRepository);
 export const getEventsRepository = jest.fn(() => mockEventsRepository);
@@ -339,6 +354,7 @@ export const getClubChannelsRepository = jest.fn(() => mockClubChannelsRepositor
 export const getTrainerProfilesRepository = jest.fn(() => mockTrainerProfilesRepository);
 export const getWorkoutsRepository = jest.fn(() => mockWorkoutsRepository);
 export const getTrainerGroupsRepository = jest.fn(() => mockTrainerGroupsRepository);
+export const getTrainerClientsRepository = jest.fn(() => mockTrainerClientsRepository);
 export const getTerritoriesRepository = jest.fn(() => mockTerritoriesRepository);
 
 // Mock ActivitiesRepository (GET /api/activities uses findByUserId)
@@ -371,6 +387,7 @@ export class ClubChannelsRepository {}
 export class TrainerProfilesRepository {}
 export class WorkoutsRepository {}
 export class TrainerGroupsRepository {}
+export class TrainerClientsRepository {}
 export class TerritoriesRepository {}
 export class ActivitiesRepository {}
 export type EventParticipant = { id: string };

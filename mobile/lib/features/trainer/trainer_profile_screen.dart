@@ -18,12 +18,41 @@ class TrainerProfileScreen extends StatefulWidget {
 class _TrainerProfileScreenState extends State<TrainerProfileScreen> {
   late Future<TrainerProfile?> _profileFuture;
   late Future<ProfileModel> _meFuture;
+  late Future<String> _statusFuture;
+  bool _statusLoading = false;
 
   @override
   void initState() {
     super.initState();
     _profileFuture = ServiceLocator.trainerService.getProfile(widget.userId);
     _meFuture = ServiceLocator.usersService.getProfile();
+    _statusFuture = ServiceLocator.trainerService.getRequestStatus(widget.userId);
+  }
+
+  void _reloadStatus() {
+    setState(() {
+      _statusFuture = ServiceLocator.trainerService.getRequestStatus(widget.userId);
+    });
+  }
+
+  Future<void> _handleRequest(String currentStatus) async {
+    setState(() => _statusLoading = true);
+    try {
+      if (currentStatus == 'none' || currentStatus == 'rejected') {
+        await ServiceLocator.trainerService.requestToJoin(widget.userId);
+      } else if (currentStatus == 'pending') {
+        await ServiceLocator.trainerService.cancelRequest(widget.userId);
+      }
+      if (mounted) _reloadStatus();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _statusLoading = false);
+    }
   }
 
   @override
@@ -41,29 +70,38 @@ class _TrainerProfileScreenState extends State<TrainerProfileScreen> {
               final isMe = meId != null && meId == widget.userId;
               if (!isMe) return const SizedBox.shrink();
 
-              return FutureBuilder<TrainerProfile?>(
-                future: _profileFuture,
-                builder: (context, profileSnap) {
-                  final profile = profileSnap.data;
-                  if (profile == null) return const SizedBox.shrink();
-
-                  return IconButton(
-                    icon: const Icon(Icons.edit),
-                    tooltip: l10n.trainerEditProfile,
-                    onPressed: () async {
-                      final result = await context.push<bool>(
-                        '/trainer/edit',
-                        extra: profile,
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.people),
+                    tooltip: l10n.trainerRequestsScreen,
+                    onPressed: () => context.push('/trainer/requests'),
+                  ),
+                  FutureBuilder<TrainerProfile?>(
+                    future: _profileFuture,
+                    builder: (context, profileSnap) {
+                      final profile = profileSnap.data;
+                      if (profile == null) return const SizedBox.shrink();
+                      return IconButton(
+                        icon: const Icon(Icons.edit),
+                        tooltip: l10n.trainerEditProfile,
+                        onPressed: () async {
+                          final result = await context.push<bool>(
+                            '/trainer/edit',
+                            extra: profile,
+                          );
+                          if (result == true && mounted) {
+                            setState(() {
+                              _profileFuture = ServiceLocator.trainerService
+                                  .getProfile(widget.userId);
+                            });
+                          }
+                        },
                       );
-                      if (result == true && mounted) {
-                        setState(() {
-                          _profileFuture = ServiceLocator.trainerService
-                              .getProfile(widget.userId);
-                        });
-                      }
                     },
-                  );
-                },
+                  ),
+                ],
               );
             },
           ),
@@ -125,11 +163,16 @@ class _TrainerProfileScreenState extends State<TrainerProfileScreen> {
             );
           }
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+          return FutureBuilder<ProfileModel>(
+            future: _meFuture,
+            builder: (context, meSnap) {
+              final meId = meSnap.data?.user.id;
+              final isMe = meId != null && meId == widget.userId;
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                 // Private trainer badge
                 if (profile.acceptsPrivateClients) ...[
                   Chip(
@@ -185,12 +228,72 @@ class _TrainerProfileScreenState extends State<TrainerProfileScreen> {
                         ),
                       )),
                 ],
+
+                // CTA: Become a student (only if acceptsPrivateClients and not own profile)
+                if (!isMe && profile.acceptsPrivateClients) ...[
+                  const SizedBox(height: 24),
+                  FutureBuilder<String>(
+                    future: _statusFuture,
+                    builder: (context, statusSnap) {
+                      final status = statusSnap.data ?? 'none';
+                      return _buildCtaButton(l10n, status);
+                    },
+                  ),
+                ],
               ],
-            ),
+                ),
+              );
+            },
           );
         },
       ),
     );
+  }
+
+  Widget _buildCtaButton(AppLocalizations l10n, String status) {
+    if (_statusLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    switch (status) {
+      case 'active':
+        return Center(
+          child: Chip(
+            avatar: const Icon(Icons.check_circle, size: 18),
+            label: Text(l10n.trainerYouAreStudent),
+            backgroundColor:
+                Colors.green.withValues(alpha: 0.15),
+          ),
+        );
+      case 'pending':
+        return Column(
+          children: [
+            Chip(
+              avatar: const Icon(Icons.hourglass_top, size: 18),
+              label: Text(l10n.trainerRequestSent),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton(
+              onPressed: () => _handleRequest('pending'),
+              child: Text(l10n.trainerCancelRequest),
+            ),
+          ],
+        );
+      case 'rejected':
+        return Center(
+          child: ElevatedButton(
+            onPressed: () => _handleRequest('rejected'),
+            child: Text(l10n.trainerReapply),
+          ),
+        );
+      default: // none
+        return Center(
+          child: ElevatedButton.icon(
+            onPressed: () => _handleRequest('none'),
+            icon: const Icon(Icons.school),
+            label: Text(l10n.trainerBecomeStudent),
+          ),
+        );
+    }
   }
 
   String _localizeSpec(AppLocalizations l10n, String spec) {

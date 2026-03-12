@@ -13,6 +13,7 @@ import { validateBody } from './validateBody';
 import {
   getUsersRepository,
   getTrainerProfilesRepository,
+  getTrainerClientsRepository,
   getClubMembersRepository,
   getMessagesRepository,
   getTrainerGroupsRepository,
@@ -21,6 +22,7 @@ import {
 import {
   CreateTrainerProfileSchema,
   UpdateTrainerProfileSchema,
+  RespondToRequestSchema,
   CreateTrainerGroupSchema,
   UpdateTrainerGroupSchema,
 } from '../modules/trainer';
@@ -70,8 +72,14 @@ async function ensureApprovedTrainer(userId: string, res: Response): Promise<boo
 router.get('/', async (req: Request, res: Response) => {
   try {
     const { cityId, specialization } = req.query as Record<string, string | undefined>;
+    const uid = req.authUser?.uid;
+    let currentUserId: string | undefined;
+    if (uid) {
+      const user = await getUsersRepository().findByFirebaseUid(uid);
+      currentUserId = user?.id;
+    }
     const repo = getTrainerProfilesRepository();
-    const trainers = await repo.findPublicTrainers({ cityId, specialization });
+    const trainers = await repo.findPublicTrainers({ cityId, specialization, currentUserId });
     res.status(200).json(trainers);
   } catch (error) {
     logger.error('Error fetching public trainers', { error });
@@ -486,6 +494,191 @@ router.get('/clients/:clientId/runs', async (req: Request, res: Response) => {
     res.status(200).json(runs);
   } catch (error) {
     logger.error('Error fetching client runs', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Trainer-client relationship endpoints
+// ---------------------------------------------------------------------------
+
+/**
+ * GET /api/trainer/:userId/request-status — current user's relationship with a trainer
+ */
+router.get('/:userId/request-status', async (req: Request, res: Response) => {
+  try {
+    const clientId = await resolveUserId(req, res);
+    if (!clientId) return;
+
+    const { userId: trainerId } = req.params;
+    if (!isValidUuid(trainerId)) {
+      return res.status(400).json({ code: 'validation_error', message: 'Invalid trainerId' });
+    }
+
+    const repo = getTrainerClientsRepository();
+    const record = await repo.findByTrainerAndClient(trainerId, clientId);
+    res.status(200).json({ status: record?.status ?? 'none' });
+  } catch (error) {
+    logger.error('Error fetching request status', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /api/trainer/:userId/request — client submits a join request
+ */
+router.post('/:userId/request', async (req: Request, res: Response) => {
+  try {
+    const clientId = await resolveUserId(req, res);
+    if (!clientId) return;
+
+    const { userId: trainerId } = req.params;
+    if (!isValidUuid(trainerId)) {
+      return res.status(400).json({ code: 'validation_error', message: 'Invalid trainerId' });
+    }
+
+    if (trainerId === clientId) {
+      return res.status(400).json({ code: 'bad_request', message: 'Cannot request yourself as trainer' });
+    }
+
+    // Verify trainer exists and accepts private clients
+    const trainerProfile = await getTrainerProfilesRepository().findByUserId(trainerId);
+    if (!trainerProfile || !trainerProfile.acceptsPrivateClients) {
+      return res.status(404).json({ code: 'not_found', message: 'Trainer not found or not accepting clients' });
+    }
+
+    const repo = getTrainerClientsRepository();
+    const existing = await repo.findByTrainerAndClient(trainerId, clientId);
+
+    if (existing?.status === 'active') {
+      return res.status(409).json({ code: 'already_client', message: 'You are already a client of this trainer' });
+    }
+    if (existing?.status === 'pending') {
+      return res.status(409).json({ code: 'request_exists', message: 'Request already pending' });
+    }
+
+    // Create new or re-apply after rejection
+    const record = await repo.upsertPending(trainerId, clientId);
+    res.status(201).json(record);
+  } catch (error) {
+    logger.error('Error creating trainer request', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
+ * DELETE /api/trainer/:userId/request — client withdraws pending request
+ */
+router.delete('/:userId/request', async (req: Request, res: Response) => {
+  try {
+    const clientId = await resolveUserId(req, res);
+    if (!clientId) return;
+
+    const { userId: trainerId } = req.params;
+    if (!isValidUuid(trainerId)) {
+      return res.status(400).json({ code: 'validation_error', message: 'Invalid trainerId' });
+    }
+
+    const repo = getTrainerClientsRepository();
+    const deleted = await repo.delete(trainerId, clientId);
+    if (!deleted) {
+      return res.status(404).json({ code: 'not_found', message: 'No pending request found' });
+    }
+    res.status(200).json({ ok: true });
+  } catch (error) {
+    logger.error('Error deleting trainer request', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/trainer/requests — trainer sees incoming pending requests
+ */
+router.get('/requests', async (req: Request, res: Response) => {
+  try {
+    const trainerId = await resolveUserId(req, res);
+    if (!trainerId) return;
+
+    const repo = getTrainerClientsRepository();
+    const requests = await repo.findPendingByTrainer(trainerId);
+    res.status(200).json(requests);
+  } catch (error) {
+    logger.error('Error fetching trainer requests', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
+ * PATCH /api/trainer/requests/:id — trainer accepts or rejects a request
+ */
+router.patch(
+  '/requests/:id',
+  validateBody(RespondToRequestSchema),
+  async (req: Request, res: Response) => {
+    try {
+      const trainerId = await resolveUserId(req, res);
+      if (!trainerId) return;
+
+      const { id } = req.params;
+      if (!isValidUuid(id)) {
+        return res.status(400).json({ code: 'validation_error', message: 'Invalid id' });
+      }
+
+      const repo = getTrainerClientsRepository();
+      const record = await repo.findById(id);
+      if (!record) {
+        return res.status(404).json({ code: 'not_found', message: 'Request not found' });
+      }
+      if (record.trainerId !== trainerId) {
+        return res.status(403).json({ code: 'forbidden', message: 'Not your request' });
+      }
+      if (record.status !== 'pending') {
+        return res.status(400).json({ code: 'bad_request', message: 'Request is not pending' });
+      }
+
+      const newStatus = req.body.action === 'accept' ? 'active' : 'rejected';
+      const updated = await repo.updateStatusIfPending(id, newStatus);
+      if (!updated) {
+        return res.status(409).json({ code: 'conflict', message: 'Request was already processed' });
+      }
+      res.status(200).json(updated);
+    } catch (error) {
+      logger.error('Error responding to trainer request', { error });
+      res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+    }
+  },
+);
+
+/**
+ * GET /api/trainer/clients — trainer's active clients with last run
+ */
+router.get('/clients', async (req: Request, res: Response) => {
+  try {
+    const trainerId = await resolveUserId(req, res);
+    if (!trainerId) return;
+
+    const repo = getTrainerClientsRepository();
+    const clients = await repo.findActiveClientsByTrainer(trainerId);
+    res.status(200).json(clients);
+  } catch (error) {
+    logger.error('Error fetching trainer clients', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/trainer/my-trainers — client's active trainers
+ */
+router.get('/my-trainers', async (req: Request, res: Response) => {
+  try {
+    const clientId = await resolveUserId(req, res);
+    if (!clientId) return;
+
+    const repo = getTrainerClientsRepository();
+    const trainers = await repo.findActiveTrainersByClient(clientId);
+    res.status(200).json(trainers);
+  } catch (error) {
+    logger.error('Error fetching my trainers', { error });
     res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
   }
 });

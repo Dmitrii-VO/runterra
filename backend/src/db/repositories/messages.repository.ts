@@ -210,7 +210,7 @@ export class MessagesRepository extends BaseRepository {
   /** Add trainer-client relationship */
   async addTrainerClient(trainerId: string, clientId: string): Promise<void> {
     await this.queryOne(
-      `INSERT INTO trainer_clients (trainer_id, client_id) VALUES ($1::uuid, $2::uuid)
+      `INSERT INTO trainer_clients (trainer_id, client_id, status) VALUES ($1::uuid, $2::uuid, 'active')
        ON CONFLICT (trainer_id, client_id) DO NOTHING`,
       [trainerId, clientId],
     );
@@ -219,7 +219,7 @@ export class MessagesRepository extends BaseRepository {
   /** Remove trainer-client relationship */
   async removeTrainerClient(trainerId: string, clientId: string): Promise<boolean> {
     const result = await this.query(
-      `DELETE FROM trainer_clients WHERE trainer_id = $1::uuid AND client_id = $2::uuid`,
+      `DELETE FROM trainer_clients WHERE trainer_id = $1::uuid AND client_id = $2::uuid AND status != 'active'`,
       [trainerId, clientId],
     );
     return result.rowCount !== null && result.rowCount > 0;

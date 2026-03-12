@@ -4,6 +4,26 @@ import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/trainer_profile.dart';
 
+class _StatusBadge extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String label;
+
+  const _StatusBadge({required this.icon, required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 2),
+        Text(label, style: TextStyle(fontSize: 11, color: color)),
+      ],
+    );
+  }
+}
+
 /// Discovery screen for finding private trainers
 class TrainersListScreen extends StatefulWidget {
   const TrainersListScreen({super.key});
@@ -177,8 +197,26 @@ class _TrainerCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(trainer.name,
-                        style: Theme.of(context).textTheme.titleSmall),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(trainer.name,
+                              style: Theme.of(context).textTheme.titleSmall),
+                        ),
+                        if (trainer.myStatus == 'active')
+                          _StatusBadge(
+                            icon: Icons.check_circle,
+                            color: Colors.green,
+                            label: l10n.trainerYouAreStudent,
+                          )
+                        else if (trainer.myStatus == 'pending')
+                          _StatusBadge(
+                            icon: Icons.hourglass_top,
+                            color: Colors.orange,
+                            label: l10n.trainerRequestSent,
+                          ),
+                      ],
+                    ),
                     if (trainer.bio != null && trainer.bio!.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
@@ -189,18 +227,29 @@ class _TrainerCard extends StatelessWidget {
                       ),
                     ],
                     const SizedBox(height: 4),
-                    Wrap(
-                      spacing: 4,
-                      runSpacing: 2,
-                      children: trainer.specialization
-                          .map((s) => Chip(
-                                label: Text(_localizeSpec(s),
-                                    style:
-                                        const TextStyle(fontSize: 11)),
-                                visualDensity: VisualDensity.compact,
-                                padding: EdgeInsets.zero,
-                              ))
-                          .toList(),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Wrap(
+                            spacing: 4,
+                            runSpacing: 2,
+                            children: trainer.specialization
+                                .map((s) => Chip(
+                                      label: Text(_localizeSpec(s),
+                                          style:
+                                              const TextStyle(fontSize: 11)),
+                                      visualDensity: VisualDensity.compact,
+                                      padding: EdgeInsets.zero,
+                                    ))
+                                .toList(),
+                          ),
+                        ),
+                        if (trainer.activeClientsCount > 0)
+                          Text(
+                            l10n.trainerClientsCount(trainer.activeClientsCount),
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                      ],
                     ),
                   ],
                 ),

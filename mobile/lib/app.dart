@@ -35,6 +35,8 @@ import 'features/trainer/workout_detail_screen.dart';
 import 'features/trainer/workout_form_screen.dart';
 import 'features/trainer/create_trainer_group_screen.dart';
 import 'features/trainer/client_runs_screen.dart';
+import 'features/trainer/trainer_requests_screen.dart';
+import 'features/trainer/my_trainers_screen.dart';
 import 'features/people/people_search_screen.dart';
 import 'features/people/public_profile_screen.dart';
 import 'shared/models/profile_model.dart' show ProfileUserData;
@@ -422,6 +424,14 @@ class _RunterraAppState extends State<RunterraApp> {
             clientName: extra['clientName'] ?? '',
           );
         },
+      ),
+      GoRoute(
+        path: '/trainer/requests',
+        builder: (context, state) => const TrainerRequestsScreen(),
+      ),
+      GoRoute(
+        path: '/my-trainers',
+        builder: (context, state) => const MyTrainersScreen(),
       ),
     ],
   );

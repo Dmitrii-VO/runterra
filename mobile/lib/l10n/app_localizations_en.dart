@@ -2066,4 +2066,57 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get myClubsAsTrainer => 'Clubs where I\'m a trainer';
+
+  @override
+  String get trainerBecomeStudent => 'Become a student';
+
+  @override
+  String get trainerRequestSent => 'Request sent';
+
+  @override
+  String get trainerCancelRequest => 'Cancel request';
+
+  @override
+  String get trainerYouAreStudent => 'You are a student';
+
+  @override
+  String get trainerReapply => 'Re-apply';
+
+  @override
+  String get trainerRequestsScreen => 'Client Requests';
+
+  @override
+  String get trainerIncomingRequests => 'Incoming requests';
+
+  @override
+  String get trainerActiveClients => 'Active clients';
+
+  @override
+  String get trainerAccept => 'Accept';
+
+  @override
+  String get trainerReject => 'Reject';
+
+  @override
+  String trainerClientsCount(int count) {
+    return '$count clients';
+  }
+
+  @override
+  String get trainerNoRequests => 'No pending requests';
+
+  @override
+  String get trainerNoClientsYet => 'No active clients yet';
+
+  @override
+  String get myTrainersScreen => 'My Trainers';
+
+  @override
+  String get myTrainersEmpty => 'No trainers yet';
+
+  @override
+  String get trainerRequestAccepted => 'Request accepted';
+
+  @override
+  String get trainerRequestRejectedMsg => 'Request rejected';
 }

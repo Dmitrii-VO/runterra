@@ -980,7 +980,7 @@ router.post(
       }
 
       await pool.query(
-        `INSERT INTO trainer_clients (trainer_id, client_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+        `INSERT INTO trainer_clients (trainer_id, client_id, status) VALUES ($1, $2, 'active') ON CONFLICT DO NOTHING`,
         [trainerId, targetUserId],
       );
 

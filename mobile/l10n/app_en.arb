@@ -1060,5 +1060,27 @@
   "editProfilePhotoUploading": "Uploading photo...",
   "myClubsMySection": "My clubs",
   "myClubsFind": "Find a club",
-  "myClubsAsTrainer": "Clubs where I'm a trainer"
+  "myClubsAsTrainer": "Clubs where I'm a trainer",
+  "trainerBecomeStudent": "Become a student",
+  "trainerRequestSent": "Request sent",
+  "trainerCancelRequest": "Cancel request",
+  "trainerYouAreStudent": "You are a student",
+  "trainerReapply": "Re-apply",
+  "trainerRequestsScreen": "Client Requests",
+  "trainerIncomingRequests": "Incoming requests",
+  "trainerActiveClients": "Active clients",
+  "trainerAccept": "Accept",
+  "trainerReject": "Reject",
+  "trainerClientsCount": "{count} clients",
+  "@trainerClientsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "trainerNoRequests": "No pending requests",
+  "trainerNoClientsYet": "No active clients yet",
+  "myTrainersScreen": "My Trainers",
+  "myTrainersEmpty": "No trainers yet",
+  "trainerRequestAccepted": "Request accepted",
+  "trainerRequestRejectedMsg": "Request rejected"
 }

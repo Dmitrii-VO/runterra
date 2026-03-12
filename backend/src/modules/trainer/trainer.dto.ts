@@ -22,5 +22,10 @@ export const CreateTrainerProfileSchema = z.object({
 
 export const UpdateTrainerProfileSchema = CreateTrainerProfileSchema.partial();
 
+export const RespondToRequestSchema = z.object({
+  action: z.enum(['accept', 'reject']),
+});
+
 export type CreateTrainerProfileDto = z.infer<typeof CreateTrainerProfileSchema>;
 export type UpdateTrainerProfileDto = z.infer<typeof UpdateTrainerProfileSchema>;
+export type RespondToRequestDto = z.infer<typeof RespondToRequestSchema>;

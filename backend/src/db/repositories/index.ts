@@ -29,3 +29,9 @@ export { TrainerGroupsRepository, getTrainerGroupsRepository } from './trainer_g
 export { WorkoutsRepository, getWorkoutsRepository } from './workouts.repository';
 export { ScheduleRepository, getScheduleRepository } from './schedule.repository';
 export { TerritoriesRepository, getTerritoriesRepository } from './territories.repository';
+export {
+  TrainerClientsRepository,
+  getTrainerClientsRepository,
+  TrainerClientWithUser,
+  MyTrainerEntry,
+} from './trainer_clients.repository';
