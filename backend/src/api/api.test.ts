@@ -44,6 +44,7 @@ describe('API Routes', () => {
           displayName: 'Test User',
         },
       }),
+      revokeTokens: jest.fn().mockResolvedValue(undefined),
     });
   });
 
@@ -1485,6 +1486,7 @@ describe('API Routes', () => {
             displayName: 'Auth User',
           },
         }),
+        revokeTokens: jest.fn().mockResolvedValue(undefined),
       });
     });
 

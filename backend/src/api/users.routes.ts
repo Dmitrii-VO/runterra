@@ -35,6 +35,7 @@ import { ActivityStatus } from '../modules/activities';
 import { findCityById } from '../modules/cities/cities.config';
 import { ClubRole } from '../modules/clubs';
 import { logger } from '../shared/logger';
+import { getAuthProvider } from '../modules/auth';
 
 const router = Router();
 
@@ -594,6 +595,13 @@ router.delete('/me', async (req: Request, res: Response) => {
     }
 
     await repo.delete(user.id);
+
+    // Revoke Firebase refresh tokens so existing JWTs stop working after expiry
+    try {
+      await getAuthProvider().revokeTokens(firebaseUid);
+    } catch (revokeError) {
+      logger.warn('Failed to revoke Firebase tokens on account delete', { firebaseUid, revokeError });
+    }
 
     res.status(200).json({
       success: true,

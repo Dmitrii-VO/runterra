@@ -49,4 +49,10 @@ export interface AuthProvider {
    * @returns Результат проверки с данными пользователя или ошибкой
    */
   verifyToken(token: string): Promise<TokenVerificationResult>;
+
+  /**
+   * Revoke all refresh tokens for a Firebase UID.
+   * Called on account deletion to prevent token reuse.
+   */
+  revokeTokens(uid: string): Promise<void>;
 }

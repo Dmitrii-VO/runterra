@@ -28,6 +28,9 @@ interface WsClient {
 /** Per-connection state: subscribed channels + authenticated uid */
 const clients = new Map<WebSocket, WsClient>();
 
+/** Reverse index: Firebase UID → all WebSocket connections for that user */
+const clientsByUid = new Map<string, Set<WebSocket>>();
+
 let wss: WebSocketServer | null = null;
 
 /**
@@ -152,6 +155,8 @@ export function initChatWs(server: HttpServer): void {
 
   wss.on('connection', (ws: WebSocket, uid: string) => {
     clients.set(ws, { channels: new Set<string>(), uid });
+    if (!clientsByUid.has(uid)) clientsByUid.set(uid, new Set());
+    clientsByUid.get(uid)!.add(ws);
 
     ws.on('message', (data: Buffer) => {
       try {
@@ -177,9 +182,30 @@ export function initChatWs(server: HttpServer): void {
     });
 
     ws.on('close', () => {
+      const client = clients.get(ws);
+      if (client) {
+        const set = clientsByUid.get(client.uid);
+        if (set) {
+          set.delete(ws);
+          if (set.size === 0) clientsByUid.delete(client.uid);
+        }
+      }
       clients.delete(ws);
     });
   });
+}
+
+/**
+ * Remove a specific channel from all WebSocket connections belonging to firebaseUid.
+ * Used when a user is evicted from a club (leave / kick) so they stop receiving
+ * new messages on the old socket without waiting for reconnect.
+ */
+export function evictUserFromChannel(firebaseUid: string, channelKey: string): void {
+  const sockets = clientsByUid.get(firebaseUid);
+  if (!sockets) return;
+  for (const ws of sockets) {
+    clients.get(ws)?.channels.delete(channelKey);
+  }
 }
 
 /**
@@ -191,6 +217,7 @@ export function closeChatWs(): void {
     ws.close(1001, 'Server shutting down');
   }
   clients.clear();
+  clientsByUid.clear();
   wss.close();
   wss = null;
 }

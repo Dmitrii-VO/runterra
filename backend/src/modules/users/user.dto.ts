@@ -56,7 +56,6 @@ export const CreateUserSchema = z.object({
  */
 export interface UserViewDto {
   id: string;
-  email: string;
   name: string;
   avatarUrl?: string;
   cityId?: string;
@@ -67,12 +66,11 @@ export interface UserViewDto {
 }
 
 /**
- * Maps User entity to UserViewDto (omits firebaseUid).
+ * Maps User entity to UserViewDto (omits firebaseUid and email).
  */
 export function userToViewDto(user: User): UserViewDto {
   return {
     id: user.id,
-    email: user.email,
     name: user.name,
     avatarUrl: user.avatarUrl,
     cityId: user.cityId,
@@ -185,6 +183,17 @@ export const UpdateProfileSchema = z.object({
     .optional(),
   country: z.string().max(100).nullable().optional(),
   gender: z.enum(['male', 'female']).optional(),
-  avatarUrl: z.union([z.string().url(), z.literal('')]).optional(),
+  avatarUrl: z
+    .union([
+      z
+        .string()
+        .url()
+        .refine(
+          url => new URL(url).hostname === 'firebasestorage.googleapis.com',
+          'Avatar URL must be a Firebase Storage URL',
+        ),
+      z.literal(''),
+    ])
+    .optional(),
   profileVisible: z.boolean().optional(),
 });

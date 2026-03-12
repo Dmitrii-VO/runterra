@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/api/users_service.dart';
@@ -10,9 +11,7 @@ import '../../shared/models/profile_model.dart';
 import '../../shared/models/trainer_profile.dart';
 import '../../shared/ui/profile/stats_section.dart';
 import '../../shared/ui/profile/activity_section.dart';
-import '../../shared/ui/profile/quick_actions_section.dart';
 import '../../shared/ui/profile/notifications_section.dart';
-import '../city/city_picker_dialog.dart';
 
 /// Profile screen — personal account of the current user.
 class ProfileScreen extends StatefulWidget {
@@ -225,27 +224,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: () => context.push('/profile/clubs'),
               ),
             ),
-            _CitySection(
-              currentCityId: profile.user.cityId,
-              currentCityName: profile.user.cityName ?? profile.user.cityId,
-              onCitySelected: () => _retry(),
+            _ClubStatusSection(
+              hasClub: profile.club != null,
+              isMercenary: profile.user.isMercenary,
+              onFindClub: () => context.push('/clubs'),
             ),
             ProfileActivitySection(
               nextActivity: profile.nextActivity,
               lastActivity: profile.lastActivity,
-            ),
-            ProfileQuickActionsSection(
-              hasClub: profile.club != null,
-              isMercenary: profile.user.isMercenary,
-            ),
-            Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: ListTile(
-                leading: const Icon(Icons.fitness_center),
-                title: Text(l10n.workouts),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.push('/workouts'),
-              ),
             ),
             if (_trainerProfile?.acceptsPrivateClients == true ||
                 profile.club?.role == 'trainer' ||
@@ -259,15 +245,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onTap: () => context.push('/trainer/${profile.user.id}'),
                 ),
               ),
-            Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: ListTile(
-                leading: const Icon(Icons.person_search_outlined),
-                title: Text(l10n.findPeople),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.push('/people'),
-              ),
-            ),
             ProfileNotificationsSection(notifications: profile.notifications),
             const SizedBox(height: 24),
           ]),
@@ -356,11 +333,22 @@ class _ProfileHeroHeader extends StatelessWidget {
                         ),
                   ),
                   if (user.username != null && user.username!.isNotEmpty)
-                    Text(
-                      '@${user.username}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white70,
+                    GestureDetector(
+                      onTap: () {
+                        Clipboard.setData(ClipboardData(text: '@${user.username}'));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('@${user.username} скопировано'),
+                            duration: const Duration(seconds: 2),
                           ),
+                        );
+                      },
+                      child: Text(
+                        '@${user.username}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.white70,
+                            ),
+                      ),
                     ),
                 ],
               ),
@@ -372,46 +360,70 @@ class _ProfileHeroHeader extends StatelessWidget {
   }
 }
 
-/// City selection tile in the profile.
-class _CitySection extends StatelessWidget {
-  const _CitySection({
-    required this.currentCityId,
-    this.currentCityName,
-    required this.onCitySelected,
+/// Club status section — shows stable content regardless of membership state.
+///
+/// For users in a club: hidden (Card "Мой клуб" above is sufficient).
+/// For mercenaries (isMercenary=true): free-agent identity badge.
+/// For club-less non-mercenaries: CTA to find/join a club.
+class _ClubStatusSection extends StatelessWidget {
+  const _ClubStatusSection({
+    required this.hasClub,
+    required this.isMercenary,
+    required this.onFindClub,
   });
 
-  final String? currentCityId;
-  final String? currentCityName;
-  final VoidCallback onCitySelected;
+  final bool hasClub;
+  final bool isMercenary;
+  final VoidCallback onFindClub;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final displayText = (currentCityName != null && currentCityName!.isNotEmpty)
-        ? currentCityName!
-        : (currentCityId != null && currentCityId!.isNotEmpty
-            ? currentCityId!
-            : l10n.cityNotSelected);
-    return ListTile(
-      leading: const Icon(Icons.location_city),
-      title: Text(l10n.cityLabel),
-      subtitle: Text(displayText),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: () async {
-        final selected = await showCityPickerDialog(context);
-        if (selected == null || !context.mounted) return;
-        try {
-          await ServiceLocator.usersService.updateProfile(currentCityId: selected);
-          await ServiceLocator.currentCityService.setCurrentCityId(selected);
-          if (context.mounted) onCitySelected();
-        } catch (_) {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(l10n.profileCityRequired)),
-            );
-          }
-        }
-      },
+    if (hasClub) return const SizedBox.shrink();
+
+    if (isMercenary) {
+      return Card(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              const Icon(Icons.bolt, size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Свободный агент',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    Text(
+                      'Бегаешь без клуба',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // No club, not mercenary — show single CTA
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: onFindClub,
+            icon: const Icon(Icons.group_add),
+            label: const Text('Найти клуб'),
+          ),
+        ),
+      ),
     );
   }
 }

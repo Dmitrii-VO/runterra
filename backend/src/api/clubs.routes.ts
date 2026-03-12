@@ -47,6 +47,7 @@ import { scheduleGeneratorService } from '../modules/schedule/schedule-generator
 import { notificationsService } from '../modules/notifications/notifications.service';
 import { Event } from '../modules/events/event.entity';
 import { getTerritoriesRepository } from '../db/repositories';
+import { evictUserFromChannel } from '../ws/chatWs';
 
 const router = Router();
 
@@ -705,6 +706,13 @@ router.post('/:id/leave', async (req: Request, res: Response) => {
     }
 
     const membership = await clubMembersRepo.deactivate(clubId, user.id);
+
+    // Evict from WebSocket channel so the departed user stops receiving new messages
+    const firebaseUid = req.authUser?.uid;
+    if (firebaseUid) {
+      evictUserFromChannel(firebaseUid, `club:${clubId}`);
+    }
+
     res.status(200).json({
       id: membership?.id ?? existing.id,
       clubId: existing.clubId,
@@ -1149,6 +1157,12 @@ router.delete(
         `DELETE FROM trainer_group_members WHERE group_id = $1::uuid AND user_id = $2::uuid`,
         [groupId, targetUserId],
       );
+
+      // Evict target user from trainer_group WS channel so they stop receiving messages immediately
+      const targetUser = await usersRepo.findById(targetUserId);
+      if (targetUser) {
+        evictUserFromChannel(targetUser.firebaseUid, `trainer_group:${groupId}`);
+      }
 
       return res.status(200).json({ ok: true });
     } catch (error) {

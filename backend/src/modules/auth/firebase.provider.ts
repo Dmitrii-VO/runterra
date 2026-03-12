@@ -79,6 +79,11 @@ export class FirebaseAuthProvider implements AuthProvider {
    * @param token - Firebase ID Token из заголовка Authorization
    * @returns Результат проверки
    */
+  async revokeTokens(uid: string): Promise<void> {
+    const app = getFirebaseAdminApp();
+    await app.auth().revokeRefreshTokens(uid);
+  }
+
   async verifyToken(token: string): Promise<TokenVerificationResult> {
     if (!token || token.trim() === '') {
       return {
@@ -89,7 +94,7 @@ export class FirebaseAuthProvider implements AuthProvider {
 
     try {
       const app = getFirebaseAdminApp();
-      const decoded = await app.auth().verifyIdToken(token);
+      const decoded = await app.auth().verifyIdToken(token, /* checkRevoked */ true);
       return {
         valid: true,
         user: mapDecodedTokenToAuthUser(decoded),

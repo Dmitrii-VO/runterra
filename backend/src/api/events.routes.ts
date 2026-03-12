@@ -519,11 +519,12 @@ router.get('/:id/participants', async (req: Request, res: Response) => {
 
     const participantDtos: EventParticipantViewDto[] = participants.map(participant => {
       const user = usersById.get(participant.userId);
+      const visible = user?.profileVisible !== false;
       return {
         id: participant.id,
         userId: participant.userId,
-        name: user?.name ?? null,
-        avatarUrl: user?.avatarUrl,
+        name: visible ? (user?.name ?? null) : null,
+        avatarUrl: visible ? user?.avatarUrl : undefined,
         status: participant.status,
         checkedInAt: participant.checkedInAt ? participant.checkedInAt.toISOString() : undefined,
       };

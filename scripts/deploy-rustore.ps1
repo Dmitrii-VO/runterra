@@ -59,7 +59,8 @@ $PublishType = if ([string]::IsNullOrWhiteSpace($env:RUSTORE_PUBLISH_TYPE)) { "M
 $PublishDateTime = $env:RUSTORE_PUBLISH_DATE_TIME
 $ModerInfo = $env:RUSTORE_MODER_INFO
 $PriorityUpdate = if ([string]::IsNullOrWhiteSpace($env:RUSTORE_PRIORITY_UPDATE)) { "0" } else { $env:RUSTORE_PRIORITY_UPDATE.Trim() }
-$MinAndroidVersion = if ([string]::IsNullOrWhiteSpace($env:RUSTORE_MIN_ANDROID_VERSION)) { 8 } else { [int]$env:RUSTORE_MIN_ANDROID_VERSION }
+$MinAndroidVersion = if ([string]::IsNullOrWhiteSpace($env:RUSTORE_MIN_ANDROID_VERSION)) { "8" } else { $env:RUSTORE_MIN_ANDROID_VERSION.Trim() }
+$DeveloperEmail = if ([string]::IsNullOrWhiteSpace($env:RUSTORE_DEVELOPER_EMAIL)) { "luckyleeop@gmail.com" } else { $env:RUSTORE_DEVELOPER_EMAIL.Trim() }
 $AndroidKeystorePath = $env:ANDROID_KEYSTORE_PATH
 $AndroidKeystorePassword = $env:ANDROID_KEYSTORE_PASSWORD
 $AndroidKeyAlias = $env:ANDROID_KEY_ALIAS
@@ -211,7 +212,14 @@ function Invoke-RuStoreJson {
     }
 
     try {
-        return Invoke-RestMethod @params
+        $webParams = $params.Clone()
+        $webParams.Remove("ContentType") | Out-Null
+        $response = Invoke-WebRequest @params -SkipHttpErrorCheck -ContentType "application/json; charset=utf-8"
+        if ($response.StatusCode -ge 400) {
+            Write-Host "RuStore raw response ($($response.StatusCode)): $($response.Content)" -ForegroundColor Yellow
+            throw "RuStore API $Method $Path failed: HTTP $($response.StatusCode) - $($response.Content)"
+        }
+        return ($response.Content | ConvertFrom-Json)
     } catch {
         $message = Get-RuStoreErrorMessage -Exception $_.Exception
         $_.Exception.Data["RuStoreMessage"] = "RuStore API $Method $Path failed: $message"
@@ -265,6 +273,7 @@ function Invoke-RuStoreUpload {
         "--silent",
         "--show-error",
         "--fail-with-body",
+        "--ssl-no-revoke",
         "--request", "POST",
         "--header", "Public-Token: $PublicToken",
         "--header", "Accept: application/json",
@@ -274,6 +283,12 @@ function Invoke-RuStoreUpload {
 
     $raw = & curl.exe @curlArgs
     if ($LASTEXITCODE -ne 0) {
+        Write-Host "RuStore upload raw response: $raw" -ForegroundColor Yellow
+        # 400 may mean APK already uploaded to this draft — treat as success
+        if ($raw -match '"code"\s*:\s*"ERROR"' -and ($raw -match 'already' -or $raw -match 'exist')) {
+            Write-Host "APK already uploaded to this draft, skipping." -ForegroundColor Yellow
+            return $null
+        }
         throw "RuStore upload failed for $FilePath"
     }
     if ([string]::IsNullOrWhiteSpace($raw)) { return $null }
@@ -550,9 +565,9 @@ if (-not $SkipTests) {
 Write-Host "`n=== 2. Build release artifact ===" -ForegroundColor Cyan
 Set-Location (Join-Path $ProjectRoot "mobile")
 if ($ArtifactType -eq "aab") {
-    flutter build appbundle --release --build-name=$buildName --build-number=$buildNumber
+    flutter build appbundle --release --build-name=$buildName --build-number=$buildNumber --obfuscate --split-debug-info=symbols/
 } else {
-    flutter build apk --release --build-name=$buildName --build-number=$buildNumber
+    flutter build apk --release --build-name=$buildName --build-number=$buildNumber --obfuscate --split-debug-info=symbols/
 }
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 Set-Location $ProjectRoot
@@ -568,6 +583,7 @@ $draftBody = @{
     publishType = $PublishType
     whatsNew = $ReleaseNotes
     minAndroidVersion = $MinAndroidVersion
+    developerContacts = @{ email = $DeveloperEmail }
 }
 if (-not [string]::IsNullOrWhiteSpace($ModerInfo)) {
     $draftBody.moderInfo = $ModerInfo
@@ -583,8 +599,17 @@ try {
     $statusCode = Get-HttpStatusCodeFromException -Exception $_.Exception
     if ($statusCode -eq 403) {
         Invoke-RuStoreDiagnostics -PackageName $PackageName
+        throw
     }
-    throw
+    # If a draft already exists, extract its versionId from the error message
+    $errMsg = $_.Exception.Message
+    if ($errMsg -match 'already have draft version with ID\s*=\s*(\d+)') {
+        $existingId = $Matches[1]
+        Write-Host "Existing draft found (versionId=$existingId), reusing it." -ForegroundColor Yellow
+        $draftResponse = @{ body = $existingId }
+    } else {
+        throw
+    }
 }
 $versionId = $draftResponse.body
 if (-not $versionId -and $draftResponse.content.versionId) {
@@ -611,11 +636,31 @@ if ($SkipCommit) {
     Write-Host "Skipped (--SkipCommit). Draft remains in RuStore with versionId=$versionId." -ForegroundColor Yellow
 } else {
     Write-Host "`n=== 5. Submit for moderation ===" -ForegroundColor Cyan
-    $commitResponse = Invoke-RuStoreJson -Method "POST" -Path "/application/$PackageName/version/$versionId/commit?priorityUpdate=$PriorityUpdate"
-    if ($commitResponse.code -and $commitResponse.code -ne "OK") {
-        throw "RuStore moderation submit failed: $($commitResponse.message)"
+    # Refresh JWE token — it expires in 15 min and upload may take longer
+    if ([string]::IsNullOrWhiteSpace($env:RUSTORE_PUBLIC_TOKEN)) {
+        Write-Host "Refreshing auth token before commit..." -ForegroundColor Gray
+        $script:PublicToken = $null
+        $PublicToken = Get-RuStorePublicToken
     }
-    Write-Host "Version $versionId submitted for moderation." -ForegroundColor Green
+    try {
+        $commitResponse = Invoke-RuStoreJson -Method "POST" -Path "/application/$PackageName/version/$versionId/commit?priorityUpdate=$PriorityUpdate"
+        if ($commitResponse.code -and $commitResponse.code -ne "OK") {
+            throw "RuStore moderation submit failed: $($commitResponse.message)"
+        }
+        Write-Host "Version $versionId submitted for moderation." -ForegroundColor Green
+    } catch {
+        $statusCode = Get-HttpStatusCodeFromException -Exception $_.Exception
+        $is403 = ($statusCode -eq 403) -or ($_.Exception.Message -match 'HTTP 403') -or ($_.ToString() -match 'HTTP 403')
+        $is401 = ($statusCode -eq 401) -or ($_.Exception.Message -match 'HTTP 401') -or ($_.ToString() -match 'HTTP 401')
+        if ($is403 -or $is401) {
+            $reason = if ($is401) { "401 token expired" } else { "403 no permission" }
+            Write-Host "WARNING: Cannot submit for moderation ($reason)." -ForegroundColor Yellow
+            Write-Host "APK uploaded successfully (versionId=$versionId)." -ForegroundColor Yellow
+            Write-Host "Submit for moderation manually: https://console.rustore.ru" -ForegroundColor Yellow
+        } else {
+            throw
+        }
+    }
 }
 
 if (-not $SkipTag) {
