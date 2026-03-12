@@ -350,6 +350,37 @@ class _RunterraAppState extends State<RunterraApp> {
         },
       ),
       GoRoute(
+        path: '/trainer/requests',
+        builder: (context, state) => const TrainerRequestsScreen(),
+      ),
+      GoRoute(
+        path: '/trainer/clients/:clientId/runs',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, String>;
+          return ClientRunsScreen(
+            clientId: state.pathParameters['clientId']!,
+            clientName: extra['clientName'] ?? '',
+          );
+        },
+      ),
+      GoRoute(
+        path: '/trainer/groups/create',
+        builder: (context, state) {
+          final clubId = state.uri.queryParameters['clubId'] ?? '';
+          final clubName = state.uri.queryParameters['clubName'] ?? '';
+          final trainerId = state.uri.queryParameters['trainerId'];
+          final trainerName = state.uri.queryParameters['trainerName'];
+          final group = state.extra as TrainerGroupModel?;
+          return CreateTrainerGroupScreen(
+            clubId: clubId,
+            clubName: clubName,
+            existingGroup: group,
+            forcedTrainerId: trainerId,
+            forcedTrainerName: trainerName,
+          );
+        },
+      ),
+      GoRoute(
         path: '/trainer/:userId',
         builder: (context, state) {
           final userId = state.pathParameters['userId'] ?? '';
@@ -379,23 +410,6 @@ class _RunterraAppState extends State<RunterraApp> {
         },
       ),
       GoRoute(
-        path: '/trainer/groups/create',
-        builder: (context, state) {
-          final clubId = state.uri.queryParameters['clubId'] ?? '';
-          final clubName = state.uri.queryParameters['clubName'] ?? '';
-          final trainerId = state.uri.queryParameters['trainerId'];
-          final trainerName = state.uri.queryParameters['trainerName'];
-          final group = state.extra as TrainerGroupModel?;
-          return CreateTrainerGroupScreen(
-            clubId: clubId,
-            clubName: clubName,
-            existingGroup: group,
-            forcedTrainerId: trainerId,
-            forcedTrainerName: trainerName,
-          );
-        },
-      ),
-      GoRoute(
         path: '/chat/:type/:id',
         builder: (context, state) {
           final type = state.pathParameters['type'] ?? '';
@@ -414,20 +428,6 @@ class _RunterraAppState extends State<RunterraApp> {
           userId: state.pathParameters['id']!,
           preload: state.extra as UserSearchResult?,
         ),
-      ),
-      GoRoute(
-        path: '/trainer/clients/:clientId/runs',
-        builder: (context, state) {
-          final extra = state.extra as Map<String, String>;
-          return ClientRunsScreen(
-            clientId: state.pathParameters['clientId']!,
-            clientName: extra['clientName'] ?? '',
-          );
-        },
-      ),
-      GoRoute(
-        path: '/trainer/requests',
-        builder: (context, state) => const TrainerRequestsScreen(),
       ),
       GoRoute(
         path: '/my-trainers',
