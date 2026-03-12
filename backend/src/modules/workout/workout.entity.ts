@@ -22,6 +22,9 @@ export interface Workout {
   description?: string;
   type: string;
   difficulty: string;
+  targetMetric?: string;
+  targetValue?: number;
+  targetZone?: string;
   surface?: Surface;
   blocks?: WorkoutBlock[];
   // Type-specific fields

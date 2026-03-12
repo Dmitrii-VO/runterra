@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 const workoutTypes = ['FUNCTIONAL', 'TEMPO', 'RECOVERY', 'ACCELERATIONS'] as const;
 const difficulties = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'PRO'] as const;
+const targetMetrics = ['DISTANCE', 'TIME', 'PACE'] as const;
 const surfaces = ['ROAD', 'TRACK', 'TRAIL'] as const;
 const blockTypes = ['warmup', 'work', 'rest', 'cooldown'] as const;
 
@@ -25,6 +26,9 @@ export const CreateWorkoutSchema = z.object({
   description: z.string().max(5000).optional(),
   type: z.enum(workoutTypes),
   difficulty: z.enum(difficulties).optional().default('BEGINNER'),
+  targetMetric: z.enum(targetMetrics).optional(),
+  targetValue: z.number().int().min(1).optional(),
+  targetZone: z.string().max(50).optional(),
   surface: z.enum(surfaces).optional(),
   blocks: z.array(WorkoutBlockSchema).optional(),
   // Type-specific fields
