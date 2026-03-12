@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/run_session.dart';
 import 'run_tracking_screen.dart';
@@ -11,8 +12,9 @@ import 'run_history_screen.dart';
 class RunScreen extends StatefulWidget {
   final String? activityId;
   final String? scheduledItemId;
+  final String? assignmentId;
 
-  const RunScreen({super.key, this.activityId, this.scheduledItemId});
+  const RunScreen({super.key, this.activityId, this.scheduledItemId, this.assignmentId});
 
   @override
   State<RunScreen> createState() => _RunScreenState();
@@ -41,15 +43,19 @@ class _RunScreenState extends State<RunScreen> {
       _selectedScheduledItemId = null;
       _forceTracking = false;
     });
+    if (widget.assignmentId != null) {
+      context.go('/run');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     // If activityId is provided or there's an active session or user tapped "Start run" — show tracking
-    if (widget.activityId != null || widget.scheduledItemId != null || _hasActiveSession || _forceTracking) {
+    if (widget.activityId != null || widget.scheduledItemId != null || widget.assignmentId != null || _hasActiveSession || _forceTracking) {
       return RunTrackingScreen(
         activityId: widget.activityId,
         scheduledItemId: widget.scheduledItemId ?? _selectedScheduledItemId,
+        assignmentId: widget.assignmentId,
         onRunCompleted: _onRunCompleted,
       );
     }

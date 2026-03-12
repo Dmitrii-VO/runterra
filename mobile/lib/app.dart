@@ -31,6 +31,7 @@ import 'features/trainer/trainer_profile_screen.dart';
 import 'features/trainer/trainer_edit_profile_screen.dart';
 import 'features/trainer/trainers_list_screen.dart';
 import 'features/trainer/workouts_list_screen.dart';
+import 'features/trainer/workout_detail_screen.dart';
 import 'features/trainer/workout_form_screen.dart';
 import 'features/trainer/create_trainer_group_screen.dart';
 import 'features/trainer/client_runs_screen.dart';
@@ -160,7 +161,8 @@ class _RunterraAppState extends State<RunterraApp> {
                 path: '/run',
                 builder: (context, state) {
                   final activityId = state.uri.queryParameters['activityId'];
-                  return RunScreen(activityId: activityId);
+                  final assignmentId = state.uri.queryParameters['assignmentId'];
+                  return RunScreen(activityId: activityId, assignmentId: assignmentId);
                 },
               ),
             ],
@@ -359,6 +361,13 @@ class _RunterraAppState extends State<RunterraApp> {
       GoRoute(
         path: '/workouts/create',
         builder: (context, state) => const WorkoutFormScreen(),
+      ),
+      GoRoute(
+        path: '/workouts/:id',
+        builder: (context, state) {
+          final workout = state.extra as Workout;
+          return WorkoutDetailScreen(workout: workout);
+        },
       ),
       GoRoute(
         path: '/workouts/:id/edit',

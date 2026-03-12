@@ -352,6 +352,7 @@ router.post(
             userId: user.id,
             activityId, // Link to activity (new or provided)
             scoringClubId, // Pass the resolved scoringClubId
+            assignmentId: dto.assignmentId,
             startedAt,
             endedAt,
             duration,

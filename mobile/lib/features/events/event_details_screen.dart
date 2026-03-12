@@ -400,6 +400,9 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       AppLocalizations.of(context)!.workoutDescription,
                       event.workoutDescription!,
                     ),
+                  if (event.workoutSnapshot != null &&
+                      event.workoutSnapshot!.isNotEmpty)
+                    _buildWorkoutBlocks(context, event.workoutSnapshot!),
                   if (event.trainerId != null || event.trainerName != null)
                     _buildInfoRow(
                       context,
@@ -521,6 +524,79 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         },
       ),
     );
+  }
+
+  Widget _buildWorkoutBlocks(
+    BuildContext context,
+    List<Map<String, dynamic>> blocks,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.workoutBlocks,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 6),
+          ...blocks.map((b) {
+            final type = b['type'] as String? ?? '';
+            final durationMin = b['durationMin'] as int?;
+            final distanceM = b['distanceM'] as int?;
+            final parts = <String>[];
+            if (durationMin != null) parts.add('$durationMin min');
+            if (distanceM != null) parts.add('$distanceM m');
+            final color = _blockColor(type);
+            final label = _blockLabel(l10n, type);
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration:
+                        BoxDecoration(color: color, shape: BoxShape.circle),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(label,
+                      style: const TextStyle(fontWeight: FontWeight.w500)),
+                  if (parts.isNotEmpty) ...[
+                    const SizedBox(width: 6),
+                    Text(parts.join(' · '),
+                        style: Theme.of(context).textTheme.bodySmall),
+                  ],
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Color _blockColor(String type) {
+    switch (type) {
+      case 'warmup': return Colors.orange;
+      case 'work': return Colors.red;
+      case 'rest': return Colors.blue;
+      case 'cooldown': return Colors.green;
+      default: return Colors.grey;
+    }
+  }
+
+  String _blockLabel(AppLocalizations l10n, String type) {
+    switch (type) {
+      case 'warmup': return l10n.workoutBlockWarmup;
+      case 'work': return l10n.workoutBlockWork;
+      case 'rest': return l10n.workoutBlockRest;
+      case 'cooldown': return l10n.workoutBlockCooldown;
+      default: return type;
+    }
   }
 
   Widget _buildInfoRow(

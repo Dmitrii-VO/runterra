@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/workout.dart';
@@ -347,7 +348,7 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
                   onPressed: () => _showAssignDialog(w),
                 ),
                 onTap: () async {
-                  final result = await context.push('/workouts/${w.id}/edit', extra: w);
+                  final result = await context.push('/workouts/${w.id}', extra: w);
                   if (result == true) _refresh();
                 },
               ),
@@ -415,7 +416,7 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
                   ],
                 ),
                 onTap: () async {
-                  final result = await context.push('/workouts/${w.id}/edit', extra: w);
+                  final result = await context.push('/workouts/${w.id}', extra: w);
                   if (result == true) _refresh();
                 },
               ),
@@ -447,49 +448,108 @@ class _WorkoutsListScreenState extends State<WorkoutsListScreen>
           );
         }
 
-        final workouts = snapshot.data ?? [];
-        if (workouts.isEmpty) {
+        final all = snapshot.data ?? [];
+        if (all.isEmpty) {
           return Center(child: Text(l10n.workoutAssignedEmpty));
         }
 
+        // Sort: pending first, then completed
+        final sorted = [...all]
+          ..sort((a, b) {
+            if (a.isCompleted == b.isCompleted) return 0;
+            return a.isCompleted ? 1 : -1;
+          });
+
+        // First pending item gets the pin card
+        final pinIndex = sorted.indexWhere((w) => !w.isCompleted);
+
         return ListView.builder(
-          itemCount: workouts.length,
+          padding: const EdgeInsets.only(bottom: 16),
+          itemCount: sorted.length,
           itemBuilder: (context, index) {
-            final w = workouts[index];
-            return ListTile(
-              title: Text(w.name),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Wrap(
-                    spacing: 4,
-                    runSpacing: 4,
-                    children: [
-                      Chip(
-                        label: Text(_localizeType(l10n, w.type)),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ],
-                  ),
-                  Text(
-                    l10n.workoutAssignedBy(w.trainerName),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  if (w.note != null && w.note!.isNotEmpty)
-                    Text(
-                      w.note!,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                ],
-              ),
-              trailing: w.isCompleted
-                  ? const Icon(Icons.check_circle, color: Colors.green)
-                  : const Icon(Icons.radio_button_unchecked, color: Colors.grey),
-              onTap: () => context.push('/workouts/${w.id}/edit', extra: w),
-            );
+            final w = sorted[index];
+            final isPin = index == pinIndex;
+            return _buildAssignedTile(context, l10n, w, isPin: isPin);
           },
         );
       },
+    );
+  }
+
+  Widget _buildAssignedTile(
+    BuildContext context,
+    AppLocalizations l10n,
+    AssignedWorkout w, {
+    bool isPin = false,
+  }) {
+    final dateStr = DateFormat('d MMM').format(w.assignedAt);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    final subtitleChildren = <Widget>[
+      Wrap(
+        spacing: 4,
+        runSpacing: 4,
+        children: [
+          Chip(
+            label: Text(_localizeType(l10n, w.type)),
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
+      ),
+      Text(
+        '${l10n.workoutAssignedBy(w.trainerName)} · $dateStr',
+        style: Theme.of(context).textTheme.bodySmall,
+      ),
+      if (w.note != null && w.note!.isNotEmpty)
+        Text(w.note!, style: Theme.of(context).textTheme.bodySmall),
+    ];
+
+    final tile = ListTile(
+      title: Text(w.name),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: subtitleChildren,
+      ),
+      trailing: w.isCompleted
+          ? const Icon(Icons.check_circle, color: Colors.green)
+          : FilledButton.tonal(
+              onPressed: () => context.go('/run?assignmentId=${w.assignmentId}'),
+              child: Text(l10n.workoutStartRun),
+            ),
+      onTap: () => context.push('/workouts/${w.id}', extra: w),
+    );
+
+    if (!isPin) return tile;
+
+    // Pin card — accent background + label
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+      child: Card(
+        color: colorScheme.primaryContainer,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: Row(
+                children: [
+                  Icon(Icons.today_outlined,
+                      size: 16, color: colorScheme.onPrimaryContainer),
+                  const SizedBox(width: 6),
+                  Text(
+                    l10n.workoutTodayPlan,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: colorScheme.onPrimaryContainer,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            tile,
+          ],
+        ),
+      ),
     );
   }
 

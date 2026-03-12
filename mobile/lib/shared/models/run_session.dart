@@ -14,6 +14,7 @@ class RunSession {
   final String? activityId;
   final String? scheduledItemId;
   final String? scoringClubId;
+  final String? assignmentId;
   final DateTime startedAt;
   final RunSessionStatus status;
   final Duration duration;
@@ -37,6 +38,7 @@ class RunSession {
     this.activityId,
     this.scheduledItemId,
     this.scoringClubId,
+    this.assignmentId,
     required this.startedAt,
     required this.status,
     Duration? duration,
@@ -60,6 +62,7 @@ class RunSession {
     String? activityId,
     String? scheduledItemId,
     String? scoringClubId,
+    String? assignmentId,
     DateTime? startedAt,
     RunSessionStatus? status,
     Duration? duration,
@@ -78,6 +81,7 @@ class RunSession {
       activityId: activityId ?? this.activityId,
       scheduledItemId: scheduledItemId ?? this.scheduledItemId,
       scoringClubId: scoringClubId ?? this.scoringClubId,
+      assignmentId: assignmentId ?? this.assignmentId,
       startedAt: startedAt ?? this.startedAt,
       status: status ?? this.status,
       duration: duration ?? this.duration,

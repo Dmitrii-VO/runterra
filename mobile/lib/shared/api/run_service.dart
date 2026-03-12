@@ -52,7 +52,7 @@ class RunService {
   }
 
   /// Начать пробежку.
-  Future<RunSession> startRun({String? activityId, String? scheduledItemId, String? scoringClubId}) async {
+  Future<RunSession> startRun({String? activityId, String? scheduledItemId, String? scoringClubId, String? assignmentId}) async {
     // Auto-clear completed sessions (failed submissions, etc.)
     if (_currentSession != null &&
         _currentSession!.status == RunSessionStatus.completed) {
@@ -132,6 +132,7 @@ class RunService {
       activityId: activityId,
       scheduledItemId: scheduledItemId,
       scoringClubId: scoringClubId,
+      assignmentId: assignmentId,
       startedAt: _startTime!,
       status: RunSessionStatus.running,
       gpsStatus: initialGpsStatus,
@@ -325,6 +326,9 @@ class RunService {
     }
     if (session.scheduledItemId != null) {
       requestBody['scheduledItemId'] = session.scheduledItemId;
+    }
+    if (session.assignmentId != null) {
+      requestBody['assignmentId'] = session.assignmentId;
     }
     final finalScoringClubId = scoringClubId ?? session.scoringClubId;
     if (finalScoringClubId != null) {

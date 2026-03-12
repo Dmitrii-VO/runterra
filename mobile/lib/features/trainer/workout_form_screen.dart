@@ -4,6 +4,58 @@ import '../../shared/di/service_locator.dart';
 import '../../shared/models/workout.dart';
 import '../../shared/models/my_club_model.dart';
 import '../../shared/api/users_service.dart' show ApiException;
+import 'block_editor_sheet.dart';
+
+/// Draws a row of colored bars representing workout block intensity.
+class _BlockVisualizerPainter extends CustomPainter {
+  final List<Map<String, dynamic>> blocks;
+
+  _BlockVisualizerPainter(this.blocks);
+
+  static double _heightFraction(String type) {
+    switch (type) {
+      case 'warmup': return 0.4;
+      case 'work': return 1.0;
+      case 'rest': return 0.15;
+      case 'cooldown': return 0.35;
+      default: return 0.5;
+    }
+  }
+
+  static Color _color(String type) {
+    switch (type) {
+      case 'warmup': return Colors.orange;
+      case 'work': return Colors.red;
+      case 'rest': return Colors.blue;
+      case 'cooldown': return Colors.green;
+      default: return Colors.grey;
+    }
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (blocks.isEmpty) return;
+    final barWidth = size.width / blocks.length;
+    for (int i = 0; i < blocks.length; i++) {
+      final type = blocks[i]['type'] as String? ?? '';
+      final frac = _heightFraction(type);
+      final barHeight = size.height * frac;
+      final rect = Rect.fromLTWH(
+        i * barWidth + 2,
+        size.height - barHeight,
+        barWidth - 4,
+        barHeight,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(rect, const Radius.circular(3)),
+        Paint()..color = _color(type),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_BlockVisualizerPainter old) => old.blocks != blocks;
+}
 
 /// Screen to create or edit a workout template
 class WorkoutFormScreen extends StatefulWidget {
@@ -41,6 +93,8 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
 
   static const _types = ['TEMPO', 'RECOVERY', 'ACCELERATIONS', 'FUNCTIONAL'];
 
+  final List<Map<String, dynamic>> _blocks = [];
+
   @override
   void initState() {
     super.initState();
@@ -52,6 +106,7 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
     if (w != null) {
       _type = w.type;
       _clubId = w.clubId;
+      if (w.blocks != null) _blocks.addAll(w.blocks!);
       _distanceMController.text = w.distanceM?.toString() ?? '';
       _heartRateController.text = w.heartRateTarget?.toString() ?? '';
       _paceController.text = w.paceTarget != null ? _secondsToPace(w.paceTarget!) : '';
@@ -148,6 +203,7 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
             if (repDistanceM != null) 'repDistanceM': repDistanceM,
             if (exerciseName != null) 'exerciseName': exerciseName,
             if (exerciseInstructions != null) 'exerciseInstructions': exerciseInstructions,
+            if (_blocks.isNotEmpty) 'blocks': _blocks,
           },
         );
       } else {
@@ -163,6 +219,7 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
           repDistanceM: repDistanceM,
           exerciseName: exerciseName,
           exerciseInstructions: exerciseInstructions,
+          blocks: _blocks.isNotEmpty ? _blocks : null,
         );
       }
 
@@ -274,6 +331,105 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
     if (value == null || value.trim().isEmpty) return null;
     if (_paceToSeconds(value) == null) return 'Format: M:SS (e.g. 4:30)';
     return null;
+  }
+
+  Future<void> _openBlockEditor({Map<String, dynamic>? existing, int? index}) async {
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => BlockEditorSheet(initial: existing),
+    );
+    if (result == null) return;
+    if (!mounted) return;
+    setState(() {
+      if (index != null) {
+        _blocks[index] = result;
+      } else {
+        _blocks.add(result);
+      }
+    });
+  }
+
+  String _blockTypeLabel(AppLocalizations l10n, String type) {
+    switch (type) {
+      case 'warmup': return l10n.workoutBlockWarmup;
+      case 'work': return l10n.workoutBlockWork;
+      case 'rest': return l10n.workoutBlockRest;
+      case 'cooldown': return l10n.workoutBlockCooldown;
+      default: return type;
+    }
+  }
+
+  Widget _buildBlocksSection(AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(l10n.workoutBlocks, style: Theme.of(context).textTheme.titleSmall),
+            const Spacer(),
+            TextButton.icon(
+              onPressed: _saving ? null : () => _openBlockEditor(),
+              icon: const Icon(Icons.add, size: 18),
+              label: Text(l10n.workoutAddBlock),
+            ),
+          ],
+        ),
+
+        if (_blocks.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          // Load visualizer
+          SizedBox(
+            height: 40,
+            child: CustomPaint(
+              size: const Size(double.infinity, 40),
+              painter: _BlockVisualizerPainter(_blocks),
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Block list
+          ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _blocks.length,
+            onReorder: (oldIndex, newIndex) {
+              setState(() {
+                if (newIndex > oldIndex) newIndex--;
+                final item = _blocks.removeAt(oldIndex);
+                _blocks.insert(newIndex, item);
+              });
+            },
+            itemBuilder: (context, i) {
+              final b = _blocks[i];
+              final type = b['type'] as String? ?? '';
+              final parts = <String>[];
+              if (b['durationMin'] != null) parts.add('${b['durationMin']} min');
+              if (b['distanceM'] != null) parts.add('${b['distanceM']} m');
+              return ListTile(
+                key: ValueKey(i),
+                dense: true,
+                leading: const Icon(Icons.drag_handle, size: 20),
+                title: Text(_blockTypeLabel(l10n, type)),
+                subtitle: parts.isNotEmpty ? Text(parts.join(' · ')) : null,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      onPressed: () => _openBlockEditor(existing: b, index: i),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                      onPressed: () => setState(() => _blocks.removeAt(i)),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ],
+    );
   }
 
   Widget _buildTypeSpecificFields(AppLocalizations l10n) {
@@ -491,6 +647,10 @@ class _WorkoutFormScreenState extends State<WorkoutFormScreen> {
 
             // Type-specific fields
             _buildTypeSpecificFields(l10n),
+            const SizedBox(height: 24),
+
+            // Blocks section
+            _buildBlocksSection(l10n),
             const SizedBox(height: 24),
 
             // Save button

@@ -31,6 +31,7 @@ interface EventRow {
   updated_at: Date;
   workout_id: string | null;
   trainer_id: string | null;
+  workout_snapshot: Record<string, unknown> | null;
   template_id: string | null;
   generated_for_date: Date | null;
   is_manually_edited: boolean;
@@ -99,6 +100,7 @@ function rowToEvent(row: EventRow): Event {
     updatedAt: row.updated_at,
     workoutId: row.workout_id || undefined,
     trainerId: row.trainer_id || undefined,
+    workoutSnapshot: row.workout_snapshot ?? undefined,
     isManuallyEdited: row.is_manually_edited ?? false,
     price: row.price ?? 0,
   };
@@ -333,6 +335,7 @@ export class EventsRepository extends BaseRepository {
     generatedForDate?: string;
     workoutId?: string;
     trainerId?: string;
+    workoutSnapshot?: Record<string, unknown>;
     price?: number;
   }): Promise<Event> {
     const row = await this.queryOne<EventRow>(
@@ -340,8 +343,8 @@ export class EventsRepository extends BaseRepository {
         name, type, status, start_date_time, end_date_time, start_longitude, start_latitude,
         location_name, organizer_id, organizer_type, difficulty_level,
         description, participant_limit, territory_id, city_id, visibility,
-        template_id, generated_for_date, workout_id, trainer_id, price
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+        template_id, generated_for_date, workout_id, trainer_id, workout_snapshot, price
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
       RETURNING *`,
       [
         data.name,
@@ -364,6 +367,7 @@ export class EventsRepository extends BaseRepository {
         data.generatedForDate || null,
         data.workoutId || null,
         data.trainerId || null,
+        data.workoutSnapshot ? JSON.stringify(data.workoutSnapshot) : null,
         data.price ?? 0,
       ],
     );

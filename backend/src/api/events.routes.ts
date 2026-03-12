@@ -462,6 +462,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       workoutType: integration?.workoutType,
       workoutDifficulty: integration?.workoutDifficulty,
       trainerName: integration?.trainerName,
+      workoutSnapshot: event.workoutSnapshot,
       isParticipant,
       participantStatus,
       isOrganizer,
@@ -636,6 +637,30 @@ router.post(
         });
       }
 
+      // Build workout snapshot if workoutId is provided
+      let workoutSnapshot: Record<string, unknown> | undefined;
+      if (dto.workoutId) {
+        const workoutsRepo = getWorkoutsRepository();
+        const linkedWorkout = await workoutsRepo.findById(dto.workoutId);
+        if (linkedWorkout) {
+          workoutSnapshot = {
+            id: linkedWorkout.id,
+            name: linkedWorkout.name,
+            description: linkedWorkout.description,
+            type: linkedWorkout.type,
+            difficulty: linkedWorkout.difficulty,
+            distanceM: linkedWorkout.distanceM,
+            heartRateTarget: linkedWorkout.heartRateTarget,
+            paceTarget: linkedWorkout.paceTarget,
+            repCount: linkedWorkout.repCount,
+            repDistanceM: linkedWorkout.repDistanceM,
+            exerciseName: linkedWorkout.exerciseName,
+            exerciseInstructions: linkedWorkout.exerciseInstructions,
+            blocks: linkedWorkout.blocks,
+          };
+        }
+      }
+
       const repo = getEventsRepository();
       const event = await repo.create({
         name: dto.name,
@@ -653,6 +678,7 @@ router.post(
         visibility: dto.visibility,
         workoutId: dto.workoutId,
         trainerId: dto.trainerId,
+        workoutSnapshot,
         price: dto.price ?? 0,
       });
 
@@ -689,6 +715,7 @@ router.post(
         workoutType: integration?.workoutType,
         workoutDifficulty: integration?.workoutDifficulty,
         trainerName: integration?.trainerName,
+        workoutSnapshot: event.workoutSnapshot,
         price: event.price,
       };
 

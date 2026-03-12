@@ -27,6 +27,9 @@ export interface CreateRunDto {
   /** Идентификатор клуба, в который идет зачет очков (опционально) */
   scoringClubId?: string;
 
+  /** Идентификатор назначенной тренировки (опционально) */
+  assignmentId?: string;
+
   /** Время начала пробежки (ISO 8601 строка) */
   startedAt: string;
 
@@ -66,6 +69,7 @@ export const CreateRunSchema = z.object({
   activityId: z.string().uuid().optional(),
   scheduledItemId: z.string().uuid().optional(),
   scoringClubId: z.string().uuid().optional(),
+  assignmentId: z.string().uuid().optional(),
   startedAt: z.string().datetime(),
   endedAt: z.string().datetime(),
   duration: z.number(),

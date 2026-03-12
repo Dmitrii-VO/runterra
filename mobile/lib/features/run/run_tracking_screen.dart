@@ -19,9 +19,10 @@ typedef OnRunCompleted = void Function();
 class RunTrackingScreen extends StatefulWidget {
   final String? activityId;
   final String? scheduledItemId;
+  final String? assignmentId;
   final OnRunCompleted? onRunCompleted;
 
-  const RunTrackingScreen({super.key, this.activityId, this.scheduledItemId, this.onRunCompleted});
+  const RunTrackingScreen({super.key, this.activityId, this.scheduledItemId, this.assignmentId, this.onRunCompleted});
 
   @override
   State<RunTrackingScreen> createState() => _RunTrackingScreenState();
@@ -175,6 +176,7 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
         activityId: widget.activityId,
         scheduledItemId: widget.scheduledItemId,
         scoringClubId: _selectedScoringClub?.id,
+        assignmentId: widget.assignmentId,
       );
 
       // Логируем начало пробежки
@@ -187,6 +189,7 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
         },
       );
 
+      if (!mounted) return;
       setState(() {
         _session = session;
         _state = _TrackingState.running;

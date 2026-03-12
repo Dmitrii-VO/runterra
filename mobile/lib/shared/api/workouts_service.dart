@@ -52,6 +52,7 @@ class WorkoutsService {
     int? repDistanceM,
     String? exerciseName,
     String? exerciseInstructions,
+    List<Map<String, dynamic>>? blocks,
   }) async {
     final response = await _apiClient.post(
       '/api/workouts',
@@ -67,6 +68,7 @@ class WorkoutsService {
         if (repDistanceM != null) 'repDistanceM': repDistanceM,
         if (exerciseName != null) 'exerciseName': exerciseName,
         if (exerciseInstructions != null) 'exerciseInstructions': exerciseInstructions,
+        if (blocks != null) 'blocks': blocks,
       },
     );
     if (response.statusCode >= 200 && response.statusCode < 300) {

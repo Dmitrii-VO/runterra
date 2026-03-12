@@ -24,6 +24,7 @@ class AssignedWorkout extends Workout {
     super.repDistanceM,
     super.exerciseName,
     super.exerciseInstructions,
+    super.blocks,
     required super.createdAt,
     required this.trainerId,
     required this.trainerName,
@@ -49,6 +50,9 @@ class AssignedWorkout extends Workout {
       repDistanceM: json['repDistanceM'] as int?,
       exerciseName: json['exerciseName'] as String?,
       exerciseInstructions: json['exerciseInstructions'] as String?,
+      blocks: (json['blocks'] as List<dynamic>?)
+          ?.map((b) => Map<String, dynamic>.from(b as Map))
+          .toList(),
       createdAt: DateTime.parse(json['createdAt'] as String),
       trainerId: json['trainerId'] as String,
       trainerName: json['trainerName'] as String,

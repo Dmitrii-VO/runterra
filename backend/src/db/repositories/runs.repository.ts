@@ -146,6 +146,7 @@ export class RunsRepository extends BaseRepository {
       userId: string;
       activityId?: string;
       scoringClubId?: string;
+      assignmentId?: string;
       startedAt: Date;
       endedAt: Date;
       duration: number;
@@ -166,13 +167,14 @@ export class RunsRepository extends BaseRepository {
 
     // Create run record
     const row = await this.queryOne<RunRow>(
-      `INSERT INTO runs (user_id, activity_id, scoring_club_id, started_at, ended_at, duration, distance, status, rpe, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      `INSERT INTO runs (user_id, activity_id, scoring_club_id, assignment_id, started_at, ended_at, duration, distance, status, rpe, notes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
       [
         data.userId,
         data.activityId || null,
         data.scoringClubId || null,
+        data.assignmentId || null,
         data.startedAt,
         data.endedAt,
         data.duration,
@@ -254,7 +256,7 @@ export class RunsRepository extends BaseRepository {
     const rows = await this.queryMany<
       RunRow & { assignment_id: string | null; workout_title: string | null }
     >(
-      `SELECT r.*, r.assignment_id, w.title AS workout_title
+      `SELECT r.*, r.assignment_id, w.name AS workout_title
        FROM runs r
        LEFT JOIN workout_assignments wa ON wa.id = r.assignment_id AND wa.trainer_id = $1
        LEFT JOIN workouts w ON w.id = wa.workout_id

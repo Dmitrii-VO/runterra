@@ -1515,6 +1515,48 @@ class AppLocalizationsRu extends AppLocalizations {
   String get workoutAssignError => 'Не удалось назначить тренировку';
 
   @override
+  String get workoutStartRun => 'Начать';
+
+  @override
+  String get workoutEdit => 'Редактировать';
+
+  @override
+  String get workoutBlocks => 'Этапы тренировки';
+
+  @override
+  String get workoutBlockWarmup => 'Разминка';
+
+  @override
+  String get workoutBlockWork => 'Работа';
+
+  @override
+  String get workoutBlockRest => 'Отдых';
+
+  @override
+  String get workoutBlockCooldown => 'Заминка';
+
+  @override
+  String get workoutTodayPlan => 'Тренировка на сегодня';
+
+  @override
+  String get workoutAddBlock => 'Добавить этап';
+
+  @override
+  String get workoutBlockDurationMin => 'Длительность (мин)';
+
+  @override
+  String get workoutBlockNote => 'Заметка';
+
+  @override
+  String get difficultyBeginner => 'Начинающий';
+
+  @override
+  String get difficultyIntermediate => 'Средний';
+
+  @override
+  String get difficultyAdvanced => 'Продвинутый';
+
+  @override
   String get typeRecovery => 'Восстановительная';
 
   @override

@@ -1510,6 +1510,48 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workoutAssignError => 'Failed to assign workout';
 
   @override
+  String get workoutStartRun => 'Start';
+
+  @override
+  String get workoutEdit => 'Edit';
+
+  @override
+  String get workoutBlocks => 'Workout phases';
+
+  @override
+  String get workoutBlockWarmup => 'Warm-up';
+
+  @override
+  String get workoutBlockWork => 'Work';
+
+  @override
+  String get workoutBlockRest => 'Rest';
+
+  @override
+  String get workoutBlockCooldown => 'Cool-down';
+
+  @override
+  String get workoutTodayPlan => 'Today\'s workout';
+
+  @override
+  String get workoutAddBlock => 'Add phase';
+
+  @override
+  String get workoutBlockDurationMin => 'Duration (min)';
+
+  @override
+  String get workoutBlockNote => 'Note';
+
+  @override
+  String get difficultyBeginner => 'Beginner';
+
+  @override
+  String get difficultyIntermediate => 'Intermediate';
+
+  @override
+  String get difficultyAdvanced => 'Advanced';
+
+  @override
   String get typeRecovery => 'Recovery';
 
   @override

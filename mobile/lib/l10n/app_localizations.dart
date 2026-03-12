@@ -2864,6 +2864,90 @@ abstract class AppLocalizations {
   /// **'Failed to assign workout'**
   String get workoutAssignError;
 
+  /// No description provided for @workoutStartRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get workoutStartRun;
+
+  /// No description provided for @workoutEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get workoutEdit;
+
+  /// No description provided for @workoutBlocks.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout phases'**
+  String get workoutBlocks;
+
+  /// No description provided for @workoutBlockWarmup.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm-up'**
+  String get workoutBlockWarmup;
+
+  /// No description provided for @workoutBlockWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Work'**
+  String get workoutBlockWork;
+
+  /// No description provided for @workoutBlockRest.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest'**
+  String get workoutBlockRest;
+
+  /// No description provided for @workoutBlockCooldown.
+  ///
+  /// In en, this message translates to:
+  /// **'Cool-down'**
+  String get workoutBlockCooldown;
+
+  /// No description provided for @workoutTodayPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s workout'**
+  String get workoutTodayPlan;
+
+  /// No description provided for @workoutAddBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Add phase'**
+  String get workoutAddBlock;
+
+  /// No description provided for @workoutBlockDurationMin.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration (min)'**
+  String get workoutBlockDurationMin;
+
+  /// No description provided for @workoutBlockNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get workoutBlockNote;
+
+  /// No description provided for @difficultyBeginner.
+  ///
+  /// In en, this message translates to:
+  /// **'Beginner'**
+  String get difficultyBeginner;
+
+  /// No description provided for @difficultyIntermediate.
+  ///
+  /// In en, this message translates to:
+  /// **'Intermediate'**
+  String get difficultyIntermediate;
+
+  /// No description provided for @difficultyAdvanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced'**
+  String get difficultyAdvanced;
+
   /// No description provided for @typeRecovery.
   ///
   /// In en, this message translates to:

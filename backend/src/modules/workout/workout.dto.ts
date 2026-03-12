@@ -8,24 +8,16 @@ const workoutTypes = ['FUNCTIONAL', 'TEMPO', 'RECOVERY', 'ACCELERATIONS'] as con
 const difficulties = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'PRO'] as const;
 const targetMetrics = ['DISTANCE', 'TIME', 'PACE'] as const;
 const surfaces = ['ROAD', 'TRACK', 'TRAIL'] as const;
-const segmentTypes = ['WARMUP', 'RUN', 'REST', 'COOLDOWN'] as const;
-const durationTypes = ['TIME', 'DISTANCE', 'MANUAL'] as const;
-const recoveryTypes = ['JOG', 'WALK', 'STAND'] as const;
+const blockTypes = ['warmup', 'work', 'rest', 'cooldown'] as const;
 
-export const WorkoutSegmentSchema = z.object({
-  type: z.enum(segmentTypes),
-  durationValue: z.number().int().min(0),
-  durationType: z.enum(durationTypes),
-  targetValue: z.string().max(50).optional(),
-  targetZone: z.string().max(50).optional(),
-  recoveryType: z.enum(recoveryTypes).optional(),
-  instructions: z.string().max(1000).optional(),
-  mediaUrl: z.string().url().max(500).optional().or(z.literal('')),
-});
-
+/** Flat workout block for MVP: a single phase with optional time/distance targets */
 export const WorkoutBlockSchema = z.object({
-  repeatCount: z.number().int().min(1),
-  segments: z.array(WorkoutSegmentSchema),
+  type: z.enum(blockTypes),
+  durationMin: z.number().int().min(1).optional(),
+  distanceM: z.number().int().min(1).optional(),
+  paceTarget: z.number().int().min(1).optional(), // seconds/km
+  heartRate: z.number().int().min(1).optional(),
+  note: z.string().max(500).optional(),
 });
 
 export const CreateWorkoutSchema = z.object({
@@ -36,9 +28,6 @@ export const CreateWorkoutSchema = z.object({
   difficulty: z.enum(difficulties).optional().default('BEGINNER'),
   surface: z.enum(surfaces).optional(),
   blocks: z.array(WorkoutBlockSchema).optional(),
-  targetMetric: z.enum(targetMetrics).optional().default('DISTANCE'),
-  targetValue: z.number().int().min(1).optional(),
-  targetZone: z.string().max(50).optional(),
   // Type-specific fields
   distanceM: z.number().int().min(1).optional(),
   heartRateTarget: z.number().int().min(1).optional(),
@@ -53,5 +42,4 @@ export const UpdateWorkoutSchema = CreateWorkoutSchema.partial().omit({ clubId: 
 
 export type CreateWorkoutDto = z.infer<typeof CreateWorkoutSchema>;
 export type UpdateWorkoutDto = z.infer<typeof UpdateWorkoutSchema>;
-export type WorkoutSegmentDto = z.infer<typeof WorkoutSegmentSchema>;
 export type WorkoutBlockDto = z.infer<typeof WorkoutBlockSchema>;

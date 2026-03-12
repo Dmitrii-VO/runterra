@@ -119,6 +119,9 @@ class EventDetailsModel {
   /// Стоимость участия в рублях (0 = бесплатно)
   final int price;
 
+  /// Snapshot of the linked workout at event creation time (blocks + type-specific fields)
+  final List<Map<String, dynamic>>? workoutSnapshot;
+
   EventDetailsModel({
     required this.id,
     required this.name,
@@ -149,6 +152,7 @@ class EventDetailsModel {
     this.participantStatus,
     this.isOrganizer,
     this.price = 0,
+    this.workoutSnapshot,
   });
 
   /// Создает EventDetailsModel из JSON
@@ -190,6 +194,9 @@ class EventDetailsModel {
       participantStatus: json['participantStatus'] as String?,
       isOrganizer: json['isOrganizer'] as bool?,
       price: (json['price'] as num?)?.toInt() ?? 0,
+      workoutSnapshot: ((json['workoutSnapshot'] as Map<String, dynamic>?)?['blocks'] as List<dynamic>?)
+          ?.map((b) => Map<String, dynamic>.from(b as Map))
+          .toList(),
     );
   }
 

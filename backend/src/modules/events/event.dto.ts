@@ -231,6 +231,9 @@ export interface EventDetailsDto {
   /** Trainer display name (resolved for display) */
   trainerName?: string;
 
+  /** Snapshot of workout at time of event creation (blocks + type-specific fields) */
+  workoutSnapshot?: Record<string, unknown>;
+
   /** Является ли текущий пользователь участником события */
   isParticipant?: boolean;
 

@@ -17,6 +17,7 @@ class Workout {
   final int? repDistanceM;
   final String? exerciseName;
   final String? exerciseInstructions;
+  final List<Map<String, dynamic>>? blocks;
   final DateTime createdAt;
 
   Workout({
@@ -34,6 +35,7 @@ class Workout {
     this.repDistanceM,
     this.exerciseName,
     this.exerciseInstructions,
+    this.blocks,
     required this.createdAt,
   });
 
@@ -53,6 +55,9 @@ class Workout {
       repDistanceM: json['repDistanceM'] as int?,
       exerciseName: json['exerciseName'] as String?,
       exerciseInstructions: json['exerciseInstructions'] as String?,
+      blocks: (json['blocks'] as List<dynamic>?)
+          ?.map((b) => Map<String, dynamic>.from(b as Map))
+          .toList(),
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
@@ -73,6 +78,7 @@ class Workout {
       if (repDistanceM != null) 'repDistanceM': repDistanceM,
       if (exerciseName != null) 'exerciseName': exerciseName,
       if (exerciseInstructions != null) 'exerciseInstructions': exerciseInstructions,
+      if (blocks != null) 'blocks': blocks,
       'createdAt': createdAt.toIso8601String(),
     };
   }

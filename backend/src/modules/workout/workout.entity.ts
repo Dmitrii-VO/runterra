@@ -4,26 +4,14 @@
 
 export type Surface = 'ROAD' | 'TRACK' | 'TRAIL';
 
-export type SegmentType = 'WARMUP' | 'RUN' | 'REST' | 'COOLDOWN';
-
-export type DurationType = 'TIME' | 'DISTANCE' | 'MANUAL';
-
-export type RecoveryType = 'JOG' | 'WALK' | 'STAND';
-
-export interface WorkoutSegment {
-  type: SegmentType;
-  durationValue: number; // seconds or meters
-  durationType: DurationType;
-  targetValue?: string; // e.g. "4:00" or "160"
-  targetZone?: string; // e.g. "Z1", "Z5", "100% threshold"
-  recoveryType?: RecoveryType;
-  instructions?: string;
-  mediaUrl?: string;
-}
-
+/** Flat workout phase for MVP */
 export interface WorkoutBlock {
-  repeatCount: number;
-  segments: WorkoutSegment[];
+  type: 'warmup' | 'work' | 'rest' | 'cooldown';
+  durationMin?: number;
+  distanceM?: number;
+  paceTarget?: number; // seconds/km
+  heartRate?: number;
+  note?: string;
 }
 
 export interface Workout {
@@ -36,10 +24,7 @@ export interface Workout {
   difficulty: string;
   surface?: Surface;
   blocks?: WorkoutBlock[];
-  targetMetric: string;
-  targetValue?: number;
-  targetZone?: string;
-  // New type-specific fields
+  // Type-specific fields
   distanceM?: number;
   heartRateTarget?: number;
   paceTarget?: number;

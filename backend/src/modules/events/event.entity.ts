@@ -110,6 +110,9 @@ export interface Event {
   /** Assigned trainer (optional) */
   trainerId?: string;
 
+  /** Snapshot of linked workout at time of event creation */
+  workoutSnapshot?: Record<string, unknown>;
+
   /** Whether event was manually edited after generation (skip sync from template) */
   isManuallyEdited?: boolean;
 
