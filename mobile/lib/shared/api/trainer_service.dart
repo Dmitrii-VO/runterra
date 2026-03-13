@@ -4,6 +4,7 @@ import 'users_service.dart' show ApiException;
 import '../models/trainer_profile.dart';
 import '../models/trainer_group_model.dart';
 import '../models/client_run_model.dart';
+import '../models/run_model.dart';
 import '../navigation/nav_status_provider.dart';
 
 export '../models/trainer_profile.dart' show TrainerClientRequest, MyTrainerEntry;
@@ -176,6 +177,17 @@ class TrainerService {
           .toList();
     }
     _throwApiException(response, 'get_client_runs_error');
+  }
+
+  /// GET /api/trainer/clients/:clientId/runs/:runId — run detail with GPS for a client run
+  Future<RunDetailModel> getClientRunDetail(String clientId, String runId) async {
+    final response = await _apiClient.get(
+      '/api/trainer/clients/$clientId/runs/$runId',
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return RunDetailModel.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    }
+    _throwApiException(response, 'get_client_run_detail_error');
   }
 
   /// POST /api/trainer/clients/:userId — add a client

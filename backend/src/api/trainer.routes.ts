@@ -498,6 +498,70 @@ router.get('/clients/:clientId/runs', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * GET /api/trainer/clients/:clientId/runs/:runId — run detail (with GPS) for a specific client run
+ * Trainer must have clientId in their trainer_clients list and the run must belong to clientId.
+ */
+router.get('/clients/:clientId/runs/:runId', async (req: Request, res: Response) => {
+  try {
+    const trainerId = await resolveUserId(req, res);
+    if (!trainerId) return;
+
+    const { clientId, runId } = req.params;
+    if (!isValidUuid(clientId)) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'clientId must be a valid UUID',
+        details: { fields: [{ field: 'clientId', message: 'Invalid UUID', code: 'invalid_uuid' }] },
+      });
+    }
+    if (!isValidUuid(runId)) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'runId must be a valid UUID',
+        details: { fields: [{ field: 'runId', message: 'Invalid UUID', code: 'invalid_uuid' }] },
+      });
+    }
+
+    const isClient = await getMessagesRepository().isTrainerClient(trainerId, clientId);
+    if (!isClient) {
+      return res.status(403).json({ code: 'forbidden', message: 'User is not your client' });
+    }
+
+    const runsRepo = getRunsRepository();
+    const run = await runsRepo.findById(runId);
+    if (!run) {
+      return res.status(404).json({ code: 'not_found', message: 'Run not found' });
+    }
+    if (run.userId !== clientId) {
+      return res.status(403).json({ code: 'forbidden', message: 'Run does not belong to this client' });
+    }
+
+    const gpsPoints = await runsRepo.getGpsPoints(runId);
+
+    return res.status(200).json({
+      id: run.id,
+      userId: run.userId,
+      activityId: run.activityId,
+      startedAt: run.startedAt,
+      endedAt: run.endedAt,
+      duration: run.duration,
+      distance: run.distance,
+      status: run.status,
+      createdAt: run.createdAt,
+      updatedAt: run.updatedAt,
+      gpsPoints: gpsPoints.map(p => ({
+        latitude: p.latitude,
+        longitude: p.longitude,
+        timestamp: p.timestamp,
+      })),
+    });
+  } catch (error) {
+    logger.error('Error fetching client run detail', { error });
+    return res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
 // ---------------------------------------------------------------------------
 // Trainer-client relationship endpoints
 // ---------------------------------------------------------------------------

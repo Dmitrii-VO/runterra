@@ -228,7 +228,8 @@ class _RunterraAppState extends State<RunterraApp> {
         path: '/run/detail/:id',
         builder: (context, state) {
           final runId = state.pathParameters['id'] ?? '';
-          return RunDetailScreen(runId: runId);
+          final clientId = state.uri.queryParameters['clientId'];
+          return RunDetailScreen(runId: runId, clientId: clientId);
         },
       ),
       GoRoute(

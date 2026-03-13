@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/client_run_model.dart';
@@ -88,7 +89,10 @@ class _ClientRunsScreenState extends State<ClientRunsScreen> {
               final run = runs[index];
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                child: Padding(
+                clipBehavior: Clip.hardEdge,
+                child: InkWell(
+                  onTap: () => context.push('/run/detail/${run.id}?clientId=${widget.clientId}'),
+                  child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,6 +154,7 @@ class _ClientRunsScreenState extends State<ClientRunsScreen> {
                         ),
                       ],
                     ],
+                  ),
                   ),
                 ),
               );

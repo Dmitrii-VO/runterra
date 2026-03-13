@@ -5,10 +5,12 @@ import '../../shared/models/run_model.dart';
 import 'widgets/run_detail_map.dart';
 
 /// Detail view for a completed run with GPS route and metrics.
+/// If [clientId] is provided, fetches via the trainer endpoint (trainer viewing a client's run).
 class RunDetailScreen extends StatefulWidget {
   final String runId;
+  final String? clientId;
 
-  const RunDetailScreen({super.key, required this.runId});
+  const RunDetailScreen({super.key, required this.runId, this.clientId});
 
   @override
   State<RunDetailScreen> createState() => _RunDetailScreenState();
@@ -20,7 +22,14 @@ class _RunDetailScreenState extends State<RunDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _detailFuture = ServiceLocator.runService.getRunDetail(widget.runId);
+    if (widget.clientId != null) {
+      _detailFuture = ServiceLocator.trainerService.getClientRunDetail(
+        widget.clientId!,
+        widget.runId,
+      );
+    } else {
+      _detailFuture = ServiceLocator.runService.getRunDetail(widget.runId);
+    }
   }
 
   String _formatDuration(int seconds) {
