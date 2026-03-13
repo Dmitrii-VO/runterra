@@ -213,11 +213,12 @@ class _RunDetailScreenState extends State<RunDetailScreen> {
                             label: l10n.runCalories,
                             icon: Icons.local_fire_department,
                           ),
-                          _buildMetricCard(
-                            value: run.gpsPoints.length.toString(),
-                            label: l10n.runGpsPoints,
-                            icon: Icons.location_on,
-                          ),
+                          if (run.gpsPoints.isNotEmpty)
+                            _buildMetricCard(
+                              value: run.gpsPoints.length.toString(),
+                              label: l10n.runGpsPoints,
+                              icon: Icons.location_on,
+                            ),
                           if (run.avgCadence != null)
                             _buildMetricCard(
                               value: l10n.runCadenceValue(run.avgCadence!),
