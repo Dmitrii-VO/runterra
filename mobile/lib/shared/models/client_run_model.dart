@@ -30,7 +30,7 @@ class ClientRunModel {
       startedAt: DateTime.parse(json['startedAt'] as String),
       endedAt: DateTime.parse(json['endedAt'] as String),
       duration: (json['duration'] as num).toInt(),
-      distance: (json['distance'] as int),
+      distance: (json['distance'] as num).toInt(),
       rpe: json['rpe'] as int?,
       notes: json['notes'] as String?,
       assignmentId: json['assignmentId'] as String?,

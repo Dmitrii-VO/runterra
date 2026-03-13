@@ -127,7 +127,14 @@ class _RunDetailScreenState extends State<RunDetailScreen> {
                   TextButton(
                     onPressed: () {
                       setState(() {
-                        _detailFuture = ServiceLocator.runService.getRunDetail(widget.runId);
+                        if (widget.clientId != null) {
+                          _detailFuture = ServiceLocator.trainerService.getClientRunDetail(
+                            widget.clientId!,
+                            widget.runId,
+                          );
+                        } else {
+                          _detailFuture = ServiceLocator.runService.getRunDetail(widget.runId);
+                        }
                       });
                     },
                     child: Text(l10n.retry),

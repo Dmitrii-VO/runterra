@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:geolocator/geolocator.dart';
 import 'package:pedometer/pedometer.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../config/api_config.dart';
 import '../location/location_service.dart';
 import '../models/run_model.dart';
@@ -59,8 +60,14 @@ class RunService {
     }
   }
 
-  /// Start listening to pedometer step count events.
-  void _startStepTracking() {
+  /// Request ACTIVITY_RECOGNITION permission and start listening to pedometer.
+  Future<void> _startStepTracking() async {
+    // Android 10+ requires runtime permission for step counter
+    final status = await Permission.activityRecognition.request();
+    if (!status.isGranted) {
+      debugPrint('ACTIVITY_RECOGNITION permission denied — cadence unavailable');
+      return;
+    }
     _stepSubscription?.cancel();
     _stepSubscription = Pedometer.stepCountStream.listen(
       (StepCount event) {
@@ -198,7 +205,7 @@ class RunService {
     );
 
     // Start pedometer tracking
-    _startStepTracking();
+    await _startStepTracking();
 
     // Create session
     _currentSession = RunSession(
@@ -245,6 +252,7 @@ class RunService {
       duration: totalAccumulated,
       accumulatedDuration: totalAccumulated,
       lastResumedAt: null,
+      currentCadence: null,
     );
   }
 
@@ -292,7 +300,7 @@ class RunService {
     );
 
     // Restart pedometer for this segment
-    _startStepTracking();
+    await _startStepTracking();
 
     final now = DateTime.now();
     _currentSession = _currentSession!.copyWith(
@@ -495,6 +503,8 @@ class RunService {
   }
 
   void dispose() {
+    _stepSubscription?.cancel();
+    _stepSubscription = null;
     if (_ownLocationService) {
       _locationService.stopTracking();
       _locationService.dispose();

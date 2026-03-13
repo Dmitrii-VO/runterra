@@ -1279,6 +1279,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get runGpsPoints => 'GPS points';
 
   @override
+  String get runCadence => 'Cadence';
+
+  @override
+  String runCadenceValue(int spm) {
+    return '$spm spm';
+  }
+
+  @override
   String get tierGreen => 'Green Zone';
 
   @override

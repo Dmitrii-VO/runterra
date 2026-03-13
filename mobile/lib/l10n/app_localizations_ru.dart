@@ -1283,6 +1283,14 @@ class AppLocalizationsRu extends AppLocalizations {
   String get runGpsPoints => 'GPS точки';
 
   @override
+  String get runCadence => 'Каденс';
+
+  @override
+  String runCadenceValue(int spm) {
+    return '$spm шаг/мин';
+  }
+
+  @override
   String get tierGreen => 'Зелёная зона';
 
   @override

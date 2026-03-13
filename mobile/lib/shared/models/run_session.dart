@@ -1,6 +1,13 @@
 import 'package:geolocator/geolocator.dart';
 import 'workout.dart';
 
+// Sentinel for copyWith nullable fields
+class _Unset {
+  const _Unset();
+}
+
+const _unset = _Unset();
+
 /// Local UI/tracker state model for the run screen (idle / recording / result).
 ///
 /// NOT a DTO: no fromJson/toJson. Used only in-app for:
@@ -84,7 +91,7 @@ class RunSession {
     int? currentBlockIndex,
     int? currentSegmentIndex,
     int? stepCount,
-    int? currentCadence,
+    Object? currentCadence = _unset,
   }) {
     return RunSession(
       id: id ?? this.id,
@@ -105,7 +112,7 @@ class RunSession {
       currentBlockIndex: currentBlockIndex ?? this.currentBlockIndex,
       currentSegmentIndex: currentSegmentIndex ?? this.currentSegmentIndex,
       stepCount: stepCount ?? this.stepCount,
-      currentCadence: currentCadence ?? this.currentCadence,
+      currentCadence: currentCadence is _Unset ? this.currentCadence : currentCadence as int?,
     );
   }
 }

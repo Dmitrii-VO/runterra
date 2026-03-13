@@ -2450,6 +2450,18 @@ abstract class AppLocalizations {
   /// **'GPS points'**
   String get runGpsPoints;
 
+  /// No description provided for @runCadence.
+  ///
+  /// In en, this message translates to:
+  /// **'Cadence'**
+  String get runCadence;
+
+  /// No description provided for @runCadenceValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{spm} spm'**
+  String runCadenceValue(int spm);
+
   /// No description provided for @tierGreen.
   ///
   /// In en, this message translates to:
