@@ -1161,6 +1161,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get scheduleTitle => 'Шаблон расписания';
 
   @override
+  String get scheduleConduct => 'Провести';
+
+  @override
+  String get scheduleEmptyDay => 'Нет тренировок в этот день';
+
+  @override
   String get planTypeClub => 'Клубный';
 
   @override

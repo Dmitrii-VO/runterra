@@ -260,7 +260,8 @@ class _RunterraAppState extends State<RunterraApp> {
         path: '/club/:id/schedule',
         builder: (context, state) {
           final clubId = state.pathParameters['id'] ?? '';
-          return ClubScheduleScreen(clubId: clubId);
+          final userRole = state.extra as String?;
+          return ClubScheduleScreen(clubId: clubId, userRole: userRole);
         },
       ),
       GoRoute(
@@ -320,8 +321,14 @@ class _RunterraAppState extends State<RunterraApp> {
       GoRoute(
         path: '/event/create',
         builder: (context, state) {
-          final initialType = state.uri.queryParameters['type'];
-          return CreateEventScreen(initialType: initialType);
+          final params = state.uri.queryParameters;
+          return CreateEventScreen(
+            initialType: params['type'],
+            initialName: params['name'],
+            initialTime: params['time'],
+            initialWorkoutId: params['workoutId'],
+            initialClubId: params['clubId'],
+          );
         },
       ),
       GoRoute(

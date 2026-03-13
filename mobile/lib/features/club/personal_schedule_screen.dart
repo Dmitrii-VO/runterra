@@ -76,10 +76,7 @@ class _PersonalScheduleScreenState extends State<PersonalScheduleScreen> {
           [
             {
               'dayOfWeek': 1,
-              'startTime': '09:00',
-              'type': 'note',
               'name': 'Персональная пробежка: 5км',
-              'noteText': 'Персональная пробежка: 5км',
             }
           ],
         );
@@ -131,8 +128,8 @@ class _PersonalScheduleScreenState extends State<PersonalScheduleScreen> {
                             final dayNames = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
                             return ListTile(
                               leading: CircleAvatar(child: Text(dayNames[item.dayOfWeek][0])),
-                              title: Text("${dayNames[item.dayOfWeek]} ${item.startTime}"),
-                              subtitle: Text(item.noteText ?? item.name),
+                              title: Text(dayNames[item.dayOfWeek]),
+                              subtitle: Text(item.name),
                             );
                           },
                         ),

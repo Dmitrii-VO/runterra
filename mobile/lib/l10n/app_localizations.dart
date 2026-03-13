@@ -2210,6 +2210,18 @@ abstract class AppLocalizations {
   /// **'Schedule Template'**
   String get scheduleTitle;
 
+  /// No description provided for @scheduleConduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Conduct'**
+  String get scheduleConduct;
+
+  /// No description provided for @scheduleEmptyDay.
+  ///
+  /// In en, this message translates to:
+  /// **'No trainings this day'**
+  String get scheduleEmptyDay;
+
   /// No description provided for @planTypeClub.
   ///
   /// In en, this message translates to:

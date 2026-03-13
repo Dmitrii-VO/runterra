@@ -9,8 +9,19 @@ import '../../shared/models/workout.dart';
 
 class CreateEventScreen extends StatefulWidget {
   final String? initialType;
+  final String? initialName;
+  final String? initialTime; // "HH:mm" from schedule template
+  final String? initialWorkoutId;
+  final String? initialClubId; // overrides CurrentClubService when set (e.g. from schedule conduct)
 
-  const CreateEventScreen({super.key, this.initialType});
+  const CreateEventScreen({
+    super.key,
+    this.initialType,
+    this.initialName,
+    this.initialTime,
+    this.initialWorkoutId,
+    this.initialClubId,
+  });
 
   @override
   State<CreateEventScreen> createState() => _CreateEventScreenState();
@@ -45,6 +56,22 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   void initState() {
     super.initState();
     _eventType = widget.initialType ?? 'training';
+    // Apply prefill from schedule template
+    if (widget.initialName != null) {
+      _nameController.text = widget.initialName!;
+    }
+    if (widget.initialTime != null) {
+      final parts = widget.initialTime!.split(':');
+      if (parts.length == 2) {
+        final h = int.tryParse(parts[0]);
+        final m = int.tryParse(parts[1]);
+        if (h != null && m != null) {
+          _selectedTime = TimeOfDay(hour: h, minute: m);
+        }
+      }
+    }
+    // initialWorkoutId prefill is deferred to _loadWorkouts — applied only if
+    // the workout is present in the loaded list (avoids invalid dropdown state).
     _loadDefaults();
   }
 
@@ -65,8 +92,10 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       _cityId = currentCityId;
     });
 
-    // Auto-fill organizer
-    final clubId = ServiceLocator.currentClubService.currentClubId;
+    // Auto-fill organizer: prefer initialClubId (e.g. from schedule conduct) over global active club
+    final clubId = (widget.initialClubId != null && widget.initialClubId!.isNotEmpty)
+        ? widget.initialClubId
+        : ServiceLocator.currentClubService.currentClubId;
     if (clubId != null && clubId.isNotEmpty) {
       _organizerIdController.text = clubId;
       _organizerType = 'club';
@@ -109,7 +138,18 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
           : <Workout>[];
       final seen = <String>{};
       final merged = [...personal, ...club].where((w) => seen.add(w.id)).toList();
-      if (mounted) setState(() => _workouts = merged);
+      if (mounted) {
+        setState(() {
+          _workouts = merged;
+          // Apply initialWorkoutId only if the workout exists in the loaded list;
+          // otherwise reset to null so the dropdown stays valid.
+          if (widget.initialWorkoutId != null) {
+            _selectedWorkoutId = merged.any((w) => w.id == widget.initialWorkoutId)
+                ? widget.initialWorkoutId
+                : null;
+          }
+        });
+      }
     } catch (e) {
       debugPrint('Error loading workouts: $e');
     }

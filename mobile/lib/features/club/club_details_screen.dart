@@ -1033,7 +1033,7 @@ class _ClubDetailsScreenState extends State<ClubDetailsScreen> {
                           Expanded(
                             child: ElevatedButton.icon(
                               onPressed: () =>
-                                  context.push('/club/${club.id}/schedule'),
+                                  context.push('/club/${club.id}/schedule', extra: club.userRole),
                               icon: const Icon(Icons.calendar_month),
                               label: Text(l10n.clubManageSchedule),
                             ),

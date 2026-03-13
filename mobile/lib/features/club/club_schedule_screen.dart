@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/di/service_locator.dart';
 import '../../shared/models/schedule_model.dart';
@@ -6,8 +8,9 @@ import '../../shared/models/workout.dart';
 
 class ClubScheduleScreen extends StatefulWidget {
   final String clubId;
+  final String? userRole; // 'leader', 'trainer', or null for regular members
 
-  const ClubScheduleScreen({super.key, required this.clubId});
+  const ClubScheduleScreen({super.key, required this.clubId, this.userRole});
 
   @override
   State<ClubScheduleScreen> createState() => _ClubScheduleScreenState();
@@ -16,23 +19,27 @@ class ClubScheduleScreen extends StatefulWidget {
 class _ClubScheduleScreenState extends State<ClubScheduleScreen> {
   int _selectedDay = 1; // 1 (Mon) to 7 (Sun) in UI
   List<WeeklyScheduleItemModel>? _allSchedule;
+  List<Workout> _workouts = [];
   bool _loading = true;
+
+  bool get _canManage =>
+      widget.userRole == 'leader' || widget.userRole == 'trainer';
 
   @override
   void initState() {
     super.initState();
     _loadSchedule();
+    if (_canManage) _loadWorkouts();
   }
 
-  // Convert UI day (1-7, Mon-Sun) to Backend day (0-6, Sun-Sat)
-  int _uiDayToBackend(int uiDay) {
-    return uiDay % 7;
-  }
+  // Convert UI day (1=Mon … 7=Sun) to backend day (0=Sun, 1=Mon … 6=Sat)
+  int _uiDayToBackend(int uiDay) => uiDay % 7;
 
   Future<void> _loadSchedule() async {
     setState(() => _loading = true);
     try {
-      final schedule = await ServiceLocator.clubsService.getWeeklySchedule(widget.clubId);
+      final schedule =
+          await ServiceLocator.clubsService.getWeeklySchedule(widget.clubId);
       if (mounted) {
         setState(() {
           _allSchedule = schedule;
@@ -42,171 +49,188 @@ class _ClubScheduleScreenState extends State<ClubScheduleScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
       }
+    }
+  }
+
+  Future<void> _loadWorkouts() async {
+    try {
+      final personal = await ServiceLocator.workoutsService.getWorkouts();
+      final club = await ServiceLocator.workoutsService
+          .getWorkouts(clubId: widget.clubId);
+      final seen = <String>{};
+      final merged =
+          [...personal, ...club].where((w) => seen.add(w.id)).toList();
+      if (mounted) setState(() => _workouts = merged);
+    } catch (_) {
+      // Non-critical — workout picker will just be empty
     }
   }
 
   List<WeeklyScheduleItemModel> get _currentDayItems {
     if (_allSchedule == null) return [];
     final backendDay = _uiDayToBackend(_selectedDay);
-    return _allSchedule!.where((item) => item.dayOfWeek == backendDay).toList();
+    return _allSchedule!
+        .where((item) => item.dayOfWeek == backendDay)
+        .toList();
   }
 
   Future<void> _addItem() async {
     final l10n = AppLocalizations.of(context)!;
-    final type = await showModalBottomSheet<ScheduleItemType>(
+
+    // Step 1: pick type
+    final isNote = await showModalBottomSheet<bool>(
       context: context,
-      builder: (context) => SafeArea(
+      builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
               leading: const Icon(Icons.event),
               title: Text(l10n.eventTypeTraining),
-              onTap: () => Navigator.pop(context, ScheduleItemType.event),
+              onTap: () => Navigator.pop(ctx, false),
             ),
             ListTile(
               leading: const Icon(Icons.note_alt),
               title: Text(l10n.tabPersonal),
-              onTap: () => Navigator.pop(context, ScheduleItemType.note),
+              onTap: () => Navigator.pop(ctx, true),
             ),
           ],
         ),
       ),
     );
 
-    if (type == null || !mounted) return;
+    if (isNote == null || !mounted) return;
 
-    final timeController = TextEditingController(text: "10:00");
+    final timeController = TextEditingController(text: '10:00');
 
-    if (type == ScheduleItemType.note) {
+    if (isNote) {
+      // Note: free text, no workout link
       final textController = TextEditingController();
-      
       final confirm = await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (ctx) => AlertDialog(
           title: Text(l10n.tabPersonal),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: timeController,
-                decoration: InputDecoration(labelText: '${l10n.eventCreateTime} (HH:mm)'),
+                decoration: InputDecoration(
+                    labelText: '${l10n.eventCreateTime} (HH:mm)'),
               ),
               TextField(
                 controller: textController,
-                decoration: InputDecoration(labelText: l10n.eventDescription),
+                decoration:
+                    InputDecoration(labelText: l10n.eventDescription),
                 maxLines: 3,
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
             TextButton(
-              onPressed: () => Navigator.pop(context, true),
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(l10n.cancel)),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
               child: Text(l10n.editProfileSave),
             ),
           ],
         ),
       );
 
-      if (confirm == true && textController.text.isNotEmpty) {
+      if (confirm == true && textController.text.isNotEmpty && mounted) {
         try {
           await ServiceLocator.clubsService.createWeeklyItem(widget.clubId, {
             'dayOfWeek': _uiDayToBackend(_selectedDay),
             'startTime': timeController.text,
-            'type': 'note',
             'activityType': 'note',
             'name': textController.text,
-            'noteText': textController.text,
           });
           _loadSchedule();
         } catch (e) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(e.toString())));
           }
         }
       }
     } else {
-      // Pick from library
+      // Workout event: pick from prefetched library
+      if (_workouts.isEmpty && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.workoutEmpty)),
+        );
+        return;
+      }
+
       final workout = await showDialog<Workout>(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (ctx) => AlertDialog(
           title: Text(l10n.quickFindTraining),
           content: SizedBox(
             width: double.maxFinite,
             height: 400,
-            child: FutureBuilder<List<Workout>>(
-              future: ServiceLocator.workoutsService.getWorkouts(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(child: Text(snapshot.error.toString()));
-                }
-                final workouts = snapshot.data ?? [];
-                if (workouts.isEmpty) {
-                  return Center(child: Text(l10n.workoutEmpty));
-                }
-                return ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: workouts.length,
-                  itemBuilder: (context, index) {
-                    final w = workouts[index];
-                    return ListTile(
-                      title: Text(w.name),
-                      subtitle: Text(w.type),
-                      onTap: () => Navigator.pop(context, w),
-                    );
-                  },
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _workouts.length,
+              itemBuilder: (_, index) {
+                final w = _workouts[index];
+                return ListTile(
+                  title: Text(w.name),
+                  subtitle: Text(w.type),
+                  onTap: () => Navigator.pop(ctx, w),
                 );
               },
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+            TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(l10n.cancel)),
           ],
         ),
       );
 
-      if (workout != null && mounted) {
-        final confirm = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text(workout.name),
-            content: TextField(
-              controller: timeController,
-              decoration: InputDecoration(labelText: '${l10n.eventCreateTime} (HH:mm)'),
-            ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text(l10n.editProfileSave),
-              ),
-            ],
-          ),
-        );
+      if (workout == null || !mounted) return;
 
-        if (confirm == true) {
-          try {
-            await ServiceLocator.clubsService.createWeeklyItem(widget.clubId, {
-              'dayOfWeek': _uiDayToBackend(_selectedDay),
-              'startTime': timeController.text,
-              'type': 'event',
-              'activityType': workout.type,
-              'name': workout.name,
-              'workoutId': workout.id,
-            });
-            _loadSchedule();
-          } catch (e) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-            }
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(workout.name),
+          content: TextField(
+            controller: timeController,
+            decoration:
+                InputDecoration(labelText: '${l10n.eventCreateTime} (HH:mm)'),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(l10n.cancel)),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l10n.editProfileSave),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm == true && mounted) {
+        try {
+          await ServiceLocator.clubsService.createWeeklyItem(widget.clubId, {
+            'dayOfWeek': _uiDayToBackend(_selectedDay),
+            'startTime': timeController.text,
+            'activityType': workout.type,
+            'name': workout.name,
+            'workoutId': workout.id,
+          });
+          _loadSchedule();
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(e.toString())));
           }
         }
       }
@@ -219,15 +243,35 @@ class _ClubScheduleScreenState extends State<ClubScheduleScreen> {
       _loadSchedule();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
       }
     }
+  }
+
+  void _conductItem(WeeklyScheduleItemModel item) {
+    final params = <String, String>{
+      'type': 'training', // all schedule templates are trainings
+      if (item.name != null) 'name': item.name!,
+      'time': item.startTime,
+      if (item.workoutId != null) 'workoutId': item.workoutId!,
+      'clubId': widget.clubId,
+    };
+    final query = Uri(queryParameters: params).query;
+    context.push('/event/create?$query');
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    final locale = Localizations.localeOf(context).toString();
+
+    // Generate localized short day names: index 0 = Mon, ..., 6 = Sun
+    // 2024-01-01 is Monday → add index days to get Mon-Sun sequence
+    final dayNames = List.generate(7, (i) {
+      final date = DateTime(2024, 1, 1 + i);
+      return DateFormat.E(locale).format(date);
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -263,34 +307,56 @@ class _ClubScheduleScreenState extends State<ClubScheduleScreen> {
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : _currentDayItems.isEmpty
-                    ? const Center(child: Text("Нет данных"))
+                    ? Center(child: Text(l10n.scheduleEmptyDay))
                     : ListView.builder(
                         itemCount: _currentDayItems.length,
                         itemBuilder: (context, index) {
                           final item = _currentDayItems[index];
                           return ListTile(
                             leading: Icon(
-                              item.type == ScheduleItemType.event ? Icons.event : Icons.note_alt,
-                              color: item.type == ScheduleItemType.event ? Colors.blue : Colors.orange,
+                              item.isNote
+                                  ? Icons.note_alt
+                                  : Icons.directions_run,
+                              color: item.isNote
+                                  ? Colors.orange
+                                  : Colors.blue,
                             ),
                             title: Text(item.startTime),
-                            subtitle: Text(item.type == ScheduleItemType.event 
-                              ? (item.name ?? item.eventId ?? '') 
-                              : (item.noteText ?? '')),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete_outline, color: Colors.red),
-                              onPressed: () => _deleteItem(item.id),
-                            ),
+                            subtitle: Text(item.name ?? ''),
+                            trailing: _canManage
+                                ? Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (!item.isNote)
+                                        IconButton(
+                                          icon: const Icon(
+                                              Icons.play_circle_outline),
+                                          tooltip: l10n.scheduleConduct,
+                                          onPressed: () =>
+                                              _conductItem(item),
+                                        ),
+                                      IconButton(
+                                        icon: const Icon(
+                                            Icons.delete_outline,
+                                            color: Colors.red),
+                                        onPressed: () =>
+                                            _deleteItem(item.id),
+                                      ),
+                                    ],
+                                  )
+                                : null,
                           );
                         },
                       ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addItem,
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: _canManage
+          ? FloatingActionButton(
+              onPressed: _addItem,
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 }

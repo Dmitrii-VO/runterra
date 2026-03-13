@@ -612,6 +612,8 @@
   "rosterSelectGroup": "Select group",
   "rosterAssignmentUpdated": "Assignment updated",
   "scheduleTitle": "Schedule Template",
+  "scheduleConduct": "Conduct",
+  "scheduleEmptyDay": "No trainings this day",
   "planTypeClub": "Club",
   "planTypePersonal": "Personal",
   "@clubMemberRoleChangeError": {

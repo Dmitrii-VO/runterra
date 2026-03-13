@@ -1158,6 +1158,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scheduleTitle => 'Schedule Template';
 
   @override
+  String get scheduleConduct => 'Conduct';
+
+  @override
+  String get scheduleEmptyDay => 'No trainings this day';
+
+  @override
   String get planTypeClub => 'Club';
 
   @override

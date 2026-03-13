@@ -1,27 +1,30 @@
 // Models for weekly and personal schedule templates.
 
-enum ScheduleItemType { event, note }
-
 class WeeklyScheduleItemModel {
   final String id;
   final String clubId;
-  final int dayOfWeek; // 1 (Mon) - 7 (Sun)
+  final int dayOfWeek; // 0-6 (0=Sun, 1=Mon, ..., 6=Sat) — matches backend
   final String startTime; // HH:mm
-  final ScheduleItemType type;
+  final String activityType; // 'note', 'training', 'tempo', etc.
   final String? name;
-  final String? eventId;
-  final String? noteText;
+  final String? description;
+  final String? workoutId;
+  final String? trainerId;
 
   WeeklyScheduleItemModel({
     required this.id,
     required this.clubId,
     required this.dayOfWeek,
     required this.startTime,
-    required this.type,
+    required this.activityType,
     this.name,
-    this.eventId,
-    this.noteText,
+    this.description,
+    this.workoutId,
+    this.trainerId,
   });
+
+  /// True when this item is a free-text note, not a workout event.
+  bool get isNote => activityType == 'note';
 
   factory WeeklyScheduleItemModel.fromJson(Map<String, dynamic> json) {
     return WeeklyScheduleItemModel(
@@ -29,10 +32,11 @@ class WeeklyScheduleItemModel {
       clubId: json['clubId'] as String,
       dayOfWeek: json['dayOfWeek'] as int,
       startTime: json['startTime'] as String,
-      type: json['type'] == 'event' ? ScheduleItemType.event : ScheduleItemType.note,
+      activityType: json['activityType'] as String? ?? 'note',
       name: json['name'] as String?,
-      eventId: json['eventId'] as String?,
-      noteText: json['noteText'] as String?,
+      description: json['description'] as String?,
+      workoutId: json['workoutId'] as String?,
+      trainerId: json['trainerId'] as String?,
     );
   }
 
@@ -40,10 +44,11 @@ class WeeklyScheduleItemModel {
     return {
       'dayOfWeek': dayOfWeek,
       'startTime': startTime,
-      'type': type == ScheduleItemType.event ? 'event' : 'note',
+      'activityType': activityType,
       'name': name,
-      'eventId': eventId,
-      'noteText': noteText,
+      'description': description,
+      'workoutId': workoutId,
+      'trainerId': trainerId,
     };
   }
 }
@@ -51,22 +56,20 @@ class WeeklyScheduleItemModel {
 class PersonalScheduleItemModel {
   final String id;
   final String userId;
-  final int dayOfWeek;
-  final String startTime;
-  final ScheduleItemType type;
-  final String name; // Added name field
-  final String? eventId;
-  final String? noteText;
+  final int dayOfWeek; // 0-6 (0=Sun, 1=Mon, ..., 6=Sat) — matches backend
+  final String name;
+  final String? description;
+  final String? workoutId;
+  final String? trainerId;
 
   PersonalScheduleItemModel({
     required this.id,
     required this.userId,
     required this.dayOfWeek,
-    required this.startTime,
-    required this.type,
     required this.name,
-    this.eventId,
-    this.noteText,
+    this.description,
+    this.workoutId,
+    this.trainerId,
   });
 
   factory PersonalScheduleItemModel.fromJson(Map<String, dynamic> json) {
@@ -74,22 +77,20 @@ class PersonalScheduleItemModel {
       id: json['id'] as String,
       userId: json['userId'] as String,
       dayOfWeek: json['dayOfWeek'] as int,
-      startTime: json['startTime'] as String,
-      type: json['type'] == 'event' ? ScheduleItemType.event : ScheduleItemType.note,
-      name: json['name'] as String? ?? 'Training',
-      eventId: json['eventId'] as String?,
-      noteText: json['noteText'] as String?,
+      name: json['name'] as String? ?? '',
+      description: json['description'] as String?,
+      workoutId: json['workoutId'] as String?,
+      trainerId: json['trainerId'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'dayOfWeek': dayOfWeek,
-      'startTime': startTime,
-      'type': type == ScheduleItemType.event ? 'event' : 'note',
       'name': name,
-      'eventId': eventId,
-      'noteText': noteText,
+      'description': description,
+      'workoutId': workoutId,
+      'trainerId': trainerId,
     };
   }
 }

@@ -438,6 +438,8 @@
   "rosterSelectGroup": "Выберите группу",
   "rosterAssignmentUpdated": "Назначение обновлено",
   "scheduleTitle": "Шаблон расписания",
+  "scheduleConduct": "Провести",
+  "scheduleEmptyDay": "Нет тренировок в этот день",
   "planTypeClub": "Клубный",
   "planTypePersonal": "Личный",
   "@clubMemberRoleChangeError": {

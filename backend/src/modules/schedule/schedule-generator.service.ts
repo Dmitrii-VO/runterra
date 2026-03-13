@@ -8,6 +8,11 @@ import { EventType } from '../events/event.type';
 
 export class ScheduleGeneratorService {
   /**
+   * @deprecated Not called anywhere. Replaced by the Blueprint approach:
+   * leaders/trainers use the "Conduct" button in the schedule screen to
+   * manually create an Event from a template with a real location.
+   * Kept for reference — remove when personal schedule feature is fully designed.
+   *
    * Генерация событий и заметок на 31 день вперед
    */
   async generateNextMonth(): Promise<void> {
