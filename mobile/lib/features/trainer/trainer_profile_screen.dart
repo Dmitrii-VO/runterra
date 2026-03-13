@@ -261,7 +261,7 @@ class _TrainerProfileScreenState extends State<TrainerProfileScreen> {
             avatar: const Icon(Icons.check_circle, size: 18),
             label: Text(l10n.trainerYouAreStudent),
             backgroundColor:
-                Colors.green.withValues(alpha: 0.15),
+                Colors.green.withOpacity(0.15),
           ),
         );
       case 'pending':
