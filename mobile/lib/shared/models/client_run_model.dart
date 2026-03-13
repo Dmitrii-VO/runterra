@@ -9,6 +9,7 @@ class ClientRunModel {
   final String? notes;
   final String? assignmentId;
   final String? workoutTitle;
+  final int? avgCadence;
 
   ClientRunModel({
     required this.id,
@@ -20,6 +21,7 @@ class ClientRunModel {
     this.notes,
     this.assignmentId,
     this.workoutTitle,
+    this.avgCadence,
   });
 
   factory ClientRunModel.fromJson(Map<String, dynamic> json) {
@@ -27,12 +29,13 @@ class ClientRunModel {
       id: json['id'] as String,
       startedAt: DateTime.parse(json['startedAt'] as String),
       endedAt: DateTime.parse(json['endedAt'] as String),
-      duration: json['duration'] as int,
-      distance: json['distance'] as int,
+      duration: (json['duration'] as num).toInt(),
+      distance: (json['distance'] as int),
       rpe: json['rpe'] as int?,
       notes: json['notes'] as String?,
       assignmentId: json['assignmentId'] as String?,
       workoutTitle: json['workoutTitle'] as String?,
+      avgCadence: json['avgCadence'] != null ? (json['avgCadence'] as num).toInt() : null,
     );
   }
 }

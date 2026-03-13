@@ -16,6 +16,7 @@ class RunModel {
   final Duration duration;
   final double distance;
   final RunModelStatus status;
+  final int? avgCadence;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -29,6 +30,7 @@ class RunModel {
     required this.duration,
     required this.distance,
     required this.status,
+    this.avgCadence,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -49,6 +51,7 @@ class RunModel {
       duration: Duration(seconds: durationSec.toInt()),
       distance: (json['distance'] as num).toDouble(),
       status: RunModelStatus.fromString(statusRaw),
+      avgCadence: json['avgCadence'] != null ? (json['avgCadence'] as num).toInt() : null,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -93,6 +96,7 @@ class RunDetailModel extends RunModel {
     required super.duration,
     required super.distance,
     required super.status,
+    super.avgCadence,
     required super.createdAt,
     required super.updatedAt,
     required this.gpsPoints,
@@ -114,6 +118,7 @@ class RunDetailModel extends RunModel {
       duration: base.duration,
       distance: base.distance,
       status: base.status,
+      avgCadence: base.avgCadence,
       createdAt: base.createdAt,
       updatedAt: base.updatedAt,
       gpsPoints: pointsList,

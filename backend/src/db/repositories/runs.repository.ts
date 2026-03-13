@@ -19,6 +19,7 @@ interface RunRow {
   status: string;
   rpe: number | null;
   notes: string | null;
+  avg_cadence: number | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -46,6 +47,7 @@ function rowToRun(row: RunRow): Run {
     status: row.status as RunStatus,
     rpe: row.rpe ?? undefined,
     notes: row.notes ?? undefined,
+    avgCadence: row.avg_cadence ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -154,6 +156,7 @@ export class RunsRepository extends BaseRepository {
       gpsPoints?: GpsPoint[];
       rpe?: number;
       notes?: string;
+      avgCadence?: number;
     },
     client?: import('pg').PoolClient,
   ): Promise<{ run: Run; validation: RunValidationResult }> {
@@ -167,8 +170,8 @@ export class RunsRepository extends BaseRepository {
 
     // Create run record
     const row = await this.queryOne<RunRow>(
-      `INSERT INTO runs (user_id, activity_id, scoring_club_id, assignment_id, started_at, ended_at, duration, distance, status, rpe, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      `INSERT INTO runs (user_id, activity_id, scoring_club_id, assignment_id, started_at, ended_at, duration, distance, status, rpe, notes, avg_cadence)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING *`,
       [
         data.userId,
@@ -182,6 +185,7 @@ export class RunsRepository extends BaseRepository {
         validation.status,
         data.rpe || null,
         data.notes || null,
+        data.avgCadence || null,
       ],
       client,
     );

@@ -91,6 +91,7 @@ router.get('/', async (req: Request, res: Response) => {
         distance: r.distance,
         paceSecondsPerKm: r.distance > 0 ? Math.round((r.duration / r.distance) * 1000) : 0,
         rpe: r.rpe,
+        avgCadence: r.avgCadence,
       }));
 
     res.json(items);
@@ -168,6 +169,9 @@ router.get('/:id', async (req: Request, res: Response) => {
       duration: run.duration,
       distance: run.distance,
       status: run.status,
+      rpe: run.rpe,
+      notes: run.notes,
+      avgCadence: run.avgCadence,
       createdAt: run.createdAt,
       updatedAt: run.updatedAt,
       gpsPoints: gpsPoints.map(p => ({
@@ -360,6 +364,7 @@ router.post(
             gpsPoints,
             rpe: dto.rpe,
             notes: dto.notes,
+            avgCadence: dto.avgCadence,
           },
           client,
         );
@@ -405,6 +410,7 @@ router.post(
         status: run.status,
         rpe: run.rpe,
         notes: run.notes,
+        avgCadence: run.avgCadence,
         createdAt: run.createdAt,
         updatedAt: run.updatedAt,
       };

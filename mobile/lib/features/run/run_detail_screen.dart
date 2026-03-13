@@ -211,6 +211,12 @@ class _RunDetailScreenState extends State<RunDetailScreen> {
                             label: l10n.runGpsPoints,
                             icon: Icons.location_on,
                           ),
+                          if (run.avgCadence != null)
+                            _buildMetricCard(
+                              value: l10n.runCadenceValue(run.avgCadence!),
+                              label: l10n.runCadence,
+                              icon: Icons.directions_walk,
+                            ),
                         ],
                       ),
                     ],

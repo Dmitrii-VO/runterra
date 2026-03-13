@@ -70,6 +70,9 @@ export interface Run {
   /** Заметки для тренера */
   notes?: string;
 
+  /** Average cadence in steps/min */
+  avgCadence?: number;
+
   /** Дата создания записи */
   createdAt: Date;
 

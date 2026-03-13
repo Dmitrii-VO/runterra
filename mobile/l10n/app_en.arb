@@ -659,6 +659,13 @@
   "runDetailTitle": "Run details",
   "runDetailLoadError": "Could not load run details",
   "runGpsPoints": "GPS points",
+  "runCadence": "Cadence",
+  "runCadenceValue": "{spm} spm",
+  "@runCadenceValue": {
+    "placeholders": {
+      "spm": { "type": "int" }
+    }
+  },
   "tierGreen": "Green Zone",
   "tierBlue": "Blue Zone",
   "tierRed": "Red Zone",

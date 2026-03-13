@@ -284,6 +284,13 @@
   "runAvgSpeedValue": "{speed} км/ч",
   "runCalories": "Калории",
   "runCaloriesValue": "~{calories} ккал",
+  "runCadence": "Каденс",
+  "runCadenceValue": "{spm} шаг/мин",
+  "@runCadenceValue": {
+    "placeholders": {
+      "spm": { "type": "int" }
+    }
+  },
   "runHeartRate": "Пульс",
   "runHeartRateValue": "{bpm} уд/мин",
   "runNoData": "—",

@@ -753,6 +753,20 @@ class _RunTrackingScreenState extends State<RunTrackingScreen> {
                   ],
                 ),
               ],
+              if (_session?.currentCadence != null) ...[
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.directions_walk, size: 16, color: Colors.blue),
+                    const SizedBox(width: 4),
+                    Text(
+                      l10n.runCadenceValue(_session!.currentCadence!),
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),

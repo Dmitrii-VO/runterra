@@ -54,6 +54,9 @@ export interface CreateRunDto {
 
   /** Заметки для тренера */
   notes?: string;
+
+  /** Average cadence in steps/min */
+  avgCadence?: number;
 }
 
 /**
@@ -77,6 +80,7 @@ export const CreateRunSchema = z.object({
   gpsPoints: z.array(GpsPointSchema).optional(),
   rpe: z.number().int().min(1).max(10).optional(),
   notes: z.string().max(2000).optional(),
+  avgCadence: z.number().int().min(1).max(300).optional(),
 });
 
 /**
@@ -120,6 +124,9 @@ export interface RunViewDto {
   /** Notes */
   notes?: string;
 
+  /** Average cadence in steps/min */
+  avgCadence?: number;
+
   /** Дата создания записи */
   createdAt: Date;
 
@@ -135,6 +142,7 @@ export interface RunHistoryItemDto {
   distance: number;
   paceSecondsPerKm: number;
   rpe?: number;
+  avgCadence?: number;
 }
 
 /** Run details with GPS track */

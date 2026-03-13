@@ -499,7 +499,7 @@ router.get('/clients/:clientId/runs', async (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/trainer/clients/:clientId/runs/:runId — run detail (with GPS) for a specific client run
+ * GET /api/trainer/clients/:clientId/runs/:runId — run detail for a specific client run
  * Trainer must have clientId in their trainer_clients list and the run must belong to clientId.
  */
 router.get('/clients/:clientId/runs/:runId', async (req: Request, res: Response) => {
@@ -537,8 +537,6 @@ router.get('/clients/:clientId/runs/:runId', async (req: Request, res: Response)
       return res.status(403).json({ code: 'forbidden', message: 'Run does not belong to this client' });
     }
 
-    const gpsPoints = await runsRepo.getGpsPoints(runId);
-
     return res.status(200).json({
       id: run.id,
       userId: run.userId,
@@ -548,13 +546,12 @@ router.get('/clients/:clientId/runs/:runId', async (req: Request, res: Response)
       duration: run.duration,
       distance: run.distance,
       status: run.status,
+      rpe: run.rpe,
+      notes: run.notes,
+      avgCadence: run.avgCadence,
       createdAt: run.createdAt,
       updatedAt: run.updatedAt,
-      gpsPoints: gpsPoints.map(p => ({
-        latitude: p.latitude,
-        longitude: p.longitude,
-        timestamp: p.timestamp,
-      })),
+      gpsPoints: [],
     });
   } catch (error) {
     logger.error('Error fetching client run detail', { error });

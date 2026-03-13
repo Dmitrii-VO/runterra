@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:geolocator/geolocator.dart';
+import 'package:pedometer/pedometer.dart';
 import '../config/api_config.dart';
 import '../location/location_service.dart';
 import '../models/run_model.dart';
@@ -27,8 +28,15 @@ class RunService {
 
   RunSession? _currentSession;
   StreamSubscription<Position>? _positionSubscription;
+  StreamSubscription<StepCount>? _stepSubscription;
   final List<Position> _gpsPoints = [];
   DateTime? _startTime;
+
+  // Step tracking for cadence
+  int? _stepCountBaseline;       // device step counter at run start / last resume
+  int _accumulatedSteps = 0;     // steps accumulated across completed segments
+  DateTime? _cadenceWindowStart; // start of cadence sliding window
+  int? _cadenceWindowSteps;      // device steps at window start
 
 
   RunService({
@@ -49,6 +57,67 @@ class RunService {
     } catch (e) {
       debugPrint('Error initializing TTS: $e');
     }
+  }
+
+  /// Start listening to pedometer step count events.
+  void _startStepTracking() {
+    _stepSubscription?.cancel();
+    _stepSubscription = Pedometer.stepCountStream.listen(
+      (StepCount event) {
+        final deviceSteps = event.steps;
+
+        // Initialize baseline on first event
+        if (_stepCountBaseline == null) {
+          _stepCountBaseline = deviceSteps;
+          _cadenceWindowStart = DateTime.now();
+          _cadenceWindowSteps = deviceSteps;
+          return;
+        }
+
+        // Steps in current segment
+        final segmentSteps = deviceSteps - _stepCountBaseline!;
+        final totalSteps = _accumulatedSteps + segmentSteps;
+
+        // Compute real-time cadence using 30-second sliding window
+        final now = DateTime.now();
+        final windowSeconds = now.difference(_cadenceWindowStart!).inSeconds;
+        int? cadence;
+        if (windowSeconds >= 5 && _cadenceWindowSteps != null) {
+          final windowSteps = deviceSteps - _cadenceWindowSteps!;
+          cadence = ((windowSteps / windowSeconds) * 60).round();
+          // Reset window every 30 seconds
+          if (windowSeconds >= 30) {
+            _cadenceWindowStart = now;
+            _cadenceWindowSteps = deviceSteps;
+          }
+        }
+
+        if (_currentSession != null) {
+          _currentSession = _currentSession!.copyWith(
+            stepCount: totalSteps,
+            currentCadence: cadence,
+          );
+        }
+      },
+      onError: (e) {
+        debugPrint('Pedometer error: $e');
+      },
+    );
+  }
+
+  /// Stop pedometer and save accumulated steps for the current segment.
+  void _stopStepTracking() {
+    _stepSubscription?.cancel();
+    _stepSubscription = null;
+    // Accumulate steps from completed segment before pause
+    if (_stepCountBaseline != null && _currentSession != null) {
+      // _currentSession already has the latest stepCount from the listener
+      _accumulatedSteps = _currentSession!.stepCount;
+    }
+    // Reset baseline so next resume starts fresh
+    _stepCountBaseline = null;
+    _cadenceWindowStart = null;
+    _cadenceWindowSteps = null;
   }
 
   /// Начать пробежку.
@@ -79,6 +148,8 @@ class RunService {
 
     _startTime = DateTime.now();
     _gpsPoints.clear();
+    _accumulatedSteps = 0;
+    _stepCountBaseline = null;
 
     // Start GPS tracking (background so run continues when app is in background)
     await _locationService.startTracking(distanceFilter: 5, background: true);
@@ -126,6 +197,9 @@ class RunService {
       },
     );
 
+    // Start pedometer tracking
+    _startStepTracking();
+
     // Create session
     _currentSession = RunSession(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -159,6 +233,7 @@ class RunService {
     _locationService.stopTracking();
     _positionSubscription?.cancel();
     _positionSubscription = null;
+    _stopStepTracking();
 
     final now = DateTime.now();
     final lastResumed = _currentSession!.lastResumedAt ?? _currentSession!.startedAt;
@@ -216,6 +291,9 @@ class RunService {
       },
     );
 
+    // Restart pedometer for this segment
+    _startStepTracking();
+
     final now = DateTime.now();
     _currentSession = _currentSession!.copyWith(
       status: RunSessionStatus.running,
@@ -272,10 +350,11 @@ class RunService {
       throw Exception('No active run session');
     }
 
-    // Stop GPS tracking
+    // Stop GPS and pedometer tracking
     _locationService.stopTracking();
     _positionSubscription?.cancel();
     _positionSubscription = null;
+    _stopStepTracking();
 
     // Calculate final active duration
     final Duration finalDuration;
@@ -340,6 +419,11 @@ class RunService {
     if (notes != null && notes.trim().isNotEmpty) {
       requestBody['notes'] = notes.trim();
     }
+    // Compute avg cadence: total steps / active minutes
+    final durationMinutes = session.duration.inSeconds / 60.0;
+    if (session.stepCount > 0 && durationMinutes > 0) {
+      requestBody['avgCadence'] = (session.stepCount / durationMinutes).round();
+    }
 
     final response = await _apiClient.post(
       '/api/runs',
@@ -371,6 +455,8 @@ class RunService {
     _locationService.stopTracking();
     _positionSubscription?.cancel();
     _positionSubscription = null;
+    _stopStepTracking();
+    _accumulatedSteps = 0;
     _currentSession = null;
     _gpsPoints.clear();
     _startTime = null;

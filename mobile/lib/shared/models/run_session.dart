@@ -28,6 +28,12 @@ class RunSession {
   /// Heart rate in BPM from watch sensor (null if watch not connected)
   final int? heartRate;
 
+  /// Accumulated steps counted by pedometer during active (non-paused) run segments
+  final int stepCount;
+
+  /// Real-time cadence in steps/min (computed from recent steps, null before first data)
+  final int? currentCadence;
+
   /// Workout template attached to the run
   final Workout? workout;
   final int currentBlockIndex;
@@ -51,6 +57,8 @@ class RunSession {
     this.workout,
     this.currentBlockIndex = 0,
     this.currentSegmentIndex = 0,
+    this.stepCount = 0,
+    this.currentCadence,
   })  : duration = duration ?? Duration.zero,
         distance = distance ?? 0.0,
         gpsStatus = gpsStatus ?? GpsStatus.searching,
@@ -75,6 +83,8 @@ class RunSession {
     Workout? workout,
     int? currentBlockIndex,
     int? currentSegmentIndex,
+    int? stepCount,
+    int? currentCadence,
   }) {
     return RunSession(
       id: id ?? this.id,
@@ -94,6 +104,8 @@ class RunSession {
       workout: workout ?? this.workout,
       currentBlockIndex: currentBlockIndex ?? this.currentBlockIndex,
       currentSegmentIndex: currentSegmentIndex ?? this.currentSegmentIndex,
+      stepCount: stepCount ?? this.stepCount,
+      currentCadence: currentCadence ?? this.currentCadence,
     );
   }
 }

@@ -125,6 +125,11 @@ class _ClientRunsScreenState extends State<ClientRunsScreen> {
                               label: l10n.clientRunsRpe,
                               value: '${run.rpe}/10',
                             ),
+                          if (run.avgCadence != null)
+                            _Stat(
+                              label: l10n.runCadence,
+                              value: l10n.runCadenceValue(run.avgCadence!),
+                            ),
                         ],
                       ),
                       if (run.workoutTitle != null) ...[
