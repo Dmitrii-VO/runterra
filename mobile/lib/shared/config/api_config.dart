@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 // Conditional import: dart:io only for non-web platforms
 import 'dart:io' if (dart.library.html) 'dart:html' as io;
