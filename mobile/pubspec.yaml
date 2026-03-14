@@ -1,7 +1,7 @@
 name: runterra
 description: Runterra mobile application
 publish_to: 'none'
-version: 1.0.16+316
+version: 1.0.17+318
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
