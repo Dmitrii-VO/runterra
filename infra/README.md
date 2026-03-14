@@ -49,6 +49,11 @@ ssh runterra "journalctl -u runterra-backend -f"
 
 считается `deferred` и пока не реализуется в этом цикле.
 
+Подготовленный runbook для этого перехода:
+
+- [domain-and-https.md](./domain-and-https.md)
+- [Caddyfile.example](./Caddyfile.example)
+
 ## Deploy
 
 Backend обновляется через серверный `update.sh`:
@@ -136,7 +141,7 @@ npm run migrate:prod
 - [ ] Автодеплой после merge в `main`
 - [ ] Staging окружение
 - [ ] Docker для backend
-- [ ] Завести домен + HTTPS + reverse proxy для backend (`deferred`, не текущий цикл)
+- [ ] Завести домен + HTTPS + reverse proxy для backend
 - [ ] Разобраться с `Firebase App Distribution 403`, если проблема воспроизводится у тестеров
 
 ## Source Of Truth

@@ -24,7 +24,7 @@ class ApiConfig {
   /// - Если задан API_BASE_URL (--dart-define) — возвращает его (для dev можно http://).
   /// - Иначе —:
   ///   - в debug: облачный dev backend (http://85.208.85.13:3000);
-  ///   - в release/production: фиксированный продакшн backend (https://85.208.85.13:3000).
+  ///   - в release/production: фиксированный продакшн backend (https://api.runterra.ru).
   ///
   /// Для Android: использует localhost по умолчанию (эмулятор определяется через API_BASE_URL).
   /// Для физических Android устройств использует localhost (или IP через API_BASE_URL).
@@ -33,9 +33,7 @@ class ApiConfig {
 
   /// Production backend base URL. Used for mobile/desktop in release builds
   /// when API_BASE_URL is not provided via --dart-define.
-  /// Note: HTTP is used because server has no domain/SSL cert. Android cleartext
-  /// is allowed via network_security_config.xml for this IP only.
-  static const String _prodBaseUrl = 'http://85.208.85.13:3000';
+  static const String _prodBaseUrl = 'https://api.runterra.ru';
 
   static String getBaseUrl() {
     final override = _envBaseUrl.trim();
