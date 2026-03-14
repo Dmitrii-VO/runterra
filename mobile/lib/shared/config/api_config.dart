@@ -5,8 +5,8 @@ import 'dart:io' if (dart.library.html) 'dart:html' as io;
 
 /// Конфигурация API для работы с backend
 ///
-/// Определяет baseUrl: production — всегда https; dev/emulator — можно переопределить
-/// через --dart-define=API_BASE_URL=http://... (например http://10.0.2.2:3000).
+/// Определяет baseUrl: всегда https://api.runterra.ru; для локальной разработки
+/// переопределяется через --dart-define=API_BASE_URL=http://... (например http://10.0.2.2:3000).
 ///
 /// ЗАЧЕМ: Безопасность — GPS и профиль не должны передаваться по HTTP в production.
 /// Разные платформы для дефолта: Android эмулятор — 10.0.2.2, остальные — localhost.
@@ -22,27 +22,15 @@ class ApiConfig {
   /// Получает baseUrl для текущей платформы
   ///
   /// - Если задан API_BASE_URL (--dart-define) — возвращает его (для dev можно http://).
-  /// - Иначе —:
-  ///   - в debug: облачный dev backend (http://85.208.85.13:3000);
-  ///   - в release/production: фиксированный продакшн backend (https://api.runterra.ru).
+  /// - Иначе — всегда используется https://api.runterra.ru (и в debug, и в release).
   ///
-  /// Для Android: использует localhost по умолчанию (эмулятор определяется через API_BASE_URL).
-  /// Для физических Android устройств использует localhost (или IP через API_BASE_URL).
-  /// Cloud dev server (backend on Cloud.ru). Used as default in debug when API_BASE_URL is not set.
-  static const String _cloudDevBaseUrl = 'http://85.208.85.13:3000';
-
-  /// Production backend base URL. Used for mobile/desktop in release builds
-  /// when API_BASE_URL is not provided via --dart-define.
+  /// Для локальной разработки передавайте API_BASE_URL явно через --dart-define.
   static const String _prodBaseUrl = 'https://api.runterra.ru';
 
   static String getBaseUrl() {
     final override = _envBaseUrl.trim();
     if (override.isNotEmpty) {
       return override.endsWith('/') ? override.substring(0, override.length - 1) : override;
-    }
-    // In debug builds, default to cloud backend so dev runs work without --dart-define.
-    if (kDebugMode) {
-      return _cloudDevBaseUrl;
     }
 
     // Flutter Web: в release также используем фиксированный production backend.
