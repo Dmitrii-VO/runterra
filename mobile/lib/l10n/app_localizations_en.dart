@@ -2284,4 +2284,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workoutSaveAsNew => 'Save as new';
+
+  @override
+  String get workoutMetricDistance => 'Distance';
+
+  @override
+  String get workoutMetricPace => 'Pace';
+
+  @override
+  String get workoutMetricDuration => 'Duration';
+
+  @override
+  String get workoutMetricHR => 'Heart rate';
+
+  @override
+  String get workoutFinish => 'Finish';
+
+  @override
+  String get workoutPhaseWarmup => 'Warm-up';
+
+  @override
+  String get workoutPhaseWork => 'Work';
+
+  @override
+  String get workoutPhaseRest => 'Rest';
+
+  @override
+  String get workoutSegment => 'Segment';
 }

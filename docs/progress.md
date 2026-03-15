@@ -3,6 +3,19 @@
 ## Обзор
 Документ отслеживает выполнение задач и прогресс разработки проекта Runterra.
 
+## 2026-03-15 (продолжение)
+
+- **Личные тренировки — adversarial review fixes (Фаза 9, v1.0.20):** Закрыты 4 HIGH и 5 MEDIUM/LOW дефектов, выявленных рецензией (2026-03-15).
+  - **[HIGH] Fix #1 — blocks DSL:** `workout.dto.ts` — добавлены `'interval_config'` и `'progression_segment'` в `blockTypes`; в `WorkoutBlockSchema` добавлены поля `reps`, `restDistanceM`, `restDurationMin`, `recoveryDistanceM`, `recoveryDurationMin`, `warmup: {valueM}`, `paceTargetSecPerKm`, `value`. POST INTERVALS/PROGRESSION больше не возвращает 400.
+  - **[HIGH] Fix #2 — GPS в /workout/active:** `workout_active_screen.dart` — в `initState()` вызывается `ServiceLocator.runService.startRun()` если сессия null (`_startedRunByUs = true`); в `dispose()` — `stopRun()` если мы её запустили. GPS-метрики теперь реально обновляются.
+  - **[HIGH] Fix #3+6 — accept() атомарность и фильтрация:** `workout_shares.repository.ts` — `accept()` обёрнут в транзакцию с `FOR UPDATE` + `AND accepted = false` (предотвращает дубли при retry); `findReceivedByUser()` добавлен фильтр `AND accepted = false` — уже принятые шаринги не показываются.
+  - **[HIGH] Fix #4 — rest minutes vs metres:** `workout_creation_screen.dart` — wizard интервалов теперь использует `_restMCtrl` (метры) вместо `_restMinCtrl` (минуты); `restDurationMin` убран из `_submit()`. Данные согласованы с `_updateIntervalState()` в active screen.
+  - **[MEDIUM] Fix #5 — POST /shares partial success:** `workouts.routes.ts` — `Promise.allSettled()` вместо `Promise.all()`; ответ `{ ok, shared, failed? }`.
+  - **[MEDIUM] Fix #7 — l10n:** `workout_active_screen.dart` — 9 хардкодных RU-строк заменены на l10n; добавлены ключи `workoutMetricDistance/Pace/Duration/HR`, `workoutFinish`, `workoutPhaseWarmup/Work/Rest`, `workoutSegment` в оба ARB-файла.
+  - **[MEDIUM] Fix #8 — O(n) elevation:** `workout_active_screen.dart` — инкрементальный подсчёт через `_lastAltitude`/`_altitudeInitialized` вместо полного прохода по всем GPS-точкам каждую секунду.
+  - **[LOW] Fix #9 — saveAsTemplate дубль:** `workout_plan_service.dart` — `saveAsTemplate()` делает PATCH если `plan.id != null`, не POST.
+  - **Верификация:** `npm test` — 202/202 ✅; `flutter analyze` — 0 issues ✅. Добавлено 2 новых теста (interval_config block, accept idempotency).
+
 ## 2026-03-15
 
 - **Раздел тренировок — личные тренировки (Фазы 1–6):** Реализован полный флоу создания и ведения личных тренировок.

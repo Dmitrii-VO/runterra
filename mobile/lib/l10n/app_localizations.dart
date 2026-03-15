@@ -4351,6 +4351,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save as new'**
   String get workoutSaveAsNew;
+
+  /// No description provided for @workoutMetricDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get workoutMetricDistance;
+
+  /// No description provided for @workoutMetricPace.
+  ///
+  /// In en, this message translates to:
+  /// **'Pace'**
+  String get workoutMetricPace;
+
+  /// No description provided for @workoutMetricDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get workoutMetricDuration;
+
+  /// No description provided for @workoutMetricHR.
+  ///
+  /// In en, this message translates to:
+  /// **'Heart rate'**
+  String get workoutMetricHR;
+
+  /// No description provided for @workoutFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish'**
+  String get workoutFinish;
+
+  /// No description provided for @workoutPhaseWarmup.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm-up'**
+  String get workoutPhaseWarmup;
+
+  /// No description provided for @workoutPhaseWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Work'**
+  String get workoutPhaseWork;
+
+  /// No description provided for @workoutPhaseRest.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest'**
+  String get workoutPhaseRest;
+
+  /// No description provided for @workoutSegment.
+  ///
+  /// In en, this message translates to:
+  /// **'Segment'**
+  String get workoutSegment;
 }
 
 class _AppLocalizationsDelegate

@@ -2289,4 +2289,31 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get workoutSaveAsNew => 'Сохранить как новую';
+
+  @override
+  String get workoutMetricDistance => 'Расстояние';
+
+  @override
+  String get workoutMetricPace => 'Темп';
+
+  @override
+  String get workoutMetricDuration => 'Длительность';
+
+  @override
+  String get workoutMetricHR => 'Пульс';
+
+  @override
+  String get workoutFinish => 'Завершить';
+
+  @override
+  String get workoutPhaseWarmup => 'Разминка';
+
+  @override
+  String get workoutPhaseWork => 'Ускорение';
+
+  @override
+  String get workoutPhaseRest => 'Отдых';
+
+  @override
+  String get workoutSegment => 'Отрезок';
 }

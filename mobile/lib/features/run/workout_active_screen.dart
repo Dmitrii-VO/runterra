@@ -28,6 +28,10 @@ class _WorkoutActiveScreenState extends State<WorkoutActiveScreen> {
   int _currentHR = 0;
   double _elevationGainM = 0;
 
+  // Incremental elevation tracking (Fix #8)
+  double _lastAltitude = 0;
+  bool _altitudeInitialized = false;
+
   // Intervals state
   int _intervalPhase = 0; // 0=warmup, 1=work, 2=rest
   int _repsDone = 0;
@@ -37,11 +41,25 @@ class _WorkoutActiveScreenState extends State<WorkoutActiveScreen> {
   int _currentSegment = 0;
   double _segmentDistanceM = 0;
 
+  // Whether we started the run session ourselves (Fix #2)
+  bool _startedRunByUs = false;
+
   @override
   void initState() {
     super.initState();
     WakelockPlus.enable();
     _stopwatch = Stopwatch()..start();
+    // Start GPS tracking if not already running (Fix #2)
+    if (ServiceLocator.runService.currentSession == null) {
+      () async {
+        try {
+          await ServiceLocator.runService.startRun();
+          _startedRunByUs = true;
+        } catch (_) {
+          // Silently ignore — metrics will remain at 0 if GPS fails
+        }
+      }();
+    }
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       _updateMetrics();
     });
@@ -58,14 +76,15 @@ class _WorkoutActiveScreenState extends State<WorkoutActiveScreen> {
           ? (elapsedSec / (_distanceM / 1000))
           : 0;
       _currentHR = session.heartRate ?? 0;
-      // Elevation: approximate from GPS altitude points if available
-      if (session.gpsPoints.length >= 2) {
-        double gain = 0;
-        for (int i = 1; i < session.gpsPoints.length; i++) {
-          final diff = session.gpsPoints[i].altitude - session.gpsPoints[i - 1].altitude;
-          if (diff > 0) gain += diff;
+      // Incremental elevation gain (Fix #8: O(1) instead of O(n))
+      final points = session.gpsPoints;
+      if (points.isNotEmpty) {
+        final alt = points.last.altitude;
+        if (_altitudeInitialized && alt > _lastAltitude) {
+          _elevationGainM += alt - _lastAltitude;
         }
-        _elevationGainM = gain;
+        _lastAltitude = alt;
+        _altitudeInitialized = true;
       }
 
       // Update interval/progression state based on distance
@@ -134,6 +153,11 @@ class _WorkoutActiveScreenState extends State<WorkoutActiveScreen> {
     _ticker?.cancel();
     _stopwatch.stop();
     WakelockPlus.disable();
+    // Stop the run session we started (Fix #2); user completes saving via RunScreen
+    if (_startedRunByUs && ServiceLocator.runService.currentSession != null) {
+      // ignore: unawaited_futures
+      ServiceLocator.runService.stopRun().then<void>((_) {}, onError: (_) {});
+    }
     super.dispose();
   }
 
@@ -171,7 +195,7 @@ class _WorkoutActiveScreenState extends State<WorkoutActiveScreen> {
         actions: [
           TextButton(
             onPressed: _finish,
-            child: const Text('Завершить', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.workoutFinish, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -184,34 +208,34 @@ class _WorkoutActiveScreenState extends State<WorkoutActiveScreen> {
   Widget _buildContent(BuildContext context, AppLocalizations l10n, Duration elapsed) {
     switch (widget.plan.type) {
       case WorkoutPlanType.easyRun:
-        return _buildEasyRun(elapsed);
+        return _buildEasyRun(l10n, elapsed);
       case WorkoutPlanType.longRun:
-        return _buildLongRun(elapsed);
+        return _buildLongRun(l10n, elapsed);
       case WorkoutPlanType.intervals:
-        return _buildIntervals(elapsed);
+        return _buildIntervals(l10n, elapsed);
       case WorkoutPlanType.progression:
-        return _buildProgression(elapsed);
+        return _buildProgression(l10n, elapsed);
       case WorkoutPlanType.recovery:
-        return _buildRecovery(elapsed);
+        return _buildRecovery(l10n, elapsed);
       case WorkoutPlanType.hillRun:
-        return _buildHillRun(elapsed);
+        return _buildHillRun(l10n, elapsed);
     }
   }
 
   // ── EasyRun: distance | pace | duration | HR ─────────────────────────────
 
-  Widget _buildEasyRun(Duration elapsed) {
+  Widget _buildEasyRun(AppLocalizations l10n, Duration elapsed) {
     return _MetricGrid(metrics: [
-      _Metric(label: 'Расстояние', value: '${(_distanceM / 1000).toStringAsFixed(2)} км'),
-      _Metric(label: 'Темп', value: _formatPace(_currentPaceSecPerKm)),
-      _Metric(label: 'Длительность', value: _formatDuration(elapsed)),
-      _Metric(label: 'Пульс', value: _currentHR > 0 ? '$_currentHR уд/мин' : '--'),
+      _Metric(label: l10n.workoutMetricDistance, value: '${(_distanceM / 1000).toStringAsFixed(2)} км'),
+      _Metric(label: l10n.workoutMetricPace, value: _formatPace(_currentPaceSecPerKm)),
+      _Metric(label: l10n.workoutMetricDuration, value: _formatDuration(elapsed)),
+      _Metric(label: l10n.workoutMetricHR, value: _currentHR > 0 ? '$_currentHR уд/мин' : '--'),
     ]);
   }
 
   // ── LongRun: duration fact|remain, distance fact|remain, pace fact|plan, HR fact|plan ──
 
-  Widget _buildLongRun(Duration elapsed) {
+  Widget _buildLongRun(AppLocalizations l10n, Duration elapsed) {
     final targetDur = widget.plan.durationMin != null
         ? Duration(minutes: widget.plan.durationMin!)
         : null;
@@ -223,26 +247,26 @@ class _WorkoutActiveScreenState extends State<WorkoutActiveScreen> {
 
     return _MetricGrid(metrics: [
       _Metric(
-        label: 'Длительность',
+        label: l10n.workoutMetricDuration,
         value: _formatDuration(elapsed),
         sub: remaining != null ? 'осталось ${_formatDuration(remaining)}' : null,
       ),
       _Metric(
-        label: 'Расстояние',
+        label: l10n.workoutMetricDistance,
         value: '${(_distanceM / 1000).toStringAsFixed(2)} км',
         sub: remainDistM != null && remainDistM > 0
             ? 'осталось ${(remainDistM / 1000).toStringAsFixed(2)} км'
             : null,
       ),
       _Metric(
-        label: 'Темп',
+        label: l10n.workoutMetricPace,
         value: _formatPace(_currentPaceSecPerKm),
         sub: widget.plan.paceTargetSecPerKm != null
             ? 'план ${_formatPaceTarget(widget.plan.paceTargetSecPerKm)}'
             : null,
       ),
       _Metric(
-        label: 'Пульс',
+        label: l10n.workoutMetricHR,
         value: _currentHR > 0 ? '$_currentHR' : '--',
         sub: widget.plan.heartRateTarget != null
             ? 'план ${widget.plan.heartRateTarget}'
@@ -253,20 +277,20 @@ class _WorkoutActiveScreenState extends State<WorkoutActiveScreen> {
 
   // ── Intervals ────────────────────────────────────────────────────────────
 
-  Widget _buildIntervals(Duration elapsed) {
+  Widget _buildIntervals(AppLocalizations l10n, Duration elapsed) {
     final config = widget.plan.intervalConfig;
-    if (config == null) return _buildEasyRun(elapsed);
+    if (config == null) return _buildEasyRun(l10n, elapsed);
 
     String phase;
     double phaseTarget = 0;
     if (_intervalPhase == 0) {
-      phase = 'Разминка';
+      phase = l10n.workoutPhaseWarmup;
       phaseTarget = config.warmup?.valueM.toDouble() ?? 0;
     } else if (_intervalPhase == 1) {
-      phase = 'Ускорение';
+      phase = l10n.workoutPhaseWork;
       phaseTarget = config.distanceM?.toDouble() ?? 0;
     } else {
-      phase = 'Отдых';
+      phase = l10n.workoutPhaseRest;
       phaseTarget = config.restDistanceM?.toDouble() ?? 0;
     }
     final phaseRemain = (phaseTarget - _phaseDistanceM).clamp(0.0, phaseTarget);
@@ -293,9 +317,9 @@ class _WorkoutActiveScreenState extends State<WorkoutActiveScreen> {
               label: 'Повторений',
               value: '$_repsDone / ${config.reps}',
             ),
-            _Metric(label: 'Темп', value: _formatPace(_currentPaceSecPerKm)),
+            _Metric(label: l10n.workoutMetricPace, value: _formatPace(_currentPaceSecPerKm)),
             _Metric(
-              label: 'Пульс',
+              label: l10n.workoutMetricHR,
               value: _currentHR > 0 ? '$_currentHR' : '--',
             ),
           ]),
@@ -306,7 +330,7 @@ class _WorkoutActiveScreenState extends State<WorkoutActiveScreen> {
 
   // ── Progression ───────────────────────────────────────────────────────────
 
-  Widget _buildProgression(Duration elapsed) {
+  Widget _buildProgression(AppLocalizations l10n, Duration elapsed) {
     final segs = widget.plan.progressionSegments ?? [];
     final seg = segs.isNotEmpty ? segs[_currentSegment] : null;
     final segDist = seg?.distanceM?.toDouble() ?? 0;
@@ -319,7 +343,7 @@ class _WorkoutActiveScreenState extends State<WorkoutActiveScreen> {
           color: Colors.deepPurple[900],
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Text(
-            'Отрезок ${_currentSegment + 1} / ${segs.length}',
+            '${l10n.workoutSegment} ${_currentSegment + 1} / ${segs.length}',
             style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
@@ -327,23 +351,23 @@ class _WorkoutActiveScreenState extends State<WorkoutActiveScreen> {
         Expanded(
           child: _MetricGrid(metrics: [
             _Metric(
-              label: 'Расстояние',
+              label: l10n.workoutMetricDistance,
               value: '${(_segmentDistanceM / 1000).toStringAsFixed(2)} км',
               sub: segRemain > 0 ? 'осталось ${segRemain.toStringAsFixed(0)} м' : null,
             ),
             _Metric(
-              label: 'Длительность',
+              label: l10n.workoutMetricDuration,
               value: _formatDuration(elapsed),
             ),
             _Metric(
-              label: 'Темп',
+              label: l10n.workoutMetricPace,
               value: _formatPace(_currentPaceSecPerKm),
               sub: seg?.paceTargetSecPerKm != null
                   ? 'план ${_formatPaceTarget(seg!.paceTargetSecPerKm)}'
                   : null,
             ),
             _Metric(
-              label: 'Пульс',
+              label: l10n.workoutMetricHR,
               value: _currentHR > 0 ? '$_currentHR' : '--',
               sub: seg?.heartRate != null ? 'план ${seg!.heartRate}' : null,
             ),
@@ -355,7 +379,7 @@ class _WorkoutActiveScreenState extends State<WorkoutActiveScreen> {
 
   // ── Recovery ─────────────────────────────────────────────────────────────
 
-  Widget _buildRecovery(Duration elapsed) {
+  Widget _buildRecovery(AppLocalizations l10n, Duration elapsed) {
     final targetDur = widget.plan.durationMin != null
         ? Duration(minutes: widget.plan.durationMin!)
         : null;
@@ -367,26 +391,26 @@ class _WorkoutActiveScreenState extends State<WorkoutActiveScreen> {
 
     return _MetricGrid(metrics: [
       _Metric(
-        label: 'Длительность',
+        label: l10n.workoutMetricDuration,
         value: _formatDuration(elapsed),
         sub: remaining != null ? 'осталось ${_formatDuration(remaining)}' : null,
       ),
       _Metric(
-        label: 'Расстояние',
+        label: l10n.workoutMetricDistance,
         value: '${(_distanceM / 1000).toStringAsFixed(2)} км',
         sub: remainDistM != null && remainDistM > 0
             ? 'осталось ${(remainDistM / 1000).toStringAsFixed(2)} км'
             : null,
       ),
       _Metric(
-        label: 'Темп',
+        label: l10n.workoutMetricPace,
         value: _formatPace(_currentPaceSecPerKm),
         sub: widget.plan.paceTargetSecPerKm != null
             ? 'план ${_formatPaceTarget(widget.plan.paceTargetSecPerKm)}'
             : null,
       ),
       _Metric(
-        label: 'Пульс',
+        label: l10n.workoutMetricHR,
         value: _currentHR > 0 ? '$_currentHR' : '--',
         sub: widget.plan.heartRateTarget != null
             ? 'план ${widget.plan.heartRateTarget}'
@@ -397,24 +421,24 @@ class _WorkoutActiveScreenState extends State<WorkoutActiveScreen> {
 
   // ── HillRun ──────────────────────────────────────────────────────────────
 
-  Widget _buildHillRun(Duration elapsed) {
+  Widget _buildHillRun(AppLocalizations l10n, Duration elapsed) {
     final elevationM = _elevationGainM;
 
     return _MetricGrid(metrics: [
-      _Metric(label: 'Длительность', value: _formatDuration(elapsed)),
+      _Metric(label: l10n.workoutMetricDuration, value: _formatDuration(elapsed)),
       _Metric(
-        label: 'Расстояние',
+        label: l10n.workoutMetricDistance,
         value: '${(_distanceM / 1000).toStringAsFixed(2)} км',
       ),
       _Metric(
-        label: 'Темп',
+        label: l10n.workoutMetricPace,
         value: _formatPace(_currentPaceSecPerKm),
         sub: widget.plan.paceTargetSecPerKm != null
             ? 'план ${_formatPaceTarget(widget.plan.paceTargetSecPerKm)}'
             : null,
       ),
       _Metric(
-        label: 'Пульс',
+        label: l10n.workoutMetricHR,
         value: _currentHR > 0 ? '$_currentHR' : '--',
         sub: widget.plan.heartRateTarget != null
             ? 'план ${widget.plan.heartRateTarget}'

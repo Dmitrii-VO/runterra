@@ -11,9 +11,9 @@ const workoutTypes = [
 const difficulties = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'PRO'] as const;
 const targetMetrics = ['DISTANCE', 'TIME', 'PACE'] as const;
 const surfaces = ['ROAD', 'TRACK', 'TRAIL'] as const;
-const blockTypes = ['warmup', 'work', 'rest', 'cooldown'] as const;
+const blockTypes = ['warmup', 'work', 'rest', 'cooldown', 'interval_config', 'progression_segment'] as const;
 
-/** Flat workout block for MVP: a single phase with optional time/distance targets */
+/** Workout block — flat MVP blocks plus structured interval_config / progression_segment types */
 export const WorkoutBlockSchema = z.object({
   type: z.enum(blockTypes),
   durationMin: z.number().int().min(1).optional(),
@@ -21,6 +21,16 @@ export const WorkoutBlockSchema = z.object({
   paceTarget: z.number().int().min(1).optional(), // seconds/km
   heartRate: z.number().int().min(1).optional(),
   note: z.string().max(500).optional(),
+  // interval_config fields
+  reps: z.number().int().min(1).optional(),
+  restDistanceM: z.number().int().min(1).optional(),
+  restDurationMin: z.number().int().min(1).optional(),
+  recoveryDistanceM: z.number().int().min(1).optional(),
+  recoveryDurationMin: z.number().int().min(1).optional(),
+  warmup: z.object({ valueM: z.number().int().min(1) }).optional(),
+  paceTargetSecPerKm: z.number().int().min(1).optional(),
+  // progression_segment / cooldown fields
+  value: z.number().int().min(1).optional(),
 });
 
 export const CreateWorkoutSchema = z.object({

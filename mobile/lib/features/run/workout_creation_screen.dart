@@ -235,7 +235,6 @@ class _ParamsStepState extends State<_ParamsStep> {
           intervalConfig: IntervalConfig(
             warmup: warmupM != null ? WarmupConfig(valueM: warmupM) : null,
             distanceM: _parseInt(_intervalDistCtrl),
-            restDurationMin: _parseInt(_restMinCtrl),
             restDistanceM: _parseInt(_restMCtrl),
             reps: reps,
             recoveryDurationMin: _parseInt(_recoveryMinCtrl),
@@ -385,7 +384,7 @@ class _ParamsStepState extends State<_ParamsStep> {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: _NumField(controller: _restMinCtrl, label: l10n.workoutParamsRestMin),
+              child: _NumField(controller: _restMCtrl, label: l10n.workoutParamsRestM),
             ),
           ],
         ),

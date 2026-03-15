@@ -106,9 +106,11 @@ class WorkoutPlanService {
 
   // ── Save as template ──────────────────────────────────────────────────────
 
-  /// Save workout as a new template (POST new object, original unchanged)
+  /// Mark workout as template. Updates in place if it already exists, otherwise creates new.
   Future<WorkoutPlan> saveAsTemplate(WorkoutPlan plan) async {
-    final templatePlan = plan.copyWith(isTemplate: true, id: null);
-    return createWorkout(templatePlan);
+    if (plan.id != null) {
+      return updateWorkout(plan.id!, plan.copyWith(isTemplate: true));
+    }
+    return createWorkout(plan.copyWith(isTemplate: true));
   }
 }

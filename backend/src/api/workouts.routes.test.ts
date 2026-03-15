@@ -322,6 +322,30 @@ describe('Workouts Routes', () => {
       expect(res.status).toBe(400);
       expect(res.body).toHaveProperty('code', 'validation_error');
     });
+
+    it('returns 201 when creating INTERVALS workout with interval_config block', async () => {
+      mockWorkoutsRepository.create.mockResolvedValueOnce({
+        ...mockWorkout,
+        type: 'INTERVALS',
+        blocks: [{ type: 'interval_config', reps: 5, distanceM: 400, restDistanceM: 100 }],
+      });
+
+      const res = await request(app)
+        .post('/api/workouts')
+        .set('Authorization', 'Bearer test-token')
+        .send({
+          name: 'Intervals 5x400m',
+          type: 'INTERVALS',
+          difficulty: 'INTERMEDIATE',
+          targetMetric: 'DISTANCE',
+          blocks: [{ type: 'interval_config', reps: 5, distanceM: 400, restDistanceM: 100 }],
+        });
+
+      expect(res.status).toBe(201);
+      expect(mockWorkoutsRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'INTERVALS' }),
+      );
+    });
   });
 
   describe('PATCH /api/workouts/:id', () => {
@@ -644,6 +668,17 @@ describe('Workouts Routes', () => {
 
       const res = await request(app)
         .post('/api/workouts/shares/nonexistent/accept')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(404);
+      expect(res.body).toHaveProperty('code', 'not_found');
+    });
+
+    it('returns 404 when share already accepted (idempotency)', async () => {
+      mockWorkoutSharesRepository.accept.mockRejectedValueOnce(new Error('Share not found'));
+
+      const res = await request(app)
+        .post('/api/workouts/shares/share-already-accepted/accept')
         .set('Authorization', 'Bearer test-token');
 
       expect(res.status).toBe(404);

@@ -1154,5 +1154,15 @@
   "workoutTabMy": "My",
   "workoutTabSaved": "Saved",
   "workoutAddToPlan": "Add to plan",
-  "workoutSaveAsNew": "Save as new"
+  "workoutSaveAsNew": "Save as new",
+
+  "workoutMetricDistance": "Distance",
+  "workoutMetricPace": "Pace",
+  "workoutMetricDuration": "Duration",
+  "workoutMetricHR": "Heart rate",
+  "workoutFinish": "Finish",
+  "workoutPhaseWarmup": "Warm-up",
+  "workoutPhaseWork": "Work",
+  "workoutPhaseRest": "Rest",
+  "workoutSegment": "Segment"
 }

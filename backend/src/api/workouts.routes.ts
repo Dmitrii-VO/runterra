@@ -464,10 +464,14 @@ router.post('/:id/share', async (req: Request, res: Response) => {
     }
 
     const sharesRepo = getWorkoutSharesRepository();
-    const results = await Promise.all(
+    const results = await Promise.allSettled(
       recipientIds.map(recipientId => sharesRepo.share(req.params.id, userId, recipientId)),
     );
-    res.status(201).json({ ok: true, shared: results.length });
+    const shared = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results
+      .map((r, i) => (r.status === 'rejected' ? recipientIds[i] : null))
+      .filter(Boolean);
+    res.status(201).json({ ok: true, shared, ...(failed.length > 0 && { failed }) });
   } catch (error) {
     logger.error('Error sharing workout', { error });
     res.status(500).json({ code: 'internal_error', message: 'Internal server error' });

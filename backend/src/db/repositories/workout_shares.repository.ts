@@ -108,7 +108,7 @@ export class WorkoutSharesRepository extends BaseRepository {
        FROM workout_shares ws
        JOIN workouts w ON w.id = ws.workout_id
        JOIN users u ON u.id = ws.sender_id
-       WHERE ws.recipient_id = $1
+       WHERE ws.recipient_id = $1 AND ws.accepted = false
        ORDER BY ws.shared_at DESC`,
       [userId],
     );
@@ -124,43 +124,51 @@ export class WorkoutSharesRepository extends BaseRepository {
     }));
   }
 
-  /** Accept a share: copy workout as new object for recipient, mark accepted */
+  /** Accept a share: copy workout as new object for recipient, mark accepted (atomic) */
   async accept(shareId: string, recipientId: string): Promise<Workout> {
-    // Verify the share belongs to recipient
-    const share = await this.queryOne<WorkoutShareRow>(
-      'SELECT * FROM workout_shares WHERE id = $1 AND recipient_id = $2',
-      [shareId, recipientId],
-    );
-    if (!share) throw new Error('Share not found');
+    await this.query('BEGIN');
+    try {
+      // Lock the share row; only process if not yet accepted
+      const share = await this.queryOne<WorkoutShareRow>(
+        'SELECT * FROM workout_shares WHERE id = $1 AND recipient_id = $2 AND accepted = false FOR UPDATE',
+        [shareId, recipientId],
+      );
+      if (!share) {
+        await this.query('ROLLBACK');
+        throw new Error('Share not found');
+      }
 
-    // Copy the workout for the recipient (new object, original unchanged)
-    const copied = await this.queryOne<WorkoutRow>(
-      `INSERT INTO workouts (
-         author_id, name, description, type, difficulty, surface, blocks,
-         target_metric, target_value, target_zone,
-         distance_m, heart_rate_target, pace_target, rep_count, rep_distance_m,
-         exercise_name, exercise_instructions,
-         is_template, scheduled_at, hill_elevation_m
-       )
-       SELECT
-         $1, name, description, type, difficulty, surface, blocks,
-         target_metric, target_value, target_zone,
-         distance_m, heart_rate_target, pace_target, rep_count, rep_distance_m,
-         exercise_name, exercise_instructions,
-         false, NULL, hill_elevation_m
-       FROM workouts WHERE id = $2
-       RETURNING *`,
-      [recipientId, share.workout_id],
-    );
-    if (!copied) throw new Error('Failed to copy workout');
+      // Copy the workout for the recipient (new object, original unchanged)
+      const copied = await this.queryOne<WorkoutRow>(
+        `INSERT INTO workouts (
+           author_id, name, description, type, difficulty, surface, blocks,
+           target_metric, target_value, target_zone,
+           distance_m, heart_rate_target, pace_target, rep_count, rep_distance_m,
+           exercise_name, exercise_instructions,
+           is_template, scheduled_at, hill_elevation_m
+         )
+         SELECT
+           $1, name, description, type, difficulty, surface, blocks,
+           target_metric, target_value, target_zone,
+           distance_m, heart_rate_target, pace_target, rep_count, rep_distance_m,
+           exercise_name, exercise_instructions,
+           false, NULL, hill_elevation_m
+         FROM workouts WHERE id = $2
+         RETURNING *`,
+        [recipientId, share.workout_id],
+      );
+      if (!copied) {
+        await this.query('ROLLBACK');
+        throw new Error('Failed to copy workout');
+      }
 
-    // Mark share as accepted
-    await this.query(
-      'UPDATE workout_shares SET accepted = true WHERE id = $1',
-      [shareId],
-    );
-
-    return rowToWorkout(copied);
+      await this.query('UPDATE workout_shares SET accepted = true WHERE id = $1', [shareId]);
+      await this.query('COMMIT');
+      return rowToWorkout(copied);
+    } catch (e) {
+      await this.query('ROLLBACK');
+      throw e;
+    }
   }
 }
 

@@ -980,5 +980,15 @@
   "workoutTabMy": "Мои",
   "workoutTabSaved": "Сохранённые",
   "workoutAddToPlan": "Добавить в план",
-  "workoutSaveAsNew": "Сохранить как новую"
+  "workoutSaveAsNew": "Сохранить как новую",
+
+  "workoutMetricDistance": "Расстояние",
+  "workoutMetricPace": "Темп",
+  "workoutMetricDuration": "Длительность",
+  "workoutMetricHR": "Пульс",
+  "workoutFinish": "Завершить",
+  "workoutPhaseWarmup": "Разминка",
+  "workoutPhaseWork": "Ускорение",
+  "workoutPhaseRest": "Отдых",
+  "workoutSegment": "Отрезок"
 }
