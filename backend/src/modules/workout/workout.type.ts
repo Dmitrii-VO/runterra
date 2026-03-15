@@ -3,4 +3,10 @@ export enum WorkoutType {
   TEMPO = 'TEMPO',
   RECOVERY = 'RECOVERY',
   ACCELERATIONS = 'ACCELERATIONS',
+  // Personal workout types
+  EASY_RUN = 'EASY_RUN',
+  LONG_RUN = 'LONG_RUN',
+  INTERVALS = 'INTERVALS',
+  PROGRESSION = 'PROGRESSION',
+  HILL_RUN = 'HILL_RUN',
 }

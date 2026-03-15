@@ -1091,5 +1091,68 @@
   "myTrainersScreen": "My Trainers",
   "myTrainersEmpty": "No trainers yet",
   "trainerRequestAccepted": "Request accepted",
-  "trainerRequestRejectedMsg": "Request rejected"
+  "trainerRequestRejectedMsg": "Request rejected",
+
+  "workoutCreationTitle": "Create Workout",
+  "workoutTypeSelectTitle": "Select workout type",
+  "workoutTypeEasyRun": "Easy Run",
+  "workoutTypeLongRun": "Long Run",
+  "workoutTypeIntervals": "Intervals",
+  "workoutTypeProgression": "Progression Run",
+  "workoutTypeRecovery": "Recovery Run",
+  "workoutTypeHillRun": "Hill Run",
+
+  "workoutParamsDuration": "Duration (min)",
+  "workoutParamsDistance": "Distance (km)",
+  "workoutParamsPace": "Pace (min/km)",
+  "workoutParamsHeartRate": "Heart rate (bpm)",
+  "workoutParamsReps": "Reps",
+  "workoutParamsRest": "Rest",
+  "workoutParamsRecovery": "Recovery",
+  "workoutParamsRestMin": "Rest (min)",
+  "workoutParamsRestM": "Rest (m)",
+  "workoutParamsWarmup": "Warm-up (km/m)",
+  "workoutParamsHillElevation": "Elevation (m)",
+  "workoutParamsSegment": "Segment {n}",
+  "@workoutParamsSegment": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "workoutParamsAddSegment": "+ Add segment",
+
+  "workoutCooldownNone": "Cooldown — none",
+  "workoutCooldownSelect": "Cooldown",
+  "workoutCooldownMinutes": "Set minutes",
+  "workoutCooldownMetres": "Set metres",
+  "workoutCooldownNo": "None",
+  "workoutCooldownValueMin": "Duration (min)",
+  "workoutCooldownValueM": "Distance (m)",
+
+  "workoutScheduleTitle": "Schedule this workout?",
+  "workoutScheduleYes": "Yes",
+  "workoutScheduleNo": "No",
+
+  "workoutSavedTitle": "Workout saved",
+  "workoutSavedStart": "Start workout",
+  "workoutSavedSaveTemplate": "Save as template",
+  "workoutTemplateSaved": "Template saved",
+
+  "workoutShareTitle": "Share workout",
+  "workoutShareAsTrainer": "As trainer",
+  "workoutShareWithFriends": "With friends",
+  "workoutShareSend": "Send",
+
+  "workoutIncomingShares": "Incoming workouts",
+  "workoutShareFrom": "From: {name}",
+  "@workoutShareFrom": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "workoutShareAccept": "Add to my workouts",
+  "workoutShareAccepted": "Workout added",
+
+  "workoutFavoriteAdded": "Added to saved",
+  "workoutFavoriteRemoved": "Removed from saved",
+  "workoutTabMy": "My",
+  "workoutTabSaved": "Saved",
+  "workoutAddToPlan": "Add to plan",
+  "workoutSaveAsNew": "Save as new"
 }

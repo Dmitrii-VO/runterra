@@ -35,5 +35,10 @@ export interface Workout {
   repDistanceM?: number;
   exerciseName?: string;
   exerciseInstructions?: string;
+  // Personal workout fields
+  isTemplate: boolean;
+  isFavorite: boolean;
+  scheduledAt?: Date;
+  hillElevationM?: number;
   createdAt: Date;
 }

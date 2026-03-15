@@ -280,6 +280,8 @@ export const mockWorkoutsRepository = {
     type: 'TEMPO',
     difficulty: 'INTERMEDIATE',
     targetMetric: 'DISTANCE',
+    isTemplate: false,
+    isFavorite: false,
     createdAt: new Date(),
   }),
   update: jest.fn().mockResolvedValue({
@@ -291,6 +293,8 @@ export const mockWorkoutsRepository = {
     type: 'TEMPO',
     difficulty: 'INTERMEDIATE',
     targetMetric: 'DISTANCE',
+    isTemplate: false,
+    isFavorite: false,
     createdAt: new Date(),
   }),
   delete: jest.fn().mockResolvedValue(true),
@@ -299,6 +303,9 @@ export const mockWorkoutsRepository = {
   assignToClients: jest.fn().mockResolvedValue(0),
   unassignFromClient: jest.fn().mockResolvedValue(true),
   findAssignedToUser: jest.fn().mockResolvedValue([]),
+  findPersonalByAuthor: jest.fn().mockResolvedValue([]),
+  findTemplatesByAuthor: jest.fn().mockResolvedValue([]),
+  toggleFavorite: jest.fn().mockResolvedValue(null),
 };
 
 export const mockTrainerGroupsRepository = {

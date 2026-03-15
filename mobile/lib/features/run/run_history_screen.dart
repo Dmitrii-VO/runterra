@@ -295,6 +295,9 @@ class _RunHistoryScreenState extends State<RunHistoryScreen> {
             if (_runs.isNotEmpty)
               SliverToBoxAdapter(child: _buildLastRunCard(l10n, _runs.first)),
 
+            // My Workouts section (above journal)
+            SliverToBoxAdapter(child: _buildMyWorkoutsSection(l10n)),
+
             // Run archive header
             if (_runs.length > 1)
               SliverToBoxAdapter(child: _buildSectionHeader(l10n.runHistoryTitle)),
@@ -370,9 +373,6 @@ class _RunHistoryScreenState extends State<RunHistoryScreen> {
                         ),
                 ),
               ),
-
-            // My Workouts section
-            SliverToBoxAdapter(child: _buildMyWorkoutsSection(l10n)),
 
             // Find Trainer section
             SliverToBoxAdapter(child: _buildFindTrainerSection(l10n)),
@@ -993,7 +993,7 @@ class _RunHistoryScreenState extends State<RunHistoryScreen> {
                 const Icon(Icons.fitness_center),
                 const SizedBox(width: 8),
                 Text(
-                  l10n.myWorkouts,
+                  l10n.workouts,
                   style: Theme.of(context)
                       .textTheme
                       .titleMedium
@@ -1002,12 +1002,21 @@ class _RunHistoryScreenState extends State<RunHistoryScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () => context.push('/workouts'),
-                child: Text(l10n.myWorkouts),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => context.push('/workout/create'),
+                    icon: const Icon(Icons.add),
+                    label: Text(l10n.createWorkout),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                OutlinedButton(
+                  onPressed: () => context.push('/workout/list'),
+                  child: Text(l10n.myWorkouts),
+                ),
+              ],
             ),
             if (canCreateTraining) ...[
               const SizedBox(height: 8),

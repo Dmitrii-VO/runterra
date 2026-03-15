@@ -18,6 +18,10 @@ import 'features/territory/territory_details_screen.dart';
 import 'features/map/map_screen.dart';
 import 'features/run/run_screen.dart';
 import 'features/run/run_detail_screen.dart';
+import 'features/run/workout_creation_screen.dart';
+import 'features/run/workout_active_screen.dart';
+import 'features/run/workout_list_screen.dart';
+import 'shared/models/workout_plan.dart';
 import 'features/messages/messages_screen.dart';
 import 'features/messages/chat_screen.dart';
 import 'features/events/events_screen.dart';
@@ -440,6 +444,21 @@ class _RunterraAppState extends State<RunterraApp> {
       GoRoute(
         path: '/my-trainers',
         builder: (context, state) => const MyTrainersScreen(),
+      ),
+      GoRoute(
+        path: '/workout/list',
+        builder: (context, state) => const WorkoutListScreen(),
+      ),
+      GoRoute(
+        path: '/workout/create',
+        builder: (context, state) => const WorkoutCreationScreen(),
+      ),
+      GoRoute(
+        path: '/workout/active',
+        builder: (context, state) {
+          final plan = state.extra as WorkoutPlan;
+          return WorkoutActiveScreen(plan: plan);
+        },
       ),
     ],
   );

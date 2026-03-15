@@ -2133,4 +2133,155 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get trainerRequestRejectedMsg => 'Request rejected';
+
+  @override
+  String get workoutCreationTitle => 'Create Workout';
+
+  @override
+  String get workoutTypeSelectTitle => 'Select workout type';
+
+  @override
+  String get workoutTypeEasyRun => 'Easy Run';
+
+  @override
+  String get workoutTypeLongRun => 'Long Run';
+
+  @override
+  String get workoutTypeIntervals => 'Intervals';
+
+  @override
+  String get workoutTypeProgression => 'Progression Run';
+
+  @override
+  String get workoutTypeRecovery => 'Recovery Run';
+
+  @override
+  String get workoutTypeHillRun => 'Hill Run';
+
+  @override
+  String get workoutParamsDuration => 'Duration (min)';
+
+  @override
+  String get workoutParamsDistance => 'Distance (km)';
+
+  @override
+  String get workoutParamsPace => 'Pace (min/km)';
+
+  @override
+  String get workoutParamsHeartRate => 'Heart rate (bpm)';
+
+  @override
+  String get workoutParamsReps => 'Reps';
+
+  @override
+  String get workoutParamsRest => 'Rest';
+
+  @override
+  String get workoutParamsRecovery => 'Recovery';
+
+  @override
+  String get workoutParamsRestMin => 'Rest (min)';
+
+  @override
+  String get workoutParamsRestM => 'Rest (m)';
+
+  @override
+  String get workoutParamsWarmup => 'Warm-up (km/m)';
+
+  @override
+  String get workoutParamsHillElevation => 'Elevation (m)';
+
+  @override
+  String workoutParamsSegment(int n) {
+    return 'Segment $n';
+  }
+
+  @override
+  String get workoutParamsAddSegment => '+ Add segment';
+
+  @override
+  String get workoutCooldownNone => 'Cooldown — none';
+
+  @override
+  String get workoutCooldownSelect => 'Cooldown';
+
+  @override
+  String get workoutCooldownMinutes => 'Set minutes';
+
+  @override
+  String get workoutCooldownMetres => 'Set metres';
+
+  @override
+  String get workoutCooldownNo => 'None';
+
+  @override
+  String get workoutCooldownValueMin => 'Duration (min)';
+
+  @override
+  String get workoutCooldownValueM => 'Distance (m)';
+
+  @override
+  String get workoutScheduleTitle => 'Schedule this workout?';
+
+  @override
+  String get workoutScheduleYes => 'Yes';
+
+  @override
+  String get workoutScheduleNo => 'No';
+
+  @override
+  String get workoutSavedTitle => 'Workout saved';
+
+  @override
+  String get workoutSavedStart => 'Start workout';
+
+  @override
+  String get workoutSavedSaveTemplate => 'Save as template';
+
+  @override
+  String get workoutTemplateSaved => 'Template saved';
+
+  @override
+  String get workoutShareTitle => 'Share workout';
+
+  @override
+  String get workoutShareAsTrainer => 'As trainer';
+
+  @override
+  String get workoutShareWithFriends => 'With friends';
+
+  @override
+  String get workoutShareSend => 'Send';
+
+  @override
+  String get workoutIncomingShares => 'Incoming workouts';
+
+  @override
+  String workoutShareFrom(String name) {
+    return 'From: $name';
+  }
+
+  @override
+  String get workoutShareAccept => 'Add to my workouts';
+
+  @override
+  String get workoutShareAccepted => 'Workout added';
+
+  @override
+  String get workoutFavoriteAdded => 'Added to saved';
+
+  @override
+  String get workoutFavoriteRemoved => 'Removed from saved';
+
+  @override
+  String get workoutTabMy => 'My';
+
+  @override
+  String get workoutTabSaved => 'Saved';
+
+  @override
+  String get workoutAddToPlan => 'Add to plan';
+
+  @override
+  String get workoutSaveAsNew => 'Save as new';
 }

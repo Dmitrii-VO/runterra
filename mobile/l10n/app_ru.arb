@@ -917,5 +917,68 @@
   "myTrainersScreen": "Мои тренеры",
   "myTrainersEmpty": "Тренеров пока нет",
   "trainerRequestAccepted": "Заявка принята",
-  "trainerRequestRejectedMsg": "Заявка отклонена"
+  "trainerRequestRejectedMsg": "Заявка отклонена",
+
+  "workoutCreationTitle": "Создать тренировку",
+  "workoutTypeSelectTitle": "Выберите тип тренировки",
+  "workoutTypeEasyRun": "Лёгкий бег",
+  "workoutTypeLongRun": "Лонг ран (длительный бег)",
+  "workoutTypeIntervals": "Интервалы",
+  "workoutTypeProgression": "Бег с прогрессией",
+  "workoutTypeRecovery": "Восстановительный бег",
+  "workoutTypeHillRun": "Бег в горку",
+
+  "workoutParamsDuration": "Длительность (мин)",
+  "workoutParamsDistance": "Расстояние (км)",
+  "workoutParamsPace": "Темп (мин/км)",
+  "workoutParamsHeartRate": "Пульс (уд/мин)",
+  "workoutParamsReps": "Повторений",
+  "workoutParamsRest": "Отдых",
+  "workoutParamsRecovery": "Восстановление",
+  "workoutParamsRestMin": "Отдых (мин)",
+  "workoutParamsRestM": "Отдых (м)",
+  "workoutParamsWarmup": "Разминка (км/м)",
+  "workoutParamsHillElevation": "Подъём (м)",
+  "workoutParamsSegment": "Отрезок {n}",
+  "@workoutParamsSegment": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "workoutParamsAddSegment": "+ Добавить отрезок",
+
+  "workoutCooldownNone": "Заминка — нет",
+  "workoutCooldownSelect": "Заминка",
+  "workoutCooldownMinutes": "Указать минуты",
+  "workoutCooldownMetres": "Указать метры",
+  "workoutCooldownNo": "Нет",
+  "workoutCooldownValueMin": "Длительность (мин)",
+  "workoutCooldownValueM": "Расстояние (м)",
+
+  "workoutScheduleTitle": "Назначить дату тренировки?",
+  "workoutScheduleYes": "Да",
+  "workoutScheduleNo": "Нет",
+
+  "workoutSavedTitle": "Тренировка сохранена",
+  "workoutSavedStart": "Начать тренировку",
+  "workoutSavedSaveTemplate": "Сохранить как шаблон",
+  "workoutTemplateSaved": "Шаблон сохранён",
+
+  "workoutShareTitle": "Поделиться тренировкой",
+  "workoutShareAsTrainer": "Как тренер",
+  "workoutShareWithFriends": "С друзьями",
+  "workoutShareSend": "Отправить",
+
+  "workoutIncomingShares": "Входящие тренировки",
+  "workoutShareFrom": "От: {name}",
+  "@workoutShareFrom": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "workoutShareAccept": "Добавить себе",
+  "workoutShareAccepted": "Тренировка добавлена",
+
+  "workoutFavoriteAdded": "Добавлено в сохранённые",
+  "workoutFavoriteRemoved": "Удалено из сохранённых",
+  "workoutTabMy": "Мои",
+  "workoutTabSaved": "Сохранённые",
+  "workoutAddToPlan": "Добавить в план",
+  "workoutSaveAsNew": "Сохранить как новую"
 }

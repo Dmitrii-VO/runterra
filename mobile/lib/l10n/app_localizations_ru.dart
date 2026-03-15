@@ -2138,4 +2138,155 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get trainerRequestRejectedMsg => 'Заявка отклонена';
+
+  @override
+  String get workoutCreationTitle => 'Создать тренировку';
+
+  @override
+  String get workoutTypeSelectTitle => 'Выберите тип тренировки';
+
+  @override
+  String get workoutTypeEasyRun => 'Лёгкий бег';
+
+  @override
+  String get workoutTypeLongRun => 'Лонг ран (длительный бег)';
+
+  @override
+  String get workoutTypeIntervals => 'Интервалы';
+
+  @override
+  String get workoutTypeProgression => 'Бег с прогрессией';
+
+  @override
+  String get workoutTypeRecovery => 'Восстановительный бег';
+
+  @override
+  String get workoutTypeHillRun => 'Бег в горку';
+
+  @override
+  String get workoutParamsDuration => 'Длительность (мин)';
+
+  @override
+  String get workoutParamsDistance => 'Расстояние (км)';
+
+  @override
+  String get workoutParamsPace => 'Темп (мин/км)';
+
+  @override
+  String get workoutParamsHeartRate => 'Пульс (уд/мин)';
+
+  @override
+  String get workoutParamsReps => 'Повторений';
+
+  @override
+  String get workoutParamsRest => 'Отдых';
+
+  @override
+  String get workoutParamsRecovery => 'Восстановление';
+
+  @override
+  String get workoutParamsRestMin => 'Отдых (мин)';
+
+  @override
+  String get workoutParamsRestM => 'Отдых (м)';
+
+  @override
+  String get workoutParamsWarmup => 'Разминка (км/м)';
+
+  @override
+  String get workoutParamsHillElevation => 'Подъём (м)';
+
+  @override
+  String workoutParamsSegment(int n) {
+    return 'Отрезок $n';
+  }
+
+  @override
+  String get workoutParamsAddSegment => '+ Добавить отрезок';
+
+  @override
+  String get workoutCooldownNone => 'Заминка — нет';
+
+  @override
+  String get workoutCooldownSelect => 'Заминка';
+
+  @override
+  String get workoutCooldownMinutes => 'Указать минуты';
+
+  @override
+  String get workoutCooldownMetres => 'Указать метры';
+
+  @override
+  String get workoutCooldownNo => 'Нет';
+
+  @override
+  String get workoutCooldownValueMin => 'Длительность (мин)';
+
+  @override
+  String get workoutCooldownValueM => 'Расстояние (м)';
+
+  @override
+  String get workoutScheduleTitle => 'Назначить дату тренировки?';
+
+  @override
+  String get workoutScheduleYes => 'Да';
+
+  @override
+  String get workoutScheduleNo => 'Нет';
+
+  @override
+  String get workoutSavedTitle => 'Тренировка сохранена';
+
+  @override
+  String get workoutSavedStart => 'Начать тренировку';
+
+  @override
+  String get workoutSavedSaveTemplate => 'Сохранить как шаблон';
+
+  @override
+  String get workoutTemplateSaved => 'Шаблон сохранён';
+
+  @override
+  String get workoutShareTitle => 'Поделиться тренировкой';
+
+  @override
+  String get workoutShareAsTrainer => 'Как тренер';
+
+  @override
+  String get workoutShareWithFriends => 'С друзьями';
+
+  @override
+  String get workoutShareSend => 'Отправить';
+
+  @override
+  String get workoutIncomingShares => 'Входящие тренировки';
+
+  @override
+  String workoutShareFrom(String name) {
+    return 'От: $name';
+  }
+
+  @override
+  String get workoutShareAccept => 'Добавить себе';
+
+  @override
+  String get workoutShareAccepted => 'Тренировка добавлена';
+
+  @override
+  String get workoutFavoriteAdded => 'Добавлено в сохранённые';
+
+  @override
+  String get workoutFavoriteRemoved => 'Удалено из сохранённых';
+
+  @override
+  String get workoutTabMy => 'Мои';
+
+  @override
+  String get workoutTabSaved => 'Сохранённые';
+
+  @override
+  String get workoutAddToPlan => 'Добавить в план';
+
+  @override
+  String get workoutSaveAsNew => 'Сохранить как новую';
 }

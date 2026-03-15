@@ -5,6 +5,7 @@ import { getAuthProvider } from '../modules/auth';
 // Mock the repositories module
 jest.mock('../modules/auth');
 jest.mock('../db/repositories');
+jest.mock('../db/repositories/workout_shares.repository');
 
 const app = createApp();
 
@@ -38,6 +39,10 @@ describe('Workouts Routes', () => {
     mockClubMembersRepository,
     mockTrainerGroupsRepository,
   } = require('../db/repositories');
+
+  const {
+    mockWorkoutSharesRepository,
+  } = require('../db/repositories/workout_shares.repository');
 
   const mockWorkout = {
     id: 'workout-1',
@@ -73,10 +78,16 @@ describe('Workouts Routes', () => {
     mockWorkoutsRepository.delete.mockClear();
     mockWorkoutsRepository.hasUpcomingEvents.mockClear();
     mockWorkoutsRepository.assignToClients.mockClear();
+    mockWorkoutsRepository.findPersonalByAuthor.mockClear();
+    mockWorkoutsRepository.findTemplatesByAuthor.mockClear();
+    mockWorkoutsRepository.toggleFavorite.mockClear();
     mockClubMembersRepository.findByClubAndUser.mockClear();
     mockClubMembersRepository.findActiveClubsByUser.mockClear();
     mockTrainerGroupsRepository.findById.mockClear();
     mockTrainerGroupsRepository.findMemberIds.mockClear();
+    mockWorkoutSharesRepository.share.mockClear();
+    mockWorkoutSharesRepository.findReceivedByUser.mockClear();
+    mockWorkoutSharesRepository.accept.mockClear();
 
     // Default: user exists
     mockUsersRepository.findByFirebaseUid.mockResolvedValue({
@@ -485,6 +496,158 @@ describe('Workouts Routes', () => {
       expect(res.status).toBe(404);
       expect(res.body).toHaveProperty('code', 'not_found');
       expect(mockWorkoutsRepository.assignToClients).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('GET /api/workouts/my', () => {
+    it('returns personal workouts for authenticated user', async () => {
+      const personalWorkout = { ...mockWorkout, isTemplate: false, isFavorite: false };
+      mockWorkoutsRepository.findPersonalByAuthor.mockResolvedValueOnce([personalWorkout]);
+
+      const res = await request(app)
+        .get('/api/workouts/my')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body).toHaveLength(1);
+      expect(mockWorkoutsRepository.findPersonalByAuthor).toHaveBeenCalledWith('user-1');
+    });
+
+    it('returns 401 without token', async () => {
+      const res = await request(app).get('/api/workouts/my');
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe('GET /api/workouts/templates', () => {
+    it('returns templates for authenticated user', async () => {
+      const template = { ...mockWorkout, isTemplate: true, isFavorite: false };
+      mockWorkoutsRepository.findTemplatesByAuthor.mockResolvedValueOnce([template]);
+
+      const res = await request(app)
+        .get('/api/workouts/templates')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(mockWorkoutsRepository.findTemplatesByAuthor).toHaveBeenCalledWith('user-1');
+    });
+  });
+
+  describe('GET /api/workouts/shares/received', () => {
+    it('returns received shares for authenticated user', async () => {
+      mockWorkoutSharesRepository.findReceivedByUser.mockResolvedValueOnce([
+        {
+          id: 'share-1',
+          workoutId: 'workout-1',
+          senderId: 'user-2',
+          recipientId: 'user-1',
+          sharedAt: new Date(),
+          accepted: false,
+          senderName: 'Sender',
+          workout: { ...mockWorkout },
+        },
+      ]);
+
+      const res = await request(app)
+        .get('/api/workouts/shares/received')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(mockWorkoutSharesRepository.findReceivedByUser).toHaveBeenCalledWith('user-1');
+    });
+  });
+
+  describe('PATCH /api/workouts/:id/favorite', () => {
+    it('returns updated workout when favorite toggled', async () => {
+      const favWorkout = { ...mockWorkout, isTemplate: false, isFavorite: true };
+      mockWorkoutsRepository.toggleFavorite.mockResolvedValueOnce(favWorkout);
+
+      const res = await request(app)
+        .patch('/api/workouts/workout-1/favorite')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('isFavorite', true);
+      expect(mockWorkoutsRepository.toggleFavorite).toHaveBeenCalledWith('workout-1', 'user-1');
+    });
+
+    it('returns 404 when workout not found or not owned', async () => {
+      mockWorkoutsRepository.toggleFavorite.mockResolvedValueOnce(null);
+
+      const res = await request(app)
+        .patch('/api/workouts/nonexistent/favorite')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(404);
+      expect(res.body).toHaveProperty('code', 'not_found');
+    });
+  });
+
+  describe('POST /api/workouts/:id/share', () => {
+    it('shares workout with recipients', async () => {
+      mockWorkoutsRepository.findById.mockResolvedValueOnce(mockWorkout);
+      mockWorkoutSharesRepository.share
+        .mockResolvedValueOnce({ id: 'share-1', workoutId: 'workout-1', senderId: 'user-1', recipientId: 'user-2', sharedAt: new Date(), accepted: false });
+
+      const res = await request(app)
+        .post('/api/workouts/workout-1/share')
+        .set('Authorization', 'Bearer test-token')
+        .send({ recipientIds: ['550e8400-e29b-41d4-a716-446655440010'] });
+
+      expect(res.status).toBe(201);
+      expect(res.body).toHaveProperty('ok', true);
+      expect(mockWorkoutSharesRepository.share).toHaveBeenCalled();
+    });
+
+    it('returns 400 when recipientIds is missing', async () => {
+      const res = await request(app)
+        .post('/api/workouts/workout-1/share')
+        .set('Authorization', 'Bearer test-token')
+        .send({});
+
+      expect(res.status).toBe(400);
+      expect(res.body).toHaveProperty('code', 'validation_error');
+    });
+
+    it('returns 403 when user is not the author', async () => {
+      mockWorkoutsRepository.findById.mockResolvedValueOnce({ ...mockWorkout, authorId: 'other-user' });
+
+      const res = await request(app)
+        .post('/api/workouts/workout-1/share')
+        .set('Authorization', 'Bearer test-token')
+        .send({ recipientIds: ['550e8400-e29b-41d4-a716-446655440010'] });
+
+      expect(res.status).toBe(403);
+      expect(res.body).toHaveProperty('code', 'forbidden');
+    });
+  });
+
+  describe('POST /api/workouts/shares/:shareId/accept', () => {
+    it('accepts share and returns copied workout', async () => {
+      const copiedWorkout = { ...mockWorkout, id: 'workout-copy-1', isTemplate: false, isFavorite: false };
+      mockWorkoutSharesRepository.accept.mockResolvedValueOnce(copiedWorkout);
+
+      const res = await request(app)
+        .post('/api/workouts/shares/share-1/accept')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(201);
+      expect(res.body).toHaveProperty('id', 'workout-copy-1');
+      expect(mockWorkoutSharesRepository.accept).toHaveBeenCalledWith('share-1', 'user-1');
+    });
+
+    it('returns 404 when share not found', async () => {
+      mockWorkoutSharesRepository.accept.mockRejectedValueOnce(new Error('Share not found'));
+
+      const res = await request(app)
+        .post('/api/workouts/shares/nonexistent/accept')
+        .set('Authorization', 'Bearer test-token');
+
+      expect(res.status).toBe(404);
+      expect(res.body).toHaveProperty('code', 'not_found');
     });
   });
 });

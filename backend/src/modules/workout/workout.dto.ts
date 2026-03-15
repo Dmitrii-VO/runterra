@@ -4,7 +4,10 @@
 
 import { z } from 'zod';
 
-const workoutTypes = ['FUNCTIONAL', 'TEMPO', 'RECOVERY', 'ACCELERATIONS'] as const;
+const workoutTypes = [
+  'FUNCTIONAL', 'TEMPO', 'RECOVERY', 'ACCELERATIONS',
+  'EASY_RUN', 'LONG_RUN', 'INTERVALS', 'PROGRESSION', 'HILL_RUN',
+] as const;
 const difficulties = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'PRO'] as const;
 const targetMetrics = ['DISTANCE', 'TIME', 'PACE'] as const;
 const surfaces = ['ROAD', 'TRACK', 'TRAIL'] as const;
@@ -39,6 +42,10 @@ export const CreateWorkoutSchema = z.object({
   repDistanceM: z.number().int().min(1).optional(),
   exerciseName: z.string().max(200).optional(),
   exerciseInstructions: z.string().max(5000).optional(),
+  // Personal workout fields
+  isTemplate: z.boolean().optional(),
+  scheduledAt: z.string().datetime().nullable().optional(),
+  hillElevationM: z.number().int().min(1).optional(),
 });
 
 export const UpdateWorkoutSchema = CreateWorkoutSchema.partial().omit({ clubId: true });

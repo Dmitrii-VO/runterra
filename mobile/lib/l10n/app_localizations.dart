@@ -4057,6 +4057,300 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Request rejected'**
   String get trainerRequestRejectedMsg;
+
+  /// No description provided for @workoutCreationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Workout'**
+  String get workoutCreationTitle;
+
+  /// No description provided for @workoutTypeSelectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select workout type'**
+  String get workoutTypeSelectTitle;
+
+  /// No description provided for @workoutTypeEasyRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy Run'**
+  String get workoutTypeEasyRun;
+
+  /// No description provided for @workoutTypeLongRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Long Run'**
+  String get workoutTypeLongRun;
+
+  /// No description provided for @workoutTypeIntervals.
+  ///
+  /// In en, this message translates to:
+  /// **'Intervals'**
+  String get workoutTypeIntervals;
+
+  /// No description provided for @workoutTypeProgression.
+  ///
+  /// In en, this message translates to:
+  /// **'Progression Run'**
+  String get workoutTypeProgression;
+
+  /// No description provided for @workoutTypeRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery Run'**
+  String get workoutTypeRecovery;
+
+  /// No description provided for @workoutTypeHillRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Hill Run'**
+  String get workoutTypeHillRun;
+
+  /// No description provided for @workoutParamsDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration (min)'**
+  String get workoutParamsDuration;
+
+  /// No description provided for @workoutParamsDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance (km)'**
+  String get workoutParamsDistance;
+
+  /// No description provided for @workoutParamsPace.
+  ///
+  /// In en, this message translates to:
+  /// **'Pace (min/km)'**
+  String get workoutParamsPace;
+
+  /// No description provided for @workoutParamsHeartRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Heart rate (bpm)'**
+  String get workoutParamsHeartRate;
+
+  /// No description provided for @workoutParamsReps.
+  ///
+  /// In en, this message translates to:
+  /// **'Reps'**
+  String get workoutParamsReps;
+
+  /// No description provided for @workoutParamsRest.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest'**
+  String get workoutParamsRest;
+
+  /// No description provided for @workoutParamsRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery'**
+  String get workoutParamsRecovery;
+
+  /// No description provided for @workoutParamsRestMin.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest (min)'**
+  String get workoutParamsRestMin;
+
+  /// No description provided for @workoutParamsRestM.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest (m)'**
+  String get workoutParamsRestM;
+
+  /// No description provided for @workoutParamsWarmup.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm-up (km/m)'**
+  String get workoutParamsWarmup;
+
+  /// No description provided for @workoutParamsHillElevation.
+  ///
+  /// In en, this message translates to:
+  /// **'Elevation (m)'**
+  String get workoutParamsHillElevation;
+
+  /// No description provided for @workoutParamsSegment.
+  ///
+  /// In en, this message translates to:
+  /// **'Segment {n}'**
+  String workoutParamsSegment(int n);
+
+  /// No description provided for @workoutParamsAddSegment.
+  ///
+  /// In en, this message translates to:
+  /// **'+ Add segment'**
+  String get workoutParamsAddSegment;
+
+  /// No description provided for @workoutCooldownNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Cooldown — none'**
+  String get workoutCooldownNone;
+
+  /// No description provided for @workoutCooldownSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Cooldown'**
+  String get workoutCooldownSelect;
+
+  /// No description provided for @workoutCooldownMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Set minutes'**
+  String get workoutCooldownMinutes;
+
+  /// No description provided for @workoutCooldownMetres.
+  ///
+  /// In en, this message translates to:
+  /// **'Set metres'**
+  String get workoutCooldownMetres;
+
+  /// No description provided for @workoutCooldownNo.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get workoutCooldownNo;
+
+  /// No description provided for @workoutCooldownValueMin.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration (min)'**
+  String get workoutCooldownValueMin;
+
+  /// No description provided for @workoutCooldownValueM.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance (m)'**
+  String get workoutCooldownValueM;
+
+  /// No description provided for @workoutScheduleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule this workout?'**
+  String get workoutScheduleTitle;
+
+  /// No description provided for @workoutScheduleYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get workoutScheduleYes;
+
+  /// No description provided for @workoutScheduleNo.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get workoutScheduleNo;
+
+  /// No description provided for @workoutSavedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout saved'**
+  String get workoutSavedTitle;
+
+  /// No description provided for @workoutSavedStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start workout'**
+  String get workoutSavedStart;
+
+  /// No description provided for @workoutSavedSaveTemplate.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as template'**
+  String get workoutSavedSaveTemplate;
+
+  /// No description provided for @workoutTemplateSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Template saved'**
+  String get workoutTemplateSaved;
+
+  /// No description provided for @workoutShareTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share workout'**
+  String get workoutShareTitle;
+
+  /// No description provided for @workoutShareAsTrainer.
+  ///
+  /// In en, this message translates to:
+  /// **'As trainer'**
+  String get workoutShareAsTrainer;
+
+  /// No description provided for @workoutShareWithFriends.
+  ///
+  /// In en, this message translates to:
+  /// **'With friends'**
+  String get workoutShareWithFriends;
+
+  /// No description provided for @workoutShareSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get workoutShareSend;
+
+  /// No description provided for @workoutIncomingShares.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming workouts'**
+  String get workoutIncomingShares;
+
+  /// No description provided for @workoutShareFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'From: {name}'**
+  String workoutShareFrom(String name);
+
+  /// No description provided for @workoutShareAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to my workouts'**
+  String get workoutShareAccept;
+
+  /// No description provided for @workoutShareAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout added'**
+  String get workoutShareAccepted;
+
+  /// No description provided for @workoutFavoriteAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to saved'**
+  String get workoutFavoriteAdded;
+
+  /// No description provided for @workoutFavoriteRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed from saved'**
+  String get workoutFavoriteRemoved;
+
+  /// No description provided for @workoutTabMy.
+  ///
+  /// In en, this message translates to:
+  /// **'My'**
+  String get workoutTabMy;
+
+  /// No description provided for @workoutTabSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get workoutTabSaved;
+
+  /// No description provided for @workoutAddToPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to plan'**
+  String get workoutAddToPlan;
+
+  /// No description provided for @workoutSaveAsNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as new'**
+  String get workoutSaveAsNew;
 }
 
 class _AppLocalizationsDelegate

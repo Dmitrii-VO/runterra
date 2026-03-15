@@ -25,6 +25,10 @@ interface WorkoutRow {
   rep_distance_m: number | null;
   exercise_name: string | null;
   exercise_instructions: string | null;
+  is_template: boolean;
+  is_favorite: boolean;
+  scheduled_at: Date | null;
+  hill_elevation_m: number | null;
   created_at: Date;
 }
 
@@ -46,6 +50,10 @@ function rowToWorkout(row: WorkoutRow): Workout {
     repDistanceM: row.rep_distance_m ?? undefined,
     exerciseName: row.exercise_name ?? undefined,
     exerciseInstructions: row.exercise_instructions ?? undefined,
+    isTemplate: row.is_template,
+    isFavorite: row.is_favorite,
+    scheduledAt: row.scheduled_at ?? undefined,
+    hillElevationM: row.hill_elevation_m ?? undefined,
     createdAt: row.created_at,
   };
 }
@@ -100,15 +108,19 @@ export class WorkoutsRepository extends BaseRepository {
     repDistanceM?: number;
     exerciseName?: string;
     exerciseInstructions?: string;
+    isTemplate?: boolean;
+    scheduledAt?: Date | string;
+    hillElevationM?: number;
   }): Promise<Workout> {
     const row = await this.queryOne<WorkoutRow>(
       `INSERT INTO workouts (
          author_id, club_id, name, description, type, difficulty, surface, blocks,
          target_metric, target_value, target_zone,
          distance_m, heart_rate_target, pace_target, rep_count, rep_distance_m,
-         exercise_name, exercise_instructions
+         exercise_name, exercise_instructions,
+         is_template, scheduled_at, hill_elevation_m
        )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
        RETURNING *`,
       [
         data.authorId,
@@ -129,6 +141,9 @@ export class WorkoutsRepository extends BaseRepository {
         data.repDistanceM ?? null,
         data.exerciseName ?? null,
         data.exerciseInstructions ?? null,
+        data.isTemplate ?? false,
+        data.scheduledAt ?? null,
+        data.hillElevationM ?? null,
       ],
     );
     if (!row) throw new Error('Insert workouts failed');
@@ -154,6 +169,9 @@ export class WorkoutsRepository extends BaseRepository {
       repDistanceM?: number;
       exerciseName?: string;
       exerciseInstructions?: string;
+      isTemplate?: boolean;
+      scheduledAt?: Date | string | null;
+      hillElevationM?: number;
     },
   ): Promise<Workout | null> {
     const sets: string[] = [];
@@ -223,6 +241,18 @@ export class WorkoutsRepository extends BaseRepository {
     if (data.exerciseInstructions !== undefined) {
       sets.push(`exercise_instructions = $${idx++}`);
       params.push(data.exerciseInstructions);
+    }
+    if (data.isTemplate !== undefined) {
+      sets.push(`is_template = $${idx++}`);
+      params.push(data.isTemplate);
+    }
+    if (data.scheduledAt !== undefined) {
+      sets.push(`scheduled_at = $${idx++}`);
+      params.push(data.scheduledAt);
+    }
+    if (data.hillElevationM !== undefined) {
+      sets.push(`hill_elevation_m = $${idx++}`);
+      params.push(data.hillElevationM);
     }
 
     if (sets.length === 0) {
@@ -308,6 +338,36 @@ export class WorkoutsRepository extends BaseRepository {
       assignedAt: row.assigned_at,
       isCompleted: row.is_completed,
     }));
+  }
+
+  /** Toggle is_favorite flag for a workout owned by userId */
+  async toggleFavorite(workoutId: string, userId: string): Promise<Workout | null> {
+    const row = await this.queryOne<WorkoutRow>(
+      `UPDATE workouts
+       SET is_favorite = NOT is_favorite
+       WHERE id = $1 AND author_id = $2
+       RETURNING *`,
+      [workoutId, userId],
+    );
+    return row ? rowToWorkout(row) : null;
+  }
+
+  /** Get templates created by author */
+  async findTemplatesByAuthor(authorId: string): Promise<Workout[]> {
+    const rows = await this.queryMany<WorkoutRow>(
+      'SELECT * FROM workouts WHERE author_id = $1 AND is_template = true ORDER BY created_at DESC',
+      [authorId],
+    );
+    return rows.map(rowToWorkout);
+  }
+
+  /** Get personal (non-template, non-club) workouts created by author */
+  async findPersonalByAuthor(authorId: string): Promise<Workout[]> {
+    const rows = await this.queryMany<WorkoutRow>(
+      'SELECT * FROM workouts WHERE author_id = $1 AND is_template = false AND club_id IS NULL ORDER BY created_at DESC',
+      [authorId],
+    );
+    return rows.map(rowToWorkout);
   }
 
   async hasUpcomingEvents(workoutId: string): Promise<boolean> {

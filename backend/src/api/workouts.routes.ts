@@ -17,6 +17,7 @@ import {
   getMessagesRepository,
   getTrainerGroupsRepository,
 } from '../db/repositories';
+import { getWorkoutSharesRepository } from '../db/repositories/workout_shares.repository';
 import { CreateWorkoutSchema, UpdateWorkoutSchema } from '../modules/workout';
 import { isTrainerOrLeaderInClub } from './helpers/trainer-role';
 import { logger } from '../shared/logger';
@@ -80,6 +81,46 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/workouts/my — personal (non-template, non-club) workouts
+// ⚠️ Must be registered BEFORE /:id to avoid Express treating "my" as an id
+router.get('/my', async (req: Request, res: Response) => {
+  try {
+    const userId = await resolveUserId(req, res);
+    if (!userId) return;
+    const workouts = await getWorkoutsRepository().findPersonalByAuthor(userId);
+    res.status(200).json(workouts);
+  } catch (error) {
+    logger.error('Error fetching personal workouts', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+// GET /api/workouts/templates — my templates
+router.get('/templates', async (req: Request, res: Response) => {
+  try {
+    const userId = await resolveUserId(req, res);
+    if (!userId) return;
+    const workouts = await getWorkoutsRepository().findTemplatesByAuthor(userId);
+    res.status(200).json(workouts);
+  } catch (error) {
+    logger.error('Error fetching workout templates', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+// GET /api/workouts/shares/received — incoming shares
+router.get('/shares/received', async (req: Request, res: Response) => {
+  try {
+    const userId = await resolveUserId(req, res);
+    if (!userId) return;
+    const shares = await getWorkoutSharesRepository().findReceivedByUser(userId);
+    res.status(200).json(shares);
+  } catch (error) {
+    logger.error('Error fetching received workout shares', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
 // GET /api/workouts/:id
 router.get('/:id', async (req: Request, res: Response) => {
   try {
@@ -137,6 +178,9 @@ router.post('/', validateBody(CreateWorkoutSchema), async (req: Request, res: Re
       repDistanceM,
       exerciseName,
       exerciseInstructions,
+      isTemplate,
+      scheduledAt,
+      hillElevationM,
     } = req.body;
 
     // If clubId provided, verify user is trainer/leader in that specific club
@@ -169,6 +213,9 @@ router.post('/', validateBody(CreateWorkoutSchema), async (req: Request, res: Re
       repDistanceM,
       exerciseName,
       exerciseInstructions,
+      isTemplate,
+      scheduledAt,
+      hillElevationM,
     });
     res.status(201).json(workout);
   } catch (error) {
@@ -371,6 +418,74 @@ router.delete('/:id/assign/:clientId', async (req: Request, res: Response) => {
     res.status(200).json({ ok: true });
   } catch (error) {
     logger.error('Error removing workout assignment', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+// PATCH /api/workouts/:id/favorite — toggle is_favorite
+router.patch('/:id/favorite', async (req: Request, res: Response) => {
+  try {
+    const userId = await resolveUserId(req, res);
+    if (!userId) return;
+    const updated = await getWorkoutsRepository().toggleFavorite(req.params.id, userId);
+    if (!updated) {
+      return res.status(404).json({ code: 'not_found', message: 'Workout not found' });
+    }
+    res.status(200).json(updated);
+  } catch (error) {
+    logger.error('Error toggling workout favorite', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+// POST /api/workouts/:id/share — share with friends (recipientIds) or clients (clubIds)
+router.post('/:id/share', async (req: Request, res: Response) => {
+  try {
+    const userId = await resolveUserId(req, res);
+    if (!userId) return;
+
+    const { recipientIds } = req.body as { recipientIds?: string[] };
+
+    if (!recipientIds || !Array.isArray(recipientIds) || recipientIds.length === 0) {
+      return res.status(400).json({
+        code: 'validation_error',
+        message: 'recipientIds must be a non-empty array',
+        details: { fields: [{ field: 'recipientIds', message: 'Required', code: 'required' }] },
+      });
+    }
+
+    const repo = getWorkoutsRepository();
+    const workout = await repo.findById(req.params.id);
+    if (!workout) {
+      return res.status(404).json({ code: 'not_found', message: 'Workout not found' });
+    }
+    if (workout.authorId !== userId) {
+      return res.status(403).json({ code: 'forbidden', message: 'Only the author can share this workout' });
+    }
+
+    const sharesRepo = getWorkoutSharesRepository();
+    const results = await Promise.all(
+      recipientIds.map(recipientId => sharesRepo.share(req.params.id, userId, recipientId)),
+    );
+    res.status(201).json({ ok: true, shared: results.length });
+  } catch (error) {
+    logger.error('Error sharing workout', { error });
+    res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
+  }
+});
+
+// POST /api/workouts/shares/:shareId/accept — accept a shared workout (copies it to recipient)
+router.post('/shares/:shareId/accept', async (req: Request, res: Response) => {
+  try {
+    const userId = await resolveUserId(req, res);
+    if (!userId) return;
+    const workout = await getWorkoutSharesRepository().accept(req.params.shareId, userId);
+    res.status(201).json(workout);
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Share not found') {
+      return res.status(404).json({ code: 'not_found', message: 'Share not found' });
+    }
+    logger.error('Error accepting workout share', { error });
     res.status(500).json({ code: 'internal_error', message: 'Internal server error' });
   }
 });
