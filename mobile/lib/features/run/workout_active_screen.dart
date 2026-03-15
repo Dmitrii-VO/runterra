@@ -37,9 +37,6 @@ class _WorkoutActiveScreenState extends State<WorkoutActiveScreen> {
   int _currentSegment = 0;
   double _segmentDistanceM = 0;
 
-  // Cooldown state
-  bool _inCooldown = false; // ignore: unused_field
-
   @override
   void initState() {
     super.initState();
@@ -144,7 +141,7 @@ class _WorkoutActiveScreenState extends State<WorkoutActiveScreen> {
     final h = d.inHours;
     final m = d.inMinutes % 60;
     final s = d.inSeconds % 60;
-    if (h > 0) return '${h}ч ${m.toString().padLeft(2, '0')}м';
+    if (h > 0) return '${h}ч ${m.toString().padLeft(2, '0')}м'; // ignore: unnecessary_brace_in_string_interps
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
